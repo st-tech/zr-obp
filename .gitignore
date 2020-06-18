@@ -132,6 +132,5 @@ dmypy.json
 .vscode/
 .DS_Store
 logs/
-*.csv
 *.npy
 *.html

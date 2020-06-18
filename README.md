@@ -43,14 +43,12 @@ Currently, Open Bandit Dataset & Pipeline facilitate evaluation and comparison r
 
 
 ## Installation
-<!--
-# TODO: activate pip install
 
 1. You can install OBP using Python's package manager `pip`.
 
 ```
 pip install obp
-``` -->
+```
 
 1. You can install OBP from source.
 ```bash
