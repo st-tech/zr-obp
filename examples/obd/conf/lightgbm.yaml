@@ -1,0 +1,5 @@
+model:
+  max_iter: 1000
+  learning_rate: 0.01
+  min_samples_leaf: 5
+  random_state: 12345
