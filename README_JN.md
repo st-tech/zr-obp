@@ -1,6 +1,6 @@
 # Open Bandit Dataset & Pipeline
 
-**[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README_JN.md)**
+**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README_JN.md)**
 
 ## 概要
 
@@ -60,13 +60,13 @@ Open Bandit Dataset・Pipelineでは, 以下の研究テーマに関する実験
 
 ## インストール
 
-- 以下の通り, `pip`を用いてOpen Bandit Pipelineをダウンロードすることが可能です.
+以下の通り, `pip`を用いてOpen Bandit Pipelineをダウンロードすることが可能です.
 
 ```
 pip install obp
 ```
 
-- また, 本リポジトリを直接cloneしてセットアップすることもできます.
+また, 本リポジトリを直接cloneしてセットアップすることもできます.
 ```bash
 git clone https://github.com/st-tech/zr-obp
 cd obp
@@ -78,6 +78,7 @@ python setup.py install
 - **python>=3.7.0**
 - numpy>=1.18.1
 - pandas>=0.25.1
+- scipy>=1.4.1
 - scikit-learn>=0.23.1
 - tqdm>=4.41.1
 - pyyaml>=5.1
@@ -159,7 +160,7 @@ simulator.simulate(policy=counterfactual_policy)
 
 オフライン方策シミュレーター `OfflineBanditSimulator`は `BanditPolicy` クラスと `train` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます.
 
-ユーザーは[`./obp/policy/contextfree.py`](./obp/policy/contextfree.py)の`BaseContextFreePolicy`や[`./obp/policy/contextual.py`](./obp/policy/contextual.py)の`BaseContexttualPolicy`のインターフェースに従うことで, 独自のバンディットアルゴリズムを実装することができます. 新しいバンディットアルゴリズムの実装例として文脈付きロジスティックバンディットの実装例を [`./examples/obd/logistic_bandit.py`](./examples/obd/logistic_bandit.py) に示しています.
+ユーザーは[`./obp/policy/contextfree.py`](./obp/policy/contextfree.py)の`BaseContextFreePolicy`や[`./obp/policy/contextual.py`](./obp/policy/contextual.py)の`BaseContexttualPolicy`のインターフェースに従うことで, 独自のバンディットアルゴリズムを実装することができます.
 
 
 ### (3) オフライン方策評価 （Off-Policy Evaluation）
@@ -180,18 +181,18 @@ print(relative_policy_value_of_bernoulli_ts) # 1.21428...
 `test['reward'].mean()` は観測された報酬の経験平均値であり, ランダム方策の真の性能を表します.
 
 
-<!-- ## 引用
+## 引用
 本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようお願いいたします.
 
 ```
 # TODO: add bibtex
 @article{
 }
-``` -->
+```
 
 
 ## ライセンス
-このプロジェクトはApacheライセンスを採用しています.  詳細は, [LICENSE](LICENSE) を参照してください.
+このプロジェクトはApache 2.0ライセンスを採用しています.  詳細は, [LICENSE](LICENSE) を参照してください.
 
 
 ## 主要コントリビューター

@@ -1,6 +1,6 @@
 # Open Bandit Dataset & Pipeline
 
-**[Overview](#overview)** | **[Installation](#installation)** | **[Usage](#usage)** | **[References](#references)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README.md)** | **[日本語](./README_JN.md)**
+**[Document](https://zr-obp.readthedocs.io/en/latest/)** | **[Overview](#overview)** | **[Installation](#installation)** | **[Usage](#usage)** | **[References](#references)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README.md)** | **[日本語](./README_JN.md)**
 
 ## Overview
 
@@ -46,13 +46,13 @@ Currently, Open Bandit Dataset & Pipeline facilitate evaluation and comparison r
 
 ## Installation
 
-- You can install OBP using Python's package manager `pip`.
+You can install OBP using Python's package manager `pip`.
 
 ```
 pip install obp
 ```
 
-- You can install OBP from source.
+You can install OBP from source.
 ```bash
 git clone https://github.com/st-tech/zr-obp
 cd obp
@@ -64,6 +64,7 @@ python setup.py install
 - **python>=3.7.0**
 - numpy>=1.18.1
 - pandas>=0.25.1
+- scipy>=1.4.1
 - scikit-learn>=0.23.1
 - tqdm>=4.41.1
 - pyyaml>=5.1
@@ -110,9 +111,9 @@ We prepare easy-to-use data loader for Open Bandit Dataset.
 We handle dataset preprocessing as well as standardized train/test splitting.
 
 ```python
-# Load and preprocess raw data in "Women" campaign collected by the Random policy
+# load and preprocess raw data in "Women" campaign collected by the Random policy
 dataset = OpenBanditDataset(behavior_policy='random', campaign='women')
-# Split the data into 70% training and 30% test sets
+# split the data into 70% training and 30% test sets
 train, test = dataset.split_data(test_size=0.3, random_state=0)
 
 print(train.keys())
@@ -129,20 +130,20 @@ Moreover, by following the interface of `BaseBanditDataset` class in `./obp/data
 After preparing a dataset, we now run an **offline bandit simulation** on the logged bandit feedback as follows.
 
 ```python
-# Define a simulator object
+# define a simulator object
 simulator = OfflineBanditSimulator(train=train)
-# Define a counterfacutal policy, which is the Bernoulli TS policy here
+# define a counterfacutal policy, which is the Bernoulli TS policy here
 counterfactual_policy = BernoulliTS(
   n_actions=dataset.n_actions,
   len_list=dataset.len_list,
   random_state=42)
-# Run an offline bandit simulation on the training set
+# run an offline bandit simulation on the training set
 simulator.simulate(policy=counterfactual_policy)
 ```
 
 The simulation takes `BanditPolicy` class and `train` (a dictionary storing the training set of the bandit feedback) as inputs and runs offline bandit simulation of a given bandit policy.
 
-Users can implement their own bandit algorithms by following the interface of `BaseContextFreePolicy` in [`./obp/policy/contextfree.py`](./obp/policy/contextfree.py) or `BaseContexttualPolicy` in [`./obp/policy/contextual.py`](./obp/policy/contextual.py). We show an example of implementing new bandit algorithms in [`./examples/obd/logistic_bandit.py`](./examples/obd/logistic_bandit.py).
+Users can implement their own bandit algorithms by following the interface of `BaseContextFreePolicy` in [`./obp/policy/contextfree.py`](./obp/policy/contextfree.py) or `BaseContexttualPolicy` in [`./obp/policy/contextual.py`](./obp/policy/contextual.py).
 
 ### (3) Off-Policy Evaluation
 
@@ -150,31 +151,31 @@ Our final step is **off-policy evaluation** (OPE), which attempts to estimate th
 Our pipeline also provides an easy procedure for doing OPE as follows.
 
 ```python
-# Estimate the policy value of BernoulliTS based on actions selected by that policy
+# estimate the policy value of BernoulliTS based on actions selected by that policy
 estimated_policy_value = simulator.inverse_probability_weighting()
 
-# Comapre the estimated performance of BernoulliTS (counterfactual policy)
+# comapre the estimated performance of BernoulliTS (counterfactual policy)
 # with the ground-truth performance of Random (behavior policy)
 relative_policy_value_of_bernoulli_ts = estimated_policy_value / test['reward'].mean()
-# Our OPE procedure estimates that BernoulliTS improves Random by 21.4%
+# our OPE procedure estimates that BernoulliTS improves Random by 21.4%
 print(relative_policy_value_of_bernoulli_ts) # 1.21428...
 ```
 Users can implement their own OPE estimator as a method of `OfflineBanditSimator` class.
 `test['reward'].mean()` is the empirical mean of factual rewards in the log and thus is the ground-truth performance of the behavior policy (the Random policy in this example.).
 
 
-<!-- ## Citation
+## Citation
 If you use this project in your work, please cite our paper below.
 
 ```
 # TODO: add bibtex
 @article{
 }
-``` -->
+```
 
 
 ## License
-This project is licensed under the Apache License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
 
 ## Main Contributor
