@@ -1,3 +1,6 @@
+# Copyright (c) ZOZO Technologies, Inc. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 from dataclasses import dataclass
 import logging
 from tqdm import tqdm
@@ -23,10 +26,10 @@ class OfflineBanditSimulator:
     Parameters
     ----------
     train: TRAIN_DICT
-        A training set of a logged bandit feedback data to be used in an offline bandit simulation.
+        Training set of a logged bandit feedback data to be used in an offline bandit simulation.
 
     regression_model: BaseEstimator, default: None
-        A pre-trained ML model to predict the mean reward function (E[R | X, A]).
+        ML model to predict the mean reward function (E[R | X, A]).
 
     X_action: np.ndarray (n_actions, n_features_of_actions), default: None
         Context vectors used as an input to predict the mean reward function.
@@ -65,19 +68,19 @@ class OfflineBanditSimulator:
         Parameters
         ----------
         action: int
-            An action that was chosen for the log chosen by a behavior policy.
+            Action that was chosen for the log chosen by a behavior policy.
 
         reward: float
-            A reward that was observed for the chosen action and position.
+            Reward that was observed for the chosen action and position.
 
         position: int
-            A position that the action was presented in the log.
+            Position that the action was presented in the log.
 
         pscore: float
-            A propensity score from a behavior policy that generated the log for the action chosen by it.
+            Propensity score from a behavior policy that generated the log for the action chosen by it.
 
         context: np.ndarray, (1, dim_context)
-            A context vector that characterizes the sample and would be used as an input for a counterfactual policy.
+            Context vector that characterizes the sample and would be used as an input for a counterfactual policy.
         """
         # select a list of actions
         if self.policy.policy_type == 'contextfree':
@@ -101,7 +104,7 @@ class OfflineBanditSimulator:
         Parameters
         ----------
         policy: BanditPolicyType
-            a bandit policy to be used in an offline simulation (i.e., counterfactual or evaluation policy).
+            Bandit policy to be used in an offline simulation (i.e., counterfactual or evaluation policy).
         """
         self.policy = policy
         selected_actions_list = list()
@@ -136,7 +139,7 @@ class OfflineBanditSimulator:
         Returns
         -------
         V_hat: float
-            An estimated policy value (performance) of a given counterfactual or evaluation policy.
+            Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         References
         ----------
@@ -168,8 +171,8 @@ class OfflineBanditSimulator:
         Parameters
         ----------
         min_pscore: float, default: 0.
-            A minimum value used as propensity score.
-            A socres larger than this parameter would be clipped.
+            Minimum value used as propensity score.
+            Propensity scores larger than this parameter would be clipped.
 
         is_self_normalized: bool, default: False
             Whether the self-normalized technique is used.
@@ -177,7 +180,7 @@ class OfflineBanditSimulator:
         Returns
         -------
         V_hat: float
-            An estimated policy value (performance) of a given counterfactual or evaluation policy.
+            Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         References
         ----------
@@ -220,13 +223,13 @@ class OfflineBanditSimulator:
         Parameters
         ----------
         min_pscore: float, default: 0.
-            A minimum value used as propensity score.
-            A socres larger than this parameter would be clipped.
+            Minimum value used as propensity score.
+            Propensity scores larger than this parameter would be clipped.
 
         Returns
         -------
         V_hat: float
-            An estimated policy value (performance) of a given counterfactual or evaluation policy.
+            Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         References
         ----------
@@ -254,7 +257,7 @@ class OfflineBanditSimulator:
         Returns
         -------
         V_hat: float
-            An estimated policy value (performance) of a given counterfactual or evaluation policy.
+            Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         References
         ----------

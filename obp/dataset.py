@@ -1,3 +1,6 @@
+# Copyright (c) ZOZO Technologies, Inc. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path

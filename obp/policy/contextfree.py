@@ -1,3 +1,6 @@
+# Copyright (c) ZOZO Technologies, Inc. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import List, Optional
@@ -13,14 +16,14 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
     Parameters
     ----------
     n_actions: int
-        The number of actions.
+        Number of actions.
 
     len_list: int, default: 1
-        The length of a list of recommended actions in each impression.
+        Length of a list of recommended actions in each impression.
         When Open Bandit Dataset is used, 3 shouled be set.
 
     batch_size: int, default: 1
-        The number of samples used in a batch parameter update.
+        Number of samples used in a batch parameter update.
 
     n_trial: int, default: 0
         Current number of trials in a bandit simulation.
@@ -29,7 +32,7 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
         Controls the random seed in sampling actions.
 
     policy_type: str, default: 'contextfree'
-        The type of the bandit policy.
+        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
     """
     n_actions: int
     len_list: int = 1
@@ -72,11 +75,33 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     Parameters
     ----------
+    n_actions: int
+        Number of actions.
+
+    len_list: int, default: 1
+        Length of a list of recommended actions in each impression.
+        When Open Bandit Dataset is used, 3 shouled be set.
+
+    batch_size: int, default: 1
+        Number of samples used in a batch parameter update.
+
+    n_trial: int, default: 0
+        Current number of trials in a bandit simulation.
+
+    random_state: int, default: None
+        Controls the random seed in sampling actions.
+
+    policy_type: str, default: 'contextfree'
+        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
+
     epsilon: float, default: 1.
-        The exploration hyperparameter that takes value in [0., 1.]
+        Exploration hyperparameter that must take value in the range of [0., 1.].
+
+    policy_name: str, default: f'egreedy_{epsilon}'.
+        Name of bandit policy.
     """
     epsilon: float = 1.
-    policy_name: str = f"egreedy_{epsilon}"
+    policy_name: str = f'egreedy_{epsilon}'
 
     assert 0 <= epsilon <= 1, f'epsilon must be in [0, 1], but {epsilon} is set.'
 
@@ -85,8 +110,8 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
         Returns
         ----------
-        : array
-        A list of selected actions.
+        selected_actions: array
+            List of selected actions.
         """
         self.n_trial += 1
         if self.random_.rand() > self.epsilon:
@@ -101,10 +126,10 @@ class EpsilonGreedy(BaseContextFreePolicy):
         Parameters
         ----------
         action: int
-            An selected action by the policy.
+            Selected action by the policy.
 
         reward: float
-            An observed reward for the chosen action and position.
+            Observed reward for the chosen action and position.
         """
         self.action_counts_temp[action] += 1
         n, old_reward = self.action_counts_temp[action], self.reward_counts_temp[action]
@@ -120,8 +145,30 @@ class Random(EpsilonGreedy):
 
     Parameters
     ----------
-    policy_name: str, default: 'bts'
-        The name of the policy.
+    n_actions: int
+        Number of actions.
+
+    len_list: int, default: 1
+        Length of a list of recommended actions in each impression.
+        When Open Bandit Dataset is used, 3 shouled be set.
+
+    batch_size: int, default: 1
+        Number of samples used in a batch parameter update.
+
+    n_trial: int, default: 0
+        Current number of trials in a bandit simulation.
+
+    random_state: int, default: None
+        Controls the random seed in sampling actions.
+
+    policy_type: str, default: 'contextfree'
+        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
+
+    epsilon: float, default: 1.
+        Exploration hyperparameter that must take value in the range of [0., 1.].
+
+    policy_name: str, default: 'random'.
+        Name of bandit policy.
     """
     policy_name: str = 'random'
 
@@ -132,14 +179,35 @@ class BernoulliTS(BaseContextFreePolicy):
 
     Parameters
     ----------
+    Parameters
+    ----------
+    n_actions: int
+        Number of actions.
+
+    len_list: int, default: 1
+        Length of a list of recommended actions in each impression.
+        When Open Bandit Dataset is used, 3 shouled be set.
+
+    batch_size: int, default: 1
+        Number of samples used in a batch parameter update.
+
+    n_trial: int, default: 0
+        Current number of trials in a bandit simulation.
+
+    random_state: int, default: None
+        Controls the random seed in sampling actions.
+
+    policy_type: str, default: 'contextfree'
+        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
+
     alpha: List[float]], default: None
-        A prior parameter vector for Beta distributions.
+        Prior parameter vector for Beta distributions.
 
     beta: List[float]], default: None
-        A prior parameter vector for Beta distributions.
+        Prior parameter vector for Beta distributions.
 
     policy_name: str, default: 'bts'
-        The name of the policy.
+        Name of bandit policy.
     """
     alpha: Optional[List[float]] = None
     beta: Optional[List[float]] = None
@@ -156,8 +224,8 @@ class BernoulliTS(BaseContextFreePolicy):
 
         Returns
         ----------
-        : array
-        A list of selected actions.
+        selected_actions: array
+            List of selected actions.
         """
         self.n_trial += 1
         theta = self.random_.beta(a=self.reward_counts + self.alpha,
@@ -171,10 +239,10 @@ class BernoulliTS(BaseContextFreePolicy):
         Parameters
         ----------
         action: int
-            An selected action by the policy.
+            Selected action by the policy.
 
         reward: float
-            An observed reward for the chosen action and position.
+            Observed reward for the chosen action and position.
         """
         self.action_counts_temp[action] += 1
         self.reward_counts_temp[action] += reward

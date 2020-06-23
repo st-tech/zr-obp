@@ -1,3 +1,6 @@
+# Copyright (c) ZOZO Technologies, Inc. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 from inspect import isclass
 from typing import Dict, Optional
 
@@ -108,3 +111,8 @@ def check_is_fitted(estimator: BaseEstimator,
 
     is_fitted = len(attrs) != 0
     return is_fitted
+
+
+def sigmoid(x: np.ndarray) -> np.ndarray:
+    """Calculate sigmoid function."""
+    return 1. / (1. + np.exp(-x))
