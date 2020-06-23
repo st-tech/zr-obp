@@ -9,7 +9,7 @@ from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from dataset import OBDWithContextSets
-from logistic_bandit import LogisticTS, LogisticEpsilonGreedy, LogisticUCB
+from obp.policy import LogisticTS, LogisticEpsilonGreedy, LogisticUCB
 from obp.simulator import OfflineBanditSimulator
 from obp.utils import estimate_confidence_interval_by_bootstrap
 
