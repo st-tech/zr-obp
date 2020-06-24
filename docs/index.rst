@@ -89,7 +89,7 @@ If you use this project in your work, please cite our paper below.
    obp
 
 .. toctree::
-    :caption: Others
+    :caption: Others:
 
     Github <https://github.com/st-tech/zr-obp>
     references
