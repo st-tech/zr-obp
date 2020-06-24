@@ -93,6 +93,10 @@ When the behavior policy is known, the IPW estimator is unbiased and consistent 
 However, it can have a large variance, especially when the counterfactual policy significantly deviates from the behavior policy.
 
 
+Self-Normalized Inverse Probability Weighting (SNIPW)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 Doubly Robust (DR)
 ~~~~~~~~~~~~~~~~~~~
 
