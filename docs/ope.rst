@@ -87,7 +87,7 @@ To alleviate the issue with DM, researchers often use another estimator called I
 IPW re-weights the rewards by the ratio of the counterfactual policy and behavior policy as
 
 .. math::
-    hat{V}^{\pi}_{IPW}=\frac{1}{T}\sum_{t=1}^T\sum_{a=0}^m  Y_tD_{ta}\frac{\pi(a|X_t)}{\pi_b(a|X_t)}.
+    \hat{V}^{\pi}_{IPW}=\frac{1}{T}\sum_{t=1}^T\sum_{a=0}^m  Y_tD_{ta}\frac{\pi(a|X_t)}{\pi_b(a|X_t)}.
 
 When the behavior policy is known, the IPW estimator is unbiased and consistent for the policy value.
 However, it can have a large variance, especially when the counterfactual policy significantly deviates from the behavior policy.
@@ -109,3 +109,11 @@ DR mimics IPW to use a weighted version of rewards, but DR also uses the estimat
 It preserves the consistency of IPW if either the importance weight or the mean reward estimator is accurate (a property called \textit{double robustness}).
 Moreover, DR is *semiparametric efficient* :cite:`Narita2019` when the mean reward estimator is correctly specified.
 On the other hand, when it is wrong, this estimator can have larger asymptotic mean-squared-error than IPW :cite:`Kallus2019` and perform poorly in practice :cite:`Kang2007`.
+
+
+More Robust Doubly Robust (MRDR)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Double Machine Learning (DML)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
