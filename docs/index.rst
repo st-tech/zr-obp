@@ -51,7 +51,10 @@ OPE Estimators
    * Replay Method :cite:`Li2012`
    * Direct Method :cite:`beygelzimer2009offset`
    * Inverse Probability Weighting :cite:`precup2000eligibility` :cite:`Strehl2010`
+   * Self-Normalized Inserse Probability Weighting :cite:`Swaminathan2015b`
    * Doubly Robust :cite:`Dudik2014`
+   * Switch Estimator :cite:`wang2016optimal`
+   * More Robust Doubly Robust :cite:`Farajtabar2018MoreRD`
    * Double Machine Learning :cite:`narita2020safe`
 
 Licence

@@ -4,6 +4,12 @@ obp package
 obp.policy
 ------------------------------
 
+obp.policy.base
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: obp.policy.base
+    :members:
+    :show-inheritance:
+
 obp.policy.contextfree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: obp.policy.contextfree
