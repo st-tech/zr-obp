@@ -19,7 +19,7 @@ For this purpose, we empirically evaluate their performance as follows (for each
 2. Estimate the ground-truth value of each policy :math:`\pi` by the empirical mean of clicks in the test set collected by that policy: :math:`V^{\pi} = (T^{\pi}_{test})^{-1} \sum_{t=1}^{T^{\pi}_{test}} Y_t`, where :math:`T^{\pi}_{test}` is the size of the test set of policy :math:`\pi`.
 3. Estimate the policy value of each policy by DM, IPW, and DR with the training set collected by the other policy.
 4. Repeat the above process :math:`K=15` times by sampling different training sets.
-5. Compare the ground-truth and policy value estimated by the bagging prediction:cite:`breiman1996bagging`.
+5. Compare the ground-truth and policy value estimated by the bagging prediction:cite:`Breiman1996`.
 
 
 We measure each estimator's performance with the *Relative-Estimation Error* defined below:

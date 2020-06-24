@@ -43,19 +43,19 @@ Bandit Algorithms
    * Contextual
 
       * Logistic Epsilon Greedy
-      * Logistic Thompson Sampling :cite:`chapelle2011empirical`
-      * Logistic Upper Confidence Bound :cite:`li2010contextual` :cite:`mahajan2012logucb`
+      * Logistic Thompson Sampling :cite:`Chapelle2011`
+      * Logistic Upper Confidence Bound :cite:`Li2010` :cite:`Mahajan2012`
 
 OPE Estimators
 ----------------------
    * Replay Method :cite:`Li2012`
-   * Direct Method :cite:`beygelzimer2009offset`
-   * Inverse Probability Weighting :cite:`precup2000eligibility` :cite:`Strehl2010`
+   * Direct Method :cite:`Beygelzimer2009`
+   * Inverse Probability Weighting :cite:`Precup2000` :cite:`Strehl2010`
    * Self-Normalized Inserse Probability Weighting :cite:`Swaminathan2015b`
    * Doubly Robust :cite:`Dudik2014`
-   * Switch Estimator :cite:`wang2016optimal`
-   * More Robust Doubly Robust :cite:`Farajtabar2018MoreRD`
-   * Double Machine Learning :cite:`narita2020safe`
+   * Switch Estimator :cite:`Wang2016`
+   * More Robust Doubly Robust :cite:`Farajtabar2018`
+   * Double Machine Learning :cite:`Narita2020`
 
 Licence
 ~~~~~~~~~~~~

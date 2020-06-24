@@ -69,7 +69,7 @@ There are several approaches to estimate the policy value of the counterfactual 
 
 Direct Method (DM)
 ~~~~~~~~~~~~~~~~~~~~
-A widely-used method, DM :cite:`beygelzimer2009offset`, first learns a supervised machine learning model, such as random forest, ridge regression, and gradient boosting, to predict the mean reward function.
+A widely-used method, DM :cite:`Beygelzimer2009`, first learns a supervised machine learning model, such as random forest, ridge regression, and gradient boosting, to predict the mean reward function.
 DM then uses it to estimate the policy value as
 
 .. math::
@@ -78,12 +78,12 @@ DM then uses it to estimate the policy value as
 where :math:`\hat{\mu}(a| x)` is the estimated reward function.
 If :math:`\hat{\mu}(a| x)` is a good approximation to the mean reward function, this estimator accurately predicts the policy value of the counterfactual policy :math:`V^{\pi}`.
 If :math:`\hat{\mu}(a| x)` fails to approximate the mean reward function well, however, the final estimator is no longer consistent.
-The model misspecification issue is problematic because the extent of misspecification cannot be easily quantified from data :cite:`Farajtabar2018MoreRD`.
+The model misspecification issue is problematic because the extent of misspecification cannot be easily quantified from data :cite:`Farajtabar2018`.
 
 
 Inverse Probability Weighting (IPW)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To alleviate the issue with DM, researchers often use another estimator called IPW :cite:`precup2000eligibility` :cite:`Strehl2010`.
+To alleviate the issue with DM, researchers often use another estimator called IPW :cite:`Precup2000` :cite:`Strehl2010`.
 IPW re-weights the rewards by the ratio of the counterfactual policy and behavior policy as
 
 .. math::
@@ -103,5 +103,5 @@ The final approach is DR :cite:`Dudik2014`, which combines the above two estimat
 
 DR mimics IPW to use a weighted version of rewards, but DR also uses the estimated mean reward function as a control variate to decrease the variance.
 It preserves the consistency of IPW if either the importance weight or the mean reward estimator is accurate (a property called \textit{double robustness}).
-Moreover, DR is *semiparametric efficient* :cite:`narita2019efficient` when the mean reward estimator is correctly specified.
-On the other hand, when it is wrong, this estimator can have larger asymptotic mean-squared-error than IPW :cite:`kallus2019intrinsically` and perform poorly in practice :cite:`kang2007demystifying`.
+Moreover, DR is *semiparametric efficient* :cite:`Narita2019` when the mean reward estimator is correctly specified.
+On the other hand, when it is wrong, this estimator can have larger asymptotic mean-squared-error than IPW :cite:`Kallus2019` and perform poorly in practice :cite:`Kang2007`.
