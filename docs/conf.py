@@ -14,6 +14,10 @@
 #
 import os
 import sys
+
+from pybtex.plugin import register_plugin
+from pybtex.style.labels import BaseLabelStyle
+from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
@@ -196,3 +200,16 @@ texinfo_documents = [
      author, 'obp', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+class KeyLabelStyle(BaseLabelStyle):
+    def format_labels(self, sorted_entries):
+        return [entry.key for entry in sorted_entries]
+
+
+class KeyStyle(UnsrtStyle):
+    default_label_style = 'keylabel'
+
+
+register_plugin('pybtex.style.labels', 'keylabel', KeyLabelStyle)
+register_plugin('pybtex.style.formatting', 'key', KeyStyle)
