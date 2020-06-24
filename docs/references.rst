@@ -6,7 +6,7 @@ Papers
 ------
 
 .. bibliography:: refs.bib
-    :style: plain
+    :style: unsrt
 
 
 Datasets
