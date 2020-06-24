@@ -7,13 +7,7 @@ We then select and use such an estimator to improve the platform’s fashion ite
 
 - [`dataset.py`](./dataset.py):
     We implement two ways of engeering original features.
-    This includes **CONTEXT SET 1** (user features only, such as age, gender, and length of  membership) and **CONTEXT SET 2** (Context Set 1 plus user-item affinity induced by the number of past clicks observed between each user-item pair)
-
-- [`logistic_bandit.py`](./logistic_bandit.py):
-    We implement three logistic contextual bandit algorithms *logistic epsilon-greedy (logistic EGreedy)*, *logistic upper confidence bound (logistic UCB)*, and *logistic thompson sampling (logistic TS)*.
-    They construct our counterfactual policy search space.
-    Note that we modify the contextual bandit algorithms to adjust to ZOZOTOWN top-3 recommendation setting.
-    For example, modified logistic TS selects three actions with the three highest sampled rewards.
+    This includes **CONTEXT SET 1** (user features only, such as age, gender, and length of  membership) and **CONTEXT SET 2** (Context Set 1 plus user-item affinity induced by the number of past clicks observed between each user-item pair).
 
 ## Running experiments
 
@@ -80,16 +74,3 @@ python cf_policy_selection.py\
 # =========================
 ```
 
-
-## References
-1. Alina Beygelzimer and John Langford. The offset tree for learning with partial labels. In *Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
-
-1. Olivier Chapelle and Lihong Li. An empirical evaluation of thompson sampling. In *Advances in neural information processing systems*, pages 2249–2257, 2011.
-
-1. Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li. Doubly Robust Policy Evaluation and Optimization. *Statistical Science*, 29:485–511, 2014.
-
-1. Guolin Ke, Qi Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qiwei Ye, and Tie-Yan Liu. Lightgbm: A highly efficient gradient boosting decision tree. In *Advances in Neural Information Processing Systems*, pages 3146–3154, 2017.
-
-1. Lihong Li, Wei Chu, John Langford, and Robert E Schapire. A Contextual-bandit Approach to Personalized News Article Recommendation. In *Proceedings of the 19th International Conference on World Wide Web*, pages 661–670. ACM, 2010.
-
-1. Alex Strehl, John Langford, Lihong Li, and Sham M Kakade. Learning from Logged Implicit Exploration Data. In Advances in *Neural Information Processing Systems*, pages 2217–2225, 2010.
