@@ -1,6 +1,8 @@
+matplotlib>=3.2.2
 numpy>=1.18.1
 pandas>=0.25.1
-scipy>=1.4.1
-scikit-learn>=0.23.1
-tqdm>=4.41.1
 pyyaml>=5.1
+seaborn>=0.10.1
+scikit-learn>=0.23.1
+scipy>=1.4.1
+tqdm>=4.41.1
