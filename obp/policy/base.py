@@ -3,7 +3,7 @@
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -139,3 +139,6 @@ class BaseContextualPolicy(metaclass=ABCMeta):
     def update_params(self, action: float, reward: float, context: np.ndarray) -> None:
         """Update policy parameters."""
         pass
+
+
+BaiditPolicyType = Union[BaseContextFreePolicy, BaseContextualPolicy]

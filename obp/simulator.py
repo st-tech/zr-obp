@@ -4,16 +4,14 @@
 from dataclasses import dataclass
 import logging
 from tqdm import tqdm
-from typing import Union, List, Optional
+from typing import List, Optional
 
 import numpy as np
 from sklearn.base import BaseEstimator
 
 from obp.dataset import TRAIN_DICT
-from obp.policy import BaseContextFreePolicy, BaseContextualPolicy
+from obp.policy import BanditPolicyType
 from obp.utils import check_is_fitted
-
-BanditPolicyType = Union[BaseContextFreePolicy, BaseContextualPolicy]
 
 
 @dataclass
