@@ -12,7 +12,7 @@ from scipy.stats import rankdata
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
-TRAIN_DICT = Dict[str, Union[str, np.ndarray]]
+LogBanditFeedback = Dict[str, Union[str, np.ndarray]]
 
 
 class BaseBanditDataset(metaclass=ABCMeta):
@@ -37,21 +37,26 @@ class BaseBanditDataset(metaclass=ABCMeta):
 @dataclass
 class OpenBanditDataset(BaseBanditDataset):
     """A class for loading and preprocessing Open Bandit Dataset.
+
+    Note
+    -----
     Users are free to implement their own featuer engineering by overriding `pre_process` method.
 
     Parameters
     ----------
-    behavior policy: str
+    behavior_policy: str
         Name of the behavior policy that generated the log data.
+        Must be 'random' or 'bts'.
 
     campaign: str
-        One of the three possible campaigns (i.e., "all", "men's", and "women's").
+        One of the three possible campaigns (i.e., "all", "men", and "women").
 
     data_path: Path, default: Path('./obd')
         Path that stores Open Bandit Dataset.
 
     dataset_name: str, default: 'obd'
         Name of the dataset.
+
     """
     behavior_policy: str
     campaign: str
@@ -61,15 +66,14 @@ class OpenBanditDataset(BaseBanditDataset):
     def __post_init__(self) -> None:
         """Initialize Open Bandit Dataset Class."""
         self.data_path = self.data_path / self.behavior_policy / self.campaign
-        self.raw_data_file = f'{self.campaign}.csv'
+        self.raw_data_file = f'{self.campaign}.zip'
 
         self.load_raw_data()
         self.pre_process()
-        self.pre_process_for_regression_model()
 
-        self.n_data = self.action.shape[0]
+        self.n_rounds = self.action.shape[0]
         self.n_actions = self.action.max() + 1
-        self.dim_context = self.X_policy.shape[1]
+        self.dim_context = self.context.shape[1]
 
     def load_raw_data(self) -> None:
         """Load raw open bandit dataset."""
@@ -85,22 +89,16 @@ class OpenBanditDataset(BaseBanditDataset):
     def pre_process(self) -> None:
         """Preprocess raw open bandit dataset."""
         user_cols = self.data.columns.str.contains('user_feature')
-        self.X_policy = pd.get_dummies(self.data.loc[:, user_cols], drop_first=True).values
-
-    def pre_process_for_regression_model(self) -> None:
-        """Preprocess raw open bandit dataset for training a regression model."""
-        user_cols = self.data.columns.str.contains('user_feature')
-        self.X_user = self.data.loc[:, user_cols].apply(LabelEncoder().fit_transform).values
+        self.context = pd.get_dummies(self.data.loc[:, user_cols], drop_first=True).values
         item_context = pd.read_csv(self.data_path / 'item_context.csv', index_col=0)
         item_feature_0 = item_context['item_feature_0']
         item_feature_cat = item_context.drop('item_feature_0', 1).apply(LabelEncoder().fit_transform)
-        self.X_action = pd.concat([item_feature_cat, item_feature_0], 1).values
-        self.X_reg = np.c_[self.pos, self.X_user, self.X_action[self.action, :]]
+        self.action_context = pd.concat([item_feature_cat, item_feature_0], 1).values
 
     def split_data(self,
                    test_size: Union[int, float] = 0.3,
                    is_timeseries_split: bool = False,
-                   random_state: int = 0) -> Tuple[TRAIN_DICT, TRAIN_DICT]:
+                   random_state: int = 0) -> Tuple[LogBanditFeedback, LogBanditFeedback]:
         """Split dataset into training and test sets.
 
         Parameters
@@ -117,57 +115,51 @@ class OpenBanditDataset(BaseBanditDataset):
 
         Returns:
         ----------
-        train: TRAIN_DICT
+        train: LogBanditFeedback
             Dictionary storing the training set after preprocessing.
 
-        test: TRAIN_DICT
+        test: LogBanditFeedback
             Dictionary storing the test set after preprocessing.
         """
         if is_timeseries_split:
-            test_size = test_size if isinstance(test_size, int) else np.int(test_size * self.n_data)
-            train_size = np.int(self.n_data - test_size)
+            test_size = test_size if isinstance(test_size, int) else np.int(test_size * self.n_rounds)
+            train_size = np.int(self.n_rounds - test_size)
             action_train, action_test = self.action[:train_size], self.action[train_size:]
             pos_train, pos_test = self.pos[:train_size], self.pos[train_size:]
             reward_train, reward_test = self.reward[:train_size], self.reward[train_size:]
             pscore_train, pscore_test = self.pscore[:train_size], self.pscore[train_size:]
-            X_policy_train, X_policy_test = self.X_policy[:train_size], self.X_policy[train_size:]
-            X_reg_train, X_reg_test = self.X_reg[:train_size], self.X_reg[train_size:]
-            X_user_train, X_user_test = self.X_user[:train_size], self.X_user[train_size:]
+            context_train, context_test = self.context[:train_size], self.context[train_size:]
         else:
-            action_train, action_test, pos_train, pos_test, reward_train, reward_test, pscore_train, pscore_test,\
-                X_policy_train, X_policy_test, X_reg_train, X_reg_test, X_user_train, X_user_test =\
+            action_train, action_test, pos_train, pos_test, reward_train, reward_test,\
+                pscore_train, pscore_test, context_train, context_test =\
                 train_test_split(
                     self.action,
                     self.pos,
                     self.reward,
                     self.pscore,
-                    self.X_policy,
-                    self.X_reg,
-                    self.X_user,
+                    self.context,
                     test_size=test_size,
                     random_state=random_state)
 
         self.train_size = action_train.shape[0]
         self.test_size = action_test.shape[0]
         train = dict(
-            n_data=self.train_size,
+            n_rounds=self.train_size,
             n_actions=self.n_actions,
             action=action_train,
             position=pos_train,
             reward=reward_train,
             pscore=pscore_train,
-            X_policy=X_policy_train,
-            X_reg=X_reg_train,
-            X_user=X_user_train)
+            context=context_train,
+            action_context=self.action_context)
         test = dict(
-            n_data=self.train_size,
+            n_rounds=self.test_size,
             n_actions=self.n_actions,
             action=action_test,
             position=pos_test,
             reward=reward_test,
             pscore=pscore_test,
-            X_policy=X_policy_test,
-            X_reg=X_reg_test,
-            X_user=X_user_test)
+            context=context_test,
+            action_context=self.action_context)
 
         return train, test

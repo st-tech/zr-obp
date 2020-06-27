@@ -141,4 +141,4 @@ class BaseContextualPolicy(metaclass=ABCMeta):
         pass
 
 
-BaiditPolicyType = Union[BaseContextFreePolicy, BaseContextualPolicy]
+BanditPolicy = Union[BaseContextFreePolicy, BaseContextualPolicy]
