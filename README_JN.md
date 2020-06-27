@@ -133,10 +133,10 @@ print(train.keys())
 # dict_keys(['n_rounds', 'n_actions', 'action', 'position', 'reward', 'pscore', 'context', 'action_context'])
 ```
 
-`OpenBanditDataset` クラスの `pre_process` メソッドに, 独自の特徴量エンジニアリングを実装することもできます.
+`obp.dataset.OpenBanditDataset` クラスの `pre_process` メソッドに, 独自の特徴量エンジニアリングを実装することもできます.
 [`./examples/obd/dataset.py`](./examples/obd/dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
 
-また, `./obp/dataaset.py`の`BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
+また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
 
 ### (2) オフライン方策シミュレーション
 
@@ -151,9 +151,7 @@ counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=datase
 selected_actions = run_bandit_simulation(train=train, policy=counterfactual_policy)
 ```
 
-オフライン方策シミュレーションを行うための関数である `run_bandit_simulation`は `BanditPolicy` クラスと `train` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中に設定したバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します.
-
-ユーザーは[`./obp/policy/contextfree.py`](./obp/policy/contextfree.py)の`BaseContextFreePolicy`や[`./obp/policy/contextual.py`](./obp/policy/contextual.py)の`BaseContexttualPolicy`のインターフェースに従うことで, 独自のバンディットアルゴリズムを実装することができます.
+オフライン方策シミュレーションを行うための関数である `obp.simulator.run_bandit_simulation`は `obp.policy.BanditPolicy` クラスと `train` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中に設定したバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します. またユーザーは`obp.policy.BasePolicy`のインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
 
 
 ### (3) オフライン方策評価 （Off-Policy Evaluation）
@@ -173,8 +171,8 @@ relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / test['rew
 # オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を21.4%上回ると推定された.
 print(relative_policy_value_of_bernoulli_ts) # 1.21428...
 ```
-ユーザーは独自のオフ方策推定量を `BaseOffPolicyEstimator` クラスのインターフェースに従って実装することができます.
-また, `OffPolicyEvaluation`の`ope_estimators`引数に複数のオフ方策推定量を設定することによって, 複数の推定量による推定値を同時に得ることも可能です. `test['reward'].mean()` は観測された報酬の経験平均値であり, ランダム方策の真の性能を表します.
+ユーザーは独自のオフ方策推定量を `obp.ope.BaseOffPolicyEstimator` クラスのインターフェースに従って実装することができます.
+また, `obp.ope.OffPolicyEvaluation`の`ope_estimators`引数に複数のオフ方策推定量を設定することによって, 複数の推定量による推定値を同時に得ることも可能です. `test['reward'].mean()` は観測された報酬の経験平均値であり, ランダム方策の真の性能を表します.
 
 
 ## 引用
