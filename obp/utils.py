@@ -12,7 +12,7 @@ from sklearn.utils.validation import _deprecate_positional_args
 
 def estimate_confidence_interval_by_bootstrap(samples: np.ndarray,
                                               alpha: float = 0.05,
-                                              n_resamples: int = 10000,
+                                              n_bootstrap_samples: int = 10000,
                                               random_state: Optional[int] = None) -> Dict[str, float]:
     """Estimate confidence interval by nonparametric bootstrap-like procedure.
 
@@ -24,8 +24,8 @@ def estimate_confidence_interval_by_bootstrap(samples: np.ndarray,
     alpha: float, default: 0.05
         P-value.
 
-    n_resamples: int, default: 10000
-        Number of resampling in the bootstrap procedure.
+    n_bootstrap_samples: int, default: 10000
+        Number of resampling performed in the bootstrap procedure.
 
     random_state: int, default: None
         Controls the random seed in bootstrap sampling.
@@ -37,7 +37,7 @@ def estimate_confidence_interval_by_bootstrap(samples: np.ndarray,
     """
     boot_samples = list()
     random_ = check_random_state(random_state)
-    for _ in np.arange(n_resamples):
+    for _ in np.arange(n_bootstrap_samples):
         boot_samples.append(np.mean(random_.choice(samples, size=samples.shape[0])))
     lower = np.percentile(boot_samples, 100 * (alpha / 2))
     upper = np.percentile(boot_samples, 100 * (1. - alpha / 2))

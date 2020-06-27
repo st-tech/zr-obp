@@ -97,7 +97,7 @@ class OffPolicyEvaluation:
     def estimate_intervals(self,
                            selected_actions: np.ndarray,
                            alpha: float = 0.05,
-                           n_resamples: int = 100,
+                           n_bootstrap_samples: int = 100,
                            random_state: Optional[int] = None) -> Dict[str, Dict[str, float]]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
@@ -109,8 +109,8 @@ class OffPolicyEvaluation:
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -125,14 +125,14 @@ class OffPolicyEvaluation:
         estimator_inputs = self._create_estimator_inputs(selected_actions=selected_actions)
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_interval_dict[estimator_name] = estimator.estimate_interval(
-                **estimator_inputs, alpha=alpha, n_resamples=n_resamples, random_state=random_state)
+                **estimator_inputs, alpha=alpha, n_bootstrap_samples=n_bootstrap_samples, random_state=random_state)
 
         return policy_value_interval_dict
 
     def summarize_off_policy_estimates(self,
                                        selected_actions: np.ndarray,
                                        alpha: float = 0.05,
-                                       n_resamples: int = 100,
+                                       n_bootstrap_samples: int = 100,
                                        random_state: Optional[int] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Summarize estimated_policy_values and their confidence intervals in off-policy evaluation by given estimators.
 
@@ -144,8 +144,8 @@ class OffPolicyEvaluation:
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -161,15 +161,17 @@ class OffPolicyEvaluation:
             index=['estimated_policy_value'])
         policy_value_interval_df = pd.DataFrame(
             self.estimate_intervals(
-                selected_actions=selected_actions, alpha=alpha, n_resamples=n_resamples, random_state=random_state
-            ))
+                selected_actions=selected_actions,
+                alpha=alpha,
+                n_bootstrap_samples=n_bootstrap_samples,
+                random_state=random_state))
 
         return policy_value_df.T, policy_value_interval_df.T
 
     def visualize_off_policy_estimates(self,
                                        selected_actions: np.ndarray,
                                        alpha: float = 0.05,
-                                       n_resamples: int = 100,
+                                       n_bootstrap_samples: int = 100,
                                        random_state: Optional[int] = None,
                                        fig_dir: Optional[Path] = None,
                                        fig_name: Optional[str] = None) -> None:
@@ -183,8 +185,8 @@ class OffPolicyEvaluation:
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -209,7 +211,7 @@ class OffPolicyEvaluation:
 
         fig, ax = plt.subplots(figsize=(8, 6))
         sns.barplot(data=estimated_round_rewards_df, ax=ax,
-                    ci=100 * (1 - alpha), n_boot=n_resamples)
+                    ci=100 * (1 - alpha), n_boot=n_bootstrap_samples)
         plt.xlabel("OPE Estimators", fontsize=25)
         plt.ylabel(f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20)
         plt.yticks(fontsize=15)
@@ -286,7 +288,7 @@ class CompareOffPolicyEstimators(OffPolicyEvaluation):
 
     def estimate_confidence_interval_of_ground_truth(self,
                                                      alpha: float = 0.05,
-                                                     n_resamples: int = 100,
+                                                     n_bootstrap_samples: int = 100,
                                                      random_state: Optional[int] = None) -> Dict[str, float]:
         """Estimate confidence intercal of ground truth policy value.
 
@@ -295,8 +297,8 @@ class CompareOffPolicyEstimators(OffPolicyEvaluation):
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -310,7 +312,7 @@ class CompareOffPolicyEstimators(OffPolicyEvaluation):
         return estimate_confidence_interval_by_bootstrap(
             samples=self.factual_rewards,
             alpha=alpha,
-            n_resamples=n_resamples,
+            n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state)
 
     def summarize_estimators_comparison(self, selected_actions: np.ndarray) -> pd.DataFrame:

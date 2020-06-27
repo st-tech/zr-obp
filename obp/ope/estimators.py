@@ -107,7 +107,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
                           reward: np.ndarray,
                           action_match: np.ndarray,
                           alpha: float = 0.05,
-                          n_resamples: int = 100,
+                          n_bootstrap_samples: int = 100,
                           random_state: Optional[int] = None,
                           **kwargs) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -125,8 +125,8 @@ class ReplayMethod(BaseOffPolicyEstimator):
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -141,7 +141,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_rewards,
             alpha=alpha,
-            n_resamples=n_resamples,
+            n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state)
 
 
@@ -248,7 +248,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
                           pscore: np.ndarray,
                           action_match: np.ndarray,
                           alpha: float,
-                          n_resamples: int,
+                          n_bootstrap_samples: int,
                           random_state: Optional[int] = None,
                           **kwargs) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -269,8 +269,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -286,7 +286,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_rewards,
             alpha=alpha,
-            n_resamples=n_resamples,
+            n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state)
 
 
@@ -430,7 +430,7 @@ class DirectMethod(BaseOffPolicyEstimator):
     def estimate_interval(self,
                           estimated_rewards_by_reg_model: np.ndarray,
                           alpha: float,
-                          n_resamples: int,
+                          n_bootstrap_samples: int,
                           random_state: Optional[int] = None,
                           **kwargs) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -443,8 +443,8 @@ class DirectMethod(BaseOffPolicyEstimator):
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -458,7 +458,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_rewards_by_reg_model,
             alpha=alpha,
-            n_resamples=n_resamples,
+            n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state)
 
 
@@ -574,7 +574,7 @@ class DoublyRobust(InverseProbabilityWeighting):
                           action_match: np.ndarray,
                           estimated_rewards_by_reg_model: np.ndarray,
                           alpha: float,
-                          n_resamples: int,
+                          n_bootstrap_samples: int,
                           random_state: Optional[int] = None,
                           **kwargs) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -598,8 +598,8 @@ class DoublyRobust(InverseProbabilityWeighting):
         alpha: float, default: 0.05
             P-value.
 
-        n_resamples: int, default: 100
-            Number of resampling in the bootstrap procedure.
+        n_bootstrap_samples: int, default: 100
+            Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
             Controls the random seed in bootstrap sampling.
@@ -616,7 +616,7 @@ class DoublyRobust(InverseProbabilityWeighting):
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_rewards,
             alpha=alpha,
-            n_resamples=n_resamples,
+            n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state)
 
 
@@ -703,7 +703,7 @@ class SwitchDoublyRobust(DoublyRobust):
             \\hat{V}_{Switch-DR} (\\pi) =
             \\frac{1}{T} \\sum_{t=1}^T v_t \\mathbb{I} \\{ (p_t)^{-1} \\le \\tau \\} + \{ (p_t)^{-1} > \\tau \\} \\hat{\\mu} (x_t, a_t)
 
-    where :math:`v_t` is the doubly robust estimates for the rewards of each round
+    where :math:`v_t =  \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, a_t)) + \\hat{\\mu} (x_t, a_t)` is the doubly robust estimates for the rewards of each round
     and :math:`\\tau (\\ge 1)` is the *switching hyperparameter*, which decides the *threshold* for the inverse of the propensity score.
     :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
     :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated rewards for round :math:`t`.
