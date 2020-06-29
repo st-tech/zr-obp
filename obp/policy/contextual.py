@@ -1,6 +1,7 @@
 # Copyright (c) ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
+"""Contextual Bandit Algorithms."""
 from dataclasses import dataclass
 
 import numpy as np
@@ -75,7 +76,7 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array
+        selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
         if self.action_counts.min() == 0:
@@ -185,7 +186,7 @@ class LogisticUCB(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array
+        selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
         if self.action_counts.min() == 0:
@@ -290,7 +291,7 @@ class LogisticTS(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array
+        selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
         if self.action_counts.min() == 0:

@@ -1,6 +1,7 @@
 # Copyright (c) ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
+"""Context-Free Bandit Algorithms."""
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -50,7 +51,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
         Returns
         ----------
-        selected_actions: array
+        selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
         self.n_trial += 1
@@ -164,7 +165,7 @@ class BernoulliTS(BaseContextFreePolicy):
 
         Returns
         ----------
-        selected_actions: array
+        selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
         self.n_trial += 1

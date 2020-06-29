@@ -1,6 +1,7 @@
 # Copyright (c) ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
+"""Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
 import logging
 from typing import Dict, List, Optional, Tuple

@@ -1,6 +1,7 @@
 # Copyright (c) ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
+"""Dataset Class for Logged Bandit Feedback."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
