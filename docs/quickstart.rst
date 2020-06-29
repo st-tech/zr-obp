@@ -12,7 +12,7 @@ We see that only ten lines of code are sufficient to complete OPE from scratch.
     from obp.dataset import OpenBanditDataset
     from obp.policy import BernoulliTS
     from obp.simulator import run_bandit_simulation
-    from obp.ope import OffPolicyEvaluation ReplayMethod
+    from obp.ope import OffPolicyEvaluation, ReplayMethod
 
     # (1) Data loading and preprocessing
     dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
