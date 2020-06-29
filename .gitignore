@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 # additionals
+_autosummary/
 __pycache__/
 build/
 dist/
