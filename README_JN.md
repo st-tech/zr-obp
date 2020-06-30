@@ -76,12 +76,14 @@ python setup.py install
 
 ### 依存パッケージ
 - **python>=3.7.0**
+- matplotlib>=3.2.2
 - numpy>=1.18.1
 - pandas>=0.25.1
-- scipy>=1.4.1
-- scikit-learn>=0.23.1
-- tqdm>=4.41.1
 - pyyaml>=5.1
+- seaborn>=0.10.1
+- scikit-learn>=0.23.1
+- scipy>=1.4.1
+- tqdm>=4.41.1
 
 
 ## 使用方法
@@ -95,7 +97,7 @@ python setup.py install
 from obp.dataset import OpenBanditDataset
 from obp.policy import BernoulliTS
 from obp.simulator import run_bandit_simulation
-from obp.ope import OffPolicyEvaluation ReplayMethod
+from obp.ope import OffPolicyEvaluation, ReplayMethod
 
 # (1) データの読み込みと前処理
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
@@ -164,7 +166,7 @@ selected_actions = run_bandit_simulation(train=train, policy=counterfactual_poli
 # OffPolicyEvaluationクラスには, シミュレーションに用いたデータセットと用いる推定量を渡す（複数設定可）.
 ope = OffPolicyEvaluation(train=train, ope_estimators=[ReplayMethod()])
 estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
-print(estimated_policy_value) # {'rm': 0.003717..}
+print(estimated_policy_value) # {'rm': 0.003717..}　オフ方策推定量ごとの推定値を含んだ辞書.
 
 # トンプソン抽出方策の性能の推定値とランダム方策の真の性能を比較する.
 relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / test['reward'].mean()
@@ -172,6 +174,7 @@ relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / test['rew
 print(relative_policy_value_of_bernoulli_ts) # 1.21428...
 ```
 ユーザーは独自のオフ方策推定量を `obp.ope.BaseOffPolicyEstimator` クラスのインターフェースに従って実装することができます.
+これにより新たなオフ方策推定量の推定精度をすぐに検証することが可能です.
 また, `obp.ope.OffPolicyEvaluation`の`ope_estimators`引数に複数のオフ方策推定量を設定することによって, 複数の推定量による推定値を同時に得ることも可能です. `test['reward'].mean()` は観測された報酬の経験平均値であり, ランダム方策の真の性能を表します.
 
 

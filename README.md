@@ -62,12 +62,14 @@ python setup.py install
 
 ### Requirements
 - **python>=3.7.0**
+- matplotlib>=3.2.2
 - numpy>=1.18.1
 - pandas>=0.25.1
-- scipy>=1.4.1
-- scikit-learn>=0.23.1
-- tqdm>=4.41.1
 - pyyaml>=5.1
+- seaborn>=0.10.1
+- scikit-learn>=0.23.1
+- scipy>=1.4.1
+- tqdm>=4.41.1
 
 
 ## Usage
@@ -80,7 +82,7 @@ We see that only ten lines of code are sufficient to complete OPE from scratch.
 from obp.dataset import OpenBanditDataset
 from obp.policy import BernoulliTS
 from obp.simulator import run_bandit_simulation
-from obp.ope import OffPolicyEvaluation ReplayMethod
+from obp.ope import OffPolicyEvaluation, ReplayMethod
 
 # (1) Data loading and preprocessing
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
@@ -132,7 +134,7 @@ counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=datase
 selected_actions = run_bandit_simulation(train=train, policy=counterfactual_policy)
 ```
 
-`obp.simulator.run_bandit_simulation` function takes `obp.policy.BanditPolicy` class and `train` (a dictionary storing the training set of the bandit feedback) as inputs and runs offline bandit simulation of a given bandit policy. `selected_actions` is an array of selected actions during the offline bandit simulation by the counterfactual policy. Users can implement their own bandit algorithms by following the interface of `obp.policy.BanditPolicy`.
+`obp.simulator.run_bandit_simulation` function takes `obp.policy.BanditPolicy` class and `train` (a dictionary storing the training set of the bandit feedback) as inputs and runs offline bandit simulation of a given counterfactual bandit policy. `selected_actions` is an array of selected actions during the offline bandit simulation by the counterfactual policy. Users can implement their own bandit algorithms by following the interface of `obp.policy.BanditPolicy`.
 
 ### (3) Off-Policy Evaluation
 
@@ -144,7 +146,7 @@ Our pipeline also provides an easy procedure for doing OPE as follows.
 # it is possible to set multiple OPE estimators to the `ope_estimators` argument
 ope = OffPolicyEvaluation(train=train, ope_estimators=[ReplayMethod()])
 estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
-print(estimated_policy_value) # {'rm': 0.003717..}
+print(estimated_policy_value) # {'rm': 0.003717..} dictionary containing estimated policy values by each OPE estimator.
 
 # comapre the estimated performance of BernoulliTS (counterfactual policy)
 # with the ground-truth performance of Random (behavior policy)
