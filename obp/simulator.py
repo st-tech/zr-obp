@@ -1,6 +1,7 @@
 # Copyright (c) ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
+"""Offline Bandit Simulator."""
 from tqdm import tqdm
 
 import numpy as np
