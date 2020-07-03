@@ -33,17 +33,20 @@ def estimate_confidence_interval_by_bootstrap(samples: np.ndarray,
 
     Returns
     ----------
-    estimated_ci: Dict[str, float]
+    estimated_confidence_interval: Dict[str, float]
         Dictionary storing the estimated mean and upper-lower confidence bounds.
     """
     boot_samples = list()
     random_ = check_random_state(random_state)
     for _ in np.arange(n_bootstrap_samples):
         boot_samples.append(np.mean(random_.choice(samples, size=samples.shape[0])))
-    lower = np.percentile(boot_samples, 100 * (alpha / 2))
-    upper = np.percentile(boot_samples, 100 * (1. - alpha / 2))
-    estimated_ci = dict(mean=np.mean(boot_samples), lower=lower, upper=upper)
-    return estimated_ci
+    lower_bound = np.percentile(boot_samples, 100 * (alpha / 2)).round(5)
+    upper_bound = np.percentile(boot_samples, 100 * (1. - alpha / 2)).round(5)
+    return {
+        'mean': np.mean(boot_samples),
+        f'{100 * (1. - alpha)}% CI (lower)': lower_bound,
+        f'{100 * (1. - alpha)}% CI (upper)': upper_bound
+    }
 
 
 @_deprecate_positional_args

@@ -67,7 +67,7 @@ class OpenBanditDataset(BaseBanditDataset):
     def __post_init__(self) -> None:
         """Initialize Open Bandit Dataset Class."""
         self.data_path = self.data_path / self.behavior_policy / self.campaign
-        self.raw_data_file = f'{self.campaign}.zip'
+        self.raw_data_file = f'{self.campaign}.csv'
 
         self.load_raw_data()
         self.pre_process()
