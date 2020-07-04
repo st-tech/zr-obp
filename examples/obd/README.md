@@ -11,30 +11,30 @@ We then select and use such an estimator to improve the platform’s fashion ite
 
 ## Running experiments
 
-**Example 1. Evaluating Off-policy Estimator** (Section 5.1)
+**Example 1. Evaluating Off-policy Estimator**
 
 We select the best off-policy estimator among Direct Method, Inverse Probability Weighting, and Doubly Robust.
 
 ```bash
 python evaluate_off_policy_estimators.py\
-    --n_splits 5\
-    --counterfactual_policy random\
-    --behavior_policy bts\
-    --campaign men
+    --n_boot_samples 10\
+    --counterfactual_policy bts\
+    --behavior_policy random\
+    --campaign all
 
 # relative estiamtion erros and their 95% confidence intervals of OPE estimators
 # ==================================================
 # random_state=12345
 # --------------------------------------------------
 #          mean  95.0% CI (lower)  95.0% CI (upper)
-# dm   0.092205           0.05880           0.13488
-# ipw  1.055920           0.83860           1.35543
-# dr   0.928787           0.66004           1.18238
+# dm   0.218148           0.14561           0.29018
+# ipw  1.158730           0.96190           1.53333
+# dr   0.992942           0.71789           1.35594
 # ==================================================
 ```
 
 
-**Example 2. Evaluating Counterfactual Bandit Policy** (Section 5.2)
+**Example 2. Evaluating Counterfactual Bandit Policy**
 
 We evaluate the performance of counterfactual policies based on logistic contextual bandit with OPE estimators.
 
@@ -46,14 +46,14 @@ python evaluate_counterfactual_policy.py\
     --behavior_policy bts\
     --campaign men
 
-# estimated policy values relative to the behavior policy (the Bernoulli TS here) of a counterfactual policy (the logistic UCB with Context Set 1 here) by three OPE estimators (IPW: inverse probability weighting, DM; Direct Method, DR: Doubly Robust)
+# estimated policy values relative to the behavior policy (Bernoulli TS here) of a counterfactual policy (logistic UCB with Context Set 1 here) by three OPE estimators (IPW: inverse probability weighting, DM; Direct Method, DR: Doubly Robust)
 # ======================================================================
-# random_state=12345: counterfactual policy=logistic_ucb_0.0_1
+# random_state=12345: counterfactual policy=logistic_ucb_0.1_1
 # ----------------------------------------------------------------------
 #      estimated_policy_value  relative_estimated_policy_value
-# ipw                0.007184                         1.134279
-# dm                 0.006955                         1.098153
-# dr                 0.007447                         1.175799
+# ipw                0.008000                         2.105263
+# dm                 0.003898                         1.025915
+# dr                 0.007948                         2.091689
 # ======================================================================
 ```
 

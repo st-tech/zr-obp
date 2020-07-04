@@ -55,24 +55,30 @@ if __name__ == '__main__':
         context_set=context_set
     )
 
-    kwargs = dict(n_actions=obd.n_actions, len_list=obd.len_list, dim=obd.dim_context, epsilon=epsilon)
+    kwargs = dict(
+        n_actions=obd.n_actions,
+        len_list=obd.len_list,
+        dim=obd.dim_context,
+        random_state=random_state
+    )
+    if counterfactual_policy != 'logistic_ts':
+        kwargs['epsilon'] = epsilon
     policy = counterfactual_policy_dict[counterfactual_policy](**kwargs)
-    policy_name = policy.policy_name + '_' + context_set
+    policy_name = f'{policy.policy_name}_{context_set}'
 
-    np.random.seed(random_state)
     # split dataset into training and test sets
-    train, test = obd.split_data(random_state=random_state)
+    bandit_feedback = obd.obtain_batch_bandit_feedback()
     # ground-truth policy value of the random policy
     # , which is the empirical mean of the factual (observed) rewards
-    ground_truth = np.mean(test['reward'])
+    ground_truth = bandit_feedback['reward'].mean()
 
     # a base ML model for regression model used in Direct Method and Doubly Robust
     base_model = CalibratedClassifierCV(HistGradientBoostingClassifier(**hyperparams))
     # run a counterfactual bandit algorithm on logged bandit feedback data
-    selected_actions = run_bandit_simulation(train=train, policy=policy)
+    selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=policy)
     # estimate the policy value of a given counterfactual algorithm by the three OPE estimators.
     ope = OffPolicyEvaluation(
-        train=train,
+        bandit_feedback=bandit_feedback,
         regression_model=RegressionModel(base_model=base_model),
         action_context=obd.action_context,
         ope_estimators=[InverseProbabilityWeighting(), DirectMethod(), DoublyRobust()]
