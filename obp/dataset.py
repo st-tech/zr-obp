@@ -190,7 +190,6 @@ class OpenBanditDataset(BaseBanditDataset):
 
     def split_data(self,
                    test_size: Union[int, float] = 0.3,
-                   is_timeseries_split: bool = False,
                    random_state: int = 0) -> Tuple[BanditFeedback, BanditFeedback]:
         """Split dataset into training and test sets.
 
@@ -199,9 +198,6 @@ class OpenBanditDataset(BaseBanditDataset):
         test_size: int, float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
             If int, represents the absolute number of test samples.
-
-        is_timeseries_split: bool, default: False
-            If true, split data by time series.
 
         random_state: int, default: 0
             Controls the shuffling applied to the data before applying the split.
@@ -214,26 +210,17 @@ class OpenBanditDataset(BaseBanditDataset):
         test: BanditFeedback
             Dictionary storing the test set after preprocessing.
         """
-        if is_timeseries_split:
-            test_size = test_size if isinstance(test_size, int) else np.int(test_size * self.n_rounds)
-            train_size = np.int(self.n_rounds - test_size)
-            action_train, action_test = self.action[:train_size], self.action[train_size:]
-            pos_train, pos_test = self.position[:train_size], self.position[train_size:]
-            reward_train, reward_test = self.reward[:train_size], self.reward[train_size:]
-            pscore_train, pscore_test = self.pscore[:train_size], self.pscore[train_size:]
-            context_train, context_test = self.context[:train_size], self.context[train_size:]
-        else:
-            action_train, action_test, pos_train, pos_test, reward_train, reward_test,\
-                pscore_train, pscore_test, context_train, context_test =\
-                train_test_split(
-                    self.action,
-                    self.position,
-                    self.reward,
-                    self.pscore,
-                    self.context,
-                    test_size=test_size,
-                    random_state=random_state
-                )
+        action_train, action_test, pos_train, pos_test, reward_train, reward_test,\
+            pscore_train, pscore_test, context_train, context_test =\
+            train_test_split(
+                self.action,
+                self.position,
+                self.reward,
+                self.pscore,
+                self.context,
+                test_size=test_size,
+                random_state=random_state
+            )
 
         self.train_size = action_train.shape[0]
         self.test_size = action_test.shape[0]
