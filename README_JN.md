@@ -100,8 +100,8 @@ from obp.simulator import run_bandit_simulation
 from obp.ope import OffPolicyEvaluation, ReplayMethod
 
 # (1) データの読み込みと前処理
-dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
-train, test = dataset.split_data(test_size=0.3, random_state=42)
+dataset = OpenBanditDataset(behavior_policy='random', campaign='women')
+bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
 # (2) オフライン方策シミュレーション
 counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=dataset.len_list)
@@ -113,7 +113,7 @@ estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_ac
 
 # ランダム方策に対するトンプソン抽出方策の性能の改善率（相対クリック率）
 relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / test['reward'].mean()
-print(relative_policy_value_of_bernoulli_ts) # 1.21428...
+print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ```
 
 同じ例を使った詳細な実装例は[quickstart](./examples/quickstart/quickstart.ipynb)にあり, 実際に動かして試してみることが可能です.
@@ -131,7 +131,7 @@ dataset = OpenBanditDataset(behavior_policy='random', campaign='women')
 # オフライン方策シミュレーション用データを得る.
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
-print(train.keys())
+print(bandit_feedback.keys())
 # dict_keys(['n_rounds', 'n_actions', 'action', 'position', 'reward', 'pscore', 'context', 'action_context'])
 ```
 
