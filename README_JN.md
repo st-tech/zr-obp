@@ -122,14 +122,14 @@ print(relative_policy_value_of_bernoulli_ts) # 1.21428...
 ### (1) データの読み込みと前処理
 
 Open Bandit Dataset用のデータ読み込みインターフェースを用意しています.
-これにより, Open Bandit Datasetの前処理や標準化されたデータの分割を簡潔に行うことができます.
+これにより, Open Bandit Datasetの読み込みや前処理を簡潔に行うことができます.
 
 ```python
 # 「女性向けキャンペーン」においてランダム方策が集めたログデータを読み込む.
 # OpenBanditDatasetクラスにはデータを収集した方策とキャンペーンを指定する.
-dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
-# データセットを70%のオフライン方策シミュレーション用データと30%のオフライン方策評価用データに分割する.
-train, test = dataset.split_data(test_size=0.3, random_state=0)
+dataset = OpenBanditDataset(behavior_policy='random', campaign='women')
+# オフライン方策シミュレーション用データを得る.
+bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
 print(train.keys())
 # dict_keys(['n_rounds', 'n_actions', 'action', 'position', 'reward', 'pscore', 'context', 'action_context'])
@@ -149,11 +149,11 @@ print(train.keys())
 # 評価対象の反実仮想アルゴリズム. ここでは, トンプソン抽出方策の性能をオフライン評価する.
 # 研究者が独自に実装したバンディット方策を用いることもできる.
 counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=dataset.len_list)
-# シミュレーション用データ(train)上でトンプソン抽出方策を動作させる.
-selected_actions = run_bandit_simulation(train=train, policy=counterfactual_policy)
+# シミュレーション用データ(bandit_feedback)上でトンプソン抽出方策を動作させる.
+selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
 ```
 
-オフライン方策シミュレーションを行うための関数である `obp.simulator.run_bandit_simulation`は `obp.policy.BanditPolicy` クラスと `train` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中に設定したバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します. またユーザーは`obp.policy.BasePolicy`のインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
+オフライン方策シミュレーションを行うための関数である `obp.simulator.run_bandit_simulation`は `obp.policy.BanditPolicy` クラスと `bandit_feedback` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中に設定したバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します. またユーザーは`obp.policy.BasePolicy`のインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
 
 
 ### (3) オフライン方策評価 （Off-Policy Evaluation）
@@ -164,18 +164,18 @@ selected_actions = run_bandit_simulation(train=train, policy=counterfactual_poli
 ```python
 # オフライン方策シミュレーションの結果に基づき, リプレイ推定量を用いてトンプソン抽出方策の性能をオフライン評価する.
 # OffPolicyEvaluationクラスには, シミュレーションに用いたデータセットと用いる推定量を渡す（複数設定可）.
-ope = OffPolicyEvaluation(train=train, ope_estimators=[ReplayMethod()])
+ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[ReplayMethod()])
 estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
-print(estimated_policy_value) # {'rm': 0.003717..}　オフ方策推定量ごとの推定値を含んだ辞書.
+print(estimated_policy_value) # {'rm': 0.005155..}　オフ方策推定量ごとの推定値を含んだ辞書.
 
 # トンプソン抽出方策の性能の推定値とランダム方策の真の性能を比較する.
-relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / test['reward'].mean()
-# オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を21.4%上回ると推定された.
-print(relative_policy_value_of_bernoulli_ts) # 1.21428...
+relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / bandit_feedback['reward'].mean()
+# オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を12.05%上回ると推定された.
+print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ```
 ユーザーは独自のオフ方策推定量を `obp.ope.BaseOffPolicyEstimator` クラスのインターフェースに従って実装することができます.
 これにより新たなオフ方策推定量の推定精度をすぐに検証することが可能です.
-また, `obp.ope.OffPolicyEvaluation`の`ope_estimators`引数に複数のオフ方策推定量を設定することによって, 複数の推定量による推定値を同時に得ることも可能です. `test['reward'].mean()` は観測された報酬の経験平均値であり, ランダム方策の真の性能を表します.
+また, `obp.ope.OffPolicyEvaluation`の`ope_estimators`引数に複数のオフ方策推定量を設定することによって, 複数の推定量による推定値を同時に得ることも可能です. `bandit_feedback['reward'].mean()` は観測された報酬の経験平均値（オン方策推定）であり, ランダム方策の真の性能を表します.
 
 
 ## 引用
