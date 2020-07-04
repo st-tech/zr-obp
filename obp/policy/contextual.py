@@ -48,16 +48,14 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
     epsilon: float, default: 0.
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
-    policy_name: str, default: f'logistic_egreedy_{epsilon}'.
-        Name of bandit policy.
     """
     epsilon: float = 0.
-    policy_name: str = f'logistic_egreedy_{epsilon}'
-
-    assert 0 <= epsilon <= 1, f'epsilon must be in [0, 1], but {epsilon} is set.'
 
     def __post_init__(self) -> None:
         """Initialize class."""
+        assert 0 <= self.epsilon <= 1, f'epsilon must be in [0, 1], but {self.epsilon} is set.'
+        self.policy_name = f'logistic_egreedy_{self.epsilon}'
+
         super().__post_init__()
         self.model_list = [
             MiniBatchLogisticRegression(
@@ -153,21 +151,18 @@ class LogisticUCB(BaseContextualPolicy):
     epsilon: float, default: 0.
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
-    policy_name: str, default: f'logistic_ucb_{epsilon}'.
-        Name of bandit policy.
-
     References
     ----------
     Lihong Li, Wei Chu, John Langford, and Robert E Schapire.
     "A Contextual-bandit Approach to Personalized News Article Recommendation," 2010.
     """
     epsilon: float = 0.
-    policy_name: str = f'logistic_ucb_{epsilon}'
-
-    assert 0 <= epsilon <= 1, f'epsilon must be in [0, 1], but {epsilon} is set.'
 
     def __post_init__(self) -> None:
         """Initialize class."""
+        assert 0 <= self.epsilon <= 1, f'epsilon must be in [0, 1], but {self.epsilon} is set.'
+        self.policy_name = f'logistic_ucb_{self.epsilon}'
+
         super().__post_init__()
         self.model_list = [
             MiniBatchLogisticRegression(
@@ -260,9 +255,6 @@ class LogisticTS(BaseContextualPolicy):
 
     policy_type: str, default: 'contextual'
         Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
-
-    policy_name: str, default: f'logistic_ts'.
-        Name of bandit policy.
 
     References
     ----------

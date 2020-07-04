@@ -5,9 +5,9 @@
 from dataclasses import dataclass
 
 import numpy as np
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, is_classifier
 
-from ..dataset import LogBanditFeedback
+from ..dataset import BanditFeedback
 
 
 @dataclass
@@ -21,11 +21,12 @@ class RegressionModel:
 
     fitting_method: str, default='normal'
         Method to fit the regression method.
-        Choose among ['normal', 'iw', 'mrdr'] where 'iw' stands for importance weighting and
+        Must choose among ['normal', 'iw', 'mrdr'] where 'iw' stands for importance weighting and
         'mrdr' stands for more robust doubly robust.
 
-    is_predict_proba: bool, default: True
-        Whether the regression model predicts probabilities (classification) or not (regression).
+    Note
+    ------
+    Reward (or outcome) :math:`Y` must be either binary or continuous.
 
     References
     -----------
@@ -35,44 +36,47 @@ class RegressionModel:
     """
     base_model: BaseEstimator
     fitting_method: str = 'normal'
-    # n_folds: int = 1  # TODO: implement crossfittig
-    is_predict_proba: bool = True
 
-    def fit(self, train: LogBanditFeedback, action_context: np.ndarray) -> None:
+    def fit(self, bandit_feedback: BanditFeedback, action_context: np.ndarray) -> None:
         """Fit the regression model on given logged bandit feedback data.
 
         Parameters
         ----------
-        train: LogBanditFeedback
-            Training set of logged bandit feedback data to be used in offline bandit simulation.
+        bandit_feedback: BanditFeedback
+            Logged bandit feedback data to be used in offline bandit simulation.
 
         action_context: array-like, shape (n_actions, dim_action_context)
             Context vector characterizing each action.
 
         """
+        # create context vector to make predictions
         X = self._pre_process_for_reg_model(
-            train=train, action_context=action_context, action=train['action'])
+            bandit_feedback=bandit_feedback,
+            action_context=action_context,
+            action=bandit_feedback['action']
+        )
+        # train the base model according to the given `fitting method`
         if self.fitting_method == 'normal':
-            self.base_model.fit(X, train['reward'])
+            self.base_model.fit(X, bandit_feedback['reward'])
         elif self.fitting_method == 'iw':
-            sample_weight = np.mean(train['pscore']) / train['pscore']
-            self.base_model.fit(X, train['reward'], sample_weight=sample_weight)
+            sample_weight = np.mean(bandit_feedback['pscore']) / bandit_feedback['pscore']
+            self.base_model.fit(X, bandit_feedback['reward'], sample_weight=sample_weight)
         elif self.fitting_method == 'mrdr':
-            sample_weight = ((1. - train['pscore']) / train['pscore']**2)
-            self.base_model.fit(X, train['reward'], sample_weight=sample_weight)
+            sample_weight = ((1. - bandit_feedback['pscore']) / bandit_feedback['pscore']**2)
+            self.base_model.fit(X, bandit_feedback['reward'], sample_weight=sample_weight)
         else:
             raise ValueError(f"Undefined fitting_method {self.fitting_method} is given.")
 
     def predict(self,
-                train: LogBanditFeedback,
+                bandit_feedback: BanditFeedback,
                 action_context: np.ndarray,
                 selected_actions: np.ndarray) -> np.ndarray:
         """Predict the mean reward function.
 
         Parameters
         -----------
-        train: LogBanditFeedback
-            Training set of logged bandit feedback data to be used in offline bandit simulation.
+        bandit_feedback: BanditFeedback
+            Logged bandit feedback data to be used in offline bandit simulation.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing each action.
@@ -86,16 +90,24 @@ class RegressionModel:
             Estimated rewards by regression model for each round.
 
         """
-        selected_actions_at_positions = selected_actions[np.arange(train['n_rounds']), train['position']]
+        # create context vector to make predictions
+        selected_actions_at_positions = selected_actions[
+            np.arange(bandit_feedback['n_rounds']),
+            bandit_feedback['position']
+        ]
         X = self._pre_process_for_reg_model(
-            train=train, action_context=action_context, action=selected_actions_at_positions)
-        if self.is_predict_proba:
+            bandit_feedback=bandit_feedback,
+            action_context=action_context,
+            action=selected_actions_at_positions
+        )
+        # make predictions
+        if is_classifier(self.base_model):
             return self.base_model.predict_proba(X)[:, 1]
         else:
             return self.base_model.predict(X)
 
     def _pre_process_for_reg_model(self,
-                                   train: LogBanditFeedback,
+                                   bandit_feedback: BanditFeedback,
                                    action_context: np.ndarray,
                                    action: np.ndarray) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
@@ -106,8 +118,8 @@ class RegressionModel:
 
         Parameters
         -----------
-        train: LogBanditFeedback
-            Training set of logged bandit feedback data to be used in offline bandit simulation.
+        bandit_feedback: BanditFeedback
+            Logged bandit feedback data to be used in offline bandit simulation.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing each action.
@@ -116,4 +128,4 @@ class RegressionModel:
             Actions for each round.
 
         """
-        return np.c_[train['position'], train['context'], action_context[action]]
+        return np.c_[bandit_feedback['position'], bandit_feedback['context'], action_context[action]]

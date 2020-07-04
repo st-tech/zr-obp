@@ -6,17 +6,17 @@ from tqdm import tqdm
 
 import numpy as np
 
-from obp.dataset import LogBanditFeedback
+from obp.dataset import BanditFeedback
 from obp.policy import BanditPolicy
 
 
-def run_bandit_simulation(train: LogBanditFeedback, policy: BanditPolicy) -> np.ndarray:
+def run_bandit_simulation(bandit_feedback: BanditFeedback, policy: BanditPolicy) -> np.ndarray:
     """Run bandit algorithm on logged bandit feedback data.
 
     Parameters
     ----------
-    train: LogBanditFeedback
-        Training set of logged bandit feedback data to be used in offline bandit simulation.
+    bandit_feedback: BanditFeedback
+        Logged bandit feedback data to be used in offline bandit simulation.
 
     policy: BanditPolicy
         Bandit policy to be used evaluated in offline bandit simulation (i.e., counterfactual or evaluation policy).
@@ -27,15 +27,22 @@ def run_bandit_simulation(train: LogBanditFeedback, policy: BanditPolicy) -> np.
         Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
 
     """
-    _check_bandit_feedback(train=train)
+    _check_bandit_feedback(bandit_feedback=bandit_feedback)
 
     policy_ = policy
     selected_actions_list = list()
-    action, position, reward, pscore, context =\
-        train['action'], train['position'], train['reward'], train['pscore'], train['context']
-    data_size, dim_context = context.shape
+    dim_context = bandit_feedback['context'].shape[1]
     for action_, reward_, position_, pscore_, context_ in\
-            tqdm(zip(action, reward, position, pscore, context), total=data_size):
+            tqdm(
+                zip(
+                    bandit_feedback['action'],
+                    bandit_feedback['reward'],
+                    bandit_feedback['position'],
+                    bandit_feedback['pscore'],
+                    bandit_feedback['context']
+                ),
+            total=bandit_feedback['n_rounds']
+            ):
 
         # select a list of actions
         if policy_.policy_type == 'contextfree':
@@ -55,8 +62,8 @@ def run_bandit_simulation(train: LogBanditFeedback, policy: BanditPolicy) -> np.
     return np.array(selected_actions_list)
 
 
-def _check_bandit_feedback(train: LogBanditFeedback) -> RuntimeError:
-    """Check keys of input LogBanditFeedback dict."""
+def _check_bandit_feedback(bandit_feedback: BanditFeedback) -> RuntimeError:
+    """Check keys of input BanditFeedback dict."""
     for key_ in ['action', 'position', 'reward', 'pscore', 'context']:
-        if key_ not in train:
-            raise RuntimeError(f"Missing key of {key_} in 'train'")
+        if key_ not in bandit_feedback:
+            raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
