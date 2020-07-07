@@ -1,33 +1,32 @@
-# Open Bandit Dataset & Pipeline
+**Open Bandit Dataset & Pipeline**
 
 **[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
 
-- [Open Bandit Dataset & Pipeline](#open-bandit-dataset--pipeline)
-  - [概要](#概要)
-    - [**Open Bandit Dataset**](#open-bandit-dataset)
-    - [**Open Bandit Pipeline**](#open-bandit-pipeline)
-    - [トピックとタスク](#トピックとタスク)
-  - [インストール](#インストール)
-    - [依存パッケージ](#依存パッケージ)
-  - [使用方法](#使用方法)
-    - [(1) データの読み込みと前処理](#1-データの読み込みと前処理)
-    - [(2) オフライン方策シミュレーション](#2-オフライン方策シミュレーション)
-    - [(3) オフライン方策評価 （Off-Policy Evaluation）](#3-オフライン方策評価-off-policy-evaluation)
-  - [引用](#引用)
-  - [ライセンス](#ライセンス)
-  - [主要コントリビューター](#主要コントリビューター)
-  - [参考](#参考)
-    - [論文](#論文)
-    - [実装](#実装)
+- [概要](#概要)
+  - [Open Bandit Dataset](#open-bandit-dataset)
+  - [Open Bandit Pipeline](#open-bandit-pipeline)
+  - [トピックとタスク](#トピックとタスク)
+- [インストール](#インストール)
+  - [依存パッケージ](#依存パッケージ)
+- [使用方法](#使用方法)
+  - [(1) データの読み込みと前処理](#1-データの読み込みと前処理)
+  - [(2) オフライン方策シミュレーション](#2-オフライン方策シミュレーション)
+  - [(3) オフライン方策評価 （Off-Policy Evaluation）](#3-オフライン方策評価-off-policy-evaluation)
+- [引用](#引用)
+- [ライセンス](#ライセンス)
+- [主要コントリビューター](#主要コントリビューター)
+- [参考](#参考)
+  - [論文](#論文)
+  - [実装](#実装)
 
 </details>
 
-## 概要
+# 概要
 
-### **Open Bandit Dataset**
+## Open Bandit Dataset
 
 *Open Bandit Dataset*は, バンディットアルゴリズムにまつわる研究を促進するための大規模公開実データです.
 本データセットは, 日本最大のファッションEコマース企業である[株式会社ZOZO](https://corp.zozo.com/about/profile/)が提供しています.
@@ -57,7 +56,7 @@
 </p>
 
 
-### **Open Bandit Pipeline**
+## Open Bandit Pipeline
 
 *Open Bandit Pipeline*は, データセットの前処理・オフライン方策シミュレーション・オフ方策推定量の評価を簡単に行うためのパイプライン実装です. このパイプラインにより, 研究者はオフ方策推定量 (Off-Policy Estimator) の部分の実装に集中して現実的で再現性のある方法で他の手法との性能比較を行うことができるようになります.
 
@@ -71,7 +70,7 @@
 </p>
 
 
-### トピックとタスク
+## トピックとタスク
 
 Open Bandit Dataset・Pipelineでは, 以下の研究テーマに関する実験評価を行うことができます.
 
@@ -81,7 +80,7 @@ Open Bandit Dataset・Pipelineでは, 以下の研究テーマに関する実験
 - **オフライン方策評価の評価 (Evaluation of Off-Plicy Evaluation)**：我々の公開データは, 複数の方策を実システム上で走らせることによって生成されたログデータで構成されています. またそれらの方策の真の性能が含まれています. そのため, オフ方策推定量の評価を行うことができます.
 
 
-## インストール
+# インストール
 
 以下の通り, `pip`を用いてOpen Bandit Pipelineをダウンロードすることが可能です.
 
@@ -97,7 +96,7 @@ python setup.py install
 ```
 
 
-### 依存パッケージ
+## 依存パッケージ
 - **python>=3.7.0**
 - matplotlib>=3.2.2
 - numpy>=1.18.1
@@ -109,7 +108,7 @@ python setup.py install
 - tqdm>=4.41.1
 
 
-## 使用方法
+# 使用方法
 
 ここでは, Open Bandit Pipelineの使用法を説明します.
 具体例として, リプレイ推定量とランダム方策によって生成されたログデータを用いて, トンプソン抽出方策の性能をオフラインで評価する例を使います.
@@ -142,7 +141,7 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 同じ例を使った詳細な実装例は[quickstart](./examples/quickstart/quickstart.ipynb)にあり, 実際に動かして試してみることが可能です.
 以下, 重要な要素について詳細に説明します.
 
-### (1) データの読み込みと前処理
+## (1) データの読み込みと前処理
 
 Open Bandit Dataset用のデータ読み込みインターフェースを用意しています.
 これにより, Open Bandit Datasetの読み込みや前処理を簡潔に行うことができます.
@@ -163,7 +162,7 @@ print(bandit_feedback.keys())
 
 また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
 
-### (2) オフライン方策シミュレーション
+## (2) オフライン方策シミュレーション
 
 前処理の後は, 次のようにして**オフライン方策シミュレーション**を実行します.
 
@@ -179,7 +178,7 @@ selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy
 オフライン方策シミュレーションを行うための関数である `obp.simulator.run_bandit_simulation`は `obp.policy.BanditPolicy` クラスと `bandit_feedback` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中に設定したバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します. またユーザーは`obp.policy.BasePolicy`のインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
 
 
-### (3) オフライン方策評価 （Off-Policy Evaluation）
+## (3) オフライン方策評価 （Off-Policy Evaluation）
 
 最後のステップは, オフラインでのバンディットシミュレーションによって生成されたログデータを用いてバンディットアルゴリズムの性能を推定する**オフライン方策評価**です.
 我々のパイプラインでは, 以下のような手順でオフライン方策評価を行うことができます.
@@ -201,7 +200,7 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 また, `obp.ope.OffPolicyEvaluation`の`ope_estimators`引数に複数のオフ方策推定量を設定することによって, 複数の推定量による推定値を同時に得ることも可能です. `bandit_feedback['reward'].mean()` は観測された報酬の経験平均値（オン方策推定）であり, ランダム方策の真の性能を表します.
 
 
-## 引用
+# 引用
 本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようお願いいたします.
 
 ```
@@ -211,18 +210,18 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ```
 
 
-## ライセンス
+# ライセンス
 このプロジェクトはApache 2.0ライセンスを採用しています.  詳細は, [LICENSE](LICENSE) を参照してください.
 
 
-## 主要コントリビューター
+# 主要コントリビューター
 
 - [Yuta Saito](https://usaito.github.io/)
 
 
-## 参考
+# 参考
 
-### 論文
+## 論文
 1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
 *Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
 
@@ -252,5 +251,5 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 
 14. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
 
-### 実装
+## 実装
 本プロジェクトは **Open Graph Benchmark** ([[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)]) を大いに参考しています.
