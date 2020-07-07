@@ -2,6 +2,29 @@
 
 **[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README_JN.md)**
 
+<details>
+<summary><strong>Table of Contents</strong></summary>
+
+- [Open Bandit Dataset & Pipeline](#open-bandit-dataset--pipeline)
+  - [概要](#概要)
+    - [**Open Bandit Dataset**](#open-bandit-dataset)
+    - [**Open Bandit Pipeline**](#open-bandit-pipeline)
+    - [トピックとタスク](#トピックとタスク)
+  - [インストール](#インストール)
+    - [依存パッケージ](#依存パッケージ)
+  - [使用方法](#使用方法)
+    - [(1) データの読み込みと前処理](#1-データの読み込みと前処理)
+    - [(2) オフライン方策シミュレーション](#2-オフライン方策シミュレーション)
+    - [(3) オフライン方策評価 （Off-Policy Evaluation）](#3-オフライン方策評価-off-policy-evaluation)
+  - [引用](#引用)
+  - [ライセンス](#ライセンス)
+  - [主要コントリビューター](#主要コントリビューター)
+  - [参考](#参考)
+    - [論文](#論文)
+    - [実装](#実装)
+
+</details>
+
 ## 概要
 
 ### **Open Bandit Dataset**
@@ -12,7 +35,7 @@
 バンディットアルゴリズムによるファッションアイテム推薦の例は以下の通りです.
 
 <p align="center">
-  <img width="40%" src="./images/recommended_fashion_items.png" />
+  <img width="45%" src="./images/recommended_fashion_items.png" />
   <figcaption>
     <p align="center">
       図1. ZOZOTOWNにおけるファッションアイテムの推薦の例
@@ -39,7 +62,7 @@
 *Open Bandit Pipeline*は, データセットの前処理・オフライン方策シミュレーション・オフ方策推定量の評価を簡単に行うためのパイプライン実装です. このパイプラインにより, 研究者はオフ方策推定量 (Off-Policy Estimator) の部分の実装に集中して現実的で再現性のある方法で他の手法との性能比較を行うことができるようになります.
 
 <p align="center">
-  <img width="85%" src="./images/overview.png" />
+  <img width="90%" src="./images/overview.png" />
   <figcaption>
     <p align="center">
       図3. Open Bandit Pipelineの概要. (i) Open Bandit Dataset (ii) データセットの読み込みと前処理 (iii) オフライン方策シミュレーター (iv) オフ方策推定量（研究者自身が実装すべき部分） (v) 推定量の性能の評価
@@ -200,22 +223,34 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ## 参考
 
 ### 論文
-1. Alina Beygelzimer and John Langford. The offset tree for learning with partial labels. In
-Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining, pages 129–138, 2009.
+1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
+*Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
 
-2. Olivier Chapelle and Lihong Li. An empirical evaluation of thompson sampling. In Advances in neural information processing systems, pages 2249–2257, 2011.
+2. Olivier Chapelle and Lihong Li. [An empirical evaluation of thompson sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling). In *Advances in neural information processing systems*, pages 2249–2257, 2011.
 
-3. Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li. Doubly Robust Policy Evaluation and Optimization. Statistical Science, 29:485–511, 2014.
+3. Lihong Li, Wei Chu, John Langford, and Xuanhui Wang. [Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms](https://arxiv.org/abs/1003.5956). In *Proceedings of the Fourth ACM International Conference on Web Search and Data Mining*, pages 297–306, 2011.
 
-4. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. Open graph benchmark: Datasets for machine learning on graphs. arXiv preprint arXiv:2005.00687, 2020.
+4. Alex Strehl, John Langford, Lihong Li, and Sham M Kakade. [Learning from Logged Implicit Exploration Data](https://arxiv.org/abs/1003.0120). In *Advances in Neural Information Processing Systems*, pages 2217–2225, 2010.
 
-5. Lihong Li, Wei Chu, John Langford, and Xuanhui Wang. Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms. In Proceedings of the Fourth ACM International Conference on Web Search and Data Mining, pages 297–306, 2011.
+5.  Doina Precup, Richard S. Sutton, and Satinder Singh. [Eligibility Traces for Off-Policy Policy Evaluation](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs). In *Proceedings of the 17th International Conference on Machine Learning*, 759–766. 2000.
 
-6. Yusuke Narita, Shota Yasui, and Kohei Yata. Off-policy Bandit and Reinforcement Learning. arXiv preprint arXiv:2002.08536, 2020.
+6.  Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li. [Doubly Robust Policy Evaluation and Optimization](https://arxiv.org/abs/1503.02834). *Statistical Science*, 29:485–511, 2014.
 
-7. Alex Strehl, John Langford, Lihong Li, and Sham M Kakade. Learning from Logged Implicit Exploration Data. In Advances in Neural Information Processing Systems, pages 2217–2225, 2010.
+7. Adith Swaminathan and Thorsten Joachims. [The Self-normalized Estimator for Counterfactual Learning](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning). In *Advances in Neural Information Processing Systems*, pages 3231–3239, 2015.
 
-8. Adith Swaminathan and Thorsten Joachims. The Self-normalized Estimator for Counterfactual Learning. In Advances in Neural Information Processing Systems, pages 3231–3239, 2015.
+8. Dhruv Kumar Mahajan, Rajeev Rastogi, Charu Tiwari, and Adway Mitra. [LogUCB: An Explore-Exploit Algorithm for Comments Recommendation](https://dl.acm.org/doi/10.1145/2396761.2396767). In *Proceedings of the 21st ACM international conference on Information and knowledge management*, 6–15. 2012.
+
+9.  Lihong Li, Wei Chu, John Langford, Taesup Moon, and Xuanhui Wang. [An Unbiased Offline Evaluation of Contextual Bandit Algorithms with Generalized Linear Models](http://proceedings.mlr.press/v26/li12a.html). In *Journal of Machine Learning Research: Workshop and Conference Proceedings*, volume 26, 19–36. 2012.
+
+10. Yu-Xiang Wang, Alekh Agarwal, and Miroslav Dudik. [Optimal and Adaptive Off-policy Evaluation in Contextual Bandits](https://arxiv.org/abs/1612.01205). In *Proceedings of the 34th International Conference on Machine Learning*, 3589–3597. 2017.
+
+11. Mehrdad Farajtabar, Yinlam Chow, and Mohammad Ghavamzadeh. [More Robust Doubly Robust Off-policy Evaluation](https://arxiv.org/abs/1802.03493). In *Proceedings of the 35th International Conference on Machine Learning*, 1447–1456. 2018.
+
+12. Nathan Kallus and Masatoshi Uehara. [Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1906.03735). In *Advances in Neural Information Processing Systems*. 2019.
+
+13.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+
+14. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
 
 ### 実装
 本プロジェクトは **Open Graph Benchmark** ([[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)]) を大いに参考しています.

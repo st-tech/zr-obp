@@ -2,6 +2,30 @@
 
 **[Documentation](https://zr-obp.readthedocs.io/en/latest/)** | **[Overview](#overview)** | **[Installation](#installation)** | **[Usage](#usage)** | **[References](#references)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README.md)** | **[日本語](./README_JN.md)**
 
+<details>
+<summary><strong>Table of Contents</strong></summary>
+
+- [Open Bandit Dataset & Pipeline](#open-bandit-dataset--pipeline)
+  - [Overview](#overview)
+    - [**Open Bandit Dataset (OBD)**](#open-bandit-dataset-obd)
+    - [**Open Bandit Pipeline (OBP)**](#open-bandit-pipeline-obp)
+      - [Supported Algorithms and OPE Estimators](#supported-algorithms-and-ope-estimators)
+    - [Topics and Tasks](#topics-and-tasks)
+  - [Installation](#installation)
+    - [Requirements](#requirements)
+  - [Usage](#usage)
+    - [(1) Data loading and preprocessing](#1-data-loading-and-preprocessing)
+    - [(2) Bandit Simulation](#2-bandit-simulation)
+    - [(3) Off-Policy Evaluation](#3-off-policy-evaluation)
+  - [Citation](#citation)
+  - [License](#license)
+  - [Main Contributor](#main-contributor)
+  - [References](#references)
+    - [Papers](#papers)
+    - [Projects](#projects)
+
+</details>
+
 ## Overview
 
 ### **Open Bandit Dataset (OBD)**
@@ -12,7 +36,12 @@ The company uses multi-armed bandit algorithms to recommend fashion items to use
 The following figure presents examples of displayed fashion items as actions.
 
 <p align="center">
-  <img width="40%" src="./images/recommended_fashion_items.png" />
+  <img width="45%" src="./images/recommended_fashion_items.png" />
+  <figcaption>
+  <p align="center">
+  Recommended fashion items as actions in ZOZOTOWN
+  </p>
+  </figcaption>
 </p>
 
 We collected the data in a 7-days experiment in late November 2019 on three “campaigns,” corresponding to all, men', and women' items, respectively.
@@ -31,8 +60,35 @@ This pipeline allows researchers to focus on building their OPE estimator and ea
 Thus, it facilitates reproducible research on bandit algorithms and off-policy evaluation.
 
 <p align="center">
-  <img width="85%" src="./images/overview.png" />
+  <img width="90%" src="./images/overview.png" />
+  <figcaption>
+  <p align="center">
+    Structure of Open Bandit Pipeline
+  </p>
+  </figcaption>
 </p>
+
+
+#### Supported Algorithms and OPE Estimators
+
+- Bandit Algorithms (obp.policy module)
+  - Context-free
+    - Random
+    - Epsilon Greedy
+    - Bernoulli Thompson Sampling
+  - Contextual
+    - Logistic Epsilon Greedy
+    - Logistic Thompson Sampling
+    - Logistic Upper Confidence Bound
+
+- OPE Estimators (obp.ope module)
+  - Replay Method
+  - Direct Method
+  - Inverse Probability Weighting
+  - Self-Normalized Inserse Probability Weighting
+  - Doubly Robust
+  - Switch Estimator
+  - More Robust Doubly Robust
 
 
 ### Topics and Tasks
@@ -127,13 +183,14 @@ We show an example of implementing some new feature engineering processes in [`.
 After preparing a dataset, we now run **offline bandit simulation** on the logged bandit feedback as follows.
 
 ```python
-# define a counterfacutal policy, which is the Bernoulli TS policy here
+# define a counterfacutal policy (the Bernoulli TS policy here)
 counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=dataset.len_list)
-# selected_actions is an array containing selected actions by counterfactual policy in an simulation
+# `selected_actions` is an array containing selected actions by counterfactual policy in an simulation
 selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
 ```
 
-`obp.simulator.run_bandit_simulation` function takes `obp.policy.BanditPolicy` class and `bandit_feedback` (a dictionary storing logged bandit feedback) as inputs and runs offline bandit simulation of a given counterfactual bandit policy. `selected_actions` is an array of selected actions during the offline bandit simulation by the counterfactual policy. Users can implement their own bandit algorithms by following the interface of `obp.policy.BanditPolicy`.
+`obp.simulator.run_bandit_simulation` function takes `obp.policy.BanditPolicy` class and `bandit_feedback` (a dictionary storing logged bandit feedback) as inputs and runs offline bandit simulation of a given counterfactual bandit policy. `selected_actions` is an array of selected actions during the offline bandit simulation by the counterfactual policy.
+Users can implement their own bandit algorithms by following the interface of `obp.policy.BanditPolicy`.
 
 ### (3) Off-Policy Evaluation
 
@@ -141,7 +198,7 @@ Our final step is **off-policy evaluation** (OPE), which attempts to estimate th
 Our pipeline also provides an easy procedure for doing OPE as follows.
 
 ```python
-# estimate the policy value of BernoulliTS based on actions selected by that policy
+# estimate the policy value of BernoulliTS based on actions selected by that policy in offline bandit simulation
 # it is possible to set multiple OPE estimators to the `ope_estimators` argument
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[ReplayMethod()])
 estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
@@ -153,7 +210,7 @@ relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / bandit_fe
 # our OPE procedure suggests that BernoulliTS improves Random by 12.05%
 print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ```
-Users can implement their own OPE estimator by following the interface of `obp.ope.BaseOffPolicyEstimator` class. `obp.ope.OffPolicyEvaluation` class summarizes and compares the estimated policy values by several off-policy estimators. A detailed usage of this class can be found at [quickstart](./examples/quickstart/quickstart-evaluation-of-bandit-algorithms.ipynb). `bandit_feedback['reward'].mean()` is the empirical mean of factual rewards (on-policy estimate of policy value) in the log and thus is the ground-truth performance of the behavior policy (the Random policy in this example.).
+Users can implement their own OPE estimator by following the interface of `obp.ope.BaseOffPolicyEstimator` class. `obp.ope.OffPolicyEvaluation` class summarizes and compares the estimated policy values by several off-policy estimators. A detailed usage of this class can be found at [quickstart](./examples/quickstart/quickstart-evaluation-of-bandit-algorithms.ipynb). `bandit_feedback['reward'].mean()` is the empirical mean of factual rewards (on-policy estimate of the policy value) in the log and thus is the ground-truth performance of the behavior policy (the Random policy in this example.).
 
 
 ## Citation
@@ -178,22 +235,35 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 ## References
 
 ### Papers
-1. Alina Beygelzimer and John Langford. The offset tree for learning with partial labels. In
-Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining, pages 129–138, 2009.
+1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
+*Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
 
-2. Olivier Chapelle and Lihong Li. An empirical evaluation of thompson sampling. In Advances in neural information processing systems, pages 2249–2257, 2011.
+2. Olivier Chapelle and Lihong Li. [An empirical evaluation of thompson sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling). In *Advances in neural information processing systems*, pages 2249–2257, 2011.
 
-3. Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li. Doubly Robust Policy Evaluation and Optimization. Statistical Science, 29:485–511, 2014.
+3. Lihong Li, Wei Chu, John Langford, and Xuanhui Wang. [Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms](https://arxiv.org/abs/1003.5956). In *Proceedings of the Fourth ACM International Conference on Web Search and Data Mining*, pages 297–306, 2011.
 
-4. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. Open graph benchmark: Datasets for machine learning on graphs. arXiv preprint arXiv:2005.00687, 2020.
+4. Alex Strehl, John Langford, Lihong Li, and Sham M Kakade. [Learning from Logged Implicit Exploration Data](https://arxiv.org/abs/1003.0120). In *Advances in Neural Information Processing Systems*, pages 2217–2225, 2010.
 
-5. Lihong Li, Wei Chu, John Langford, and Xuanhui Wang. Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms. In Proceedings of the Fourth ACM International Conference on Web Search and Data Mining, pages 297–306, 2011.
+5.  Doina Precup, Richard S. Sutton, and Satinder Singh. [Eligibility Traces for Off-Policy Policy Evaluation](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs). In *Proceedings of the 17th International Conference on Machine Learning*, 759–766. 2000.
 
-6. Yusuke Narita, Shota Yasui, and Kohei Yata. Off-policy Bandit and Reinforcement Learning. arXiv preprint arXiv:2002.08536, 2020.
+6.  Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li. [Doubly Robust Policy Evaluation and Optimization](https://arxiv.org/abs/1503.02834). *Statistical Science*, 29:485–511, 2014.
 
-7. Alex Strehl, John Langford, Lihong Li, and Sham M Kakade. Learning from Logged Implicit Exploration Data. In Advances in Neural Information Processing Systems, pages 2217–2225, 2010.
+7. Adith Swaminathan and Thorsten Joachims. [The Self-normalized Estimator for Counterfactual Learning](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning). In *Advances in Neural Information Processing Systems*, pages 3231–3239, 2015.
 
-8. Adith Swaminathan and Thorsten Joachims. The Self-normalized Estimator for Counterfactual Learning. In Advances in Neural Information Processing Systems, pages 3231–3239, 2015.
+8. Dhruv Kumar Mahajan, Rajeev Rastogi, Charu Tiwari, and Adway Mitra. [LogUCB: An Explore-Exploit Algorithm for Comments Recommendation](https://dl.acm.org/doi/10.1145/2396761.2396767). In *Proceedings of the 21st ACM international conference on Information and knowledge management*, 6–15. 2012.
+
+9.  Lihong Li, Wei Chu, John Langford, Taesup Moon, and Xuanhui Wang. [An Unbiased Offline Evaluation of Contextual Bandit Algorithms with Generalized Linear Models](http://proceedings.mlr.press/v26/li12a.html). In *Journal of Machine Learning Research: Workshop and Conference Proceedings*, volume 26, 19–36. 2012.
+
+10. Yu-Xiang Wang, Alekh Agarwal, and Miroslav Dudik. [Optimal and Adaptive Off-policy Evaluation in Contextual Bandits](https://arxiv.org/abs/1612.01205). In *Proceedings of the 34th International Conference on Machine Learning*, 3589–3597. 2017.
+
+11. Mehrdad Farajtabar, Yinlam Chow, and Mohammad Ghavamzadeh. [More Robust Doubly Robust Off-policy Evaluation](https://arxiv.org/abs/1802.03493). In *Proceedings of the 35th International Conference on Machine Learning*, 1447–1456. 2018.
+
+12. Nathan Kallus and Masatoshi Uehara. [Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1906.03735). In *Advances in Neural Information Processing Systems*. 2019.
+
+13.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+
+14. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
+
 
 ### Projects
 This project is strongly inspired by **Open Graph Benchmark** --a collection of benchmark datasets, data loaders, and evaluators for graph machine learning:
