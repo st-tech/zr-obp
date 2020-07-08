@@ -38,11 +38,15 @@ counterfactual_policy_dict = dict(
 )
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='evaluate off-policy estimators')
-    parser.add_argument('--n_boot_samples', '-n_b', type=int, default=1)
-    parser.add_argument('--counterfactual_policy', '-c_pol', type=str, choices=['bts', 'random'], required=True)
-    parser.add_argument('--behavior_policy', '-b_pol', type=str, choices=['bts', 'random'], required=True)
-    parser.add_argument('--campaign', '-camp', type=str, choices=['all', 'men', 'women'], required=True)
+    parser = argparse.ArgumentParser(description='evaluate off-policy estimators.')
+    parser.add_argument('--n_boot_samples', type=int, default=1,
+                        help='number of bootstrap samples in the experiment.')
+    parser.add_argument('--counterfactual_policy', type=str, choices=['bts', 'random'], required=True,
+                        help='counterfacutual policy, bts or random.')
+    parser.add_argument('--behavior_policy', type=str, choices=['bts', 'random'], required=True,
+                        help='behavior policy, bts or random.')
+    parser.add_argument('--campaign', type=str, choices=['all', 'men', 'women'], required=True,
+                        help='campaign name, men, women, or all.')
     parser.add_argument('--random_state', type=int, default=12345)
     args = parser.parse_args()
     print(args)
@@ -60,6 +64,7 @@ if __name__ == '__main__':
         data_path=data_path
     )
 
+    # hyparparameters for counterfactual policies
     kwargs = dict(n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state)
     if counterfactual_policy == 'bts':
         kwargs['alpha'] = production_prior_for_bts[campaign]['alpha']
@@ -119,6 +124,6 @@ if __name__ == '__main__':
     print(evaluation_of_ope_results_df)
     print('=' * 50)
 
-    # save results of the evaluation of off-policy estimators
+    # save results of the evaluation of off-policy estimators in './logs' directory.
     log_path = Path('./logs') / behavior_policy / campaign
     evaluation_of_ope_results_df.to_csv(log_path / 'comparison_of_ope_estimators.csv')
