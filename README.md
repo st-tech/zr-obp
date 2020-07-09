@@ -96,7 +96,7 @@ Open Bandit Pipeline consists of the following main modules.
   - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
 
 In addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
-Therefore, researchers can easily implement their own methods and evaluate them with our data and pipeline.
+Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
 Moreover, the pipeline provides an interface for logged bandit feedback datasets.
 Thus, practitioners can combine their own datasets with the pipeline and easily evaluate bandit algorithms' performance in their settings.
 
