@@ -26,7 +26,7 @@ Our open data and pipeline facilitate evaluation and comparison related to the f
 
 This website contains pages with example analyses to help demonstrate the usage of this library.
 Additionally, it presents examples of conducting the evaluation of counterfactual bandit algorithms and off-policy evaluation.
-The Reference page contains the full reference documentation for the current functions of this toolkit.
+The reference page contains the full reference documentation for the current functions of this toolkit.
 
 Supported Algorithms and OPE Estimators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
