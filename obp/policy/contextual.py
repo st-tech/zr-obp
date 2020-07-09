@@ -3,9 +3,12 @@
 
 """Contextual Bandit Algorithms."""
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
+from sklearn.utils import check_random_state
 from scipy.optimize import minimize
+
 
 from .base import BaseContextualPolicy
 from ..utils import sigmoid
@@ -263,13 +266,18 @@ class LogisticTS(BaseContextualPolicy):
     """
     policy_name: str = 'logistic_ts'
 
-    def __init__(self) -> None:
+    def __post_init__(self) -> None:
         """Initialize class."""
         super().__post_init__()
         self.model_list = [
             MiniBatchLogisticRegression(
-                lambda_=self.lambda_list[i], alpha=self.alpha_list[i], dim=self.dim)
-            for i in np.arange(self.n_actions)]
+                lambda_=self.lambda_list[i],
+                alpha=self.alpha_list[i],
+                dim=self.dim,
+                random_state=self.random_state
+            )
+            for i in np.arange(self.n_actions)
+        ]
         self.reward_lists = [[] for i in np.arange(self.n_actions)]
         self.context_lists = [[] for i in np.arange(self.n_actions)]
 
@@ -327,11 +335,13 @@ class MiniBatchLogisticRegression:
     lambda_: float
     alpha: float
     dim: int
+    random_state: Optional[int] = None
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         self._m = np.zeros(self.dim)
         self._q = np.ones(self.dim) * self.lambda_
+        self.random_ = check_random_state(self.random_state)
 
     def loss(self, w: np.ndarray, *args) -> float:
         """Calculate loss function."""
