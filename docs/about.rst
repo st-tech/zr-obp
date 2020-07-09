@@ -37,9 +37,9 @@ Thus, it facilitates reproducible research on bandit algorithms and off-policy e
 
 Open Bandit Pipeline consists of the following main modules.
 
-- **dataset module**: provides data loader for Open Bandit Dataset
+- **dataset module**: provides data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback.
 - **policy module**: provides interfaces for bandit algorithms and several standard algorithms
-- **simulator module**: provides functions for conducting offline bandit simulation
+- **simulator module**: provides functions for conducting offline bandit simulation.
 - **ope module**: provides interfaces for bandnit algorithms and several standard OPE estimators.
 
 

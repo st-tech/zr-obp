@@ -8,6 +8,7 @@
 - [概要](#概要)
   - [Open Bandit Dataset](#open-bandit-dataset)
   - [Open Bandit Pipeline](#open-bandit-pipeline)
+    - [実装されているバンディットアルゴリズムとオフ方策推定量](#実装されているバンディットアルゴリズムとオフ方策推定量)
   - [トピックとタスク](#トピックとタスク)
 - [インストール](#インストール)
   - [依存パッケージ](#依存パッケージ)
@@ -55,6 +56,14 @@
   </figcaption>
 </p>
 
+Open Bandit Pipeline は, 以下の主要モジュールで構成されています.
+
+- **datasetモジュール**。このモジュールは, Open Bandit Dataset用のデータローダとログに記録されたバンディットのフィードバックを処理するための柔軟なインターフェースを提供します.
+- **policyモジュール**: このモジュールは, バンディットアルゴリズムのためのインターフェイスを提供します. 加えて, バンディットアルゴリズムといくつかの標準なバンディットアルゴリズムを実装しています.
+- **simulatorモジュール**: このモジュールは, オフラインのバンディットシミュレーションを行うための関数を提供します.
+- **opeモジュール**:　このモジュールは, いくつかの標準的なオフ方策推定量を実装しています. また新たにオフ方策推定量を実装するためのインターフェースを提供します.
+
+www.DeepL.com/Translator（無料版）で翻訳しました。
 
 ## Open Bandit Pipeline
 
@@ -64,11 +73,36 @@
   <img width="90%" src="./images/overview.png" />
   <figcaption>
     <p align="center">
-      図3. Open Bandit Pipelineの概要. (i) Open Bandit Dataset (ii) データセットの読み込みと前処理 (iii) オフライン方策シミュレーター (iv) オフ方策推定量（研究者自身が実装すべき部分） (v) 推定量の性能の評価
+      図3. Open Bandit Pipelineの構成.
     </p>
   </figcaption>
 </p>
 
+### 実装されているバンディットアルゴリズムとオフ方策推定量
+
+- バンディットアルゴリズム (**policy module**)
+  - Context-free
+    - Random
+    - Epsilon Greedy
+    - Bernoulli Thompson Sampling
+  - Contextual
+    - Logistic Epsilon Greedy
+    - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+    - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
+
+- オフ方策推定量 (**ope module**)
+  - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
+  - Direct Method [[Beygelzimer and Langford 2009]](https://arxiv.org/abs/0812.4044)
+  - Inverse Probability Weighting [[Precup et al. 2000]](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs) [[Strehl et al. 2010]](https://arxiv.org/abs/1003.0120)
+  - Self-Normalized Inserse Probability Weighting [[Swaminathan and Joachims. 2015]](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+  - Doubly Robust [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
+  - Switch Estimator [[Wang et al. 2016]](https://arxiv.org/abs/1612.01205)
+  - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
+
+私たちのパイプラインは, 上記のアルゴリズムや推定量に加えて, 柔軟なインターフェースも提供しています.
+したがって研究者は, 独自の手法を容易に実装し, 我々のデータとパイプラインを用いて評価することができます.
+さらに、パイプラインは, ログに記録されたバンディットフィードバックデータセットのためのインタフェースを含んでいます.
+したがって、エンジニアやデータサイエンティストなどの実践者は, 独自のデータセットをパイプラインと組み合わせることで, 自社の設定・環境でバンディットアルゴリズムの性能を簡単に評価することができます.
 
 ## トピックとタスク
 

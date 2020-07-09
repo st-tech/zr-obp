@@ -67,27 +67,38 @@ Thus, it facilitates reproducible research on bandit algorithms and off-policy e
   </figcaption>
 </p>
 
+Open Bandit Pipeline consists of the following main modules.
+
+- **dataset module**: This module provides data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback.
+- **policy module**: This module provides interfaces for bandit algorithms and several standard algorithms.
+- **simulator module**: This module provides functions for conducting offline bandit simulation.
+- **ope module**: This module provides interfaces for bandnit algorithms and several standard OPE estimators.
 
 ### Supported Algorithms and OPE Estimators
 
-- Bandit Algorithms (obp.policy module)
+- Bandit Algorithms (implemented in **policy module**)
   - Context-free
     - Random
     - Epsilon Greedy
     - Bernoulli Thompson Sampling
   - Contextual
     - Logistic Epsilon Greedy
-    - Logistic Thompson Sampling
-    - Logistic Upper Confidence Bound
+    - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+    - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
 
-- OPE Estimators (obp.ope module)
-  - Replay Method
-  - Direct Method
-  - Inverse Probability Weighting
-  - Self-Normalized Inserse Probability Weighting
-  - Doubly Robust
-  - Switch Estimator
-  - More Robust Doubly Robust
+- OPE Estimators (implemented in **ope module**)
+  - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
+  - Direct Method [[Beygelzimer and Langford 2009]](https://arxiv.org/abs/0812.4044)
+  - Inverse Probability Weighting [[Precup et al. 2000]](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs) [[Strehl et al. 2010]](https://arxiv.org/abs/1003.0120)
+  - Self-Normalized Inserse Probability Weighting [[Swaminathan and Joachims. 2015]](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+  - Doubly Robust [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
+  - Switch Estimator [[Wang et al. 2016]](https://arxiv.org/abs/1612.01205)
+  - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
+
+In addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
+Therefore, researchers can easily implement their own methods and evaluate them with our data and pipeline.
+Moreover, the pipeline provides an interface for logged bandit feedback datasets.
+Thus, practitioners can combine their own datasets with the pipeline and easily evaluate bandit algorithms' performance in their settings.
 
 
 ## Topics and Tasks
