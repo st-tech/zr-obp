@@ -37,7 +37,7 @@ Below, we explain some important features in the example flow.
 Data loading and preprocessing
 ------------------------------------
 
-We prepare easy-to-use data loader for Open Bandit Dataset.
+We prepare an easy-to-use data loader for Open Bandit Dataset.
 
 .. code-block:: python
 

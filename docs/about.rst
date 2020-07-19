@@ -6,7 +6,7 @@ About
 Open Bandit Dataset (OBD)
 ------------------------------
 
-*Open Bandit Dataset* is public real-world logged bandit feedback data.
+*Open Bandit Dataset* is a public real-world logged bandit feedback data.
 The dataset is provided by `ZOZO, Inc. <https://corp.zozo.com/en/about/profile/>`_, the largest Japanese fashion e-commerce company with over 5 billion USD market capitalization (as of May 2020).
 The company uses multi-armed bandit algorithms to recommend fashion items to users in a large-scale fashion e-commerce platform called `ZOZOTOWN <https://zozo.jp/>`_.
 The following figure presents examples of displayed fashion items as actions.
@@ -15,7 +15,7 @@ The following figure presents examples of displayed fashion items as actions.
    :scale: 25%
    :align: center
 
-We collected the data in a 7-days experiment in late November 2019 on three “campaigns,” corresponding to all, men', and women' items, respectively.
+We collected the data in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
 Each campaign randomly uses either the Random algorithm or the Bernoulli Thompson Sampling (Bernoulli TS) algorithm for each user impression.
 The following table describes the statistics of Open Bandit Dataset.
 
