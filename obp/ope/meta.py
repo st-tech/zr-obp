@@ -224,8 +224,8 @@ class OffPolicyEvaluation:
     def visualize_off_policy_estimates(self,
                                        selected_actions: np.ndarray,
                                        alpha: float = 0.05,
+                                       relative: bool = False,
                                        n_bootstrap_samples: int = 100,
-                                       random_state: Optional[int] = None,
                                        fig_dir: Optional[Path] = None,
                                        fig_name: Optional[str] = None) -> None:
         """Visualize estimated policy values by given off-policy evaluation.
@@ -241,8 +241,9 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int, default: 100
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
-            Controls the random seed in bootstrap sampling.
+        relative: bool, default: False,
+            If True, the method visualizes the estimated policy values of counterfactual policy
+            relative to the ground-truth policy value of behavior policy
 
         fig_dir: Path, default: None
             Dierctory to store the bar figure.
@@ -262,6 +263,8 @@ class OffPolicyEvaluation:
             columns={key: key.upper() for key in estimated_round_rewards_dict.keys()},
             inplace=True
         )
+        if relative:
+            estimated_round_rewards_df /= self.bandit_feedback['reward'].mean()
 
         fig, ax = plt.subplots(figsize=(8, 6))
         sns.barplot(data=estimated_round_rewards_df, ax=ax,
