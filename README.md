@@ -50,6 +50,7 @@ Each campaign randomly used either the Random algorithm or the Bernoulli Thompso
   <img width="70%" src="./images/statistics_of_obd.png" />
 </p>
 
+Please see [./obd/README.md](./obd/README.md) for the description of the dataset.
 
 ## Open Bandit Pipeline (OBP)
 
