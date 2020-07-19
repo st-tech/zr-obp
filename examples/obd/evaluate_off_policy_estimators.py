@@ -126,4 +126,5 @@ if __name__ == '__main__':
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
     log_path = Path('./logs') / behavior_policy / campaign
+    log_path.mkdir(exist_ok=True, parents=True)
     evaluation_of_ope_results_df.to_csv(log_path / 'comparison_of_ope_estimators.csv')

@@ -6,7 +6,7 @@ We then select and use such an estimator to improve the platform’s fashion ite
 ## Additional Implementations
 
 - [`dataset.py`](./dataset.py):
-    We implement two ways of engeering original features.
+    We implement two ways of engineering original features.
     This includes **CONTEXT SET 1** (user features only, such as age, gender, and length of  membership) and **CONTEXT SET 2** (Context Set 1 plus user-item affinity induced by the number of past clicks observed between each user-item pair).
 
 ## Running experiments
@@ -39,7 +39,7 @@ python evaluate_off_policy_estimators.py\
     --behavior_policy random\
     --campaign all
 
-# relative estiamtion errors and their 95% confidence intervals of OPE estimators.
+# relative estimation errors and their 95% confidence intervals of OPE estimators.
 # our evaluation of OPE procedure suggests that DM performs best among the three OPE estimators because DM has low variance property.
 # (Note that this result is with the small sample data and please see our paper for the results with the full size data)
 # ==================================================
@@ -68,7 +68,7 @@ python evaluate_counterfactual_policy.py\
     --campaign $campaign\
     --random_state $random_state
 ```
-where `$context_set` specifies the way of engineering context and should be either '1' or '2'.
+where `$context_set` specifies the feature engineering method and should be either '1' or '2'.
 `$counterfactual_policy` specifies the counterfactual logistic bandit policy and should be one of 'logistic_egreedy', 'logistic_ts', and 'logistic_ucb'.
 `$epsilon` specifies the value of exploration hyperparameter and should be between 0 and 1.
 `$behavior_policy` specifies the behavior policy and should be either 'bts' or 'random'.
