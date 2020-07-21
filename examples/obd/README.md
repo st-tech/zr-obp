@@ -5,7 +5,7 @@ We then select and use such an estimator to improve the platform’s fashion ite
 
 ## Additional Implementations
 
-- [`dataset.py`](./dataset.py):
+- [`custom_dataset.py`](./custom_dataset.py):
     We implement two ways of engineering original features.
     This includes **CONTEXT SET 1** (user features only, such as age, gender, and length of  membership) and **CONTEXT SET 2** (Context Set 1 plus user-item affinity induced by the number of past clicks observed between each user-item pair).
 

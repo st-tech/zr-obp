@@ -7,7 +7,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from dataset import OBDWithInteractionFeatures
+from custom_dataset import OBDWithInteractionFeatures
 from obp.policy import LogisticTS, LogisticEpsilonGreedy, LogisticUCB
 from obp.simulator import run_bandit_simulation
 from obp.ope import (
