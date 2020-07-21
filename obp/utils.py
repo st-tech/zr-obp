@@ -120,3 +120,11 @@ def check_is_fitted(estimator: BaseEstimator,
 def sigmoid(x: np.ndarray) -> np.ndarray:
     """Calculate sigmoid function."""
     return 1. / (1. + np.exp(-x))
+
+
+def softmax(x: np.ndarray) -> np.ndarray:
+    """Calculate softmax function."""
+    b = np.expand_dims(np.max(x, axis=1), 1)
+    numerator = np.exp(x - b)
+    denominator = np.expand_dims(np.sum(numerator, axis=1), 1)
+    return numerator / denominator
