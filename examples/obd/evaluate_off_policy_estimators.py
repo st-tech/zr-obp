@@ -90,12 +90,12 @@ if __name__ == '__main__':
     evaluation_of_ope_results = {est.estimator_name: np.zeros(n_boot_samples) for est in ope_estimators}
     for b in np.arange(n_boot_samples):
         # sample bootstrap from batch logged bandit feedback
-        boot_bandit_feebdack = obd.sample_bootstrap_bandit_feedback(random_state=b)
+        boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(random_state=b)
         # run a counterfactual bandit algorithm on logged bandit feedback data
-        selected_actions = run_bandit_simulation(bandit_feedback=boot_bandit_feebdack, policy=policy)
+        selected_actions = run_bandit_simulation(bandit_feedback=boot_bandit_feedback, policy=policy)
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
-            bandit_feedback=boot_bandit_feebdack,
+            bandit_feedback=boot_bandit_feedback,
             action_context=obd.action_context,
             regression_model=RegressionModel(base_model=base_model),
             ope_estimators=ope_estimators
