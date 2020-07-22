@@ -300,7 +300,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     .. math::
 
         \\hat{V}_{SNIPW} (\\pi) =
-        \\frac{1}{\\sum_{t=1}^T \\frac{1}{p_t} } \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} Y_t
+        \\frac{1}{\\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} } \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} Y_t
 
     where :math:`p_t` is probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
 
@@ -355,8 +355,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
             Rewards estimated by the SNIPW estimator for each round.
 
         """
-        sn_weight = pscore.shape[0] / pscore
-        return sn_weight * (action_match * reward)
+        return (action_match * reward) / pscore / (action_match / pscore).mean()
 
 
 @dataclass
@@ -630,7 +629,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     .. math::
 
             \\hat{V}_{SNDR} (\\pi) =
-            \\frac{1}{\\sum_{t=1}^T \\frac{1}{p_t}} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, a_t)) + \\hat{\\mu} (x_t, a_t)
+            \\frac{1}{\\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t}} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, a_t)) + \\hat{\\mu} (x_t, a_t)
 
     where :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
     :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated rewards for round :math:`t`.
@@ -687,8 +686,10 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Rewards estimated by the SNDR estimator for each round.
 
         """
-        sn_weight = pscore.shape[0] / pscore
-        return (sn_weight * action_match * (reward - estimated_rewards_by_reg_model)) + estimated_rewards_by_reg_model
+        round_rewards = (action_match * (reward - estimated_rewards_by_reg_model) / pscore)
+        round_rewards += estimated_rewards_by_reg_model
+        round_rewards /= (action_match / pscore).mean()
+        return round_rewards
 
 
 @dataclass
@@ -713,7 +714,7 @@ class SwitchDoublyRobust(DoublyRobust):
 
     Parameters
     ----------
-    tau: float, default: 1.0
+    tau: float, default: 1000
         Switching hyperparameter. When the density ratio is larger than this parameter
         the DM estimator is applied, otherwise the DR esitmator is applied.
         This hyperparameter should be larger than 1., otherwise it is meaningless.
@@ -730,7 +731,7 @@ class SwitchDoublyRobust(DoublyRobust):
     "Optimal and Adaptive Off-policy Evaluation in Contextual Bandits", 2016.
 
     """
-    tau: float = 1.0
+    tau: float = 1000
     estimator_name: str = 'switch-dr'
     assert tau >= 1., f'switching hyperparameter should be larger than 1. but {tau} is given.'
 
