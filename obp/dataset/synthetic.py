@@ -76,28 +76,26 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             )
         >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=100000)
         >>> print(bandit_feedback)
-        {
-            'n_rounds': 100000,
-            'n_actions': 10,
-            'context': array([[ 0.06987669,  0.24667411, -0.0118616 ,  1.00481159,  1.32719461],
-                    [-0.91926156, -1.54910644,  0.0221846 ,  0.75836315, -0.66052433],
-                    [ 0.86258008, -0.0100319 ,  0.05000936,  0.67021559,  0.85296503],
-                    ...,
-                    [ 0.09658876,  2.03636863,  0.40584106, -0.49167468, -0.44993244],
-                    [-1.13892634, -1.71173775, -0.98117438,  1.84662775, -1.47738898],
-                    [ 1.19581374, -2.24630358,  0.25097774, -0.12573204, -1.07518047]]),
-            'action': array([0, 3, 7, ..., 9, 2, 1]),
-            'position': array([0, 0, 0, ..., 0, 0, 0]),
-            'reward': array([1, 0, 0, ..., 1, 0, 0]),
-            'expected_reward': array([[0.8698448 , 0.97494761, 0.92409382, ..., 0.6376252 , 0.08465611, 0.89849959],
-                    [0.34926094, 0.75759475, 0.49435996, ..., 0.12381323, 0.00737264, 0.41551479],
-                    [0.79536206, 0.9576852 , 0.87623866, ..., 0.50575962, 0.05104108, 0.83734861],
-                    ...,
-                    [0.75640208, 0.94759281, 0.84976797, ..., 0.44980427, 0.04120034, 0.80441657],
-                    [0.16113759, 0.52798049, 0.25921362, ..., 0.04814004, 0.00265123, 0.20282803],
-                    [0.20438664, 0.59934274, 0.31878273, ..., 0.06335114, 0.00354244, 0.25388019]]),
-            'pscore': array([0.1083297 , 0.09498828, 0.08607129, ..., 0.11173138, 0.10396257, 0.12499258])
-        }
+        {'n_rounds': 100000,
+        'n_actions': 10,
+        'context': array([[ 0.06987669,  0.24667411, -0.0118616 ,  1.00481159,  1.32719461],
+                [-0.91926156, -1.54910644,  0.0221846 ,  0.75836315, -0.66052433],
+                [ 0.86258008, -0.0100319 ,  0.05000936,  0.67021559,  0.85296503],
+                ...,
+                [ 0.09658876,  2.03636863,  0.40584106, -0.49167468, -0.44993244],
+                [-1.13892634, -1.71173775, -0.98117438,  1.84662775, -1.47738898],
+                [ 1.19581374, -2.24630358,  0.25097774, -0.12573204, -1.07518047]]),
+        'action': array([0, 3, 7, ..., 9, 2, 1]),
+        'position': array([0, 0, 0, ..., 0, 0, 0]),
+        'reward': array([1, 0, 0, ..., 1, 0, 0]),
+        'expected_reward': array([[0.8698448 , 0.97494761, 0.92409382, ..., 0.6376252 , 0.08465611, 0.89849959],
+                [0.34926094, 0.75759475, 0.49435996, ..., 0.12381323, 0.00737264, 0.41551479],
+                [0.79536206, 0.9576852 , 0.87623866, ..., 0.50575962, 0.05104108, 0.83734861],
+                ...,
+                [0.75640208, 0.94759281, 0.84976797, ..., 0.44980427, 0.04120034, 0.80441657],
+                [0.16113759, 0.52798049, 0.25921362, ..., 0.04814004, 0.00265123, 0.20282803],
+                [0.20438664, 0.59934274, 0.31878273, ..., 0.06335114, 0.00354244, 0.25388019]]),
+        'pscore': array([0.1083297 , 0.09498828, 0.08607129, ..., 0.11173138, 0.10396257, 0.12499258])}
 
     """
     n_actions: int
@@ -200,7 +198,23 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
 
 
 def linear_reward_function(context: np.ndarray, action_context: np.ndarray) -> np.ndarray:
-    """Linear mean reward function for synthetic bandit datasets."""
+    """Linear mean reward function for synthetic bandit datasets.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each round (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Context vectors characterizing each action.
+
+    Returns
+    ---------
+    expected_reward: array-like, shape (n_rounds, n_actions)
+        Expected reward given context and action context vectors,
+        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+
+    """
     logits = np.zeros((context.shape[0], action_context.shape[0]))
     coef_ = np.random.uniform(size=context.shape[1])
     action_coef_ = np.random.uniform(size=action_context.shape[1])
@@ -212,7 +226,23 @@ def linear_reward_function(context: np.ndarray, action_context: np.ndarray) -> n
 
 
 def linear_behavior_policy(context: np.ndarray, action_context: np.ndarray) -> np.ndarray:
-    """Linear contextual behavior policy for synthetic bandit datasets."""
+    """Linear contextual behavior policy for synthetic bandit datasets.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each round (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Context vectors characterizing each action.
+
+    Returns
+    ---------
+    behavior_policy: array-like, shape (n_rounds, n_actions)
+        Probability of choosing each action given context and action context vectors
+        i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+
+    """
     logits = np.zeros((context.shape[0], action_context.shape[0]))
     coef_ = np.random.uniform(size=context.shape[1])
     action_coef_ = np.random.uniform(size=action_context.shape[1])
