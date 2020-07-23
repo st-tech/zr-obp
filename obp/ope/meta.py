@@ -85,6 +85,7 @@ class OffPolicyEvaluation:
         1.120574...
 
     """
+
     bandit_feedback: BanditFeedback
     ope_estimators: List[BaseOffPolicyEstimator]
     action_context: Optional[np.ndarray] = None
@@ -92,14 +93,16 @@ class OffPolicyEvaluation:
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if (self.regression_model is not None):
+        if self.regression_model is not None:
             if check_is_fitted(self.regression_model):
                 logging.info("a fitted regression model is given.")
             else:
-                logging.info("the given regression model is not fitted, and thus train it here...")
+                logging.info(
+                    "the given regression model is not fitted, and thus train it here..."
+                )
                 self.regression_model.fit(
                     bandit_feedback=self.bandit_feedback,
-                    action_context=self.action_context
+                    action_context=self.action_context,
                 )
         else:
             logging.warning(
@@ -110,17 +113,27 @@ class OffPolicyEvaluation:
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
 
-    def _create_estimator_inputs(self, selected_actions: np.ndarray) -> Dict[str, np.ndarray]:
+    def _create_estimator_inputs(
+        self, selected_actions: np.ndarray
+    ) -> Dict[str, np.ndarray]:
         """Create input dictionary to estimate policy value by subclasses of `BaseOffPolicyEstimator`"""
-        estimator_inputs = {input_: self.bandit_feedback[input_] for input_ in ['reward', 'pscore']}
-        estimator_inputs['action_match'] =\
-            self.bandit_feedback['action'] == selected_actions[
-                np.arange(self.bandit_feedback['n_rounds']), self.bandit_feedback['position']]
+        estimator_inputs = {
+            input_: self.bandit_feedback[input_] for input_ in ["reward", "pscore"]
+        }
+        estimator_inputs["action_match"] = (
+            self.bandit_feedback["action"]
+            == selected_actions[
+                np.arange(self.bandit_feedback["n_rounds"]),
+                self.bandit_feedback["position"],
+            ]
+        )
         if self.regression_model is not None:
-            estimator_inputs['estimated_rewards_by_reg_model'] = self.regression_model.predict(
+            estimator_inputs[
+                "estimated_rewards_by_reg_model"
+            ] = self.regression_model.predict(
                 bandit_feedback=self.bandit_feedback,
                 action_context=self.action_context,
-                selected_actions=selected_actions
+                selected_actions=selected_actions,
             )
         return estimator_inputs
 
@@ -139,17 +152,23 @@ class OffPolicyEvaluation:
 
         """
         policy_value_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(selected_actions=selected_actions)
+        estimator_inputs = self._create_estimator_inputs(
+            selected_actions=selected_actions
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
-            policy_value_dict[estimator_name] = estimator.estimate_policy_value(**estimator_inputs)
+            policy_value_dict[estimator_name] = estimator.estimate_policy_value(
+                **estimator_inputs
+            )
 
         return policy_value_dict
 
-    def estimate_intervals(self,
-                           selected_actions: np.ndarray,
-                           alpha: float = 0.05,
-                           n_bootstrap_samples: int = 100,
-                           random_state: Optional[int] = None) -> Dict[str, Dict[str, float]]:
+    def estimate_intervals(
+        self,
+        selected_actions: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+    ) -> Dict[str, Dict[str, float]]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
         Parameters
@@ -173,18 +192,26 @@ class OffPolicyEvaluation:
 
         """
         policy_value_interval_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(selected_actions=selected_actions)
+        estimator_inputs = self._create_estimator_inputs(
+            selected_actions=selected_actions
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_interval_dict[estimator_name] = estimator.estimate_interval(
-                **estimator_inputs, alpha=alpha, n_bootstrap_samples=n_bootstrap_samples, random_state=random_state)
+                **estimator_inputs,
+                alpha=alpha,
+                n_bootstrap_samples=n_bootstrap_samples,
+                random_state=random_state,
+            )
 
         return policy_value_interval_dict
 
-    def summarize_off_policy_estimates(self,
-                                       selected_actions: np.ndarray,
-                                       alpha: float = 0.05,
-                                       n_bootstrap_samples: int = 100,
-                                       random_state: Optional[int] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def summarize_off_policy_estimates(
+        self,
+        selected_actions: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Summarize estimated_policy_values and their confidence intervals in off-policy evaluation by given estimators.
 
         Parameters
@@ -209,25 +236,28 @@ class OffPolicyEvaluation:
         """
         policy_value_df = pd.DataFrame(
             self.estimate_policy_values(selected_actions=selected_actions),
-            index=['estimated_policy_value']
+            index=["estimated_policy_value"],
         )
         policy_value_interval_df = pd.DataFrame(
             self.estimate_intervals(
                 selected_actions=selected_actions,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
-                random_state=random_state)
+                random_state=random_state,
+            )
         )
 
         return policy_value_df.T, policy_value_interval_df.T
 
-    def visualize_off_policy_estimates(self,
-                                       selected_actions: np.ndarray,
-                                       alpha: float = 0.05,
-                                       relative: bool = False,
-                                       n_bootstrap_samples: int = 100,
-                                       fig_dir: Optional[Path] = None,
-                                       fig_name: Optional[str] = None) -> None:
+    def visualize_off_policy_estimates(
+        self,
+        selected_actions: np.ndarray,
+        alpha: float = 0.05,
+        relative: bool = False,
+        n_bootstrap_samples: int = 100,
+        fig_dir: Optional[Path] = None,
+        fig_name: Optional[str] = None,
+    ) -> None:
         """Visualize estimated policy values by given off-policy evaluation.
 
         Parameters
@@ -255,32 +285,44 @@ class OffPolicyEvaluation:
 
         """
         estimated_round_rewards_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(selected_actions=selected_actions)
+        estimator_inputs = self._create_estimator_inputs(
+            selected_actions=selected_actions
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
-            estimated_round_rewards_dict[estimator_name] = estimator._estimate_round_rewards(**estimator_inputs)
+            estimated_round_rewards_dict[
+                estimator_name
+            ] = estimator._estimate_round_rewards(**estimator_inputs)
         estimated_round_rewards_df = pd.DataFrame(estimated_round_rewards_dict)
         estimated_round_rewards_df.rename(
             columns={key: key.upper() for key in estimated_round_rewards_dict.keys()},
-            inplace=True
+            inplace=True,
         )
         if relative:
-            estimated_round_rewards_df /= self.bandit_feedback['reward'].mean()
+            estimated_round_rewards_df /= self.bandit_feedback["reward"].mean()
 
         fig, ax = plt.subplots(figsize=(8, 6))
-        sns.barplot(data=estimated_round_rewards_df, ax=ax,
-                    ci=100 * (1 - alpha), n_boot=n_bootstrap_samples)
+        sns.barplot(
+            data=estimated_round_rewards_df,
+            ax=ax,
+            ci=100 * (1 - alpha),
+            n_boot=n_bootstrap_samples,
+        )
         plt.xlabel("OPE Estimators", fontsize=25)
-        plt.ylabel(f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20)
+        plt.ylabel(
+            f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20
+        )
         plt.yticks(fontsize=15)
         plt.xticks(fontsize=20)
 
         if fig_dir:
-            fig_name = fig_name if fig_name is not None else 'estimated_policy_value.png'
+            fig_name = (
+                fig_name if fig_name is not None else "estimated_policy_value.png"
+            )
             fig.savefig(str(fig_dir / fig_name))
 
-    def evaluate_performance_of_estimators(self,
-                                           selected_actions: np.ndarray,
-                                           ground_truth_policy_value: float) -> Dict[str, float]:
+    def evaluate_performance_of_estimators(
+        self, selected_actions: np.ndarray, ground_truth_policy_value: float
+    ) -> Dict[str, float]:
         """Evaluate results of off-policy estimators by relative estimation error.
 
         Evaluate the performacnce of off-policy estimators by the following relative estimation error.
@@ -308,15 +350,21 @@ class OffPolicyEvaluation:
 
         """
         relative_estimation_error_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(selected_actions=selected_actions)
+        estimator_inputs = self._create_estimator_inputs(
+            selected_actions=selected_actions
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_policy_value = estimator.estimate_policy_value(**estimator_inputs)
-            relative_estimation_error_dict[estimator_name] =\
-                np.abs((estimated_policy_value - ground_truth_policy_value) / ground_truth_policy_value)
+            relative_estimation_error_dict[estimator_name] = np.abs(
+                (estimated_policy_value - ground_truth_policy_value)
+                / ground_truth_policy_value
+            )
 
         return relative_estimation_error_dict
 
-    def summarize_estimators_comparison(self, selected_actions: np.ndarray) -> pd.DataFrame:
+    def summarize_estimators_comparison(
+        self, selected_actions: np.ndarray
+    ) -> pd.DataFrame:
         """Summarize performance comparison of given off-policy estimators.
 
         Parameters
@@ -332,7 +380,7 @@ class OffPolicyEvaluation:
         """
         relative_estimation_error_df = pd.DataFrame(
             self.evaluate_performance_of_estimators(selected_actions=selected_actions),
-            index=['relative_estimation_error']
+            index=["relative_estimation_error"],
         )
 
         return relative_estimation_error_df.T

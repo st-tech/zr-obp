@@ -11,10 +11,12 @@ from sklearn.utils import check_random_state
 from sklearn.utils.validation import _deprecate_positional_args
 
 
-def estimate_confidence_interval_by_bootstrap(samples: np.ndarray,
-                                              alpha: float = 0.05,
-                                              n_bootstrap_samples: int = 10000,
-                                              random_state: Optional[int] = None) -> Dict[str, float]:
+def estimate_confidence_interval_by_bootstrap(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    n_bootstrap_samples: int = 10000,
+    random_state: Optional[int] = None,
+) -> Dict[str, float]:
     """Estimate confidence interval by nonparametric bootstrap-like procedure.
 
     Parameters
@@ -41,20 +43,18 @@ def estimate_confidence_interval_by_bootstrap(samples: np.ndarray,
     for _ in np.arange(n_bootstrap_samples):
         boot_samples.append(np.mean(random_.choice(samples, size=samples.shape[0])))
     lower_bound = np.percentile(boot_samples, 100 * (alpha / 2)).round(5)
-    upper_bound = np.percentile(boot_samples, 100 * (1. - alpha / 2)).round(5)
+    upper_bound = np.percentile(boot_samples, 100 * (1.0 - alpha / 2)).round(5)
     return {
-        'mean': np.mean(boot_samples),
-        f'{100 * (1. - alpha)}% CI (lower)': lower_bound,
-        f'{100 * (1. - alpha)}% CI (upper)': upper_bound
+        "mean": np.mean(boot_samples),
+        f"{100 * (1. - alpha)}% CI (lower)": lower_bound,
+        f"{100 * (1. - alpha)}% CI (upper)": upper_bound,
     }
 
 
 @_deprecate_positional_args
-def check_is_fitted(estimator: BaseEstimator,
-                    attributes=None,
-                    *,
-                    msg: str = None,
-                    all_or_any=all) -> bool:
+def check_is_fitted(
+    estimator: BaseEstimator, attributes=None, *, msg: str = None, all_or_any=all
+) -> bool:
     """Perform is_fitted validation for estimator.
 
     Note
@@ -100,10 +100,12 @@ def check_is_fitted(estimator: BaseEstimator,
     if isclass(estimator):
         raise TypeError("{} is a class, not an instance.".format(estimator))
     if msg is None:
-        msg = ("This %(name)s instance is not fitted yet. Call 'fit' with "
-               "appropriate arguments before using this estimator.")
+        msg = (
+            "This %(name)s instance is not fitted yet. Call 'fit' with "
+            "appropriate arguments before using this estimator."
+        )
 
-    if not hasattr(estimator, 'fit'):
+    if not hasattr(estimator, "fit"):
         raise TypeError("%s is not an estimator instance." % (estimator))
 
     if attributes is not None:
@@ -111,7 +113,9 @@ def check_is_fitted(estimator: BaseEstimator,
             attributes = [attributes]
         attrs = all_or_any([hasattr(estimator, attr) for attr in attributes])
     else:
-        attrs = [v for v in vars(estimator) if v.endswith("_") and not v.startswith("__")]
+        attrs = [
+            v for v in vars(estimator) if v.endswith("_") and not v.startswith("__")
+        ]
 
     is_fitted = len(attrs) != 0
     return is_fitted
@@ -119,7 +123,7 @@ def check_is_fitted(estimator: BaseEstimator,
 
 def sigmoid(x: np.ndarray) -> np.ndarray:
     """Calculate sigmoid function."""
-    return 1. / (1. + np.exp(-x))
+    return 1.0 / (1.0 + np.exp(-x))
 
 
 def softmax(x: np.ndarray) -> np.ndarray:

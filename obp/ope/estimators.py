@@ -15,7 +15,9 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for off-policy estimators."""
 
     @abstractmethod
-    def _estimate_round_rewards(self, reward: np.ndarray, action_match: np.ndarray) -> np.ndarray:
+    def _estimate_round_rewards(
+        self, reward: np.ndarray, action_match: np.ndarray
+    ) -> np.ndarray:
         """Estimate rewards for each round."""
         pass
 
@@ -56,9 +58,12 @@ class ReplayMethod(BaseOffPolicyEstimator):
     "Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms.", 2011.
 
     """
-    estimator_name: str = 'rm'
 
-    def _estimate_round_rewards(self, reward: np.ndarray, action_match: np.ndarray, **kwargs) -> np.ndarray:
+    estimator_name: str = "rm"
+
+    def _estimate_round_rewards(
+        self, reward: np.ndarray, action_match: np.ndarray, **kwargs
+    ) -> np.ndarray:
         """Estimate rewards for each round.
 
         Parameters
@@ -78,11 +83,13 @@ class ReplayMethod(BaseOffPolicyEstimator):
 
         """
         estimated_rewards = np.zeros_like(action_match)
-        if np.sum(action_match) > 0.:
+        if np.sum(action_match) > 0.0:
             estimated_rewards = action_match * reward / np.mean(action_match)
         return estimated_rewards
 
-    def estimate_policy_value(self, reward: np.ndarray, action_match: np.ndarray, **kwargs) -> float:
+    def estimate_policy_value(
+        self, reward: np.ndarray, action_match: np.ndarray, **kwargs
+    ) -> float:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
@@ -101,16 +108,20 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         """
-        estimated_rewards = self._estimate_round_rewards(reward=reward, action_match=action_match)
+        estimated_rewards = self._estimate_round_rewards(
+            reward=reward, action_match=action_match
+        )
         return np.mean(estimated_rewards)
 
-    def estimate_interval(self,
-                          reward: np.ndarray,
-                          action_match: np.ndarray,
-                          alpha: float = 0.05,
-                          n_bootstrap_samples: int = 100,
-                          random_state: Optional[int] = None,
-                          **kwargs) -> Dict[str, float]:
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        action_match: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
         Parameters
@@ -138,12 +149,15 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        estimated_rewards = self._estimate_round_rewards(reward=reward, action_match=action_match)
+        estimated_rewards = self._estimate_round_rewards(
+            reward=reward, action_match=action_match
+        )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state)
+            random_state=random_state,
+        )
 
 
 @dataclass
@@ -182,15 +196,15 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     """
 
-    min_pscore: float = 0.
-    estimator_name: str = 'ipw'
-    assert min_pscore <= 1., f'minimum propensity score must be lower than 1, but {min_pscore} is given.'
+    min_pscore: float = 0.0
+    estimator_name: str = "ipw"
+    assert (
+        min_pscore <= 1.0
+    ), f"minimum propensity score must be lower than 1, but {min_pscore} is given."
 
-    def _estimate_round_rewards(self,
-                                reward: np.ndarray,
-                                pscore: np.ndarray,
-                                action_match: np.ndarray,
-                                **kwargs) -> np.ndarray:
+    def _estimate_round_rewards(
+        self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
+    ) -> np.ndarray:
         """Estimate rewards for each round.
 
         Parameters
@@ -214,11 +228,9 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         """
         return (action_match * reward) / pscore
 
-    def estimate_policy_value(self,
-                              reward: np.ndarray,
-                              pscore: np.ndarray,
-                              action_match: np.ndarray,
-                              **kwargs) -> np.ndarray:
+    def estimate_policy_value(
+        self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
+    ) -> np.ndarray:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
@@ -241,17 +253,20 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         """
         estimated_rewards = self._estimate_round_rewards(
-            reward=reward, pscore=pscore, action_match=action_match)
+            reward=reward, pscore=pscore, action_match=action_match
+        )
         return np.mean(estimated_rewards)
 
-    def estimate_interval(self,
-                          reward: np.ndarray,
-                          pscore: np.ndarray,
-                          action_match: np.ndarray,
-                          alpha: float,
-                          n_bootstrap_samples: int,
-                          random_state: Optional[int] = None,
-                          **kwargs) -> Dict[str, float]:
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        action_match: np.ndarray,
+        alpha: float,
+        n_bootstrap_samples: int,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
         Parameters
@@ -283,12 +298,14 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         """
         estimated_rewards = self._estimate_round_rewards(
-            reward=reward, pscore=pscore, action_match=action_match)
+            reward=reward, pscore=pscore, action_match=action_match
+        )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state)
+            random_state=random_state,
+        )
 
 
 @dataclass
@@ -327,13 +344,12 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
 
     """
-    estimator_name: str = 'snipw'
 
-    def _estimate_round_rewards(self,
-                                reward: np.ndarray,
-                                pscore: np.ndarray,
-                                action_match: np.ndarray,
-                                **kwargs) -> np.ndarray:
+    estimator_name: str = "snipw"
+
+    def _estimate_round_rewards(
+        self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
+    ) -> np.ndarray:
         """Estimate rewards for each round.
 
         Parameters
@@ -393,9 +409,12 @@ class DirectMethod(BaseOffPolicyEstimator):
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
     """
-    estimator_name: str = 'dm'
 
-    def _estimate_round_rewards(self, estimated_rewards_by_reg_model: np.ndarray, **kwargs) -> float:
+    estimator_name: str = "dm"
+
+    def _estimate_round_rewards(
+        self, estimated_rewards_by_reg_model: np.ndarray, **kwargs
+    ) -> float:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
@@ -411,7 +430,9 @@ class DirectMethod(BaseOffPolicyEstimator):
         """
         return estimated_rewards_by_reg_model
 
-    def estimate_policy_value(self, estimated_rewards_by_reg_model: np.ndarray, **kwargs) -> float:
+    def estimate_policy_value(
+        self, estimated_rewards_by_reg_model: np.ndarray, **kwargs
+    ) -> float:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
@@ -427,12 +448,14 @@ class DirectMethod(BaseOffPolicyEstimator):
         """
         return np.mean(estimated_rewards_by_reg_model)
 
-    def estimate_interval(self,
-                          estimated_rewards_by_reg_model: np.ndarray,
-                          alpha: float,
-                          n_bootstrap_samples: int,
-                          random_state: Optional[int] = None,
-                          **kwargs) -> Dict[str, float]:
+    def estimate_interval(
+        self,
+        estimated_rewards_by_reg_model: np.ndarray,
+        alpha: float,
+        n_bootstrap_samples: int,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
         Parameters
@@ -459,7 +482,8 @@ class DirectMethod(BaseOffPolicyEstimator):
             samples=estimated_rewards_by_reg_model,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state)
+            random_state=random_state,
+        )
 
 
 @dataclass
@@ -500,14 +524,17 @@ class DoublyRobust(InverseProbabilityWeighting):
     "More Robust Doubly Robust Off-policy Evaluation.", 2018.
 
     """
-    estimator_name: str = 'dr'
 
-    def _estimate_round_rewards(self,
-                                reward: np.ndarray,
-                                pscore: np.ndarray,
-                                estimated_rewards_by_reg_model: np.ndarray,
-                                action_match: np.ndarray,
-                                **kwargs) -> np.ndarray:
+    estimator_name: str = "dr"
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        action_match: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
         """Estimate rewards for each round.
 
         Parameters
@@ -532,13 +559,17 @@ class DoublyRobust(InverseProbabilityWeighting):
             Rewards estimated by the DR estimator for each round.
 
         """
-        return ((action_match * (reward - estimated_rewards_by_reg_model)) / pscore) + estimated_rewards_by_reg_model
+        return (
+            (action_match * (reward - estimated_rewards_by_reg_model)) / pscore
+        ) + estimated_rewards_by_reg_model
 
-    def estimate_policy_value(self,
-                              reward: np.ndarray,
-                              pscore: np.ndarray,
-                              action_match: np.ndarray,
-                              estimated_rewards_by_reg_model: np.ndarray) -> float:
+    def estimate_policy_value(
+        self,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        action_match: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+    ) -> float:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
@@ -564,19 +595,24 @@ class DoublyRobust(InverseProbabilityWeighting):
 
         """
         estimated_rewards = self._estimate_round_rewards(
-            reward=reward, pscore=pscore, action_match=action_match,
-            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,)
+            reward=reward,
+            pscore=pscore,
+            action_match=action_match,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         return np.mean(estimated_rewards)
 
-    def estimate_interval(self,
-                          reward: np.ndarray,
-                          pscore: np.ndarray,
-                          action_match: np.ndarray,
-                          estimated_rewards_by_reg_model: np.ndarray,
-                          alpha: float,
-                          n_bootstrap_samples: int,
-                          random_state: Optional[int] = None,
-                          **kwargs) -> Dict[str, float]:
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        action_match: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        alpha: float,
+        n_bootstrap_samples: int,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
         Parameters
@@ -611,13 +647,17 @@ class DoublyRobust(InverseProbabilityWeighting):
 
         """
         estimated_rewards = self._estimate_round_rewards(
-            reward=reward, pscore=pscore, action_match=action_match,
-            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,)
+            reward=reward,
+            pscore=pscore,
+            action_match=action_match,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state)
+            random_state=random_state,
+        )
 
 
 @dataclass
@@ -654,14 +694,17 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
 
     """
-    estimator_name: str = 'sndr'
 
-    def _estimate_round_rewards(self,
-                                reward: np.ndarray,
-                                pscore: np.ndarray,
-                                estimated_rewards_by_reg_model: np.ndarray,
-                                action_match: np.ndarray,
-                                **kwargs) -> np.ndarray:
+    estimator_name: str = "sndr"
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        action_match: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
         """Estimate rewards for each round.
 
         Parameters
@@ -686,7 +729,9 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Rewards estimated by the SNDR estimator for each round.
 
         """
-        round_rewards = (action_match * (reward - estimated_rewards_by_reg_model) / pscore)
+        round_rewards = (
+            action_match * (reward - estimated_rewards_by_reg_model) / pscore
+        )
         round_rewards += estimated_rewards_by_reg_model
         round_rewards /= (action_match / pscore).mean()
         return round_rewards
@@ -731,16 +776,21 @@ class SwitchDoublyRobust(DoublyRobust):
     "Optimal and Adaptive Off-policy Evaluation in Contextual Bandits", 2016.
 
     """
-    tau: float = 1000
-    estimator_name: str = 'switch-dr'
-    assert tau >= 1., f'switching hyperparameter should be larger than 1. but {tau} is given.'
 
-    def _estimate_round_rewards(self,
-                                reward: np.ndarray,
-                                pscore: np.ndarray,
-                                estimated_rewards_by_reg_model: np.ndarray,
-                                action_match: np.ndarray,
-                                **kwargs) -> float:
+    tau: float = 1000
+    estimator_name: str = "switch-dr"
+    assert (
+        tau >= 1.0
+    ), f"switching hyperparameter should be larger than 1. but {tau} is given."
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        action_match: np.ndarray,
+        **kwargs,
+    ) -> float:
         """Estimate rewards for each round.
 
         Parameters
@@ -765,7 +815,15 @@ class SwitchDoublyRobust(DoublyRobust):
             Rewards estimated by the Switch-DR estimator for each round.
 
         """
-        switch_indicator = np.array((1. / pscore) <= self.tau, dtype=int)
-        dr_estimated_rewards = ((action_match * (reward - estimated_rewards_by_reg_model)) / pscore)
+        switch_indicator = np.array((1.0 / pscore) <= self.tau, dtype=int)
+        dr_estimated_rewards = (
+            action_match * (reward - estimated_rewards_by_reg_model)
+        ) / pscore
         dr_estimated_rewards += estimated_rewards_by_reg_model
-        return switch_indicator * dr_estimated_rewards + (1 - switch_indicator) * estimated_rewards_by_reg_model
+        switch_dr_estimated_rewards = switch_indicator * dr_estimated_rewards
+        switch_dr_estimated_rewards += (
+            1 - switch_indicator
+        ) * estimated_rewards_by_reg_model
+
+        return switch_dr_estimated_rewards
+

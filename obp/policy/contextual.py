@@ -9,7 +9,6 @@ import numpy as np
 from sklearn.utils import check_random_state
 from scipy.optimize import minimize
 
-
 from .base import BaseContextualPolicy
 from ..utils import sigmoid
 
@@ -52,18 +51,23 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
     """
-    epsilon: float = 0.
+
+    epsilon: float = 0.0
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert 0 <= self.epsilon <= 1, f'epsilon must be in [0, 1], but {self.epsilon} is set.'
-        self.policy_name = f'logistic_egreedy_{self.epsilon}'
+        assert (
+            0 <= self.epsilon <= 1
+        ), f"epsilon must be in [0, 1], but {self.epsilon} is set."
+        self.policy_name = f"logistic_egreedy_{self.epsilon}"
 
         super().__post_init__()
         self.model_list = [
             MiniBatchLogisticRegression(
-                lambda_=self.lambda_list[i], alpha=self.alpha_list[i], dim=self.dim)
-            for i in np.arange(self.n_actions)]
+                lambda_=self.lambda_list[i], alpha=self.alpha_list[i], dim=self.dim
+            )
+            for i in np.arange(self.n_actions)
+        ]
         self.reward_lists = [[] for i in np.arange(self.n_actions)]
         self.context_lists = [[] for i in np.arange(self.n_actions)]
 
@@ -81,14 +85,22 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
             List of selected actions.
         """
         if self.action_counts.min() == 0:
-            return self.random_.choice(self.n_actions, size=self.len_list, replace=False)
+            return self.random_.choice(
+                self.n_actions, size=self.len_list, replace=False
+            )
         else:
             if self.random_.rand() > self.epsilon:
-                theta = np.array([model.predict_proba(context) for model in self.model_list]).flatten()
-                unsorted_max_arms = np.argpartition(-theta, self.len_list)[:self.len_list]
+                theta = np.array(
+                    [model.predict_proba(context) for model in self.model_list]
+                ).flatten()
+                unsorted_max_arms = np.argpartition(-theta, self.len_list)[
+                    : self.len_list
+                ]
                 return unsorted_max_arms[np.argsort(-theta[unsorted_max_arms])]
             else:
-                return self.random_.choice(self.n_actions, size=self.len_list, replace=False)
+                return self.random_.choice(
+                    self.n_actions, size=self.len_list, replace=False
+                )
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
         """Update policy parameters.
@@ -111,8 +123,10 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
         if self.n_trial % self.batch_size == 0:
             for action, model in enumerate(self.model_list):
                 if not len(self.reward_lists[action]) == 0:
-                    model.fit(X=np.concatenate(self.context_lists[action], axis=0),
-                              y=np.array(self.reward_lists[action]))
+                    model.fit(
+                        X=np.concatenate(self.context_lists[action], axis=0),
+                        y=np.array(self.reward_lists[action]),
+                    )
             self.reward_lists = [[] for i in np.arange(self.n_actions)]
             self.context_lists = [[] for i in np.arange(self.n_actions)]
 
@@ -159,18 +173,23 @@ class LogisticUCB(BaseContextualPolicy):
     Lihong Li, Wei Chu, John Langford, and Robert E Schapire.
     "A Contextual-bandit Approach to Personalized News Article Recommendation," 2010.
     """
-    epsilon: float = 0.
+
+    epsilon: float = 0.0
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert 0 <= self.epsilon <= 1, f'epsilon must be in [0, 1], but {self.epsilon} is set.'
-        self.policy_name = f'logistic_ucb_{self.epsilon}'
+        assert (
+            0 <= self.epsilon <= 1
+        ), f"epsilon must be in [0, 1], but {self.epsilon} is set."
+        self.policy_name = f"logistic_ucb_{self.epsilon}"
 
         super().__post_init__()
         self.model_list = [
             MiniBatchLogisticRegression(
-                lambda_=self.lambda_list[i], alpha=self.alpha_list[i], dim=self.dim)
-            for i in np.arange(self.n_actions)]
+                lambda_=self.lambda_list[i], alpha=self.alpha_list[i], dim=self.dim
+            )
+            for i in np.arange(self.n_actions)
+        ]
         self.reward_lists = [[] for i in np.arange(self.n_actions)]
         self.context_lists = [[] for i in np.arange(self.n_actions)]
 
@@ -188,14 +207,23 @@ class LogisticUCB(BaseContextualPolicy):
             List of selected actions.
         """
         if self.action_counts.min() == 0:
-            return self.random_.choice(self.n_actions, size=self.len_list, replace=False)
+            return self.random_.choice(
+                self.n_actions, size=self.len_list, replace=False
+            )
         else:
-            theta = np.array([model.predict_proba(context)
-                              for model in self.model_list]).flatten()
-            std = np.array([np.sqrt(np.sum((model._q ** (-1)) * (context ** 2)))
-                            for model in self.model_list]).flatten()
+            theta = np.array(
+                [model.predict_proba(context) for model in self.model_list]
+            ).flatten()
+            std = np.array(
+                [
+                    np.sqrt(np.sum((model._q ** (-1)) * (context ** 2)))
+                    for model in self.model_list
+                ]
+            ).flatten()
             ucb_score = theta + self.epsilon * std
-            unsorted_max_arms = np.argpartition(-ucb_score, self.len_list)[:self.len_list]
+            unsorted_max_arms = np.argpartition(-ucb_score, self.len_list)[
+                : self.len_list
+            ]
             return unsorted_max_arms[np.argsort(-ucb_score[unsorted_max_arms])]
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
@@ -219,8 +247,10 @@ class LogisticUCB(BaseContextualPolicy):
         if self.n_trial % self.batch_size == 0:
             for action, model in enumerate(self.model_list):
                 if not len(self.reward_lists[action]) == 0:
-                    model.fit(X=np.concatenate(self.context_lists[action], axis=0),
-                              y=np.array(self.reward_lists[action]))
+                    model.fit(
+                        X=np.concatenate(self.context_lists[action], axis=0),
+                        y=np.array(self.reward_lists[action]),
+                    )
             self.reward_lists = [[] for i in np.arange(self.n_actions)]
             self.context_lists = [[] for i in np.arange(self.n_actions)]
 
@@ -264,7 +294,8 @@ class LogisticTS(BaseContextualPolicy):
     Olivier Chapelle and Lihong Li.
     "An empirical evaluation of thompson sampling," 2011.
     """
-    policy_name: str = 'logistic_ts'
+
+    policy_name: str = "logistic_ts"
 
     def __post_init__(self) -> None:
         """Initialize class."""
@@ -274,7 +305,7 @@ class LogisticTS(BaseContextualPolicy):
                 lambda_=self.lambda_list[i],
                 alpha=self.alpha_list[i],
                 dim=self.dim,
-                random_state=self.random_state
+                random_state=self.random_state,
             )
             for i in np.arange(self.n_actions)
         ]
@@ -295,11 +326,17 @@ class LogisticTS(BaseContextualPolicy):
             List of selected actions.
         """
         if self.action_counts.min() == 0:
-            return self.random_.choice(self.n_actions, size=self.len_list, replace=False)
+            return self.random_.choice(
+                self.n_actions, size=self.len_list, replace=False
+            )
         else:
-            theta = np.array([model.predict_proba_with_sampling(context)
-                              for model in self.model_list]).flatten()
-            unsorted_max_arms = np.argpartition(-theta, self.len_list)[:self.len_list]
+            theta = np.array(
+                [
+                    model.predict_proba_with_sampling(context)
+                    for model in self.model_list
+                ]
+            ).flatten()
+            unsorted_max_arms = np.argpartition(-theta, self.len_list)[: self.len_list]
             return unsorted_max_arms[np.argsort(-theta[unsorted_max_arms])]
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
@@ -323,8 +360,10 @@ class LogisticTS(BaseContextualPolicy):
         if self.n_trial % self.batch_size == 0:
             for action, model in enumerate(self.model_list):
                 if not len(self.reward_lists[action]) == 0:
-                    model.fit(X=np.concatenate(self.context_lists[action], axis=0),
-                              y=np.array(self.reward_lists[action]))
+                    model.fit(
+                        X=np.concatenate(self.context_lists[action], axis=0),
+                        y=np.array(self.reward_lists[action]),
+                    )
             self.reward_lists = [[] for i in np.arange(self.n_actions)]
             self.context_lists = [[] for i in np.arange(self.n_actions)]
 
@@ -332,6 +371,7 @@ class LogisticTS(BaseContextualPolicy):
 @dataclass
 class MiniBatchLogisticRegression:
     """MiniBatch Online Logistic Regression Model."""
+
     lambda_: float
     alpha: float
     dim: int
@@ -346,12 +386,17 @@ class MiniBatchLogisticRegression:
     def loss(self, w: np.ndarray, *args) -> float:
         """Calculate loss function."""
         X, y = args
-        return 0.5 * (self._q * (w - self._m)).dot(w - self._m) + np.log(1 + np.exp(-y * w.dot(X.T))).sum()
+        return (
+            0.5 * (self._q * (w - self._m)).dot(w - self._m)
+            + np.log(1 + np.exp(-y * w.dot(X.T))).sum()
+        )
 
     def grad(self, w: np.ndarray, *args) -> np.ndarray:
         """Calculate gradient."""
         X, y = args
-        return self._q * (w - self._m) + (-1) * (((y * X.T) / (1. + np.exp(y * w.dot(X.T)))).T).sum(axis=0)
+        return self._q * (w - self._m) + (-1) * (
+            ((y * X.T) / (1.0 + np.exp(y * w.dot(X.T)))).T
+        ).sum(axis=0)
 
     def sample(self) -> np.ndarray:
         """Sample coefficient vector from the prior distribution."""
@@ -359,14 +404,20 @@ class MiniBatchLogisticRegression:
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         """Update coefficient vector by the mini-batch data."""
-        self._m = minimize(self.loss, self._m, args=(X, y), jac=self.grad, method="L-BFGS-B",
-                           options={'maxiter': 20, 'disp': False}).x
+        self._m = minimize(
+            self.loss,
+            self._m,
+            args=(X, y),
+            jac=self.grad,
+            method="L-BFGS-B",
+            options={"maxiter": 20, "disp": False},
+        ).x
         P = (1 + np.exp(1 + X.dot(self._m))) ** (-1)
         self._q = self._q + (P * (1 - P)).dot(X ** 2)
 
     def sd(self) -> np.ndarray:
         """Standard deviation for the coefficient vector."""
-        return self.alpha * (self._q)**(-1.0)
+        return self.alpha * (self._q) ** (-1.0)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Predict extected probability by the expected coefficient."""

@@ -4,13 +4,12 @@
 """Dataset Class for Real-World Logged Bandit Feedback."""
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Union, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
 from .base import BaseRealBanditDataset, BanditFeedback
 
@@ -39,15 +38,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Name of the dataset.
 
     """
+
     behavior_policy: str
     campaign: str
-    data_path: Path = Path('./obd')
-    dataset_name: str = 'obd'
+    data_path: Path = Path("./obd")
+    dataset_name: str = "obd"
 
     def __post_init__(self) -> None:
         """Initialize Open Bandit Dataset Class."""
         self.data_path = self.data_path / self.behavior_policy / self.campaign
-        self.raw_data_file = f'{self.campaign}.csv'
+        self.raw_data_file = f"{self.campaign}.csv"
 
         self.load_raw_data()
         self.pre_process()
@@ -73,10 +73,9 @@ class OpenBanditDataset(BaseRealBanditDataset):
         return self.position.max() + 1
 
     @classmethod
-    def calc_on_policy_policy_value_estimate(cls,
-                                             behavior_policy: str,
-                                             campaign: str,
-                                             data_path: Path = Path('./obd')) -> float:
+    def calc_on_policy_policy_value_estimate(
+        cls, behavior_policy: str, campaign: str, data_path: Path = Path("./obd")
+    ) -> float:
         """Calculate on-policy  (used as a ground-truth policy value).
 
         Parameters
@@ -99,27 +98,31 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
         """
         return cls(
-            behavior_policy=behavior_policy,
-            campaign=campaign,
-            data_path=data_path
+            behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
         ).reward.mean()
 
     def load_raw_data(self) -> None:
         """Load raw open bandit dataset."""
         self.data = pd.read_csv(self.data_path / self.raw_data_file, index_col=0)
-        self.data.sort_values('timestamp', inplace=True)
-        self.action = self.data['item_id'].values
-        self.position = (rankdata(self.data['position'].values, 'dense') - 1).astype(int)
-        self.reward = self.data['click'].values
-        self.pscore = self.data['propensity_score'].values
+        self.data.sort_values("timestamp", inplace=True)
+        self.action = self.data["item_id"].values
+        self.position = (rankdata(self.data["position"].values, "dense") - 1).astype(
+            int
+        )
+        self.reward = self.data["click"].values
+        self.pscore = self.data["propensity_score"].values
 
     def pre_process(self) -> None:
         """Preprocess raw open bandit dataset."""
-        user_cols = self.data.columns.str.contains('user_feature')
-        self.context = pd.get_dummies(self.data.loc[:, user_cols], drop_first=True).values
-        item_context = pd.read_csv(self.data_path / 'item_context.csv', index_col=0)
-        item_feature_0 = item_context['item_feature_0']
-        item_feature_cat = item_context.drop('item_feature_0', 1).apply(LabelEncoder().fit_transform)
+        user_cols = self.data.columns.str.contains("user_feature")
+        self.context = pd.get_dummies(
+            self.data.loc[:, user_cols], drop_first=True
+        ).values
+        item_context = pd.read_csv(self.data_path / "item_context.csv", index_col=0)
+        item_feature_0 = item_context["item_feature_0"]
+        item_feature_cat = item_context.drop("item_feature_0", 1).apply(
+            LabelEncoder().fit_transform
+        )
         self.action_context = pd.concat([item_feature_cat, item_feature_0], 1).values
 
     def obtain_batch_bandit_feedback(self) -> BanditFeedback:
@@ -132,10 +135,12 @@ class OpenBanditDataset(BaseRealBanditDataset):
             reward=self.reward,
             pscore=self.pscore,
             context=self.context,
-            action_context=self.action_context
+            action_context=self.action_context,
         )
 
-    def sample_bootstrap_bandit_feedback(self, random_state: Optional[int] = None) -> BanditFeedback:
+    def sample_bootstrap_bandit_feedback(
+        self, random_state: Optional[int] = None
+    ) -> BanditFeedback:
         """Sample bootstrap logged bandit feedback.
 
         Parameters
@@ -151,9 +156,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         """
         random_ = check_random_state(random_state)
         bootstrap_idx = random_.choice(
-            np.arange(self.n_rounds),
-            size=self.n_rounds,
-            replace=True
+            np.arange(self.n_rounds), size=self.n_rounds, replace=True
         )
 
         return dict(
@@ -164,64 +167,5 @@ class OpenBanditDataset(BaseRealBanditDataset):
             reward=self.reward[bootstrap_idx],
             pscore=self.pscore[bootstrap_idx],
             context=self.context[bootstrap_idx, :],
-            action_context=self.action_context
+            action_context=self.action_context,
         )
-
-    def split_data(self,
-                   test_size: Union[int, float] = 0.3,
-                   random_state: int = 0) -> Tuple[BanditFeedback, BanditFeedback]:
-        """Split dataset into training and test sets.
-
-        Parameters
-        ----------
-        test_size: int, float, default=0.3
-            If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
-            If int, represents the absolute number of test samples.
-
-        random_state: int, default: 0
-            Controls the shuffling applied to the data before applying the split.
-
-        Returns:
-        ----------
-        train: BanditFeedback
-            Dictionary storing the training set after preprocessing.
-
-        test: BanditFeedback
-            Dictionary storing the test set after preprocessing.
-        """
-        action_train, action_test, pos_train, pos_test, reward_train, reward_test,\
-            pscore_train, pscore_test, context_train, context_test =\
-            train_test_split(
-                self.action,
-                self.position,
-                self.reward,
-                self.pscore,
-                self.context,
-                test_size=test_size,
-                random_state=random_state
-            )
-
-        self.train_size = action_train.shape[0]
-        self.test_size = action_test.shape[0]
-        train = dict(
-            n_rounds=self.train_size,
-            n_actions=self.n_actions,
-            action=action_train,
-            position=pos_train,
-            reward=reward_train,
-            pscore=pscore_train,
-            context=context_train,
-            action_context=self.action_context
-        )
-        test = dict(
-            n_rounds=self.test_size,
-            n_actions=self.n_actions,
-            action=action_test,
-            position=pos_test,
-            reward=reward_test,
-            pscore=pscore_test,
-            context=context_test,
-            action_context=self.action_context
-        )
-
-        return train, test

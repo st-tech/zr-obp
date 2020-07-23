@@ -35,12 +35,13 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
     policy_type: str, default: 'contextfree'
         Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
     """
+
     n_actions: int
     len_list: int = 1
     batch_size: int = 1
     n_trial: int = 0
     random_state: Optional[int] = None
-    policy_type: str = 'contextfree'
+    policy_type: str = "contextfree"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
@@ -104,15 +105,16 @@ class BaseContextualPolicy(metaclass=ABCMeta):
     policy_type: str, default: 'contextual'
         Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'
     """
+
     dim: int
     n_actions: int
     len_list: int = 1
     batch_size: int = 1
     n_trial: int = 0
-    alpha_: float = 1.
-    lambda_: float = 1.
+    alpha_: float = 1.0
+    lambda_: float = 1.0
     random_state: Optional[int] = None
-    policy_type: str = 'contextual'
+    policy_type: str = "contextual"
 
     def __post_init__(self) -> None:
         """Initialize class."""

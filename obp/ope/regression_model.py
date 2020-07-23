@@ -34,8 +34,9 @@ class RegressionModel:
     "More Robust Doubly Robust Off-policy Evaluation.", 2018.
 
     """
+
     base_model: BaseEstimator
-    fitting_method: str = 'normal'
+    fitting_method: str = "normal"
 
     def fit(self, bandit_feedback: BanditFeedback, action_context: np.ndarray) -> None:
         """Fit the regression model on given logged bandit feedback data.
@@ -53,24 +54,36 @@ class RegressionModel:
         X = self._pre_process_for_reg_model(
             bandit_feedback=bandit_feedback,
             action_context=action_context,
-            action=bandit_feedback['action']
+            action=bandit_feedback["action"],
         )
         # train the base model according to the given `fitting method`
-        if self.fitting_method == 'normal':
-            self.base_model.fit(X, bandit_feedback['reward'])
-        elif self.fitting_method == 'iw':
-            sample_weight = np.mean(bandit_feedback['pscore']) / bandit_feedback['pscore']
-            self.base_model.fit(X, bandit_feedback['reward'], sample_weight=sample_weight)
-        elif self.fitting_method == 'mrdr':
-            sample_weight = ((1. - bandit_feedback['pscore']) / bandit_feedback['pscore']**2)
-            self.base_model.fit(X, bandit_feedback['reward'], sample_weight=sample_weight)
+        if self.fitting_method == "normal":
+            self.base_model.fit(X, bandit_feedback["reward"])
+        elif self.fitting_method == "iw":
+            sample_weight = (
+                np.mean(bandit_feedback["pscore"]) / bandit_feedback["pscore"]
+            )
+            self.base_model.fit(
+                X, bandit_feedback["reward"], sample_weight=sample_weight
+            )
+        elif self.fitting_method == "mrdr":
+            sample_weight = (1.0 - bandit_feedback["pscore"]) / bandit_feedback[
+                "pscore"
+            ] ** 2
+            self.base_model.fit(
+                X, bandit_feedback["reward"], sample_weight=sample_weight
+            )
         else:
-            raise ValueError(f"Undefined fitting_method {self.fitting_method} is given.")
+            raise ValueError(
+                f"Undefined fitting_method {self.fitting_method} is given."
+            )
 
-    def predict(self,
-                bandit_feedback: BanditFeedback,
-                action_context: np.ndarray,
-                selected_actions: np.ndarray) -> np.ndarray:
+    def predict(
+        self,
+        bandit_feedback: BanditFeedback,
+        action_context: np.ndarray,
+        selected_actions: np.ndarray,
+    ) -> np.ndarray:
         """Predict the mean reward function.
 
         Parameters
@@ -92,13 +105,12 @@ class RegressionModel:
         """
         # create context vector to make predictions
         selected_actions_at_positions = selected_actions[
-            np.arange(bandit_feedback['n_rounds']),
-            bandit_feedback['position']
+            np.arange(bandit_feedback["n_rounds"]), bandit_feedback["position"]
         ]
         X = self._pre_process_for_reg_model(
             bandit_feedback=bandit_feedback,
             action_context=action_context,
-            action=selected_actions_at_positions
+            action=selected_actions_at_positions,
         )
         # make predictions
         if is_classifier(self.base_model):
@@ -106,10 +118,12 @@ class RegressionModel:
         else:
             return self.base_model.predict(X)
 
-    def _pre_process_for_reg_model(self,
-                                   bandit_feedback: BanditFeedback,
-                                   action_context: np.ndarray,
-                                   action: np.ndarray) -> np.ndarray:
+    def _pre_process_for_reg_model(
+        self,
+        bandit_feedback: BanditFeedback,
+        action_context: np.ndarray,
+        action: np.ndarray,
+    ) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
 
         Note
@@ -128,4 +142,8 @@ class RegressionModel:
             Actions for each round.
 
         """
-        return np.c_[bandit_feedback['position'], bandit_feedback['context'], action_context[action]]
+        return np.c_[
+            bandit_feedback["position"],
+            bandit_feedback["context"],
+            action_context[action],
+        ]

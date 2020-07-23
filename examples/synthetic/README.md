@@ -39,19 +39,20 @@ python evaluate_off_policy_estimators.py\
     --random_state 12345
 
 # relative estimation errors (lower is better) and their 95% confidence intervals of OPE estimators.
-# our evaluation of OPE procedure suggests that IPW and SNIPW perform better than other
-# model dependent estimators including DM, DR, SNDR, and Switch-DR.
+# our evaluation of OPE procedure suggests that DR and Switch-DR perform better than other
+# model dependent estimators including DM, IPW, SNIPS, and SNDR.
 # ============================================================
 # random_state=12345
 # ------------------------------------------------------------
 #                mean  95.0% CI (lower)  95.0% CI (upper)
-# dm         0.084652           0.05387           0.11658
-# ipw        0.023547           0.01196           0.03720
-# snipw      0.031046           0.01254           0.05261
-# dr         0.034639           0.02392           0.04739
-# sndr       0.065582           0.03284           0.10466
-# switch-dr  0.050021           0.03090           0.07106
+# dm         0.027422           0.01739           0.03866
+# ipw        0.041248           0.01669           0.06655
+# snipw      0.046043           0.03420           0.05703
+# dr         0.024526           0.01723           0.03270
+# sndr       0.051949           0.02563           0.08765
+# switch-dr  0.017145           0.00904           0.02579
 # ============================================================
 ```
 
-Let's try the evaluation of OPE with other experimental settings!
+The above result can change with different situations.
+You can try the evaluation of OPE with other experimental settings easily!

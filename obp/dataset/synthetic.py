@@ -98,13 +98,16 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         'pscore': array([0.1083297 , 0.09498828, 0.08607129, ..., 0.11173138, 0.10396257, 0.12499258])}
 
     """
+
     n_actions: int
     dim_context: int
     dim_action_context: int
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
-    behavior_policy_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
+    behavior_policy_function: Optional[
+        Callable[[np.ndarray, np.ndarray], np.ndarray]
+    ] = None
     random_state: Optional[int] = None
-    dataset_name: str = 'synthetic_contextual_bandit_dataset'
+    dataset_name: str = "synthetic_contextual_bandit_dataset"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
@@ -149,42 +152,39 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             Context-free synthetic bandit feedback dataset.
 
         """
-        context = self.random_.normal(
-            size=(n_rounds, self.dim_context)
-        )
+        context = self.random_.normal(size=(n_rounds, self.dim_context))
 
+        # sample actions for each round based on the behavior policy
         if self.behavior_policy_function is None:
             action = self.random_.choice(
-                np.arange(self.n_actions),
-                p=self.behavior_policy,
-                size=n_rounds
+                np.arange(self.n_actions), p=self.behavior_policy, size=n_rounds
             )
             pscore = self.behavior_policy[action]
         else:
             behavior_policy_ = self.behavior_policy_function(
-                context=context,
-                action_context=self.action_context
+                context=context, action_context=self.action_context
             )
             action = np.array(
                 [
                     self.random_.choice(
-                        np.arange(self.n_actions),
-                        p=behavior_policy_[i],
+                        np.arange(self.n_actions), p=behavior_policy_[i],
                     )
                     for i in np.arange(n_rounds)
                 ]
             )
             pscore = behavior_policy_[np.arange(n_rounds), action]
 
+        # sample reward for each round based on the reward function
         if self.reward_function is None:
             expected_reward_ = self.expected_reward
             reward = self.random_.binomial(n=1, p=expected_reward_[action])
         else:
             expected_reward_ = self.reward_function(
-                context=context,
-                action_context=self.action_context
+                context=context, action_context=self.action_context
             )
-            reward = self.random_.binomial(n=1, p=expected_reward_[np.arange(n_rounds), action])
+            reward = self.random_.binomial(
+                n=1, p=expected_reward_[np.arange(n_rounds), action]
+            )
         return dict(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
@@ -193,11 +193,13 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             position=np.zeros(n_rounds, dtype=int),
             reward=reward,
             expected_reward=expected_reward_,
-            pscore=pscore
+            pscore=pscore,
         )
 
 
-def linear_reward_function(context: np.ndarray, action_context: np.ndarray) -> np.ndarray:
+def linear_reward_function(
+    context: np.ndarray, action_context: np.ndarray
+) -> np.ndarray:
     """Linear mean reward function for synthetic bandit datasets.
 
     Parameters
@@ -216,16 +218,17 @@ def linear_reward_function(context: np.ndarray, action_context: np.ndarray) -> n
 
     """
     logits = np.zeros((context.shape[0], action_context.shape[0]))
-    coef_ = np.random.uniform(size=context.shape[1])
-    action_coef_ = np.random.uniform(size=action_context.shape[1])
+    # each arm has different coefficient vectors
+    coef_ = np.random.uniform(size=(action_context.shape[0], context.shape[1]))
     for d in np.arange(action_context.shape[0]):
-        action_context_ = action_context[d]
-        logits[:, d] = context @ coef_ + action_context_ @ action_coef_
+        logits[:, d] = context @ coef_[d]
 
     return sigmoid(logits)
 
 
-def linear_behavior_policy(context: np.ndarray, action_context: np.ndarray) -> np.ndarray:
+def linear_behavior_policy(
+    context: np.ndarray, action_context: np.ndarray
+) -> np.ndarray:
     """Linear contextual behavior policy for synthetic bandit datasets.
 
     Parameters

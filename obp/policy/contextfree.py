@@ -41,10 +41,10 @@ class EpsilonGreedy(BaseContextFreePolicy):
     policy_name: str, default: f'egreedy_{epsilon}'.
         Name of bandit policy.
     """
-    epsilon: float = 1.
-    policy_name: str = f'egreedy_{epsilon}'
 
-    assert 0 <= epsilon <= 1, f'epsilon must be in [0, 1], but {epsilon} is set.'
+    epsilon: float = 1.0
+    policy_name: str = f"egreedy_{epsilon}"
+    assert 0 <= epsilon <= 1, f"epsilon must be in [0, 1], but {epsilon} is set."
 
     def select_action(self) -> np.ndarray:
         """Select a list of actions.
@@ -56,10 +56,14 @@ class EpsilonGreedy(BaseContextFreePolicy):
         """
         self.n_trial += 1
         if self.random_.rand() > self.epsilon:
-            unsorted_max_arms = np.argpartition(-self.reward_counts, self.len_list)[:self.len_list]
+            unsorted_max_arms = np.argpartition(-self.reward_counts, self.len_list)[
+                : self.len_list
+            ]
             return unsorted_max_arms[np.argsort(-self.reward_counts[unsorted_max_arms])]
         else:
-            return self.random_.choice(self.n_actions, size=self.len_list, replace=False)
+            return self.random_.choice(
+                self.n_actions, size=self.len_list, replace=False
+            )
 
     def update_params(self, action: int, reward: float) -> None:
         """Update policy parameters.
@@ -111,15 +115,14 @@ class Random(EpsilonGreedy):
     policy_name: str, default: 'random'.
         Name of bandit policy.
     """
-    policy_name: str = 'random'
+
+    policy_name: str = "random"
 
 
 @dataclass
 class BernoulliTS(BaseContextFreePolicy):
     """Bernoulli Thompson Sampling Policy
 
-    Parameters
-    ----------
     Parameters
     ----------
     n_actions: int
@@ -150,9 +153,10 @@ class BernoulliTS(BaseContextFreePolicy):
     policy_name: str, default: 'bts'
         Name of bandit policy.
     """
+
     alpha: Optional[List[float]] = None
     beta: Optional[List[float]] = None
-    policy_name: str = 'bts'
+    policy_name: str = "bts"
 
     def __post_init__(self) -> None:
         """Initialize class."""
@@ -169,9 +173,11 @@ class BernoulliTS(BaseContextFreePolicy):
             List of selected actions.
         """
         self.n_trial += 1
-        theta = self.random_.beta(a=self.reward_counts + self.alpha,
-                                  b=(self.action_counts - self.reward_counts) + self.beta)
-        unsorted_max_arms = np.argpartition(-theta, self.len_list)[:self.len_list]
+        theta = self.random_.beta(
+            a=self.reward_counts + self.alpha,
+            b=(self.action_counts - self.reward_counts) + self.beta,
+        )
+        unsorted_max_arms = np.argpartition(-theta, self.len_list)[: self.len_list]
         return unsorted_max_arms[np.argsort(-theta[unsorted_max_arms])]
 
     def update_params(self, action: int, reward: float) -> None:

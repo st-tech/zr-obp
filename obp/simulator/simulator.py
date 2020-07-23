@@ -10,7 +10,9 @@ from ..dataset import BanditFeedback
 from ..policy import BanditPolicy
 
 
-def run_bandit_simulation(bandit_feedback: BanditFeedback, policy: BanditPolicy) -> np.ndarray:
+def run_bandit_simulation(
+    bandit_feedback: BanditFeedback, policy: BanditPolicy
+) -> np.ndarray:
     """Run bandit algorithm on logged bandit feedback data.
 
     Parameters
@@ -31,31 +33,34 @@ def run_bandit_simulation(bandit_feedback: BanditFeedback, policy: BanditPolicy)
 
     policy_ = policy
     selected_actions_list = list()
-    dim_context = bandit_feedback['context'].shape[1]
-    for action_, reward_, position_, context_ in\
-            tqdm(
-                zip(
-                    bandit_feedback['action'],
-                    bandit_feedback['reward'],
-                    bandit_feedback['position'],
-                    bandit_feedback['context']
-                ),
-            total=bandit_feedback['n_rounds']
-            ):
+    dim_context = bandit_feedback["context"].shape[1]
+    for action_, reward_, position_, context_ in tqdm(
+        zip(
+            bandit_feedback["action"],
+            bandit_feedback["reward"],
+            bandit_feedback["position"],
+            bandit_feedback["context"],
+        ),
+        total=bandit_feedback["n_rounds"],
+    ):
 
         # select a list of actions
-        if policy_.policy_type == 'contextfree':
+        if policy_.policy_type == "contextfree":
             selected_actions = policy_.select_action()
-        elif policy_.policy_type == 'contextual':
+        elif policy_.policy_type == "contextual":
             selected_actions = policy_.select_action(context_.reshape(1, dim_context))
         action_match_ = action_ == selected_actions[position_]
         # update parameters of a bandit policy
         # only when selected actions&positions are equal to logged actions&positions
         if action_match_:
-            if policy_.policy_type == 'contextfree':
+            if policy_.policy_type == "contextfree":
                 policy_.update_params(action=action_, reward=reward_)
-            elif policy_.policy_type == 'contextual':
-                policy_.update_params(action=action_, reward=reward_, context=context_.reshape(1, dim_context))
+            elif policy_.policy_type == "contextual":
+                policy_.update_params(
+                    action=action_,
+                    reward=reward_,
+                    context=context_.reshape(1, dim_context),
+                )
         selected_actions_list.append(selected_actions)
 
     return np.array(selected_actions_list)
@@ -63,6 +68,6 @@ def run_bandit_simulation(bandit_feedback: BanditFeedback, policy: BanditPolicy)
 
 def _check_bandit_feedback(bandit_feedback: BanditFeedback) -> RuntimeError:
     """Check keys of input BanditFeedback dict."""
-    for key_ in ['action', 'position', 'reward', 'pscore', 'context']:
+    for key_ in ["action", "position", "reward", "pscore", "context"]:
         if key_ not in bandit_feedback:
             raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
