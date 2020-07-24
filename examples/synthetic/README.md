@@ -21,10 +21,10 @@ python evaluate_off_policy_estimators.py\
     --random_state $random_state
 ```
 where `$n_runs` specifies the number of simulation runs in the experiment to estimate confidence intervals of the performance of OPE estimators.
-`$n_rounds` and `$n_actions` specify the number of rounds and the number of actions for the synthetic bandit data.
+`$n_rounds` and `$n_actions` specify the number of rounds and the number of actions of the synthetic bandit data.
 `$dim_context` and `$dim_action_context` specify the dimension of context vectors characterizing each round and action, respectively.
 `$counterfactual_policy` specifies the counterfactual policy.
-They should be one of 'bts', 'random', 'logistic_ts', 'logistic_ucb', and 'logistic_egreedy'.
+It should be one of 'bts', 'random', 'logistic_ts', 'logistic_ucb', and 'logistic_egreedy'.
 
 For example, the following command compares the estimation performance of the OPE estimators by synthetic bandit feedback data with 100,000 rounds, 20 actions, context vectors with five dimensions.
 
@@ -39,8 +39,7 @@ python evaluate_off_policy_estimators.py\
     --random_state 12345
 
 # relative estimation errors (lower is better) and their 95% confidence intervals of OPE estimators.
-# our evaluation of OPE procedure suggests that DR and Switch-DR perform better than other
-# model dependent estimators including DM, IPW, SNIPS, and SNDR.
+# our evaluation of OPE procedure suggests that DR and Switch-DR perform better than other estimators, including DM, IPW, SNIPS, and SNDR.
 # ============================================================
 # random_state=12345
 # ------------------------------------------------------------
