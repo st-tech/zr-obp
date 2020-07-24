@@ -1,6 +1,6 @@
 **Open Bandit Dataset & Pipeline**
 
-**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README_JN.md)**
+**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -171,7 +171,7 @@ relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / test['rew
 print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ```
 
-同じ例を使った詳細な実装例は[quickstart](./examples/quickstart/quickstart.ipynb)にあり, 実際に動かして試してみることが可能です.
+同じ例を使った詳細な実装例は[quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/)にあり, 実際に動かして試してみることが可能です.
 以下, 重要な要素について詳細に説明します.
 
 ## (1) データの読み込みと前処理
@@ -191,7 +191,7 @@ print(bandit_feedback.keys())
 ```
 
 `obp.dataset.OpenBanditDataset` クラスの `pre_process` メソッドに, 独自の特徴量エンジニアリングを実装することもできます.
-[`./examples/obd/dataset.py`](./examples/obd/dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
+[`./examples/obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/obd/custom_dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
 
 また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
 
@@ -244,7 +244,7 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 
 
 # ライセンス
-このプロジェクトはApache 2.0ライセンスを採用しています.  詳細は, [LICENSE](LICENSE) を参照してください.
+このプロジェクトはApache 2.0ライセンスを採用しています.  詳細は, [LICENSE](https://github.com/st-tech/zr-obp/blob/master/LICENSE) を参照してください.
 
 
 # 主要コントリビューター

@@ -1,6 +1,6 @@
 **Open Bandit Dataset & Pipeline**
 
-**[Documentation](https://zr-obp.readthedocs.io/en/latest/)** | **[Overview](#overview)** | **[Installation](#installation)** | **[Usage](#usage)** | **[References](#references)**  | **[Quickstart](./examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](./obd/README.md)** | **[日本語](./README_JN.md)**
+**[Documentation](https://zr-obp.readthedocs.io/en/latest/)** | **[Overview](#overview)** | **[Installation](#installation)** | **[Usage](#usage)** | **[References](#references)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd)** | **[日本語](https://github.com/st-tech/zr-obp/blob/master/README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -50,7 +50,7 @@ Each campaign randomly used either the Random algorithm or the Bernoulli Thompso
   <img width="70%" src="./images/statistics_of_obd.png" />
 </p>
 
-Please see [./obd/README.md](./obd/README.md) for the description of the dataset.
+Please see [./obd/README.md](https://github.com/st-tech/zr-obp/blob/master/obd/README.md) for the description of the dataset.
 
 ## Open Bandit Pipeline (OBP)
 
@@ -168,7 +168,7 @@ relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / bandit_fe
 print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ```
 
-A formal introduction with the same example can be found at [quickstart](./examples/quickstart/quickstart-evaluation-of-bandit-algorithms.ipynb).
+A formal introduction with the same example can be found at [quickstart](https://github.com/st-tech/zr-obp/tree/master/examples/quickstart).
 Below, we explain some important features in the example flow.
 
 
@@ -187,7 +187,7 @@ print(bandit_feedback.keys())
 ```
 
 Users can implement their own feature engineering in the `pre_process` method of `obp.dataset.OpenBanditDataset` class.
-We show an example of implementing some new feature engineering processes in [`./examples/obd/dataset.py`](./examples/obd/dataset.py). Moreover, by following the interface of `obp.dataset.BaseBanditDataset` class, one can handle future open datasets for bandit algorithms other than our OBD.
+We show an example of implementing some new feature engineering processes in [`./examples/obd/cumsom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/obd/custom_dataset.py). Moreover, by following the interface of `obp.dataset.BaseBanditDataset` class, one can handle future open datasets for bandit algorithms other than our OBD.
 
 ## (2) Offline Bandit Simulation
 
@@ -221,7 +221,7 @@ relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / bandit_fe
 # our OPE procedure suggests that BernoulliTS improves Random by 12.05%
 print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 ```
-Users can implement their own OPE estimator by following the interface of `obp.ope.BaseOffPolicyEstimator` class. `obp.ope.OffPolicyEvaluation` class summarizes and compares the estimated policy values by several off-policy estimators. A detailed usage of this class can be found at [quickstart](./examples/quickstart/quickstart-evaluation-of-bandit-algorithms.ipynb). `bandit_feedback['reward'].mean()` is the empirical mean of factual rewards (on-policy estimate of the policy value) in the log and thus is the ground-truth performance of the behavior policy (the Random policy in this example.).
+Users can implement their own OPE estimator by following the interface of `obp.ope.BaseOffPolicyEstimator` class. `obp.ope.OffPolicyEvaluation` class summarizes and compares the estimated policy values by several off-policy estimators. A detailed usage of this class can be found at [quickstart](https://github.com/st-tech/zr-obp/tree/master/examples/quickstart). `bandit_feedback['reward'].mean()` is the empirical mean of factual rewards (on-policy estimate of the policy value) in the log and thus is the ground-truth performance of the behavior policy (the Random policy in this example.).
 
 
 # Citation

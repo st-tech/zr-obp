@@ -25,6 +25,14 @@ Open Bandit Datasetは, 大規模ファッションECサイト[ZOZOTOWN](https:/
 - item_id：アイテムのインデックス（インデックスの範囲は, 「すべて」キャンペーンでは0～80, 「男性」キャンペーンでは0～33, 「女性」キャンペーンでは0～46）.
 - item feature 0-3：アイテムに関連するの特徴量.
 
+<p align="center">
+  <img width="85%" src="../images/dataset.png" />
+  <figcaption>
+  <p align="center">
+    Open Bandit Datasetの構成
+  </p>
+  </figcaption>
+</p>
 
 ## 連絡
 データセットに関する質問等は, 次のメールアドレスにご連絡いただくようお願いいたします: saito.y.bj at m.titech.ac.jp
