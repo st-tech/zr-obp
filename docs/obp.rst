@@ -18,7 +18,9 @@ policy module
 
     obp.policy.base
     obp.policy.contextfree
-    obp.policy.contextual
+    obp.policy.linear
+    obp.policy.logistic
+    obp.policy.offline
 
 
 dataset module
@@ -32,7 +34,7 @@ dataset module
 
 
 simulator module
----------------
+------------------
 .. autosummary::
     :toctree: _autosummary
 

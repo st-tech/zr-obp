@@ -34,17 +34,31 @@ Supported Algorithms and OPE Estimators
 Bandit Algorithms
 ----------------------
 
-   * Context-free
+   * Online
 
-      * Random
-      * Epsilon Greedy
-      * Bernoulli Thompson Sampling
+      * Context-free
 
-   * Contextual
+         * Random
+         * Epsilon Greedy
+         * Bernoulli Thompson Sampling
 
-      * Logistic Epsilon Greedy
-      * Logistic Thompson Sampling :cite:`Chapelle2011`
-      * Logistic Upper Confidence Bound :cite:`Li2010` :cite:`Mahajan2012`
+      * Contextual (Linear)
+
+         * Linear Epsilon Greedy
+         * Linear Thompson Sampling :cite:`Agrawal2013`
+         * Linear Upper Confidence Bound :cite:`Li2010`
+
+      * Contextual (Logistic)
+
+         * Logistic Epsilon Greedy
+         * Logistic Thompson Sampling :cite:`Chapelle2011`
+         * Logistic Upper Confidence Bound :cite:`Mahajan2012`
+
+   * Offline (Off-Policy Learning) :cite:`Dudik2014`
+
+      * Direct Method
+      * Inverse Probability Weighting
+      * Doubly Robust
 
 OPE Estimators
 ----------------------
