@@ -18,7 +18,7 @@
   - [(3) オフライン方策評価 （Off-Policy Evaluation）](#3-オフライン方策評価-off-policy-evaluation)
 - [引用](#引用)
 - [ライセンス](#ライセンス)
-- [主要コントリビューター](#主要コントリビューター)
+- [プロジェクトチーム](#プロジェクトチーム)
 - [参考](#参考)
   - [論文](#論文)
   - [実装](#実装)
@@ -80,14 +80,24 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
 ### 実装されているバンディットアルゴリズムとオフ方策推定量
 
 - バンディットアルゴリズム (**policy module**)
-  - Context-free
-    - Random
-    - Epsilon Greedy
-    - Bernoulli Thompson Sampling
-  - Contextual
-    - Logistic Epsilon Greedy
-    - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
-    - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
+  - Online
+    - Context-free
+      - Random
+      - Epsilon Greedy
+      - Bernoulli Thompson Sampling
+    - Contextual
+      - Linear
+        - Linear Epsilon Greedy
+        - Linear Thompson Sampling [[Agrawal and Goyal. 2013]](http://proceedings.mlr.press/v28/agrawal13)
+        - Linear Upper Confidence Bound [[Li et al. 2010]](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
+      - Logistic
+        - Logistic Epsilon Greedy
+        - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+        - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
+  - Offline (Off-Policy Learning) [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
+    - Direct Method
+    - Inverse Probability Weighting
+    - Doubly Robust
 
 - オフ方策推定量 (**ope module**)
   - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
@@ -247,9 +257,11 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 このプロジェクトはApache 2.0ライセンスを採用しています.  詳細は, [LICENSE](https://github.com/st-tech/zr-obp/blob/master/LICENSE) を参照してください.
 
 
-# 主要コントリビューター
+# プロジェクトチーム
 
-- [Yuta Saito](https://usaito.github.io/)
+- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / 東京工業大学)
+- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (半熟仮想株式会社)
+- [Yusuke Narita](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
 
 
 # 参考

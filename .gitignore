@@ -137,5 +137,6 @@ dist/
 .vscode/
 .DS_Store
 logs/
+note.ipynb
 *.npy
 *.html

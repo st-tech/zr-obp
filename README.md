@@ -18,7 +18,7 @@
   - [(3) Off-Policy Evaluation](#3-off-policy-evaluation)
 - [Citation](#citation)
 - [License](#license)
-- [Main Contributor](#main-contributor)
+- [Project Team](#project-team)
 - [References](#references)
   - [Papers](#papers)
   - [Projects](#projects)
@@ -78,14 +78,24 @@ Open Bandit Pipeline consists of the following main modules.
 ### Supported Algorithms and OPE Estimators
 
 - Bandit Algorithms (implemented in **policy module**)
-  - Context-free
-    - Random
-    - Epsilon Greedy
-    - Bernoulli Thompson Sampling
-  - Contextual
-    - Logistic Epsilon Greedy
-    - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
-    - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
+  - Online
+    - Context-free
+      - Random
+      - Epsilon Greedy
+      - Bernoulli Thompson Sampling
+    - Contextual
+      - Linear
+        - Linear Epsilon Greedy
+        - Linear Thompson Sampling [[Agrawal and Goyal. 2013]](http://proceedings.mlr.press/v28/agrawal13)
+        - Linear Upper Confidence Bound [[Li et al. 2010]](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
+      - Logistic
+        - Logistic Epsilon Greedy
+        - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+        - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
+  - Offline (Off-Policy Learning) [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
+    - Direct Method
+    - Inverse Probability Weighting
+    - Doubly Robust
 
 - OPE Estimators (implemented in **ope module**)
   - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
@@ -238,9 +248,11 @@ If you use this project in your work, please cite our paper below.
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
 
-# Main Contributor
+# Project Team
 
-- [Yuta Saito](https://usaito.github.io/)
+- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Tokyo Institute of Technology)
+- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (Hanjuku-kaso Co., Ltd.)
+- [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
 
 
 # References
