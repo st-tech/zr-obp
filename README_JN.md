@@ -259,9 +259,9 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 
 # プロジェクトチーム
 
-- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / 東京工業大学)
-- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (半熟仮想株式会社)
-- [Yusuke Narita](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
+- [齋藤優太](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / 東京工業大学)
+- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (半熟仮想株式会社)
+- [成田悠輔](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
 
 
 # 参考
