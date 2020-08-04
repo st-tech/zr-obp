@@ -54,12 +54,9 @@ class EpsilonGreedy(BaseContextFreePolicy):
         selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
-        self.n_trial += 1
-        if self.random_.rand() > self.epsilon:
-            unsorted_max_arms = np.argpartition(-self.reward_counts, self.len_list)[
-                : self.len_list
-            ]
-            return unsorted_max_arms[np.argsort(-self.reward_counts[unsorted_max_arms])]
+        if (self.random_.rand() > self.epsilon) and (self.action_counts.min() > 0):
+            reward_preds = self.reward_counts / self.action_counts
+            return reward_preds.argsort()[::-1][: self.len_list]
         else:
             return self.random_.choice(
                 self.n_actions, size=self.len_list, replace=False
@@ -76,6 +73,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
         reward: float
             Observed reward for the chosen action and position.
         """
+        self.n_trial += 1
         self.action_counts_temp[action] += 1
         n, old_reward = self.action_counts_temp[action], self.reward_counts_temp[action]
         self.reward_counts_temp[action] = (old_reward * (n - 1) / n) + (reward / n)
@@ -172,13 +170,11 @@ class BernoulliTS(BaseContextFreePolicy):
         selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
-        self.n_trial += 1
         theta = self.random_.beta(
             a=self.reward_counts + self.alpha,
             b=(self.action_counts - self.reward_counts) + self.beta,
         )
-        unsorted_max_arms = np.argpartition(-theta, self.len_list)[: self.len_list]
-        return unsorted_max_arms[np.argsort(-theta[unsorted_max_arms])]
+        return theta.argsort()[::-1][: self.len_list]
 
     def update_params(self, action: int, reward: float) -> None:
         """Update policy parameters.
@@ -191,6 +187,7 @@ class BernoulliTS(BaseContextFreePolicy):
         reward: float
             Observed reward for the chosen action and position.
         """
+        self.n_trial += 1
         self.action_counts_temp[action] += 1
         self.reward_counts_temp[action] += reward
         if self.n_trial % self.batch_size == 0:

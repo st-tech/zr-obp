@@ -1,3 +1,5 @@
 from .base import *
 from .contextfree import *
-from .contextual import *
+from .linear import *
+from .logistic import *
+from .offline import *

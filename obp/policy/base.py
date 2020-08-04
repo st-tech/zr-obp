@@ -4,10 +4,13 @@
 """Base Interfaces for Bandit Algorithms."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 import numpy as np
+from sklearn.base import ClassifierMixin
 from sklearn.utils import check_random_state
+
+from ..ope import RegressionModel
 
 
 @dataclass
@@ -142,6 +145,147 @@ class BaseContextualPolicy(metaclass=ABCMeta):
     def update_params(self, action: float, reward: float, context: np.ndarray) -> None:
         """Update policy parameters."""
         pass
+
+
+@dataclass
+class BaseOffPolicyLearner(metaclass=ABCMeta):
+    """Base Class for off-policy learner with standard OPE estimators.
+
+    Note
+    ------
+
+    Parameters
+    -----------
+    base_model: ClassifierMixin
+        Machine learning classifier to be used to create the decision making policy.
+
+    Examples
+    ----------
+
+        .. code-block:: python
+
+    Reference
+    -----------
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+
+    """
+
+    base_model: ClassifierMixin
+
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        pass
+
+    @abstractmethod
+    def _create_train_data_for_opl(
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        **kwargs,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Create training data for off-policy learning.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_actions,)
+            Context vectors in the given training logged bandit feedback.
+
+        action: array-like, shape (n_actions,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        reward: array-like, shape (n_actions,)
+            Observed rewards in the given training logged bandit feedback.
+
+        pscore: Optional[np.ndarray], default: None
+            Propensity scores, the probability of selecting each action by behavior policy,
+            in the given training logged bandit feedback.
+
+        Returns
+        --------
+        (X, sample_weight, y): Tuple[np.ndarray, np.ndarray, np.ndarray]
+            Feature vectors, sample weights, and outcome for training the base machine learning model.
+
+        """
+        return NotImplementedError
+
+    def fit(
+        self,
+        context: np.ndarray,
+        action: float,
+        reward: float,
+        pscore: Optional[np.ndarray] = None,
+        action_context: Optional[np.ndarray] = None,
+        regression_model: Optional[RegressionModel] = None,
+    ) -> None:
+        """Fits the offline bandit policy according to the given logged bandit feedback data.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_actions,)
+            Context vectors in the given training logged bandit feedback.
+
+        action: array-like, shape (n_actions,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        reward: array-like, shape (n_actions,)
+            Observed rewards in the given training logged bandit feedback.
+
+        pscore: Optional[np.ndarray], default: None
+            Propensity scores, the probability of selecting each action by behavior policy,
+            in the given training logged bandit feedback.
+
+        action_context: array-like, shape (n_actions, dim_action_context), default: None
+            Context vectors used as input to predict the mean reward function.
+
+        regression_model: Optional[RegressionModel], default: None
+            Regression model that predicts the mean reward function :math:`E[Y | X, A]`.
+
+        """
+        X, sample_weight, y = self._create_train_data_for_opl(
+            context=context,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            action_context=action_context,
+            regression_model=regression_model,
+        )
+        self.base_model.fit(X=X, y=y, sample_weight=sample_weight)
+
+    def predict(self, context: np.ndarray) -> None:
+        """Predict best action for new data.
+
+        Parameters
+        -----------
+        context: array like of shape (n_rounds_of_new_data, dim_context)
+            Observed context vector for new data.
+
+        Returns
+        -----------
+        pred: array like of shape (n_rounds_of_new_data,)
+            Predicted best action for new data.
+
+        """
+        return self.base_model.predict(context)
+
+    def predict_proba(self, context: np.ndarray) -> None:
+        """Predict probabilities of each action being the best one for new data.
+
+        Parameters
+        -----------
+        context: array like of shape (n_rounds_of_new_data, dim_context)
+            Observed context vector for new data.
+
+        Returns
+        -----------
+        pred_proba: array like of shape (n_rounds_of_new_data, n_actions)
+            Probability estimates of each arm being the best one for new data.
+            The returned estimates for all classes are ordered by the label of classes.
+
+        """
+        return self.base_model.predict_proba(context)
 
 
 BanditPolicy = Union[BaseContextFreePolicy, BaseContextualPolicy]

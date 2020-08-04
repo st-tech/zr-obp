@@ -1,7 +1,7 @@
 # Copyright (c) ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Contextual Bandit Algorithms."""
+"""Contextual Logistic Bandit Algorithms."""
 from dataclasses import dataclass
 from typing import Optional
 
@@ -84,23 +84,15 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
         selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
-        if self.action_counts.min() == 0:
+        if self.random_.rand() > self.epsilon:
+            theta = np.array(
+                [model.predict_proba(context) for model in self.model_list]
+            ).flatten()
+            return theta.argsort()[::-1][: self.len_list]
+        else:
             return self.random_.choice(
                 self.n_actions, size=self.len_list, replace=False
             )
-        else:
-            if self.random_.rand() > self.epsilon:
-                theta = np.array(
-                    [model.predict_proba(context) for model in self.model_list]
-                ).flatten()
-                unsorted_max_arms = np.argpartition(-theta, self.len_list)[
-                    : self.len_list
-                ]
-                return unsorted_max_arms[np.argsort(-theta[unsorted_max_arms])]
-            else:
-                return self.random_.choice(
-                    self.n_actions, size=self.len_list, replace=False
-                )
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
         """Update policy parameters.
@@ -206,25 +198,17 @@ class LogisticUCB(BaseContextualPolicy):
         selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
-        if self.action_counts.min() == 0:
-            return self.random_.choice(
-                self.n_actions, size=self.len_list, replace=False
-            )
-        else:
-            theta = np.array(
-                [model.predict_proba(context) for model in self.model_list]
-            ).flatten()
-            std = np.array(
-                [
-                    np.sqrt(np.sum((model._q ** (-1)) * (context ** 2)))
-                    for model in self.model_list
-                ]
-            ).flatten()
-            ucb_score = theta + self.epsilon * std
-            unsorted_max_arms = np.argpartition(-ucb_score, self.len_list)[
-                : self.len_list
+        theta = np.array(
+            [model.predict_proba(context) for model in self.model_list]
+        ).flatten()
+        std = np.array(
+            [
+                np.sqrt(np.sum((model._q ** (-1)) * (context ** 2)))
+                for model in self.model_list
             ]
-            return unsorted_max_arms[np.argsort(-ucb_score[unsorted_max_arms])]
+        ).flatten()
+        ucb_score = theta + self.epsilon * std
+        return ucb_score.argsort()[::-1][: self.len_list]
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
         """Update policy parameters.
@@ -325,19 +309,10 @@ class LogisticTS(BaseContextualPolicy):
         selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
-        if self.action_counts.min() == 0:
-            return self.random_.choice(
-                self.n_actions, size=self.len_list, replace=False
-            )
-        else:
-            theta = np.array(
-                [
-                    model.predict_proba_with_sampling(context)
-                    for model in self.model_list
-                ]
-            ).flatten()
-            unsorted_max_arms = np.argpartition(-theta, self.len_list)[: self.len_list]
-            return unsorted_max_arms[np.argsort(-theta[unsorted_max_arms])]
+        theta = np.array(
+            [model.predict_proba_with_sampling(context) for model in self.model_list]
+        ).flatten()
+        return theta.argsort()[::-1][: self.len_list]
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
         """Update policy parameters.
