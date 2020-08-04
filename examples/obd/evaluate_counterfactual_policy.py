@@ -8,7 +8,14 @@ from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from custom_dataset import OBDWithInteractionFeatures
-from obp.policy import LogisticTS, LogisticEpsilonGreedy, LogisticUCB
+from obp.policy import (
+    LinEpsilonGreedy,
+    LinUCB,
+    LinTS,
+    LogisticTS,
+    LogisticEpsilonGreedy,
+    LogisticUCB,
+)
 from obp.simulator import run_bandit_simulation
 from obp.ope import (
     RegressionModel,
@@ -23,6 +30,9 @@ with open("./conf/lightgbm.yaml", "rb") as f:
     hyperparams = yaml.safe_load(f)["model"]
 
 counterfactual_policy_dict = dict(
+    linear_egreedy=LinEpsilonGreedy,
+    linear_ts=LinTS,
+    linear_ucb=LinUCB,
     logistic_egreedy=LogisticEpsilonGreedy,
     logistic_ts=LogisticTS,
     logistic_ucb=LogisticUCB,
@@ -30,27 +40,34 @@ counterfactual_policy_dict = dict(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="run off-policy evaluation of a counterfactual logistic bandit policy."
+        description="run off-policy evaluation of a counterfactual contextual bandit policy."
     )
     parser.add_argument(
         "--context_set",
         type=str,
         choices=["1", "2"],
         required=True,
-        help="context sets for logistic bandit policies.",
+        help="context sets for contextual bandit policies.",
     )
     parser.add_argument(
         "--counterfactual_policy",
         type=str,
-        choices=["logistic_egreedy", "logistic_ts", "logistic_ucb"],
+        choices=[
+            "linear_egreedy",
+            "linear_ts",
+            "linear_ucb",
+            "logistic_egreedy",
+            "logistic_ts",
+            "logistic_ucb",
+        ],
         required=True,
-        help="counterfacutual policy, logistic_egreedy, logistic_ts, or logistic_ucb.",
+        help="counterfacutual policy to be evaluated",
     )
     parser.add_argument(
         "--epsilon",
         type=float,
         default=0.1,
-        help="exploration hyperparameter for logistic bandit policies. must be between 0 and 1.",
+        help="exploration hyperparameter for contextual bandit policies. must be between 0 and 1.",
     )
     parser.add_argument(
         "--behavior_policy",
@@ -84,7 +101,7 @@ if __name__ == "__main__":
         context_set=context_set,
     )
 
-    # hyperparameters for logistic bandit policies
+    # hyperparameters for contextual bandit policies
     kwargs = dict(
         n_actions=obd.n_actions,
         len_list=obd.len_list,

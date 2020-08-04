@@ -2,19 +2,21 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-from numpy import random
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier as RandomForest
 from obp.dataset import (
     SyntheticBanditDataset,
     linear_behavior_policy,
-    linear_reward_function,
+    logistic_reward_function,
 )
 from obp.simulator import run_bandit_simulation
 from obp.policy import (
     Random,
     BernoulliTS,
+    LinEpsilonGreedy,
+    LinTS,
+    LinUCB,
     LogisticEpsilonGreedy,
     LogisticTS,
     LogisticUCB,
@@ -35,6 +37,9 @@ from obp.utils import estimate_confidence_interval_by_bootstrap
 counterfactual_policy_dict = dict(
     bts=BernoulliTS,
     random=Random,
+    linear_egreedy=LinEpsilonGreedy,
+    linear_ts=LinTS,
+    linear_ucb=LinUCB,
     logistic_egreedy=LogisticEpsilonGreedy,
     logistic_ts=LogisticTS,
     logistic_ucb=LogisticUCB,
@@ -78,8 +83,17 @@ if __name__ == "__main__":
         "--counterfactual_policy",
         type=str,
         required=True,
-        choices=["bts", "random", "logistic_ts", "logistic_ucb", "logistic_egreedy"],
-        help="counterfacutual policy, bts, random, logistic_ts, logistic_ucb, or logistic_egreedy.",
+        choices=[
+            "bts",
+            "random",
+            "linear_egreedy",
+            "linear_ts",
+            "linear_ucb",
+            "logistic_ts",
+            "logistic_ucb",
+            "logistic_egreedy",
+        ],
+        help="counterfacutual policy",
     )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
@@ -98,7 +112,7 @@ if __name__ == "__main__":
         n_actions=n_actions,
         dim_context=dim_context,
         dim_action_context=dim_action_context,
-        reward_function=linear_reward_function,
+        reward_function=logistic_reward_function,
         behavior_policy_function=linear_behavior_policy,
         random_state=random_state,
     )
@@ -109,9 +123,14 @@ if __name__ == "__main__":
         len_list=dataset.len_list,
         random_state=random_state,
     )
-    if "logistic" in counterfactual_policy:
+    if ("logistic" in counterfactual_policy) or ("linear" in counterfactual_policy):
         kwargs["dim"] = dim_context
-    if counterfactual_policy in ["logistic_ucb", "logistic_egreedy"]:
+    if counterfactual_policy in [
+        "linear_ucb",
+        "linear_egreedy",
+        "logistic_ucb",
+        "logistic_egreedy",
+    ]:
         kwargs["epsilon"] = 0.01
     policy = counterfactual_policy_dict[counterfactual_policy](**kwargs)
     # compared OPE estimators

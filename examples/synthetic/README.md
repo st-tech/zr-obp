@@ -24,32 +24,32 @@ where `$n_runs` specifies the number of simulation runs in the experiment to est
 `$n_rounds` and `$n_actions` specify the number of rounds and the number of actions of the synthetic bandit data.
 `$dim_context` and `$dim_action_context` specify the dimension of context vectors characterizing each round and action, respectively.
 `$counterfactual_policy` specifies the counterfactual policy.
-It should be one of 'bts', 'random', 'logistic_ts', 'logistic_ucb', and 'logistic_egreedy'.
+It should be one of 'bts', 'random', 'linear_ts', 'linear_ucb', 'linear_egreedy', 'logistic_ts', 'logistic_ucb', and 'logistic_egreedy'.
 
-For example, the following command compares the estimation performance of the OPE estimators by synthetic bandit feedback data with 100,000 rounds, 20 actions, context vectors with five dimensions.
+For example, the following command compares the estimation performance of the OPE estimators by synthetic bandit feedback data with 100,000 rounds, 10 actions, context vectors with five dimensions.
 
 ```bash
 python evaluate_off_policy_estimators.py\
     --n_runs 10\
     --n_rounds 100000\
-    --n_actions 20\
+    --n_actions 10\
     --dim_context 5\
     --dim_action_context 5\
-    --counterfactual_policy logistic_ts\
+    --counterfactual_policy linear_egreedy\
     --random_state 12345
 
 # relative estimation errors (lower is better) and their 95% confidence intervals of OPE estimators.
-# our evaluation of OPE procedure suggests that DR and Switch-DR perform better than other estimators, including DM, IPW, SNIPS, and SNDR.
+# our evaluation of OPE procedure suggests that IPW performs better than the other model dependent estimators such as DM and DR.
 # ============================================================
 # random_state=12345
 # ------------------------------------------------------------
 #                mean  95.0% CI (lower)  95.0% CI (upper)
-# dm         0.027422           0.01739           0.03866
-# ipw        0.041248           0.01669           0.06655
-# snipw      0.046043           0.03420           0.05703
-# dr         0.024526           0.01723           0.03270
-# sndr       0.051949           0.02563           0.08765
-# switch-dr  0.017145           0.00904           0.02579
+# dm         0.018156           0.01543           0.02065
+# ipw        0.006241           0.00392           0.00873
+# snipw      0.011473           0.00806           0.01463
+# dr         0.010468           0.00679           0.01421
+# sndr       0.017165           0.01053           0.02461
+# switch-dr  0.011973           0.00888           0.01494
 # ============================================================
 ```
 

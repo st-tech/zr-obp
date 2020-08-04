@@ -46,20 +46,22 @@ python evaluate_off_policy_estimators.py\
 # random_state=12345
 # --------------------------------------------------
 #          mean  95.0% CI (lower)  95.0% CI (upper)
-# dm   0.218148           0.14561           0.29018
+# dm   0.213823           0.14168           0.27770
 # ipw  1.158730           0.96190           1.53333
-# dr   0.992942           0.71789           1.35594
+# dr   1.105379           0.90189           1.42545
 # ==================================================
 ```
+
+Please visit [Examples with Synthetic Data](https://github.com/st-tech/zr-obp/tree/master/examples/synthetic) to try the evaluation of OPE estimators with a larger dataset.
 
 
 **Example Experimet 2. Evaluating Counterfactual Bandit Policy**
 
-We evaluate the performance of counterfactual policies based on logistic contextual bandit algorithms in `obp.policy` module with OPE estimators in `obp.ope` module.
-[`./evaluate_counterfactual_policy.py`](./evaluate_counterfactual_policy.py) implements the evaluation of the performance of counterfactual logistic bandit policies with the use of OPE estimators.
+We evaluate the performance of counterfactual policies based on contextual bandit algorithms in `obp.policy` module with OPE estimators in `obp.ope` module.
+[`./evaluate_counterfactual_policy.py`](./evaluate_counterfactual_policy.py) implements the evaluation of the performance of counterfactual bandit policies with the use of OPE estimators.
 
 ```bash
-# run evaluation of a counterfacutal logistic bandit policy.
+# run evaluation of a counterfacutal contextual bandit policy.
 python evaluate_counterfactual_policy.py\
     --context_set $context_set\
     --counterfactual_policy $counterfactual_policy\
@@ -69,33 +71,33 @@ python evaluate_counterfactual_policy.py\
     --random_state $random_state
 ```
 where `$context_set` specifies the feature engineering method and should be either '1' or '2'.
-`$counterfactual_policy` specifies the counterfactual logistic bandit policy and should be one of 'logistic_egreedy', 'logistic_ts', and 'logistic_ucb'.
-`$epsilon` specifies the value of exploration hyperparameter and should be between 0 and 1.
+`$counterfactual_policy` specifies the counterfactual contextual bandit policy and should be one of 'linear_egreedy', 'linear_ts', 'linear_ucb', 'logistic_egreedy', 'logistic_ts', and 'logistic_ucb'.
+`$epsilon` specifies the value of exploration hyperparameter and must be between 0 and 1.
 `$behavior_policy` specifies the behavior policy and should be either 'bts' or 'random'.
 `$campaign` specifies the campaign and should be one of 'all', 'men', or 'women'.
 
 
-For example, the following command evaluates the performance of logistic_ucb policy (context_set='1' and exploration hyperparameter=`0.1`) by using the three OPE estimators and Random as behavior policy in "All" campaign.
+For example, the following command evaluates the performance of Linear Epsilon Greedy (linear_egreedy) policy (context_set='1' and exploration hyperparameter=`0.1`) by using the three OPE estimators and Random as behavior policy in "Women" campaign.
 
 ```bash
 python evaluate_counterfactual_policy.py\
     --context_set 1\
-    --counterfactual_policy logistic_ucb\
+    --counterfactual_policy linear_egreedy\
     --epsilon 0.1\
     --behavior_policy random\
-    --campaign all
+    --campaign women
 
-# estimated policy values relative to the behavior policy (the Random policy) of a counterfactual policy (logistic UCB with Context Set 1)
+# estimated policy values relative to the behavior policy (the Random policy) of a counterfactual policy (linear epsilon greedy with Context Set 1)
 # by three OPE estimators (IPW: inverse probability weighting, DM; Direct Method, DR; Doubly Robust)
-# in this example, DM predicts that the counterfactual policy outperforms the behavior policy by about 2.59%
+# in this example, DM predicts that the counterfactual policy outperforms the behavior policy by about 5.49%
 # (Note that this result is with the small sample data and please see our paper for the results with the full size data)
 # ======================================================================
-# random_state=12345: counterfactual policy=logistic_ucb_0.1_1
+# random_state=12345: counterfactual policy=linear_epsilon_greedy_0.1_1
 # ----------------------------------------------------------------------
 #      estimated_policy_value  relative_estimated_policy_value
-# ipw                0.008000                         2.105263
-# dm                 0.003898                         1.025915
-# dr                 0.007948                         2.091689
+# ipw                0.004600                         1.000000
+# dm                 0.004853                         1.054967
+# dr                 0.004642                         1.009075
 # ======================================================================
 ```
 
