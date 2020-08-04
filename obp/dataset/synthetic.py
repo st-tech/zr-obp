@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional, Callable
 
 import numpy as np
+from numpy import random
 from sklearn.utils import check_random_state
 
 from .base import BaseSyntheticBanditDataset, BanditFeedback
@@ -162,7 +163,9 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             pscore = self.behavior_policy[action]
         else:
             behavior_policy_ = self.behavior_policy_function(
-                context=context, action_context=self.action_context
+                context=context,
+                action_context=self.action_context,
+                random_state=self.random_state,
             )
             action = np.array(
                 [
@@ -180,7 +183,9 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             reward = self.random_.binomial(n=1, p=expected_reward_[action])
         else:
             expected_reward_ = self.reward_function(
-                context=context, action_context=self.action_context
+                context=context,
+                action_context=self.action_context,
+                random_state=self.random_state,
             )
             reward = self.random_.binomial(
                 n=1, p=expected_reward_[np.arange(n_rounds), action]
@@ -197,10 +202,10 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         )
 
 
-def linear_reward_function(
-    context: np.ndarray, action_context: np.ndarray
+def logistic_reward_function(
+    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
 ) -> np.ndarray:
-    """Linear mean reward function for synthetic bandit datasets.
+    """Logistic mean reward function for synthetic bandit datasets.
 
     Parameters
     -----------
@@ -210,6 +215,9 @@ def linear_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Context vectors characterizing each action.
 
+    random_state: int, default: None
+        Controls the random seed in sampling dataset.
+
     Returns
     ---------
     expected_reward: array-like, shape (n_rounds, n_actions)
@@ -217,17 +225,19 @@ def linear_reward_function(
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
 
     """
+    random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))
     # each arm has different coefficient vectors
-    coef_ = np.random.uniform(size=(action_context.shape[0], context.shape[1]))
+    coef_ = random_.uniform(size=(action_context.shape[0], context.shape[1]))
+    action_coef_ = random_.uniform(size=action_context.shape[1])
     for d in np.arange(action_context.shape[0]):
-        logits[:, d] = context @ coef_[d]
+        logits[:, d] = context @ coef_[d] + action_context[d] @ action_coef_
 
     return sigmoid(logits)
 
 
 def linear_behavior_policy(
-    context: np.ndarray, action_context: np.ndarray
+    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear contextual behavior policy for synthetic bandit datasets.
 
@@ -239,6 +249,9 @@ def linear_behavior_policy(
     action_context: array-like, shape (n_actions, dim_action_context)
         Context vectors characterizing each action.
 
+    random_state: int, default: None
+        Controls the random seed in sampling dataset.
+
     Returns
     ---------
     behavior_policy: array-like, shape (n_rounds, n_actions)
@@ -246,11 +259,11 @@ def linear_behavior_policy(
         i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
     """
+    random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))
-    coef_ = np.random.uniform(size=context.shape[1])
-    action_coef_ = np.random.uniform(size=action_context.shape[1])
+    coef_ = random_.uniform(size=context.shape[1])
+    action_coef_ = random_.uniform(size=action_context.shape[1])
     for d in np.arange(action_context.shape[0]):
-        action_context_ = action_context[d]
-        logits[:, d] = context @ coef_ + action_context_ @ action_coef_
+        logits[:, d] = context @ coef_ + action_context[d] @ action_coef_
 
     return softmax(logits)
