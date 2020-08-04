@@ -93,9 +93,7 @@ Open Bandit Pipeline consists of the following main modules.
         - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
         - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
   - Offline (Off-Policy Learning) [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
-    - Direct Method
     - Inverse Probability Weighting
-    - Doubly Robust
 
 - OPE Estimators (implemented in **ope module**)
   - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
@@ -251,7 +249,8 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 # Project Team
 
 - [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Tokyo Institute of Technology)
-- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (Hanjuku-kaso Co., Ltd.)
+- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (Hanjuku-kaso Co., Ltd. / ZOZO Technologies, Inc.)
+- Megumi Matsutani (ZOZO Technologies, Inc.)
 - [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
 
 

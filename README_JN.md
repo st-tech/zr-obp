@@ -95,9 +95,7 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
         - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
         - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
   - Offline (Off-Policy Learning) [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
-    - Direct Method
     - Inverse Probability Weighting
-    - Doubly Robust
 
 - オフ方策推定量 (**ope module**)
   - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
@@ -260,7 +258,8 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 # プロジェクトチーム
 
 - [齋藤優太](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / 東京工業大学)
-- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (半熟仮想株式会社)
+- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (半熟仮想株式会社 / ZOZO Technologies, Inc.)
+- 松谷恵 (ZOZO Technologies, Inc.)
 - [成田悠輔](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
 
 
