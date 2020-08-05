@@ -7,7 +7,7 @@ Welcome to obp's documentation!
 ====================================
 
 .. image:: ./_static/images/logo.png
-   :scale: 25%
+   :scale: 20%
    :align: center
 
 Open Bandit Dataset and Pipeline
