@@ -37,6 +37,7 @@ def estimate_confidence_interval_by_bootstrap(
     ----------
     estimated_confidence_interval: Dict[str, float]
         Dictionary storing the estimated mean and upper-lower confidence bounds.
+
     """
     assert (0.0 < alpha < 1.0) and isinstance(
         alpha, float
@@ -103,6 +104,7 @@ def check_is_fitted(
     References
     -------
     https://scikit-learn.org/stable/modules/generated/sklearn.utils.validation.check_is_fitted.html
+
     """
     if isclass(estimator):
         raise TypeError("{} is a class, not an instance.".format(estimator))
@@ -141,23 +143,23 @@ def check_bandit_feedback_inputs(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors in the given training logged bandit feedback.
+        Context vectors in the given logged bandit feedback.
 
     action: array-like, shape (n_rounds,)
-        Selected actions by behavior policy in the given training logged bandit feedback.
+        Selected actions by behavior policy in the given logged bandit feedback.
 
     reward: array-like, shape (n_rounds,)
-        Observed rewards in the given training logged bandit feedback.
+        Observed rewards in the given logged bandit feedback.
 
-    position: array-like, shape (n_rounds,)
-            Position of each round in the given training logged bandit feedback.
+    position: array-like, shape (n_rounds,), default: None
+        Positions of each round in the given logged bandit feedback.
 
     pscore: array-like, shape (n_rounds,), default: None
         Propensity scores, the probability of selecting each action by behavior policy,
-        in the given training logged bandit feedback.
+        in the given logged bandit feedback.
 
-    action_context: array-like, shape (n_actions, dim_action_context), default: None
-        Context vectors used as input to predict the mean reward function.
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Context vectors characterizing each action.
 
     """
     assert isinstance(context, np.ndarray), "context must be ndarray"

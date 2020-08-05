@@ -13,8 +13,12 @@ from sklearn.base import BaseEstimator, is_classifier
 class RegressionModel:
     """ML model to predict the mean reward function (:math:`E[Y | X, A]`).
 
+    Note
+    -------
+    Reward (or outcome) :math:`Y` must be either binary or continuous.
+
     Parameters
-    ----------
+    ------------
     base_model: BaseEstimator
         Model class to be used to predict the mean reward function.
 
@@ -22,10 +26,6 @@ class RegressionModel:
         Method to fit the regression method.
         Must be one of ['normal', 'iw', 'mrdr'] where 'iw' stands for importance weighting and
         'mrdr' stands for more robust doubly robust.
-
-    Note
-    ------
-    Reward (or outcome) :math:`Y` must be either binary or continuous.
 
     References
     -----------
@@ -57,7 +57,7 @@ class RegressionModel:
 
         Parameters
         ----------
-        context: array-like, shape (n_rounds,)
+        context: array-like, shape (n_rounds, dim_context)
             Context vectors in the given training logged bandit feedback.
 
         action: array-like, shape (n_rounds,)
@@ -87,8 +87,6 @@ class RegressionModel:
         elif self.fitting_method == "mrdr":
             sample_weight = (1.0 - pscore) / pscore ** 2
             self.base_model.fit(X, reward, sample_weight=sample_weight)
-        else:
-            raise ValueError(f"Undefined fitting_method {self.fitting_method} is given")
 
     def predict(
         self,
@@ -101,11 +99,8 @@ class RegressionModel:
 
         Parameters
         -----------
-        context: array-like, shape (n_rounds,)
+        context: array-like, shape (n_rounds, dim_context)
             Context vectors in the given training logged bandit feedback.
-
-        position: array-like, shape (n_rounds,)
-            Position of each round in the given training logged bandit feedback.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing each action.
@@ -113,6 +108,9 @@ class RegressionModel:
         selected_actions: array-like, shape (n_rounds, len_list)
             Sequence of actions selected by counterfactual (or evaluation) policy
             at each round in offline bandit simulation.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
 
         Returns
         -----------

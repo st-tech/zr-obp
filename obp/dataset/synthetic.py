@@ -21,20 +21,20 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
     -----
     By calling the `obtain_batch_bandit_feedback` method several times,
     we have different bandit samples with the same setting.
-    This can be used to estimate confidence intervals of performance of OPE estimators.
+    This can be used to estimate confidence intervals of the performances of OPE estimators.
 
     If None is set as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
 
     Parameters
-    ----------
+    -----------
     n_actions: int
         Number of actions.
 
     dim_context: int
-        Dimetion of context vectors.
+        Number of dimensions of context vectors.
 
     dim_action_context: int
-        Dimetion of context vectors for each action.
+        Number of dimensions of context vectors for each action.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default: None
         Function generating expected reward with context and action context vectors,
@@ -49,7 +49,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         sampled from the uniform distribution automatically (context-free behavior policy).
 
     random_state: int, default: None
-        Controls the random seed in sampling dataset.
+        Controls the random seed in sampling synthetic bandit dataset.
 
     dataset_name: str, default: 'synthetic_contextual_bandit_dataset'
         Name of the dataset.
@@ -124,7 +124,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         if self.reward_function is None:
             self.sample_contextfree_expected_reward()
         if self.behavior_policy_function is None:
-            self.sample_contextfree_behaivor_policy()
+            self.sample_contextfree_behavior_policy()
 
     @property
     def len_list(self) -> int:
@@ -141,7 +141,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         """Sample expected reward for each action from the uniform distribution."""
         self.expected_reward = self.random_.uniform(size=self.n_actions)
 
-    def sample_contextfree_behaivor_policy(self) -> np.ndarray:
+    def sample_contextfree_behavior_policy(self) -> np.ndarray:
         """Sample probability of choosing each action from the dirichlet distribution."""
         alpha = self.random_.uniform(size=self.n_actions)
         self.behavior_policy = self.random_.dirichlet(alpha=alpha)
@@ -157,7 +157,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            Context-free synthetic bandit feedback dataset.
+            Generated synthetic bandit feedback dataset.
 
         """
         context = self.random_.normal(size=(n_rounds, self.dim_context))
@@ -232,6 +232,13 @@ def logistic_reward_function(
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
 
     """
+    assert (
+        isinstance(context, np.ndarray) and context.ndim == 2
+    ), "context must be 2-dimensional ndarray"
+    assert (
+        isinstance(action_context, np.ndarray) and action_context.ndim == 2
+    ), "action_context must be 2-dimensional ndarray"
+
     random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))
     # each arm has different coefficient vectors
@@ -266,6 +273,13 @@ def linear_behavior_policy(
         i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
     """
+    assert (
+        isinstance(context, np.ndarray) and context.ndim == 2
+    ), "context must be 2-dimensional ndarray"
+    assert (
+        isinstance(action_context, np.ndarray) and action_context.ndim == 2
+    ), "action_context must be 2-dimensional ndarray"
+
     random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))
     coef_ = random_.uniform(size=context.shape[1])

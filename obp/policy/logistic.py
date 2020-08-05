@@ -18,16 +18,16 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
     """Logistic Epsilon Greedy.
 
     Parameters
-    ----------
+    -----------
     dim: int
-        Dimension of context vectors.
+        Number of dimensions of context vectors.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -70,13 +70,14 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
 
         Parameters
         ----------
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
 
         Returns
         ----------
         selected_actions: array-like shape (len_list, )
             List of selected actions.
+
         """
         if self.random_.rand() > self.epsilon:
             theta = np.array(
@@ -99,8 +100,9 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
         reward: float
             Observed reward for the chosen action and position.
 
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
+
         """
         self.n_trial += 1
         self.action_counts[action] += 1
@@ -122,16 +124,16 @@ class LogisticUCB(BaseContextualPolicy):
     """Logistic Upper Confidence Bound.
 
     Parameters
-    ----------
+    ------------
     dim: int
-        Dimension of context vectors.
+        Number of dimensions of context vectors.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -152,6 +154,7 @@ class LogisticUCB(BaseContextualPolicy):
     ----------
     Lihong Li, Wei Chu, John Langford, and Robert E Schapire.
     "A Contextual-bandit Approach to Personalized News Article Recommendation," 2010.
+
     """
 
     epsilon: float = 0.0
@@ -177,14 +180,15 @@ class LogisticUCB(BaseContextualPolicy):
         """Select action for new data.
 
         Parameters
-        ----------
-        context: array
+        ------------
+        context: array-like, shape (1, dim_context)
             Observed context vector.
 
         Returns
         ----------
         selected_actions: array-like shape (len_list, )
             List of selected actions.
+
         """
         theta = np.array(
             [model.predict_proba(context) for model in self.model_list]
@@ -202,15 +206,16 @@ class LogisticUCB(BaseContextualPolicy):
         """Update policy parameters.
 
         Parameters
-        ----------
+        ------------
         action: int
             Selected action by the policy.
 
         reward: float
             Observed reward for the chosen action and position.
 
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
+
         """
         self.n_trial += 1
         self.action_counts[action] += 1
@@ -234,14 +239,14 @@ class LogisticTS(BaseContextualPolicy):
     Parameters
     ----------
     dim: int
-        Dimension of context vectors.
+        Number of dimensions of context vectors.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -259,6 +264,7 @@ class LogisticTS(BaseContextualPolicy):
     ----------
     Olivier Chapelle and Lihong Li.
     "An empirical evaluation of thompson sampling," 2011.
+
     """
 
     policy_name: str = "logistic_ts"
@@ -283,13 +289,14 @@ class LogisticTS(BaseContextualPolicy):
 
         Parameters
         ----------
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
 
         Returns
         ----------
         selected_actions: array-like shape (len_list, )
             List of selected actions.
+
         """
         theta = np.array(
             [model.predict_proba_with_sampling(context) for model in self.model_list]
@@ -307,8 +314,9 @@ class LogisticTS(BaseContextualPolicy):
         reward: float
             Observed reward for the chosen action and position.
 
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
+
         """
         self.n_trial += 1
         self.action_counts[action] += 1

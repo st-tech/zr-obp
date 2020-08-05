@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
+
 from ..utils import estimate_confidence_interval_by_bootstrap
 
 
@@ -53,7 +54,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         Name of off-policy estimator.
 
     References
-    ----------
+    ------------
     Lihong Li, Wei Chu, John Langford, and Xuanhui Wang.
     "Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms.", 2011.
 
@@ -67,7 +68,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         """Estimate rewards for each round.
 
         Parameters
-        ----------
+        ------------
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
@@ -93,7 +94,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         """Estimate policy value of a counterfactual policy.
 
         Parameters
-        ----------
+        ------------
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t = Y(a_t)`.
 
@@ -178,7 +179,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     However, it can have a large variance, especially when the counterfactual policy significantly deviates from the behavior policy.
 
     Parameters
-    ----------
+    ------------
     min_pscore: float, default: 0.
         Minimum value used as propensity score.
         Propensity socres larger than this parameter would be clipped.
@@ -187,7 +188,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Name of off-policy estimator.
 
     References
-    ----------
+    ------------
     Alex Strehl, John Langford, Lihong Li, and Sham M Kakade.
     "Learning from Logged Implicit Exploration Data"., 2010.
 
@@ -198,9 +199,12 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     min_pscore: float = 0.0
     estimator_name: str = "ipw"
-    assert (
-        min_pscore <= 1.0
-    ), f"minimum propensity score must be lower than 1, but {min_pscore} is given"
+
+    def __post_init__(self) -> None:
+        """Initalize Class."""
+        assert (
+            self.min_pscore <= 1.0
+        ), f"minimum propensity score must be lower than 1, but {self.min_pscore} is given"
 
     def _estimate_round_rewards(
         self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
@@ -741,7 +745,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
 class SwitchDoublyRobust(DoublyRobust):
     """Estimate the policy value by Switch Doubly Robust (Switch-DR).
 
-    Switch Doubly Robust aims to reduce the variance of the Doubly Robust esitmator by using the direct method insted of doubly robust
+    Switch Doubly Robust aims to reduce the variance of the Doubly Robust estimator by using the direct method insted of doubly robust
     when the inverse of the propensity score (or the density ratio) is large.
     This estimator estimates the policy value of a given counterfactual (or evaluation) policy :math:`\\pi` by
 
@@ -761,7 +765,7 @@ class SwitchDoublyRobust(DoublyRobust):
     ----------
     tau: float, default: 1000
         Switching hyperparameter. When the density ratio is larger than this parameter
-        the DM estimator is applied, otherwise the DR esitmator is applied.
+        the DM estimator is applied, otherwise the DR estimator is applied.
         This hyperparameter should be larger than 1., otherwise it is meaningless.
 
     estimator_name: str, default: 'switch-dr'.
@@ -779,9 +783,12 @@ class SwitchDoublyRobust(DoublyRobust):
 
     tau: float = 1000
     estimator_name: str = "switch-dr"
-    assert (
-        tau >= 1.0
-    ), f"switching hyperparameter should be larger than 1. but {tau} is given"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        assert (
+            self.tau >= 1.0
+        ), f"switching hyperparameter should be larger than 1. but {self.tau} is given"
 
     def _estimate_round_rewards(
         self,

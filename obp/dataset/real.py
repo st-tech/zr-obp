@@ -21,7 +21,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     Note
     -----
-    Users are free to implement their own featuer engineering by overriding `pre_process` method.
+    Users are free to implement their own feature engineering by overriding `pre_process` method.
 
     Parameters
     ----------
@@ -30,7 +30,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Must be 'random' or 'bts'.
 
     campaign: str
-        One of the three possible campaigns (i.e., "all", "men", and "women").
+        One of the three possible campaigns, "all", "men", and "women".
 
     data_path: Path, default: Path('./obd')
         Path that stores Open Bandit Dataset.
@@ -47,6 +47,17 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Open Bandit Dataset Class."""
+        assert self.behavior_policy in [
+            "bts",
+            "random",
+        ], f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
+        assert self.campaign in [
+            "all",
+            "men",
+            "women",
+        ], f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
+        assert isinstance(self.data_path, Path), f"data_path must be a Path"
+
         self.data_path = self.data_path / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
 
@@ -65,7 +76,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     @property
     def dim_context(self) -> int:
-        """Dimension of context vectors."""
+        """Number of dimensions of context vectors."""
         return self.context.shape[1]
 
     @property
@@ -77,7 +88,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     def calc_on_policy_policy_value_estimate(
         cls, behavior_policy: str, campaign: str, data_path: Path = Path("./obd")
     ) -> float:
-        """Calculate on-policy  (used as a ground-truth policy value).
+        """Calculate on-policy policy value estimate (used as a ground-truth policy value).
 
         Parameters
         ----------
@@ -147,7 +158,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Parameters
         -----------
         random_state: int, default: None
-            Controls the random seed in sampling actions.
+            Controls the random seed in sampling logged bandit dataset.
 
         Returns
         --------

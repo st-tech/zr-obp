@@ -3,7 +3,7 @@
 
 """Context-Free Bandit Algorithms."""
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -21,7 +21,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -34,6 +34,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     policy_name: str, default: f'egreedy_{epsilon}'.
         Name of bandit policy.
+
     """
 
     epsilon: float = 1.0
@@ -53,6 +54,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
         ----------
         selected_actions: array-like shape (len_list, )
             List of selected actions.
+
         """
         if (self.random_.rand() > self.epsilon) and (self.action_counts.min() > 0):
             predicted_rewards = self.reward_counts / self.action_counts
@@ -72,6 +74,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
         reward: float
             Observed reward for the chosen action and position.
+
         """
         self.n_trial += 1
         self.action_counts_temp[action] += 1
@@ -93,7 +96,7 @@ class Random(EpsilonGreedy):
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -106,6 +109,7 @@ class Random(EpsilonGreedy):
 
     policy_name: str, default: 'random'.
         Name of bandit policy.
+
     """
 
     policy_name: str = "random"
@@ -122,7 +126,7 @@ class BernoulliTS(BaseContextFreePolicy):
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -138,6 +142,7 @@ class BernoulliTS(BaseContextFreePolicy):
 
     policy_name: str, default: 'bts'
         Name of bandit policy.
+
     """
 
     alpha: Optional[np.ndarray] = None
@@ -157,6 +162,7 @@ class BernoulliTS(BaseContextFreePolicy):
         ----------
         selected_actions: array-like shape (len_list, )
             List of selected actions.
+
         """
         predicted_rewards = self.random_.beta(
             a=self.reward_counts + self.alpha,
@@ -174,6 +180,7 @@ class BernoulliTS(BaseContextFreePolicy):
 
         reward: float
             Observed reward for the chosen action and position.
+
         """
         self.n_trial += 1
         self.action_counts_temp[action] += 1

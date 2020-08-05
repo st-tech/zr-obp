@@ -161,7 +161,7 @@ class OffPolicyEvaluation:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
-        ----------
+        ------------
         selected_actions: array-like, shape (n_rounds, len_list)
             Sequence of actions selected by counterfactual (or evaluation) policy
             at each round in offline bandit simulation.
@@ -198,7 +198,7 @@ class OffPolicyEvaluation:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
         Parameters
-        ----------
+        ------------
         selected_actions: array-like, shape (n_rounds, len_list)
             Sequence of actions selected by counterfactual (or evaluation) policy
             at each round in offline bandit simulation.
@@ -249,7 +249,7 @@ class OffPolicyEvaluation:
         in off-policy evaluation by given estimators.
 
         Parameters
-        ----------
+        ------------
         selected_actions: array-like, shape (n_rounds, len_list)
             Sequence of actions selected by counterfactual (or evaluation) policy
             at each round in offline bandit simulation.
@@ -317,7 +317,7 @@ class OffPolicyEvaluation:
             relative to the ground-truth policy value of behavior policy
 
         fig_dir: Path, default: None
-            Dierctory to store the bar figure.
+            Path to store the bar figure.
             If 'None' is given, the figure will not be saved.
 
         fig_name: str, default: None
@@ -375,14 +375,14 @@ class OffPolicyEvaluation:
     ) -> Dict[str, float]:
         """Evaluate results of off-policy estimators by relative estimation error.
 
-        Evaluate the performacnce of off-policy estimators by the following relative estimation error.
+        Evaluate the performance of off-policy estimators by the following relative estimation error.
 
         .. math ::
 
             \\text{Relative-Estimation Error of } \\hat{V}^{\\pi} = \\left|  \\frac{ \\hat{V}^{\\pi} - V^{\\pi}}{V^{\\pi}} \\right|.
 
         where :math:`V^{\\pi}` is a ground-truth policy value of :math:`\\pi` in a test set.
-        :math:`\\hat{V}^{\\pi}` is an estimated policy value by each off-policy estiamtor with logged bandit feedback data.
+        :math:`\\hat{V}^{\\pi}` is an estimated policy value by each off-policy estimator with logged bandit feedback data.
 
         Parameters
         ----------

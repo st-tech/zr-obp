@@ -14,16 +14,16 @@ class LinEpsilonGreedy(BaseContextualPolicy):
     """Linear Epsilon Greedy.
 
     Parameters
-    ----------
+    ------------
     dim: int
-        Dimension of context vectors.
+        Number of dimensions of context vectors.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -38,10 +38,10 @@ class LinEpsilonGreedy(BaseContextualPolicy):
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
     References
-    -------
-    [1] L. Li, W. Chu, J. Langford, and E. Schapire.
-        A contextual-bandit approach to personalized news article recommendation.
-        In Proceedings of the 19th International Conference on World Wide Web, pp. 661–670. ACM, 2010.
+    ------------
+    L. Li, W. Chu, J. Langford, and E. Schapire.
+    A contextual-bandit approach to personalized news article recommendation.
+    In Proceedings of the 19th International Conference on World Wide Web, pp. 661–670. ACM, 2010.
 
     """
 
@@ -70,8 +70,8 @@ class LinEpsilonGreedy(BaseContextualPolicy):
         """Select action for new data.
 
         Parameters
-        ----------
-        context: array
+        ------------
+        context: array-like, shape (1, dim_context)
             Observed context vector.
 
         Returns
@@ -99,15 +99,16 @@ class LinEpsilonGreedy(BaseContextualPolicy):
         """Update policy parameters.
 
         Parameters
-        ----------
+        ------------
         action: int
             Selected action by the policy.
 
         reward: float
             Observed reward for the chosen action and position.
 
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
+
         """
         self.n_trial += 1
         self.action_counts[action] += 1
@@ -134,20 +135,17 @@ class LinUCB(BaseContextualPolicy):
     Parameters
     ----------
     dim: int
-        Dimension of context vectors.
+        Number of dimensions of context vectors.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
-
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
 
     random_state: int, default: None
         Controls the random seed in sampling actions.
@@ -156,10 +154,10 @@ class LinUCB(BaseContextualPolicy):
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
     References
-    -------
-    [1] L. Li, W. Chu, J. Langford, and E. Schapire.
-        A contextual-bandit approach to personalized news article recommendation.
-        In Proceedings of the 19th International Conference on World Wide Web, pp. 661–670. ACM, 2010.
+    --------------
+    L. Li, W. Chu, J. Langford, and E. Schapire.
+    A contextual-bandit approach to personalized news article recommendation.
+    In Proceedings of the 19th International Conference on World Wide Web, pp. 661–670. ACM, 2010.
 
     """
 
@@ -226,8 +224,9 @@ class LinUCB(BaseContextualPolicy):
         reward: float
             Observed reward for the chosen action and position.
 
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
+
         """
         self.n_trial += 1
         self.action_counts[action] += 1
@@ -253,20 +252,17 @@ class LinTS(BaseContextualPolicy):
     Parameters
     ----------
     dim: int
-        Dimension of context vectors.
+        Number of dimensions of context vectors.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
-
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
 
     alpha_: float, default: 1.
         Prior parameter for the online logistic regression.
@@ -296,7 +292,7 @@ class LinTS(BaseContextualPolicy):
 
         Parameters
         ----------
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
 
         Returns
@@ -337,8 +333,9 @@ class LinTS(BaseContextualPolicy):
         reward: float
             Observed reward for the chosen action and position.
 
-        context: array
+        context: array-like, shape (1, dim_context)
             Observed context vector.
+
         """
         self.n_trial += 1
         self.action_counts[action] += 1

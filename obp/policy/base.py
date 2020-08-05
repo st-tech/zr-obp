@@ -24,7 +24,7 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
@@ -90,20 +90,17 @@ class BaseContextualPolicy(metaclass=ABCMeta):
     Parameters
     ----------
     dim: int
-        Dimension of context vectors.
+        Number of dimensions of context vectors.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default: 1
         Length of a list of recommended actions in each impression.
-        When Open Bandit Dataset is used, 3 shouled be set.
+        When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
-
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
 
     alpha_: float, default: 1.
         Prior parameter for the online logistic regression.
@@ -113,6 +110,7 @@ class BaseContextualPolicy(metaclass=ABCMeta):
 
     random_state: int, default: None
         Controls the random seed in sampling actions.
+
     """
 
     dim: int
@@ -172,20 +170,13 @@ class BaseContextualPolicy(metaclass=ABCMeta):
 
 @dataclass
 class BaseOffPolicyLearner(metaclass=ABCMeta):
-    """Base Class for off-policy learner with standard OPE estimators.
-
-    Note
-    ------
+    """Base Class for off-policy learner with OPE estimators.
 
     Parameters
     -----------
     base_model: ClassifierMixin
-        Machine learning classifier to be used to create the decision making policy.
-
-    Examples
-    ----------
-
-        .. code-block:: python
+        Machine learning classifier to be used to estimate the loss function
+        for learning the decision making policy.
 
     Reference
     -----------
@@ -264,7 +255,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
 
         """
         check_bandit_feedback_inputs(
-            context=context, action=action, rewrard=reward, pscore=pscore,
+            context=context, action=action, reward=reward, pscore=pscore,
         )
         X, sample_weight, y = self._create_train_data_for_opl(
             context=context, action=action, reward=reward, pscore=pscore,
