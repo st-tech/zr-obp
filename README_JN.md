@@ -1,4 +1,6 @@
-**Open Bandit Dataset & Pipeline**
+<p align="center">
+  <img width="80%" src="./images/logo.png" />
+</p>
 
 **[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)**
 
