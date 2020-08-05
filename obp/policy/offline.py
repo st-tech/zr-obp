@@ -19,11 +19,6 @@ class IPWLearner(BaseOffPolicyLearner):
     base_model: ClassifierMixin
         Machine learning classifier to be used to create the decision making policy.
 
-    Examples
-    ----------
-
-        .. code-block:: python
-
     Reference
     -----------
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
@@ -47,16 +42,16 @@ class IPWLearner(BaseOffPolicyLearner):
 
         Parameters
         -----------
-        context: array-like, shape (n_actions,)
+        context: array-like, shape (n_rounds, dim_context)
             Context vectors in the given training logged bandit feedback.
 
-        action: array-like, shape (n_actions,)
+        action: array-like, shape (n_rounds,)
             Selected actions by behavior policy in the given training logged bandit feedback.
 
-        reward: array-like, shape (n_actions,)
+        reward: array-like, shape (n_rounds,)
             Observed rewards in the given training logged bandit feedback.
 
-        pscore: Optional[np.ndarray], default: None
+        pscore: array-like, shape (n_rounds,), default: None
             Propensity scores, the probability of selecting each action by behavior policy,
             in the given training logged bandit feedback.
 

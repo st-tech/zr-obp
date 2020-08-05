@@ -14,8 +14,8 @@ import seaborn as sns
 
 from .estimators import BaseOffPolicyEstimator
 from .regression_model import RegressionModel
-from ..dataset import BanditFeedback
-from ..utils import check_is_fitted
+from ..types import BanditFeedback
+from ..utils import check_is_fitted, check_bandit_feedback_inputs
 
 
 @dataclass
@@ -93,6 +93,10 @@ class OffPolicyEvaluation:
 
     def __post_init__(self) -> None:
         """Initialize class."""
+        for key_ in ["action", "position", "reward", "pscore", "context"]:
+            if key_ not in self.bandit_feedback:
+                raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
+
         if self.regression_model is not None:
             if check_is_fitted(self.regression_model):
                 logging.info("a fitted regression model is given.")
@@ -100,8 +104,18 @@ class OffPolicyEvaluation:
                 logging.info(
                     "the given regression model is not fitted, and thus train it here..."
                 )
+                check_bandit_feedback_inputs(
+                    context=self.bandit_feedback["context"],
+                    action=self.bandit_feedback["action"],
+                    reward=self.bandit_feedback["reward"],
+                    pscore=self.bandit_feedback["pscore"],
+                    action_context=self.action_context,
+                )
                 self.regression_model.fit(
-                    bandit_feedback=self.bandit_feedback,
+                    context=self.bandit_feedback["context"],
+                    action=self.bandit_feedback["action"],
+                    reward=self.bandit_feedback["reward"],
+                    pscore=self.bandit_feedback["pscore"],
                     action_context=self.action_context,
                 )
         else:
@@ -117,6 +131,11 @@ class OffPolicyEvaluation:
         self, selected_actions: np.ndarray
     ) -> Dict[str, np.ndarray]:
         """Create input dictionary to estimate policy value by subclasses of `BaseOffPolicyEstimator`"""
+        assert isinstance(
+            selected_actions, np.ndarray
+        ), "selected_actions must be ndarray"
+        assert selected_actions.ndim == 2, "selected_actions must be 2-dimensional"
+
         estimator_inputs = {
             input_: self.bandit_feedback[input_] for input_ in ["reward", "pscore"]
         }
@@ -131,7 +150,8 @@ class OffPolicyEvaluation:
             estimator_inputs[
                 "estimated_rewards_by_reg_model"
             ] = self.regression_model.predict(
-                bandit_feedback=self.bandit_feedback,
+                context=self.bandit_feedback["context"],
+                position=self.bandit_feedback["position"],
                 action_context=self.action_context,
                 selected_actions=selected_actions,
             )
@@ -143,7 +163,8 @@ class OffPolicyEvaluation:
         Parameters
         ----------
         selected_actions: array-like, shape (n_rounds, len_list)
-            Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
+            Sequence of actions selected by counterfactual (or evaluation) policy
+            at each round in offline bandit simulation.
 
         Returns
         ----------
@@ -151,6 +172,11 @@ class OffPolicyEvaluation:
             Dictionary containing estimated policy values by off-policy estimators.
 
         """
+        assert isinstance(
+            selected_actions, np.ndarray
+        ), "selected_actions must be ndarray"
+        assert selected_actions.ndim == 2, "selected_actions must be 2-dimensional"
+
         policy_value_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             selected_actions=selected_actions
@@ -174,7 +200,8 @@ class OffPolicyEvaluation:
         Parameters
         ----------
         selected_actions: array-like, shape (n_rounds, len_list)
-            Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
+            Sequence of actions selected by counterfactual (or evaluation) policy
+            at each round in offline bandit simulation.
 
         alpha: float, default: 0.05
             P-value.
@@ -188,9 +215,15 @@ class OffPolicyEvaluation:
         Returns
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
-            Dictionary containing confidence intervals of policy value estimated by nonparametric booststrap procedure.
+            Dictionary containing confidence intervals of policy value estimated
+            by nonparametric booststrap procedure.
 
         """
+        assert isinstance(
+            selected_actions, np.ndarray
+        ), "selected_actions must be ndarray"
+        assert selected_actions.ndim == 2, "selected_actions must be 2-dimensional"
+
         policy_value_interval_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             selected_actions=selected_actions
@@ -212,12 +245,14 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Summarize estimated_policy_values and their confidence intervals in off-policy evaluation by given estimators.
+        """Summarize estimated_policy_values and their confidence intervals
+        in off-policy evaluation by given estimators.
 
         Parameters
         ----------
         selected_actions: array-like, shape (n_rounds, len_list)
-            Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
+            Sequence of actions selected by counterfactual (or evaluation) policy
+            at each round in offline bandit simulation.
 
         alpha: float, default: 0.05
             P-value.
@@ -234,6 +269,11 @@ class OffPolicyEvaluation:
             Estimated policy values and their confidence intervals made by given off-policy estimators.
 
         """
+        assert isinstance(
+            selected_actions, np.ndarray
+        ), "selected_actions must be ndarray"
+        assert selected_actions.ndim == 2, "selected_actions must be 2-dimensional"
+
         policy_value_df = pd.DataFrame(
             self.estimate_policy_values(selected_actions=selected_actions),
             index=["estimated_policy_value"],
@@ -263,7 +303,8 @@ class OffPolicyEvaluation:
         Parameters
         ----------
         selected_actions: array-like, shape (n_rounds, len_list)
-            Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
+            Sequence of actions selected by counterfactual (or evaluation) policy
+            at each round in offline bandit simulation.
 
         alpha: float, default: 0.05
             P-value.
@@ -279,11 +320,20 @@ class OffPolicyEvaluation:
             Dierctory to store the bar figure.
             If 'None' is given, the figure will not be saved.
 
-        fig_dir: Path, default: None
+        fig_name: str, default: None
             Name of the bar figure.
             If 'None' is given, 'estimated_policy_value.png' will be used.
 
         """
+        assert isinstance(
+            selected_actions, np.ndarray
+        ), "selected_actions must be ndarray"
+        assert selected_actions.ndim == 2, "selected_actions must be 2-dimensional"
+        if fig_dir is not None:
+            assert isinstance(fig_dir, Path), "fig_dir must be a Path"
+        if fig_name is not None:
+            assert isinstance(fig_name, str), "fig_dir must be a string"
+
         estimated_round_rewards_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             selected_actions=selected_actions
@@ -337,7 +387,7 @@ class OffPolicyEvaluation:
         Parameters
         ----------
         selected_actions: array-like, shape (n_rounds, len_list)
-            Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
+            Sequence of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
 
         ground_truth policy value: int
             Ground_truth policy value of a counterfactual policy, i.e., :math:`V(\\pi)`.
@@ -349,6 +399,14 @@ class OffPolicyEvaluation:
             Dictionary containing relative estimation error of off-policy estimators.
 
         """
+        assert isinstance(
+            selected_actions, np.ndarray
+        ), "selected_actions must be ndarray"
+        assert selected_actions.ndim == 2, "selected_actions must be 2-dimensional"
+        assert isinstance(
+            ground_truth_policy_value, float
+        ), "ground_truth_policy_value must be a float"
+
         relative_estimation_error_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             selected_actions=selected_actions
@@ -370,7 +428,7 @@ class OffPolicyEvaluation:
         Parameters
         ----------
         selected_actions: array-like, shape (n_rounds, len_list)
-            Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
+            Sequence of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
 
         Returns
         ----------
@@ -378,6 +436,11 @@ class OffPolicyEvaluation:
             Estimated policy values and their confidence intervals made by given off-policy estimators.
 
         """
+        assert isinstance(
+            selected_actions, np.ndarray
+        ), "selected_actions must be ndarray"
+        assert selected_actions.ndim == 2, "selected_actions must be 2-dimensional"
+
         relative_estimation_error_df = pd.DataFrame(
             self.evaluate_performance_of_estimators(selected_actions=selected_actions),
             index=["relative_estimation_error"],

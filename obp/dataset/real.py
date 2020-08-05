@@ -11,7 +11,8 @@ import pandas as pd
 from scipy.stats import rankdata
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_random_state
-from .base import BaseRealBanditDataset, BanditFeedback
+from .base import BaseRealBanditDataset
+from ..types import BanditFeedback
 
 
 @dataclass
@@ -60,7 +61,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     @property
     def n_actions(self) -> int:
         """Number of actions."""
-        return self.action.max() + 1
+        return int(self.action.max() + 1)
 
     @property
     def dim_context(self) -> int:
@@ -70,7 +71,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     @property
     def len_list(self) -> int:
         """Length of recommendation lists."""
-        return self.position.max() + 1
+        return int(self.position.max() + 1)
 
     @classmethod
     def calc_on_policy_policy_value_estimate(

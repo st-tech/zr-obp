@@ -4,13 +4,13 @@
 """Base Interfaces for Bandit Algorithms."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
-from sklearn.base import ClassifierMixin
+from sklearn.base import ClassifierMixin, is_classifier
 from sklearn.utils import check_random_state
 
-from ..ope import RegressionModel
+from ..utils import check_bandit_feedback_inputs
 
 
 @dataclass
@@ -29,30 +29,39 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
 
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
-
     random_state: int, default: None
         Controls the random seed in sampling actions.
 
-    policy_type: str, default: 'contextfree'
-        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
     """
 
     n_actions: int
     len_list: int = 1
     batch_size: int = 1
-    n_trial: int = 0
     random_state: Optional[int] = None
-    policy_type: str = "contextfree"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
+        assert self.n_actions > 1 and isinstance(
+            self.n_actions, int
+        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+        assert self.len_list > 0 and isinstance(
+            self.len_list, int
+        ), f"len_list must be a positive integer, but {self.len_list} is given"
+        assert self.batch_size > 0 and isinstance(
+            self.batch_size, int
+        ), f"batch_size must be a positive integer, but {self.batch_size} is given"
+
+        self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
         self.action_counts = np.zeros(self.n_actions, dtype=int)
         self.action_counts_temp = np.zeros(self.n_actions, dtype=int)
         self.reward_counts_temp = np.zeros(self.n_actions)
         self.reward_counts = np.zeros(self.n_actions)
+
+    @property
+    def policy_type(self) -> str:
+        """Type of the bandit policy."""
+        return "contextfree"
 
     def initialize(self) -> None:
         """Initialize Parameters."""
@@ -66,12 +75,12 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
     @abstractmethod
     def select_action(self) -> np.ndarray:
         """Select a list of actions."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def update_params(self, action: int, reward: float) -> None:
         """Update policy parameters."""
-        pass
+        raise NotImplementedError
 
 
 @dataclass
@@ -104,47 +113,61 @@ class BaseContextualPolicy(metaclass=ABCMeta):
 
     random_state: int, default: None
         Controls the random seed in sampling actions.
-
-    policy_type: str, default: 'contextual'
-        Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'
     """
 
     dim: int
     n_actions: int
     len_list: int = 1
     batch_size: int = 1
-    n_trial: int = 0
     alpha_: float = 1.0
     lambda_: float = 1.0
     random_state: Optional[int] = None
-    policy_type: str = "contextual"
 
     def __post_init__(self) -> None:
         """Initialize class."""
+        assert self.dim > 0 and isinstance(
+            self.dim, int
+        ), f"dim must be a positive integer, but {self.dim} is given"
+        assert self.n_actions > 1 and isinstance(
+            self.n_actions, int
+        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+        assert self.len_list > 0 and isinstance(
+            self.len_list, int
+        ), f"len_list must be a positive integer, but {self.len_list} is given"
+        assert self.batch_size > 0 and isinstance(
+            self.batch_size, int
+        ), f"batch_size must be a positive integer, but {self.batch_size} is given"
+
+        self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
         self.alpha_list = self.alpha_ * np.ones(self.n_actions)
         self.lambda_list = self.lambda_ * np.ones(self.n_actions)
         self.action_counts = np.zeros(self.n_actions, dtype=int)
-        self.reward_lists = [[] for i in np.arange(self.n_actions)]
-        self.context_lists = [[] for i in np.arange(self.n_actions)]
+        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+        self.context_lists = [[] for _ in np.arange(self.n_actions)]
+
+    @property
+    def policy_type(self) -> str:
+        """Type of the bandit policy."""
+        return "contextual"
 
     def initialize(self) -> None:
         """Initialize policy parameters."""
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
         self.action_counts = np.zeros(self.n_actions, dtype=int)
-        self.reward_lists = [[] for i in np.arange(self.n_actions)]
-        self.context_lists = [[] for i in np.arange(self.n_actions)]
+        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+        self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
     @abstractmethod
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select a list of actions."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def update_params(self, action: float, reward: float, context: np.ndarray) -> None:
         """Update policy parameters."""
-        pass
+        raise NotImplementedError
 
 
 @dataclass
@@ -175,7 +198,12 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        pass
+        assert is_classifier(self.base_model), "base_model must be a classifier."
+
+    @property
+    def policy_type(self) -> str:
+        """Type of the bandit policy."""
+        return "offline"
 
     @abstractmethod
     def _create_train_data_for_opl(
@@ -184,7 +212,6 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        **kwargs,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Create training data for off-policy learning.
 
@@ -209,48 +236,38 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
             Feature vectors, sample weights, and outcome for training the base machine learning model.
 
         """
-        return NotImplementedError
+        raise NotImplementedError
 
     def fit(
         self,
         context: np.ndarray,
-        action: float,
-        reward: float,
+        action: np.ndarray,
+        reward: np.ndarray,
         pscore: Optional[np.ndarray] = None,
-        action_context: Optional[np.ndarray] = None,
-        regression_model: Optional[RegressionModel] = None,
     ) -> None:
         """Fits the offline bandit policy according to the given logged bandit feedback data.
 
         Parameters
         -----------
-        context: array-like, shape (n_actions,)
+        context: array-like, shape (n_rounds, dim_context)
             Context vectors in the given training logged bandit feedback.
 
-        action: array-like, shape (n_actions,)
+        action: array-like, shape (n_rounds,)
             Selected actions by behavior policy in the given training logged bandit feedback.
 
-        reward: array-like, shape (n_actions,)
+        reward: array-like, shape (n_rounds,)
             Observed rewards in the given training logged bandit feedback.
 
-        pscore: Optional[np.ndarray], default: None
+        pscore: array-like, shape (n_rounds,), default: None
             Propensity scores, the probability of selecting each action by behavior policy,
             in the given training logged bandit feedback.
 
-        action_context: array-like, shape (n_actions, dim_action_context), default: None
-            Context vectors used as input to predict the mean reward function.
-
-        regression_model: Optional[RegressionModel], default: None
-            Regression model that predicts the mean reward function :math:`E[Y | X, A]`.
-
         """
+        check_bandit_feedback_inputs(
+            context=context, action=action, rewrard=reward, pscore=pscore,
+        )
         X, sample_weight, y = self._create_train_data_for_opl(
-            context=context,
-            action=action,
-            reward=reward,
-            pscore=pscore,
-            action_context=action_context,
-            regression_model=regression_model,
+            context=context, action=action, reward=reward, pscore=pscore,
         )
         self.base_model.fit(X=X, y=y, sample_weight=sample_weight)
 
@@ -259,15 +276,19 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
 
         Parameters
         -----------
-        context: array like of shape (n_rounds_of_new_data, dim_context)
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
             Observed context vector for new data.
 
         Returns
         -----------
-        pred: array like of shape (n_rounds_of_new_data,)
+        pred: array-like, shape (n_rounds_of_new_data,)
             Predicted best action for new data.
 
         """
+        assert (
+            isinstance(context, np.ndarray) and context.ndim == 2
+        ), "context must be 2-dimensional ndarray"
+
         return self.base_model.predict(context)
 
     def predict_proba(self, context: np.ndarray) -> None:
@@ -275,17 +296,18 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
 
         Parameters
         -----------
-        context: array like of shape (n_rounds_of_new_data, dim_context)
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
             Observed context vector for new data.
 
         Returns
         -----------
-        pred_proba: array like of shape (n_rounds_of_new_data, n_actions)
+        pred_proba: array-like, shape (n_rounds_of_new_data, n_actions)
             Probability estimates of each arm being the best one for new data.
             The returned estimates for all classes are ordered by the label of classes.
 
         """
+        assert (
+            isinstance(context, np.ndarray) and context.ndim == 2
+        ), "context must be 2-dimensional ndarray"
+
         return self.base_model.predict_proba(context)
-
-
-BanditPolicy = Union[BaseContextFreePolicy, BaseContextualPolicy]

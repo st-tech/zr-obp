@@ -6,8 +6,8 @@ from tqdm import tqdm
 
 import numpy as np
 
-from ..dataset import BanditFeedback
-from ..policy import BanditPolicy
+from ..utils import check_bandit_feedback_inputs
+from ..types import BanditFeedback, BanditPolicy
 
 
 def run_bandit_simulation(
@@ -21,15 +21,25 @@ def run_bandit_simulation(
         Logged bandit feedback data to be used in offline bandit simulation.
 
     policy: BanditPolicy
-        Bandit policy to be used evaluated in offline bandit simulation (i.e., counterfactual or evaluation policy).
+        Bandit policy to be evaluated in offline bandit simulation (i.e., counterfactual or evaluation policy).
 
     Returns
     --------
-    selected_actions: array-like shape (n_rounds, len_list)
-        Lists of actions selected by counterfactual (or evaluation) policy at each round in offline bandit simulation.
+    selected_actions: array-like, shape (n_rounds, len_list)
+        Sequence of list of actions selected by counterfactual (or evaluation) policy
+        at each round in offline bandit simulation.
 
     """
-    _check_bandit_feedback(bandit_feedback=bandit_feedback)
+    for key_ in ["action", "position", "reward", "pscore", "context"]:
+        if key_ not in bandit_feedback:
+            raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
+    check_bandit_feedback_inputs(
+        context=bandit_feedback["context"],
+        action=bandit_feedback["action"],
+        reward=bandit_feedback["reward"],
+        position=bandit_feedback["position"],
+        pscore=bandit_feedback["pscore"],
+    )
 
     policy_ = policy
     selected_actions_list = list()
@@ -65,9 +75,3 @@ def run_bandit_simulation(
 
     return np.array(selected_actions_list)
 
-
-def _check_bandit_feedback(bandit_feedback: BanditFeedback) -> RuntimeError:
-    """Check keys of input BanditFeedback dict."""
-    for key_ in ["action", "position", "reward", "pscore", "context"]:
-        if key_ not in bandit_feedback:
-            raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")

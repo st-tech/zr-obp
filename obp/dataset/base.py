@@ -3,11 +3,6 @@
 
 """Abstract Base Class for Logged Bandit Feedback."""
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Union
-
-import numpy as np
-
-BanditFeedback = Dict[str, Union[str, np.ndarray]]
 
 
 class BaseRealBanditDataset(metaclass=ABCMeta):
@@ -16,17 +11,17 @@ class BaseRealBanditDataset(metaclass=ABCMeta):
     @abstractmethod
     def load_raw_data(self) -> None:
         """Load raw dataset."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def pre_process(self) -> None:
         """Preprocess raw dataset."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def obtain_batch_bandit_feedback(self) -> None:
         """Obtain batch logged bandit feedback."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class BaseSyntheticBanditDataset(metaclass=ABCMeta):
@@ -35,4 +30,4 @@ class BaseSyntheticBanditDataset(metaclass=ABCMeta):
     @abstractmethod
     def obtain_batch_bandit_feedback(self) -> None:
         """Obtain batch logged bandit feedback."""
-        raise NotImplementedError()
+        raise NotImplementedError

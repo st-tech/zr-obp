@@ -31,9 +31,6 @@ class LinEpsilonGreedy(BaseContextualPolicy):
     n_trial: int, default: 0
         Current number of trials in a bandit simulation.
 
-    policy_type: str, default: 'contextual'
-        Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
-
     random_state: int, default: None
         Controls the random seed in sampling actions.
 
@@ -54,7 +51,7 @@ class LinEpsilonGreedy(BaseContextualPolicy):
         """Initialize class."""
         assert (
             0 <= self.epsilon <= 1
-        ), f"epsilon must be in [0, 1], but {self.epsilon} is set."
+        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
         self.policy_name = f"linear_epsilon_greedy_{self.epsilon}"
 
         super().__post_init__()
@@ -91,8 +88,8 @@ class LinEpsilonGreedy(BaseContextualPolicy):
                 ],
                 axis=1,
             )  # dim * n_actions
-            reward_preds = (context @ self.theta_hat).flatten()
-            return reward_preds.argsort()[::-1][: self.len_list]
+            predicted_rewards = (context @ self.theta_hat).flatten()
+            return predicted_rewards.argsort()[::-1][: self.len_list]
         else:
             return self.random_.choice(
                 self.n_actions, size=self.len_list, replace=False
@@ -152,9 +149,6 @@ class LinUCB(BaseContextualPolicy):
     n_trial: int, default: 0
         Current number of trials in a bandit simulation.
 
-    policy_type: str, default: 'contextual'
-        Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
-
     random_state: int, default: None
         Controls the random seed in sampling actions.
 
@@ -175,7 +169,7 @@ class LinUCB(BaseContextualPolicy):
         """Initialize class."""
         assert (
             0 <= self.epsilon <= 1
-        ), f"epsilon must be in [0, 1], but {self.epsilon} is set."
+        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
         self.policy_name = f"linear_ucb_{self.epsilon}"
 
         super().__post_init__()
@@ -280,9 +274,6 @@ class LinTS(BaseContextualPolicy):
     random_state: int, default: None
         Controls the random seed in sampling actions.
 
-    policy_type: str, default: 'contextual'
-        Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
-
     """
 
     def __post_init__(self) -> None:
@@ -314,19 +305,17 @@ class LinTS(BaseContextualPolicy):
             List of selected actions.
 
         """
-        self.theta_hat = np.concatenate(
+        theta_hat = np.concatenate(
             [
                 self.A_inv[i] @ np.expand_dims(self.b[:, i], axis=1)
                 for i in np.arange(self.n_actions)
             ],
             axis=1,
         )
-        self.theta_tilde = np.concatenate(
+        theta_sampled = np.concatenate(
             [
                 np.expand_dims(
-                    self.random_.multivariate_normal(
-                        self.theta_hat[:, i], self.A_inv[i]
-                    ),
+                    self.random_.multivariate_normal(theta_hat[:, i], self.A_inv[i]),
                     axis=1,
                 )
                 for i in np.arange(self.n_actions)
@@ -334,8 +323,8 @@ class LinTS(BaseContextualPolicy):
             axis=1,
         )
 
-        reward_preds = (context @ self.theta_tilde).flatten()
-        return reward_preds.argsort()[::-1][: self.len_list]
+        predicted_rewards = (context @ theta_sampled).flatten()
+        return predicted_rewards.argsort()[::-1][: self.len_list]
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
         """Update policy parameters.

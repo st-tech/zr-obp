@@ -3,7 +3,7 @@
 
 """Useful Tools."""
 from inspect import isclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 from sklearn.base import BaseEstimator
@@ -21,7 +21,7 @@ def estimate_confidence_interval_by_bootstrap(
 
     Parameters
     ----------
-    samples: array
+    samples: array-like
         Empirical observed samples to be used to estimate cumulative distribution function.
 
     alpha: float, default: 0.05
@@ -38,12 +38,19 @@ def estimate_confidence_interval_by_bootstrap(
     estimated_confidence_interval: Dict[str, float]
         Dictionary storing the estimated mean and upper-lower confidence bounds.
     """
+    assert (0.0 < alpha < 1.0) and isinstance(
+        alpha, float
+    ), f"alpha must be a positive float, but {alpha} is given"
+    assert (n_bootstrap_samples > 0) and isinstance(
+        n_bootstrap_samples, int
+    ), f"n_bootstrap_samples must be a positive integer, but {n_bootstrap_samples} is given"
+
     boot_samples = list()
     random_ = check_random_state(random_state)
     for _ in np.arange(n_bootstrap_samples):
         boot_samples.append(np.mean(random_.choice(samples, size=samples.shape[0])))
-    lower_bound = np.percentile(boot_samples, 100 * (alpha / 2)).round(5)
-    upper_bound = np.percentile(boot_samples, 100 * (1.0 - alpha / 2)).round(5)
+    lower_bound = np.percentile(boot_samples, 100 * (alpha / 2))
+    upper_bound = np.percentile(boot_samples, 100 * (1.0 - alpha / 2))
     return {
         "mean": np.mean(boot_samples),
         f"{100 * (1. - alpha)}% CI (lower)": lower_bound,
@@ -121,12 +128,75 @@ def check_is_fitted(
     return is_fitted
 
 
-def sigmoid(x: np.ndarray) -> np.ndarray:
+def check_bandit_feedback_inputs(
+    context: np.ndarray,
+    action: np.ndarray,
+    reward: np.ndarray,
+    position: Optional[np.ndarray] = None,
+    pscore: Optional[np.ndarray] = None,
+    action_context: Optional[np.ndarray] = None,
+) -> Optional[AssertionError]:
+    """Check inputs for bandit learning or simulation.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors in the given training logged bandit feedback.
+
+    action: array-like, shape (n_rounds,)
+        Selected actions by behavior policy in the given training logged bandit feedback.
+
+    reward: array-like, shape (n_rounds,)
+        Observed rewards in the given training logged bandit feedback.
+
+    position: array-like, shape (n_rounds,)
+            Position of each round in the given training logged bandit feedback.
+
+    pscore: array-like, shape (n_rounds,), default: None
+        Propensity scores, the probability of selecting each action by behavior policy,
+        in the given training logged bandit feedback.
+
+    action_context: array-like, shape (n_actions, dim_action_context), default: None
+        Context vectors used as input to predict the mean reward function.
+
+    """
+    assert isinstance(context, np.ndarray), "context must be ndarray"
+    assert context.ndim == 2, "context must be 2-dimensional"
+    assert isinstance(action, np.ndarray), "action must be ndarray"
+    assert action.ndim == 1, "action must be 1-dimensional"
+    assert isinstance(reward, np.ndarray), "reward must be ndarray"
+    assert reward.ndim == 1, "reward must be 1-dimensional"
+
+    if pscore is not None:
+        assert isinstance(pscore, np.ndarray), "pscore must be ndarray"
+        assert pscore.ndim == 1, "pscore must be 1-dimensional"
+        assert (
+            context.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0]
+        ), "context, action, reward, and pscore must be the same size."
+    if position is not None:
+        assert isinstance(position, np.ndarray), "position must be ndarray"
+        assert position.ndim == 1, "position must be 1-dimensional"
+        assert (
+            context.shape[0] == action.shape[0] == reward.shape[0] == position.shape[0]
+        ), "context, action, reward, and position must be the same size."
+    else:
+        assert (
+            context.shape[0] == action.shape[0] == reward.shape[0]
+        ), "context, action, and reward must be the same size."
+    if action_context is not None:
+        assert isinstance(action_context, np.ndarray), "action_context must be ndarray"
+        assert action_context.ndim == 2, "action_context must be 2-dimensional"
+        assert (action.max() + 1) == action_context.shape[
+            0
+        ], "the number of action and the size of the first dimension of action_context must be same."
+
+
+def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate sigmoid function."""
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def softmax(x: np.ndarray) -> np.ndarray:
+def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate softmax function."""
     b = np.expand_dims(np.max(x, axis=1), 1)
     numerator = np.exp(x - b)

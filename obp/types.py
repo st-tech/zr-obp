@@ -8,7 +8,7 @@ import numpy as np
 from .policy import BaseContextFreePolicy, BaseContextualPolicy
 
 # dataset
-BanditFeedback = Dict[str, Union[str, np.ndarray]]
+BanditFeedback = Dict[str, Union[int, np.ndarray]]
 
 # policy
 BanditPolicy = Union[BaseContextFreePolicy, BaseContextualPolicy]

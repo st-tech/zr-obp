@@ -26,14 +26,8 @@ class EpsilonGreedy(BaseContextFreePolicy):
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
 
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
-
     random_state: int, default: None
         Controls the random seed in sampling actions.
-
-    policy_type: str, default: 'contextfree'
-        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
 
     epsilon: float, default: 1.
         Exploration hyperparameter that must take value in the range of [0., 1.].
@@ -44,7 +38,13 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     epsilon: float = 1.0
     policy_name: str = f"egreedy_{epsilon}"
-    assert 0 <= epsilon <= 1, f"epsilon must be in [0, 1], but {epsilon} is set."
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        assert (
+            0 <= self.epsilon <= 1
+        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+        super().__post_init__()
 
     def select_action(self) -> np.ndarray:
         """Select a list of actions.
@@ -55,8 +55,8 @@ class EpsilonGreedy(BaseContextFreePolicy):
             List of selected actions.
         """
         if (self.random_.rand() > self.epsilon) and (self.action_counts.min() > 0):
-            reward_preds = self.reward_counts / self.action_counts
-            return reward_preds.argsort()[::-1][: self.len_list]
+            predicted_rewards = self.reward_counts / self.action_counts
+            return predicted_rewards.argsort()[::-1][: self.len_list]
         else:
             return self.random_.choice(
                 self.n_actions, size=self.len_list, replace=False
@@ -98,14 +98,8 @@ class Random(EpsilonGreedy):
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
 
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
-
     random_state: int, default: None
         Controls the random seed in sampling actions.
-
-    policy_type: str, default: 'contextfree'
-        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
 
     epsilon: float, default: 1.
         Exploration hyperparameter that must take value in the range of [0., 1.].
@@ -133,27 +127,21 @@ class BernoulliTS(BaseContextFreePolicy):
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
 
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
-
     random_state: int, default: None
         Controls the random seed in sampling actions.
 
-    policy_type: str, default: 'contextfree'
-        Type of the bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
-
-    alpha: List[float]], default: None
+    alpha: array-like, shape (n_actions, ), default: None
         Prior parameter vector for Beta distributions.
 
-    beta: List[float]], default: None
+    beta: array-like, shape (n_actions, ), default: None
         Prior parameter vector for Beta distributions.
 
     policy_name: str, default: 'bts'
         Name of bandit policy.
     """
 
-    alpha: Optional[List[float]] = None
-    beta: Optional[List[float]] = None
+    alpha: Optional[np.ndarray] = None
+    beta: Optional[np.ndarray] = None
     policy_name: str = "bts"
 
     def __post_init__(self) -> None:
@@ -170,11 +158,11 @@ class BernoulliTS(BaseContextFreePolicy):
         selected_actions: array-like shape (len_list, )
             List of selected actions.
         """
-        theta = self.random_.beta(
+        predicted_rewards = self.random_.beta(
             a=self.reward_counts + self.alpha,
             b=(self.action_counts - self.reward_counts) + self.beta,
         )
-        return theta.argsort()[::-1][: self.len_list]
+        return predicted_rewards.argsort()[::-1][: self.len_list]
 
     def update_params(self, action: int, reward: float) -> None:
         """Update policy parameters.

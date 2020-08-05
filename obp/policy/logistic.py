@@ -32,9 +32,6 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
 
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
-
     alpha_: float, default: 1.
         Prior parameter for the online logistic regression.
 
@@ -43,9 +40,6 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
 
     random_state: int, default: None
         Controls the random seed in sampling actions.
-
-    policy_type: str, default: 'contextual'
-        Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
 
     epsilon: float, default: 0.
         Exploration hyperparameter that must take value in the range of [0., 1.].
@@ -58,7 +52,7 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
         """Initialize class."""
         assert (
             0 <= self.epsilon <= 1
-        ), f"epsilon must be in [0, 1], but {self.epsilon} is set."
+        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
         self.policy_name = f"logistic_egreedy_{self.epsilon}"
 
         super().__post_init__()
@@ -68,8 +62,8 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
             )
             for i in np.arange(self.n_actions)
         ]
-        self.reward_lists = [[] for i in np.arange(self.n_actions)]
-        self.context_lists = [[] for i in np.arange(self.n_actions)]
+        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+        self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -119,8 +113,8 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
                         X=np.concatenate(self.context_lists[action], axis=0),
                         y=np.array(self.reward_lists[action]),
                     )
-            self.reward_lists = [[] for i in np.arange(self.n_actions)]
-            self.context_lists = [[] for i in np.arange(self.n_actions)]
+            self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+            self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
 
 @dataclass
@@ -142,9 +136,6 @@ class LogisticUCB(BaseContextualPolicy):
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
 
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
-
     alpha_: float, default: 1.
         Prior parameter for the online logistic regression.
 
@@ -153,9 +144,6 @@ class LogisticUCB(BaseContextualPolicy):
 
     random_state: int, default: None
         Controls the random seed in sampling actions.
-
-    policy_type: str, default: 'contextual'
-        Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
 
     epsilon: float, default: 0.
         Exploration hyperparameter that must take value in the range of [0., 1.].
@@ -172,7 +160,7 @@ class LogisticUCB(BaseContextualPolicy):
         """Initialize class."""
         assert (
             0 <= self.epsilon <= 1
-        ), f"epsilon must be in [0, 1], but {self.epsilon} is set."
+        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
         self.policy_name = f"logistic_ucb_{self.epsilon}"
 
         super().__post_init__()
@@ -182,8 +170,8 @@ class LogisticUCB(BaseContextualPolicy):
             )
             for i in np.arange(self.n_actions)
         ]
-        self.reward_lists = [[] for i in np.arange(self.n_actions)]
-        self.context_lists = [[] for i in np.arange(self.n_actions)]
+        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+        self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -235,8 +223,8 @@ class LogisticUCB(BaseContextualPolicy):
                         X=np.concatenate(self.context_lists[action], axis=0),
                         y=np.array(self.reward_lists[action]),
                     )
-            self.reward_lists = [[] for i in np.arange(self.n_actions)]
-            self.context_lists = [[] for i in np.arange(self.n_actions)]
+            self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+            self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
 
 @dataclass
@@ -258,9 +246,6 @@ class LogisticTS(BaseContextualPolicy):
     batch_size: int, default: 1
         Number of samples used in a batch parameter update.
 
-    n_trial: int, default: 0
-        Current number of trials in a bandit simulation.
-
     alpha_: float, default: 1.
         Prior parameter for the online logistic regression.
 
@@ -269,9 +254,6 @@ class LogisticTS(BaseContextualPolicy):
 
     random_state: int, default: None
         Controls the random seed in sampling actions.
-
-    policy_type: str, default: 'contextual'
-        Type of bandit policy such as 'contextfree', 'contextual', and 'combinatorial'.
 
     References
     ----------
@@ -293,8 +275,8 @@ class LogisticTS(BaseContextualPolicy):
             )
             for i in np.arange(self.n_actions)
         ]
-        self.reward_lists = [[] for i in np.arange(self.n_actions)]
-        self.context_lists = [[] for i in np.arange(self.n_actions)]
+        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+        self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -339,8 +321,8 @@ class LogisticTS(BaseContextualPolicy):
                         X=np.concatenate(self.context_lists[action], axis=0),
                         y=np.array(self.reward_lists[action]),
                     )
-            self.reward_lists = [[] for i in np.arange(self.n_actions)]
-            self.context_lists = [[] for i in np.arange(self.n_actions)]
+            self.reward_lists = [[] for _ in np.arange(self.n_actions)]
+            self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
 
 @dataclass

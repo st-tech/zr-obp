@@ -19,17 +19,17 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         self, reward: np.ndarray, action_match: np.ndarray
     ) -> np.ndarray:
         """Estimate rewards for each round."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def estimate_policy_value(self) -> float:
         """Estimate policy value of a counterfactual policy."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def estimate_interval(self) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure."""
-        pass
+        raise NotImplementedError
 
 
 @dataclass
@@ -200,7 +200,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     estimator_name: str = "ipw"
     assert (
         min_pscore <= 1.0
-    ), f"minimum propensity score must be lower than 1, but {min_pscore} is given."
+    ), f"minimum propensity score must be lower than 1, but {min_pscore} is given"
 
     def _estimate_round_rewards(
         self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
@@ -781,7 +781,7 @@ class SwitchDoublyRobust(DoublyRobust):
     estimator_name: str = "switch-dr"
     assert (
         tau >= 1.0
-    ), f"switching hyperparameter should be larger than 1. but {tau} is given."
+    ), f"switching hyperparameter should be larger than 1. but {tau} is given"
 
     def _estimate_round_rewards(
         self,
