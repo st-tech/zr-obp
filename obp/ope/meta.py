@@ -3,7 +3,7 @@
 
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
-import logging
+from logging import getLogger
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
@@ -16,6 +16,8 @@ from .estimators import BaseOffPolicyEstimator
 from .regression_model import RegressionModel
 from ..types import BanditFeedback
 from ..utils import check_is_fitted, check_bandit_feedback_inputs
+
+logger = getLogger(__name__)
 
 
 @dataclass
@@ -99,9 +101,9 @@ class OffPolicyEvaluation:
 
         if self.regression_model is not None:
             if check_is_fitted(self.regression_model):
-                logging.info("a fitted regression model is given.")
+                logger.info("a fitted regression model is given.")
             else:
-                logging.info(
+                logger.info(
                     "the given regression model is not fitted, and thus train it here..."
                 )
                 check_bandit_feedback_inputs(
@@ -119,7 +121,7 @@ class OffPolicyEvaluation:
                     action_context=self.action_context,
                 )
         else:
-            logging.warning(
+            logger.warning(
                 "regression model is not given; model dependent estimators such as DM or DR cannot be used."
             )
 

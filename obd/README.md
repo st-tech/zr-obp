@@ -43,4 +43,4 @@ Here is a detailed description of the fields (they are comma-separated in the CS
 
 
 ## Contact
-For any question, feel free to contact: saito.y.bj at m.titech.ac.jp
+For any question, feel free to contact: saito at hanjuku-kaso.com

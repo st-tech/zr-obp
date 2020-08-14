@@ -46,7 +46,7 @@
 </p>
 
 2019年11月下旬の7日間にわたる実験を行い, 全アイテム・男性用アイテム・女性用アイテムに対応する3つの「キャンペーン」でデータを収集しました.
-それぞれのキャンペーンでは, 各ユーザーのインプレッションに対してランダム方策 (Random)またはトンプソン抽出方策 (Bernulli Thompson Sampling)のいずれかを確率的にランダムに選択して適用しています.
+それぞれのキャンペーンでは, 各ユーザーのインプレッションに対してランダム方策(Random)またはトンプソン抽出方策(Bernoulli Thompson Sampling)のいずれかを確率的にランダムに選択して適用しています.
 図1はOpen Bandit Datasetの記述統計を示しています.
 
 <p align="center">
@@ -66,15 +66,15 @@
   <img width="90%" src="./images/overview.png" />
   <figcaption>
     <p align="center">
-      図3. Open Bandit Pipelineの構成.
+      図3. Open Bandit Pipelineの構成
     </p>
   </figcaption>
 </p>
 
 Open Bandit Pipeline は, 以下の主要モジュールで構成されています.
 
-- **datasetモジュール**。このモジュールは, Open Bandit Dataset用のデータ読み込みクラスとデータの前処理するための柔軟なインターフェースを提供します.
-- **policyモジュール**: このモジュールは, バンディットアルゴリズムのためのインターフェイスを提供します. 加えて, バンディットアルゴリズムといくつかの標準なバンディットアルゴリズムを実装しています.
+- **datasetモジュール**。このモジュールは, Open Bandit Dataset用のデータ読み込みクラスとデータの前処理するための柔軟なインターフェースを提供します. また人工データを生成するクラスも実装しています.
+- **policyモジュール**: このモジュールは, バンディットアルゴリズムのためのインターフェイスを提供します. 加えて, いくつかの標準なバンディットアルゴリズムを実装しています.
 - **simulatorモジュール**: このモジュールは, オフラインのバンディットシミュレーションを行うための関数を提供します.
 - **opeモジュール**:　このモジュールは, いくつかの標準的なオフ方策推定量を実装しています. また新たにオフ方策推定量を実装するためのインターフェースを提供します.
 
@@ -103,7 +103,7 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
   - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
   - Direct Method [[Beygelzimer and Langford 2009]](https://arxiv.org/abs/0812.4044)
   - Inverse Probability Weighting [[Precup et al. 2000]](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs) [[Strehl et al. 2010]](https://arxiv.org/abs/1003.0120)
-  - Self-Normalized Inserse Probability Weighting [[Swaminathan and Joachims. 2015]](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+  - Self-Normalized Inverse Probability Weighting [[Swaminathan and Joachims. 2015]](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
   - Doubly Robust [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
   - Switch Estimator [[Wang et al. 2016]](https://arxiv.org/abs/1612.01205)
   - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
@@ -120,7 +120,7 @@ Open Bandit Dataset・Pipelineでは, 以下の研究テーマに関する実験
 - **バンディットアルゴリズムの評価 (Evaluation of Bandit Algorithms)**：我々の公開データには, ランダム方策によって収集された大規模なログデータが含まれています. このため, 大規模な実世界環境で新しいオンラインバンディットアルゴリズムの性能を評価することが可能です.
 
 
-- **オフライン方策評価の評価 (Evaluation of Off-Plicy Evaluation)**：我々の公開データは, 複数の方策を実システム上で走らせることによって生成されたログデータで構成されています. またそれらの方策の真の性能が含まれています. そのため, オフ方策推定量の評価を行うことができます.
+- **オフライン方策評価の評価 (Evaluation of Off-Policy Evaluation)**：我々の公開データは, 複数の方策を実システム上で走らせることによって生成されたログデータで構成されています. またそれらの方策の真の性能が含まれています. そのため, オフ方策推定量の推定精度の評価を行うことができます.
 
 
 # インストール
@@ -134,7 +134,7 @@ pip install obp
 また, 本リポジトリを直接cloneしてセットアップすることもできます.
 ```bash
 git clone https://github.com/st-tech/zr-obp
-cd obp
+cd zr-obp
 python setup.py install
 ```
 
@@ -202,7 +202,6 @@ print(bandit_feedback.keys())
 
 `obp.dataset.OpenBanditDataset` クラスの `pre_process` メソッドに, 独自の特徴量エンジニアリングを実装することもできます.
 [`./examples/obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/obd/custom_dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
-
 また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
 
 ## (2) オフライン方策シミュレーション
@@ -218,7 +217,7 @@ counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=datase
 selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
 ```
 
-オフライン方策シミュレーションを行うための関数である `obp.simulator.run_bandit_simulation`は `obp.policy.BanditPolicy` クラスと `bandit_feedback` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中に設定したバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します. またユーザーは`obp.policy.BasePolicy`のインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
+オフライン方策シミュレーションを行うための関数である `obp.simulator.run_bandit_simulation`は `obp.policy.BanditPolicy` クラスと `bandit_feedback` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中にバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します. またユーザーは[`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py)に実装されているインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
 
 
 ## (3) オフライン方策評価 （Off-Policy Evaluation）
@@ -244,7 +243,7 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 
 
 # 引用
-本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようお願いいたします.
+本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようよろしくお願いいたします.
 
 ```
 # TODO: add bibtex
@@ -298,4 +297,4 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 14. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
 
 ## 実装
-本プロジェクトは **Open Graph Benchmark** ([[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)]) を大いに参考しています.
+本プロジェクトは **Open Graph Benchmark** ([[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)]) を参考にしています.

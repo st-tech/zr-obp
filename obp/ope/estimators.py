@@ -680,7 +680,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
-    Similar to Self-Normalized Inverse Probability Weighting, SNDR estimator applies the self-normalized importance weightinng technique to
+    Similar to Self-Normalized Inverse Probability Weighting, SNDR estimator applies the self-normalized importance weighting technique to
     increase the stability of the original Doubly Robust estimator.
     See also the description of `obp.ope.SelfNormalizedInverseProbabilityWeighting` for details.
 
