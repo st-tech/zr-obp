@@ -37,15 +37,14 @@ Thus, it facilitates reproducible research on bandit algorithms and off-policy e
 
 Open Bandit Pipeline consists of the following main modules.
 
-- **dataset module**: provides data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback.
-- **policy module**: provides interfaces for bandit algorithms and several standard algorithms
-- **simulator module**: provides functions for conducting offline bandit simulation.
-- **ope module**: provides interfaces for bandnit algorithms and several standard OPE estimators.
+- **dataset module**: This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit datasets.
+- **policy module**: This module provides interfaces for online and offline bandit algorithms. It also implements several standard algorithms.
+- **simulator module**: This module provides functions for conducting offline bandit simulation.
+- **ope module**: This module provides interfaces for OPE estimators. It also implements several standard OPE estimators.
 
-
-The pipeline also provides flexible interfaces for bandit algorithms and OPE estimators.
-Therefore, researchers can easily implement their own methods and evaluate them with our data and pipeline.
-In addition, the pipeline provides an interface for logged bandit feedback datasets.
-Thus, practitioners can can combine their own datasets with the pipeline and easily evaluate the performance of bandit algorithms in their settings.
+In addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
+Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
+Moreover, the pipeline provides an interface for logged bandit feedback datasets.
+Thus, practitioners can combine their own datasets with the pipeline and easily evaluate bandit algorithms' performances in their settings.
 
 Please see `package reference <https://zr-obp.readthedocs.io/en/latest/obp.html>`_ for detailed information about Open Bandit Pipeline.

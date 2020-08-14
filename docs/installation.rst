@@ -17,5 +17,5 @@ From source:
 .. code-block:: bash
 
     git clone https://github.com/st-tech/zr-obp
-    cd obp
+    cd zr-obp
     python setup.py install

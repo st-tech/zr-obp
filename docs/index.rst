@@ -60,9 +60,7 @@ Bandit Algorithms
 
    * Offline (Off-Policy Learning) :cite:`Dudik2014`
 
-      * Direct Method
       * Inverse Probability Weighting
-      * Doubly Robust
 
 OPE Estimators
 ----------------------
