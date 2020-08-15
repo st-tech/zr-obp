@@ -47,7 +47,7 @@ if __name__ == "__main__":
         type=str,
         choices=["bts", "random"],
         required=True,
-        help="counterfacutual policy, bts or random.",
+        help="counterfactual policy, bts or random.",
     )
     parser.add_argument(
         "--behavior_policy",
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     policy = counterfactual_policy_dict[counterfactual_policy](**kwargs)
     # compared OPE estimators
     ope_estimators = [DirectMethod(), InverseProbabilityWeighting(), DoublyRobust()]
-    # a base ML model for regression model used in Direct Method and Doubly Robust
+    # a base ML model for regression model used in model dependent OPE estimators
     base_model = CalibratedClassifierCV(HistGradientBoostingClassifier(**hyperparams))
     # ground-truth policy value of a counterfactual policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         selected_actions = run_bandit_simulation(
             bandit_feedback=boot_bandit_feedback, policy=policy
         )
-        # evaluate the estimation performance of OPE estimators
+        # evaluate the estimation performance of OPE estimators by relative estimation errors
         ope = OffPolicyEvaluation(
             bandit_feedback=boot_bandit_feedback,
             action_context=obd.action_context,
@@ -119,14 +119,14 @@ if __name__ == "__main__":
             ground_truth_policy_value=ground_truth_policy_value,
         )
         policy.initialize()
-        # store relative estimation errors of OPE estimators at each split
+        # store relative estimation errors of OPE estimators estimated with each sample
         for (
             estimator_name,
             relative_estimation_error,
         ) in relative_estimation_errors.items():
             evaluation_of_ope_results[estimator_name][b] = relative_estimation_error
 
-    # estimate confidence intervals of relative estimation by nonparametric bootstrap method
+    # estimate confidence intervals of relative estimation errors by the nonparametric bootstrap
     evaluation_of_ope_results_with_ci = {
         est.estimator_name: dict() for est in ope_estimators
     }

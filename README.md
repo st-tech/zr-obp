@@ -197,7 +197,7 @@ print(bandit_feedback.keys())
 ```
 
 Users can implement their own feature engineering in the `pre_process` method of `obp.dataset.OpenBanditDataset` class.
-We show an example of implementing some new feature engineering processes in [`./examples/obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/obd/custom_dataset.py).
+We show an example of implementing some new feature engineering processes in [`./examples/examples_with_obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/custom_dataset.py).
 Moreover, by following the interface of `obp.dataset.BaseBanditDataset` class, one can handle future open datasets for bandit algorithms other than our OBD.
 `dataset` module also provide a class to generate synthetic bandit datasets.
 

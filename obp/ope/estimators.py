@@ -327,7 +327,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
 
     SNIPW re-weights the observed rewards by the self-normalized importance weihgt.
     This estimator is not unbiased even when the behavior policy is known.
-    However, it is still consistent for the policy value and increase the stability in some senses.
+    However, it is still consistent for the policy value and increases the stability in some senses.
     See the references for the detailed discussions.
 
     Parameters
@@ -389,9 +389,9 @@ class DirectMethod(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{V}_{DM} (\\pi) =
-        \\frac{1}{T} \\sum_{t=1}^T \\mathbb{I} \\{ \\pi (x_t) = a_t \\} \\hat{\\mu} (x_t, a_t)
+        \\frac{1}{T} \\sum_{t=1}^T \\hat{\\mu} (x_t, pi (x_t))
 
-    where :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated rewards for round :math:`t`.
+    where :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, pi (x_t))` is an estimated reward for round :math:`t`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`, which supports several fitting methods specific to OPE.
 
     If the regression model is a good approximation to the mean reward function,
@@ -501,10 +501,10 @@ class DoublyRobust(InverseProbabilityWeighting):
     .. math::
 
             \\hat{V}_{DR} (\\pi) =
-            \\frac{1}{T} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, a_t)) + \\hat{\\mu} (x_t, a_t)
+            \\frac{1}{T} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, pi (x_t))) + \\hat{\\mu} (x_t, pi (x_t))
 
     where :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
-    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated rewards for round :math:`t`.
+    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, \\pi (x_t))` is an estimated reward for round :math:`t`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
@@ -673,10 +673,10 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     .. math::
 
             \\hat{V}_{SNDR} (\\pi) =
-            \\frac{1}{\\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t}} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, a_t)) + \\hat{\\mu} (x_t, a_t)
+            \\frac{1}{\\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t}} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, pi (x_t))) + \\hat{\\mu} (x_t, pi (x_t))
 
     where :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
-    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated rewards for round :math:`t`.
+    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated reward for round :math:`t`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
@@ -752,20 +752,19 @@ class SwitchDoublyRobust(DoublyRobust):
     .. math::
 
             \\hat{V}_{Switch-DR} (\\pi) =
-            \\frac{1}{T} \\sum_{t=1}^T v_t \\mathbb{I} \\{ (p_t)^{-1} \\le \\tau \\} + \{ (p_t)^{-1} > \\tau \\} \\hat{\\mu} (x_t, a_t)
+            \\frac{1}{T} \\sum_{t=1}^T v_t \\mathbb{I} \\{ (p_t)^{-1} \\le \\tau \\} + \{ (p_t)^{-1} > \\tau \\} \\hat{\\mu} (x_t, \\pi (x_t))
 
-    where :math:`v_t =  \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, a_t)) + \\hat{\\mu} (x_t, a_t)` is the doubly robust estimates for the rewards of each round
+    where :math:`v_t =  \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, \\pi (x_t))) + \\hat{\\mu} (x_t, \\pi (x_t))` is the doubly robust estimated reward of each round
     and :math:`\\tau (\\ge 1)` is the *switching hyperparameter*, which decides the *threshold* for the inverse of the propensity score.
     :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
-    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated rewards for round :math:`t`.
+    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, \\pi (x_t))` is an estimated reward for round :math:`t`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
     Parameters
     ----------
     tau: float, default: 1000
-        Switching hyperparameter. When the density ratio is larger than this parameter
-        the DM estimator is applied, otherwise the DR estimator is applied.
+        Switching hyperparameter. When the density ratio is larger than this parameter, the DM estimator is applied, otherwise the DR estimator is applied.
         This hyperparameter should be larger than 1., otherwise it is meaningless.
 
     estimator_name: str, default: 'switch-dr'.

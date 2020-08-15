@@ -201,7 +201,7 @@ print(bandit_feedback.keys())
 ```
 
 `obp.dataset.OpenBanditDataset` クラスの `pre_process` メソッドに, 独自の特徴量エンジニアリングを実装することもできます.
-[`./examples/obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/obd/custom_dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
+[`./examples/examples_with_obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/custom_dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
 また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
 
 ## (2) オフライン方策シミュレーション

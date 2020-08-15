@@ -4,10 +4,10 @@ Here, we use synthetic bandit dataset and pipeline to evaluate OPE estimators.
 
 ## Running experiments
 
-**Example Experimet. Evaluating Off-Policy Estimators**
+**Evaluating Off-Policy Estimators**
 
-We evaluate the estimation performance of Direct Method (DM), Inverse Probability Weighting (IPW), Self-Normalized Inverse Probability Weighting (SNIPW), Doubly Robust (DR), Self-Normalized Doubly Robust (SNDR), and Switch Doubly Robust (Switch-DR).
-[`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators.
+We evaluate the estimation performances of Direct Method (DM), Inverse Probability Weighting (IPW), Self-Normalized Inverse Probability Weighting (SNIPW), Doubly Robust (DR), Self-Normalized Doubly Robust (SNDR), and Switch Doubly Robust (Switch-DR).
+[`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using the synthetic bandit feedback data.
 
 ```bash
 # run evaluation of OPE estimators.
@@ -26,7 +26,7 @@ where `$n_runs` specifies the number of simulation runs in the experiment to est
 `$counterfactual_policy` specifies the counterfactual policy.
 It should be one of 'bts', 'random', 'linear_ts', 'linear_ucb', 'linear_egreedy', 'logistic_ts', 'logistic_ucb', and 'logistic_egreedy'.
 
-For example, the following command compares the estimation performance of the OPE estimators by synthetic bandit feedback data with 100,000 rounds, 10 actions, context vectors with five dimensions.
+For example, the following command compares the estimation performances of the OPE estimators using the synthetic bandit feedback data with 100,000 rounds, 10 actions, context vectors with five dimensions.
 
 ```bash
 python evaluate_off_policy_estimators.py\

@@ -300,7 +300,7 @@ class OffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: Optional[str] = None,
     ) -> None:
-        """Visualize estimated policy values by given off-policy evaluation.
+        """Visualize estimated policy values by given off-policy estimators.
 
         Parameters
         ----------
@@ -375,7 +375,7 @@ class OffPolicyEvaluation:
     def evaluate_performance_of_estimators(
         self, selected_actions: np.ndarray, ground_truth_policy_value: float
     ) -> Dict[str, float]:
-        """Evaluate results of off-policy estimators by relative estimation error.
+        """Evaluate estimation accuracies of off-policy estimators by relative estimation error.
 
         Evaluate the performance of off-policy estimators by the following relative estimation error.
 
@@ -383,7 +383,7 @@ class OffPolicyEvaluation:
 
             \\text{Relative-Estimation Error of } \\hat{V}^{\\pi} = \\left|  \\frac{ \\hat{V}^{\\pi} - V^{\\pi}}{V^{\\pi}} \\right|.
 
-        where :math:`V^{\\pi}` is a ground-truth policy value of :math:`\\pi` in a test set.
+        where :math:`V^{\\pi}` is the ground-truth policy value of :math:`\\pi` in a test set.
         :math:`\\hat{V}^{\\pi}` is an estimated policy value by each off-policy estimator with logged bandit feedback data.
 
         Parameters

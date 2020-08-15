@@ -1,19 +1,27 @@
-# Examples with OBD
+# Examples with Open Bandit Dataset (OBD)
 Here, we use the open bandit dataset and pipeline to implement and evaluate OPE.
-We first evaluate well-known off-policy estimators with the ground-truth performance of a counterfactual policy.
-We then select and use such an estimator to improve the platform’s fashion item recommendation.
+We first evaluate well-known the estimation performances of off-policy estimators using the ground-truth policy value of a counterfactual policy.
+We then evaluate the performances of some contextual bandit policies by using OPE to improve the platform’s fashion item recommendation.
 
-## Additional Implementations
+## Descriptions
+
+- `conf/`
+  - [`./conf/batch_size_bts.yaml`]:
+  The batch sizes used in the Bernoulli Thompson Sampling policy when running it on the ZOZOTOWN platform
+  - [`./conf/prior_bts.yaml`]
+  The prior hyperparameters used in the Bernoulli Thompson Sampling policy when running it on the ZOZOTOWN platform
+  - [`./conf/lightgbm.yaml`]
+  The hyperparameters of the LightGBM model that is used as the regression model in model dependent OPE estimators such as DM and DR
 
 - [`custom_dataset.py`](./custom_dataset.py):
     We implement two ways of engineering original features.
-    This includes **CONTEXT SET 1** (user features only, such as age, gender, and length of  membership) and **CONTEXT SET 2** (Context Set 1 plus user-item affinity induced by the number of past clicks observed between each user-item pair).
+    This includes **CONTEXT SET 1** (user features only, such as age, gender, and length of membership) and **CONTEXT SET 2** (Context Set 1 plus user-item affinity induced by the number of past clicks observed between each user-item pair).
 
 ## Running experiments
 
-**Example Experimet 1. Evaluating Off-Policy Estimators**
+**Evaluating Off-Policy Estimators**
 
-We select the best off-policy estimator among Direct Method (DM), Inverse Probability Weighting (IPW), and Doubly Robust (DR).
+We evaluate the estimation performances of off-policy estimators, including Direct Method (DM), Inverse Probability Weighting (IPW), and Doubly Robust (DR).
 [`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators.
 
 ```bash
@@ -25,7 +33,7 @@ python evaluate_off_policy_estimators.py\
     --campaign $campaign\
     --random_state $random_state
 ```
-where `$n_boot_samples` specifies the number of bootstrap samples to estimate confidence intervals of the performance of OPE estimators.
+where `$n_boot_samples` specifies the number of bootstrap samples to estimate confidence intervals of the performance of OPE estimators (*relative estimation error*).
 `$counterfactual_policy` and `$behavior_policy` specify the counterfactual and behavior policies, respectively.
 They should be either 'bts' or 'random'.
 `$campaign` specifies the campaign and should be one of 'all', 'men', or 'women'.
@@ -40,8 +48,8 @@ python evaluate_off_policy_estimators.py\
     --campaign all
 
 # relative estimation errors and their 95% confidence intervals of OPE estimators.
-# our evaluation of OPE procedure suggests that DM performs best among the three OPE estimators because DM has low variance property.
-# (Note that this result is with the small sample data and please see our paper for the results with the full size data)
+# our evaluation of OPE procedure suggests that DM performs best among the three OPE estimators, because it has low variance property.
+# (Note that this result is with the small sample data, and please use the full size data for a more reasonable experiment)
 # ==================================================
 # random_state=12345
 # --------------------------------------------------
@@ -55,13 +63,13 @@ python evaluate_off_policy_estimators.py\
 Please visit [Examples with Synthetic Data](https://github.com/st-tech/zr-obp/tree/master/examples/synthetic) to try the evaluation of OPE estimators with a larger dataset.
 
 
-**Example Experimet 2. Evaluating Counterfactual Bandit Policy**
+**Evaluating Counterfactual Bandit Policy**
 
-We evaluate the performance of counterfactual policies based on contextual bandit algorithms in `obp.policy` module with OPE estimators in `obp.ope` module.
+We evaluate the performance of counterfactual policies based on contextual bandit algorithms in the policy module with OPE estimators in the ope module.
 [`./evaluate_counterfactual_policy.py`](./evaluate_counterfactual_policy.py) implements the evaluation of the performance of counterfactual bandit policies with the use of OPE estimators.
 
 ```bash
-# run evaluation of a counterfacutal contextual bandit policy.
+# run evaluation of a counterfactual contextual bandit policy.
 python evaluate_counterfactual_policy.py\
     --context_set $context_set\
     --counterfactual_policy $counterfactual_policy\
@@ -87,10 +95,10 @@ python evaluate_counterfactual_policy.py\
     --behavior_policy random\
     --campaign women
 
-# estimated policy values relative to the behavior policy (the Random policy) of a counterfactual policy (linear epsilon greedy with Context Set 1)
-# by three OPE estimators (IPW: inverse probability weighting, DM; Direct Method, DR; Doubly Robust)
+# estimated policy values relative to the behavior policy (Random) of a counterfactual policy (linear epsilon greedy with Context Set 1)
+# by the three OPE estimators (IPW: inverse probability weighting, DM; Direct Method, DR; Doubly Robust)
 # in this example, DM predicts that the counterfactual policy outperforms the behavior policy by about 5.49%
-# (Note that this result is with the small sample data and please see our paper for the results with the full size data)
+# (Note that this result is with the small sample data, and please use the full size data for a more reasonable experiment)
 # ======================================================================
 # random_state=12345: counterfactual policy=linear_epsilon_greedy_0.1_1
 # ----------------------------------------------------------------------

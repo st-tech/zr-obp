@@ -93,7 +93,7 @@ if __name__ == "__main__":
             "logistic_ucb",
             "logistic_egreedy",
         ],
-        help="counterfacutual policy",
+        help="counterfactual policy",
     )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
