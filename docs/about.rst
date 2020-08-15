@@ -44,7 +44,7 @@ Open Bandit Pipeline consists of the following main modules.
 
 In addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
-Moreover, the pipeline provides an interface for logged bandit feedback datasets.
+Moreover, the pipeline provides an interface for handling logged bandit feedback datasets.
 Thus, practitioners can combine their own datasets with the pipeline and easily evaluate bandit algorithms' performances in their settings.
 
 Please see `package reference <https://zr-obp.readthedocs.io/en/latest/obp.html>`_ for detailed information about Open Bandit Pipeline.

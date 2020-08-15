@@ -6,13 +6,13 @@ As a proof of concept, we use the dataset and pipeline to implement and evaluate
 We first evaluate well-known off-policy estimators with the ground-truth performance of a counterfactual policy.
 We then use these OPE estimators to evaluate a counterfactual logistic bandit policies.
 
-Formal implementations of the following PoCs are available at `examples <https://github.com/st-tech/zr-obp/blob/master/examples/obd/>`_.
+Formal implementations of the following PoCs are available at `examples <https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/>`_.
 
 Evaluation of Off-Policy Evaluation
 ----------------------------------------
 
 As an example of the evaluation of OPE, we select the best off-policy estimator among DM, IPW, and DR.
-For this purpose, we empirically evaluate their performance as follows (for each campaign separately):
+For this purpose, we empirically evaluate their estimation accuracies as follows (for each campaign separately):
 
 1. For each of the Random and Bernoulli TS policies, independently sample the data collected by that policy *with replacement* (bootstrap sampling).
 2. Estimate the ground-truth value of each policy :math:`\pi` by the empirical mean of clicks collected by that policy: :math:`V^{\pi} = (T^{\pi})^{-1} \sum_{t=1}^{T^{\pi}} Y_t`, where :math:`T^{\pi}` is the size of bandit feedback of policy :math:`\pi`.
@@ -25,7 +25,7 @@ We measure each estimator's performance with the *Relative-Estimation Error* def
 .. math::
     \text{Relative-Estimation Error of }\hat{V}^{\pi} = \left|  \frac{ \hat{V}^{\pi}_k - V^{\pi}}{V^{\pi}} \right|.
 
-where :math:`V^{\pi}` is a ground-truth policy value of :math:`\pi`, which is estimated by the empirical mean of factual clicks in the logged bandit feedback (on-policy estimate).
+where :math:`V^{\pi}` is the ground-truth policy value of :math:`\pi`, which is estimated by the empirical mean of factual clicks in the logged bandit feedback (on-policy estimate).
 :math:`\hat{V}^{\pi}_k` is an estimated policy value with the :math:`k`-th bootstrapped samples.
 We use estimated policy values :math:`\{ \hat{V}^{\pi}_k \}_{k=1}^K` to nonparametrically estimate confidence intervals of the performance of OPE estimators.
 
@@ -58,10 +58,10 @@ by using Bernoulli TS as counterfactual policy and Random as behavior policy in 
 
     # hyperparameter for the regression model (LightGBM)
     with open('./conf/lightgbm.yaml', 'rb') as f:
-    hyperparams = yaml.safe_load(f)['model']
+        hyperparams = yaml.safe_load(f)['model']
 
-    # configurations to reproduce the Bernoulli Thompson Sampling policy
-    # used in ZOZOTOWN production
+    # hyperparameters (batch_size and prior parameters of the beta distribution) to reproduce
+    # the Bernoulli Thompson Sampling policy used in the ZOZOTOWN production
     with open('./conf/prior_bts.yaml', 'rb') as f:
         production_prior_for_bts = yaml.safe_load(f)
 
@@ -133,11 +133,11 @@ by using Bernoulli TS as counterfactual policy and Random as behavior policy in 
         )
         policy.initialize()
 
-        # store relative estimation errors of OPE estimators at each bootstrap sample
+        # store relative estimation errors of OPE estimators estimated with each bootstrap sample
         for estimator_name, relative_estimation_error in relative_estimation_errors.items():
             evaluation_of_ope_results[estimator_name][b] = relative_estimation_error
 
-    # estimate confidence intervals of relative estimation by nonparametric bootstrap method
+    # estimate confidence intervals of relative estimation error by the nonparametric bootstrap method
     evaluation_of_ope_results_with_ci = {est.estimator_name: dict() for est in ope_estimators}
     for estimator_name in evaluation_of_ope_results_with_ci.keys():
         evaluation_of_ope_results_with_ci[estimator_name] = estimate_confidence_interval_by_bootstrap(
@@ -151,36 +151,36 @@ by using Bernoulli TS as counterfactual policy and Random as behavior policy in 
     print(pd.DataFrame(evaluation_of_ope_results_with_ci).T)
     print('=' * 50)
 
-    # relative estiamtion errors and their 95% confidence intervals of OPE estimators.
+    # relative estimation errors and their 95% confidence intervals of OPE estimators.
     # our evaluation of OPE procedure suggests that DM performs best among the three OPE estimators because DM has low variance property.
     # (Note that this result is with the small sample data and please see our paper for the results with the full size data)
     # ==================================================
     # random_state=12345
     # --------------------------------------------------
     #          mean  95.0% CI (lower)  95.0% CI (upper)
-    # dm   0.218148           0.14561           0.29018
-    # ipw  1.158730           0.96190           1.53333
-    # dr   0.992942           0.71789           1.35594
+    # dm   0.213823          0.141678          0.277700
+    # ipw  1.158730          0.961905          1.533333
+    # dr   1.105379          0.901894          1.425447
     # ==================================================
 
 
-If you want to run the above experiment to evaluate OPE estimators, please see `examples <https://github.com/st-tech/zr-obp/blob/master/examples/obd/>`_.
+If you want to run the above experiment to evaluate OPE estimators, please see `examples <https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/>`_.
 
 
 Evaluation of Bandit Algorithms
 ----------------------------------------
 
-We then use our dataset and pipeline to evaluate the policy value of a counterfactual logistic bandit policy.
+We then use our dataset and pipeline to evaluate the policy value of a counterfactual contextual bandit policy.
 
-As an example, we evaluate the performance of Logistic Upper Confidence Bound (logistic ucb) by its predicted policy values by OPE estimators relative to that of the behavior policy:
+As an example, we evaluate the performance of Linear LogisticEpsilonGreedy (linear egreedy) by its predicted policy values by OPE estimators relative to that of the behavior policy:
 
 .. math::
     \text{relative-CTR of } \pi =  \hat{V}^{\pi} / V^{\pi_{\textit{behavior}}} ,
 
 where the numerator is the estimated performance of a counterfactual policy.
-The denominator is the ground-truth performance of the behavior policy, which is estimated by the empirical mean of factual clicks in the logged bandit feedback (on-policy estimate).
+The denominator is the ground-truth performance of the behavior policy, which is estimated by the empirical mean of factual clicks in the logged bandit feedback (on-policy estimation).
 
-For example, the following code evaluates the performance of the logistic_ucb policy (context_set='1' and exploration hyperparameter=0.1)
+For example, the following code evaluates the performance of the linear policy (context_set='1' and exploration hyperparameter=0.1)
 by using the three OPE estimators and Random as behavior policy in "All" campaign.
 
 .. code-block:: python
@@ -194,7 +194,14 @@ by using the three OPE estimators and Random as behavior policy in "All" campaig
     from sklearn.ensemble import HistGradientBoostingClassifier
 
     from dataset import OBDWithInteractionFeatures
-    from obp.policy import LogisticTS, LogisticEpsilonGreedy, LogisticUCB
+    from obp.policy import (
+        LinEpsilonGreedy,
+        LinUCB,
+        LinTS,
+        LogisticTS,
+        LogisticEpsilonGreedy,
+        LogisticUCB,
+    )
     from obp.simulator import run_bandit_simulation
     from obp.ope import (
         RegressionModel,
@@ -206,17 +213,20 @@ by using the three OPE estimators and Random as behavior policy in "All" campaig
 
     # hyperparameter for the regression model (LightGBM)
     with open('./conf/lightgbm.yaml', 'rb') as f:
-    hyperparams = yaml.safe_load(f)['model']
+        hyperparams = yaml.safe_load(f)['model']
 
     counterfactual_policy_dict = dict(
+        linear_egreedy=LinEpsilonGreedy,
+        linear_ts=LinTS,
+        linear_ucb=LinUCB,
         logistic_egreedy=LogisticEpsilonGreedy,
         logistic_ts=LogisticTS,
-        logistic_ucb=LogisticUCB
+        logistic_ucb=LogisticUCB,
     )
 
     # configurations
     context_set = '1'
-    counterfactual_policy = 'logistic_ucb'
+    counterfactual_policy = 'linear_egreedy'
     epsilon = 0.1
     behavior_policy = 'random'
     campaign = 'all'
@@ -235,12 +245,12 @@ by using the three OPE estimators and Random as behavior policy in "All" campaig
         n_actions=obd.n_actions,
         len_list=obd.len_list,
         dim=obd.dim_context,
-        random_state=random_state
+        random_state=random_state,
     )
-    if counterfactual_policy != 'logistic_ts':
-        kwargs['epsilon'] = epsilon
+    if counterfactual_policy != "logistic_ts":
+        kwargs["epsilon"] = epsilon
     policy = counterfactual_policy_dict[counterfactual_policy](**kwargs)
-    policy_name = f'{policy.policy_name}_{context_set}'
+    policy_name = f"{policy.policy_name}_{context_set}"
 
     # obtain batch logged bandit feedback generated by behavior policy
     bandit_feedback = obd.obtain_batch_bandit_feedback()
@@ -262,7 +272,7 @@ by using the three OPE estimators and Random as behavior policy in "All" campaig
     )
     estimated_policy_value, estimated_interval = ope.summarize_off_policy_estimates(selected_actions=selected_actions)
 
-    # estimated policy value and that realtive to that of the behavior policy
+    # estimated policy value and that relative to that of the behavior policy
     print('=' * 70)
     print(f'random_state={random_state}: counterfactual policy={policy_name}')
     print('-' * 70)
@@ -270,18 +280,18 @@ by using the three OPE estimators and Random as behavior policy in "All" campaig
     print(estimated_policy_value)
     print('=' * 70)
 
-    # estimated policy values relative to the behavior policy (the Random policy) of a counterfactual policy (logistic UCB with Context Set 1)
+    # estimated policy values relative to the behavior policy (the Random policy) of a counterfactual policy (linear epsilon greedy with Context Set 1)
     # by three OPE estimators (IPW: inverse probability weighting, DM; Direct Method, DR; Doubly Robust)
-    # in this example, DM predicts that the counterfactual policy outperforms the behavior policy by about 2.59%
+    # in this example, DM predicts that the counterfactual policy outperforms the behavior policy by about 5.49%
     # (Note that this result is with the small sample data and please see our paper for the results with the full size data)
     # ======================================================================
-    # random_state=12345: counterfactual policy=logistic_ucb_0.1_1
+    # random_state=12345: counterfactual policy=linear_epsilon_greedy_0.1_1
     # ----------------------------------------------------------------------
     #      estimated_policy_value  relative_estimated_policy_value
-    # ipw                0.008000                         2.105263
-    # dm                 0.003898                         1.025915
-    # dr                 0.007948                         2.091689
+    # ipw                0.004600                         1.000000
+    # dm                 0.004853                         1.054967
+    # dr                 0.004642                         1.009075
     # ======================================================================
 
 
-If you want to run the above experiment to evaluate counterfactual logistic bandit policies, please see `examples <https://github.com/st-tech/zr-obp/blob/master/examples/obd/>`_.
+If you want to run the above experiment to evaluate counterfactual logistic bandit policies, please see `examples <https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/>`_.
