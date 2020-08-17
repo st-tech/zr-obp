@@ -17,7 +17,7 @@ setup(
     version=__version__,
     description="Open Bandit Dataset and Pipeline",
     url="https://github.com/st-tech/zr-obp",
-    author="ZOZO Technologies, Inc.",
+    author="Yuta Saito",
     author_email="saito@hanjuku-kaso.com",
     keywords=["bandit algorithms", "off-policy evaluation"],
     long_description=long_description,
