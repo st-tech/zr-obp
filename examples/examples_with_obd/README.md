@@ -5,12 +5,12 @@ We then evaluate the performances of some contextual bandit policies by using OP
 
 ## Descriptions
 
-- `conf/`
-  - [`./conf/batch_size_bts.yaml`]:
+- [`conf/`](https://github.com/st-tech/zr-obp/tree/master/examples/examples_with_obd/conf)
+  - `batch_size_bts.yaml`:
   The batch sizes used in the Bernoulli Thompson Sampling policy when running it on the ZOZOTOWN platform
-  - [`./conf/prior_bts.yaml`]
+  - `prior_bts.yaml`:
   The prior hyperparameters used in the Bernoulli Thompson Sampling policy when running it on the ZOZOTOWN platform
-  - [`./conf/lightgbm.yaml`]
+  - `lightgbm.yaml`:
   The hyperparameters of the LightGBM model that is used as the regression model in model dependent OPE estimators such as DM and DR
 
 - [`custom_dataset.py`](./custom_dataset.py):
@@ -60,7 +60,7 @@ python evaluate_off_policy_estimators.py\
 # ==================================================
 ```
 
-Please visit [Examples with Synthetic Data](https://github.com/st-tech/zr-obp/tree/master/examples/synthetic) to try the evaluation of OPE estimators with a larger dataset.
+Please visit [Examples with Synthetic Data](https://github.com/st-tech/zr-obp/tree/master/examples/examples_with_synthetic) to try the evaluation of OPE estimators with a larger dataset.
 
 
 **Evaluating Counterfactual Bandit Policy**

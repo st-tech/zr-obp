@@ -30,10 +30,10 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
     n_actions: int
         Number of actions.
 
-    dim_context: int
+    dim_context: int, default: 1
         Number of dimensions of context vectors.
 
-    dim_action_context: int
+    dim_action_context: int, default: 1
         Number of dimensions of context vectors for each action.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default: None
@@ -46,7 +46,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         Function generating probability distribution over action space,
         i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
         If None is set, context **independent** probability of choosing each action will be
-        sampled from the uniform distribution automatically (context-free behavior policy).
+        sampled from the dirichlet distribution automatically (context-free behavior policy).
 
     random_state: int, default: None
         Controls the random seed in sampling synthetic bandit dataset.
@@ -108,8 +108,8 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
     """
 
     n_actions: int
-    dim_context: int
-    dim_action_context: int
+    dim_context: int = 1
+    dim_action_context: int = 1
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
@@ -119,32 +119,40 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
+        assert self.n_actions > 1 and isinstance(
+            self.n_actions, int
+        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+        assert self.dim_context > 0 and isinstance(
+            self.dim_context, int
+        ), f"dim_context must be a positive integer, but {self.dim_context} is given"
+        assert self.dim_action_context > 0 and isinstance(
+            self.dim_action_context, int
+        ), f"dim_action_context must be a positive integer, but {self.dim_action_context} is given"
+
         self.random_ = check_random_state(self.random_state)
-        self.sample_action_context()
         if self.reward_function is None:
-            self.sample_contextfree_expected_reward()
+            self.expected_reward = self.sample_contextfree_expected_reward()
         if self.behavior_policy_function is None:
-            self.sample_contextfree_behavior_policy()
+            self.behavior_policy = self.sample_contextfree_behavior_policy()
+        self.action_context = self.sample_action_context()
 
     @property
     def len_list(self) -> int:
         """Length of recommendation lists."""
         return 1
 
-    def sample_action_context(self) -> None:
+    def sample_action_context(self) -> np.ndarray:
         """Sample action context vectors from the standard normal distribution."""
-        self.action_context = self.random_.normal(
-            size=(self.n_actions, self.dim_action_context)
-        )
+        return self.random_.normal(size=(self.n_actions, self.dim_action_context))
 
     def sample_contextfree_expected_reward(self) -> np.ndarray:
         """Sample expected reward for each action from the uniform distribution."""
-        self.expected_reward = self.random_.uniform(size=self.n_actions)
+        return self.random_.uniform(size=self.n_actions)
 
     def sample_contextfree_behavior_policy(self) -> np.ndarray:
         """Sample probability of choosing each action from the dirichlet distribution."""
         alpha = self.random_.uniform(size=self.n_actions)
-        self.behavior_policy = self.random_.dirichlet(alpha=alpha)
+        return self.random_.dirichlet(alpha=alpha)
 
     def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
@@ -201,6 +209,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             n_rounds=n_rounds,
             n_actions=self.n_actions,
             context=context,
+            action_context=self.action_context,
             action=action,
             position=np.zeros(n_rounds, dtype=int),
             reward=reward,
