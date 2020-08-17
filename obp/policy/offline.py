@@ -1,4 +1,4 @@
-# Copyright (c) ZOZO Technologies, Inc. All rights reserved.
+# Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
 """Offline Bandit Algorithms."""

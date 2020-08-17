@@ -1,4 +1,4 @@
-# Copyright (c) ZOZO Technologies, Inc. All rights reserved.
+# Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
 """Base Interfaces for Bandit Algorithms."""
@@ -272,15 +272,16 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
 
         Returns
         -----------
-        pred: array-like, shape (n_rounds_of_new_data,)
+        pred: array-like, shape (n_rounds_of_new_data, 1)
             Predicted best action for new data.
 
         """
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
         ), "context must be 2-dimensional ndarray"
+        predicted_actions = self.base_model.predict(context)
 
-        return self.base_model.predict(context)
+        return np.expand_dims(predicted_actions, 1)
 
     def predict_proba(self, context: np.ndarray) -> None:
         """Predict probabilities of each action being the best one for new data.
