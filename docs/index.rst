@@ -83,6 +83,11 @@ Citation
 ~~~~~~~~~~~~
 If you use our dataset and pipeline in your work, please cite our paper below.
 
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
+A Large-scale Open Dataset for Bandit Algorithms. `https://arxiv.org/abs/2008.07146 <https://arxiv.org/abs/2008.07146>`_
+
+Bibtex:
+
 @article{saito2020large,
   title={A Large-scale Open Dataset for Bandit Algorithms},
   author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
