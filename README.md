@@ -243,6 +243,7 @@ Users can implement their own OPE estimator by following the interface of `obp.o
 # Citation
 If you use our dataset and pipeline in your work, please cite our paper:
 
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 **A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 Bibtex:

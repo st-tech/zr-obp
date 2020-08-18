@@ -5,6 +5,8 @@ The full size version of our data is available at [https://research.zozo.com/dat
 
 
 This dataset is released along with the paper:
+
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 **A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 When using this dataset, please cite the paper with following bibtex:

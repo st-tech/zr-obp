@@ -247,6 +247,7 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 # 引用
 本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようよろしくお願いいたします.
 
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 **A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 ```

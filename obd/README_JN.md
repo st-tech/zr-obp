@@ -2,7 +2,9 @@
 
 このディレクトリには, [実装例](https://github.com/st-tech/zr-obp/tree/master/examples)を実行するための少量(キャンペーンと行動ポリシーのペアごとに10,000レコード)のデータが含まれています. フルサイズ版のデータは[https://research.zozo.com/data.html](https://research.zozo.com/data.html)にて公開されています.
 
-この公開データセットに関する詳細な記述は以下の論文を参照してください。:
+この公開データセットに関する詳細な記述は以下の論文を参照してください:
+
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 **A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 ## データセットの概要
