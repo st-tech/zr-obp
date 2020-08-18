@@ -81,10 +81,13 @@ Open Bandit Pipeline is released under Apache 2.0 license. Find out more about i
 
 Citation
 ~~~~~~~~~~~~
-If you use this project in your work, please cite our paper below.
+If you use our dataset and pipeline in your work, please cite our paper below.
 
-# TODO: add bibtex
-@article{
+@article{saito2020large,
+  title={A Large-scale Open Dataset for Bandit Algorithms},
+  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+  journal={arXiv preprint arXiv:2008.07146},
+  year={2020}
 }
 
 
