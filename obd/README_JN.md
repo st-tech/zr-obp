@@ -1,16 +1,16 @@
 # Open Bandit Dataset
 
-この公開データセットに関する詳細な記述は以下の論文を参照してください: <br>
-**[A Large-scale Open Dataset for Bandit Algorithms]()**
+このディレクトリには, [実装例](https://github.com/st-tech/zr-obp/tree/master/examples)を実行するための少量(キャンペーンと行動ポリシーのペアごとに10,000レコード)のデータが含まれています. フルサイズ版のデータは[https://research.zozo.com/data.html](https://research.zozo.com/data.html)にて公開されています.
+
+この公開データセットに関する詳細な記述は以下の論文を参照してください。:
+**A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 ## データセットの概要
-Open Bandit Datasetは, 大規模ファッションECサイト[ZOZOTOWN](https://zozo.jp/)において, 2つの多腕バンディット方策のA/Bテストによって構築されたものです.
-現在のログデータ数は合計2600万以上であり, それぞれのデータは特徴量・方策によって選択されたファッションアイテム・真の傾向スコア・クリック有無ラベルによって構成されます.
-このデータセットは, 別のアルゴリズムによって生成されたデータを用いて反実仮想アルゴリズムの性能を予測するオフライン方策評価 (*off-policy evaluation*)の性能を評価するのに特に適しています.
+Open Bandit Datasetは, 大規模ファッションECサイト[ZOZOTOWN](https://zozo.jp/)において, 2つの多腕バンディット方策のA/Bテストによって構築されたものです. 現在のログデータ数は合計2600万以上であり, それぞれのデータは特徴量・方策によって選択されたファッションアイテム・真の傾向スコア・クリック有無ラベルによって構成されます. このデータセットは, 別のアルゴリズムによって生成されたデータを用いて反実仮想アルゴリズムの性能を予測するオフライン方策評価 (*off-policy evaluation*)の性能を評価するのに特に適しています.
 
 
 ## 構成
-データセットの構成要素の詳細は以下の通りです（CSVファイルではカンマ区切りになっています）.
+データセットの構成要素の詳細は以下の通りです.
 
 **{behavior_policy}/{campaign}.csv** (behavior_policy in (bts, random), campaign in (all, men, women))
 - timestamp: インプレッションのタイムスタンプ.

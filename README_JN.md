@@ -2,7 +2,7 @@
   <img width="60%" src="./images/logo.png" />
 </p>
 
-**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)**
+**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -57,6 +57,8 @@
     </p>
   </figcaption>
 </p>
+
+[実装例](https://github.com/st-tech/zr-obp/tree/master/examples)を実行するための少量データは, [./obd/](https://github.com/st-tech/zr-obp/tree/master/obd)にあります.Open Bandit Datasetのフルサイズ版は[https://research.zozo.com/data.html](https://research.zozo.com/data.html)にあります.研究用途にはフルサイズ版をダウンロードしてください.
 
 ## Open Bandit Pipeline
 
@@ -245,9 +247,14 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 # 引用
 本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようよろしくお願いいたします.
 
+**A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
+
 ```
-# TODO: add bibtex
-@article{
+@article{saito2020large,
+  title={A Large-scale Open Dataset for Bandit Algorithms},
+  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+  journal={arXiv preprint arXiv:2008.07146},
+  year={2020}
 }
 ```
 

@@ -1,12 +1,19 @@
 # Open Bandit Dataset
 
-This dataset is released along with the paper: <br>
-**""A Large-scale Open Dataset for Bandit Algorithms.""**
+This directory contains the small size (10,000 records for each pair of campaign and behavior policy) version of our data that can be used for running [examples](https://github.com/st-tech/zr-obp/tree/master/examples).
+The full size version of our data is available at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
+
+
+This dataset is released along with the paper:
+**A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 When using this dataset, please cite the paper with following bibtex:
 ```
-# TODO: add bibtex
-@article{
+@article{saito2020large,
+  title={A Large-scale Open Dataset for Bandit Algorithms},
+  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+  journal={arXiv preprint arXiv:2008.07146},
+  year={2020}
 }
 ```
 

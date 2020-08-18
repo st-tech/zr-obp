@@ -2,7 +2,7 @@
   <img width="60%" src="./images/logo.png" />
 </p>
 
-**[Documentation](https://zr-obp.readthedocs.io/en/latest/)** | **[Overview](#overview)** | **[Installation](#installation)** | **[Usage](#usage)** | **[References](#references)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/quickstart.ipynb)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd)** | **[日本語](https://github.com/st-tech/zr-obp/blob/master/README_JN.md)**
+**[Documentation](https://zr-obp.readthedocs.io/en/latest/)** | **[Overview](#overview)** | **[Installation](#installation)** | **[Usage](#usage)** | **[References](#references)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd)** | **[日本語](https://github.com/st-tech/zr-obp/blob/master/README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -52,6 +52,10 @@ Each campaign randomly used either the Random algorithm or the Bernoulli Thompso
   <img width="70%" src="./images/statistics_of_obd.png" />
 </p>
 
+The small size version of our data is available at [./obd](https://github.com/st-tech/zr-obp/tree/master/obd).
+This can be used for running [examples](https://github.com/st-tech/zr-obp/tree/master/examples).
+We release the full size version of our data at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
+Please download the full size version for research uses.
 Please see [./obd/README.md](https://github.com/st-tech/zr-obp/blob/master/obd/README.md) for the description of the dataset.
 
 ## Open Bandit Pipeline (OBP)
@@ -237,11 +241,17 @@ Users can implement their own OPE estimator by following the interface of `obp.o
 
 
 # Citation
-If you use this project in your work, please cite our paper below.
+If you use our dataset and pipeline in your work, please cite our paper:
 
+**A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
+
+Bibtex:
 ```
-# TODO: add bibtex
-@article{
+@article{saito2020large,
+  title={A Large-scale Open Dataset for Bandit Algorithms},
+  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+  journal={arXiv preprint arXiv:2008.07146},
+  year={2020}
 }
 ```
 
