@@ -37,4 +37,7 @@ Open Bandit Datasetは, 大規模ファッションECサイト[ZOZOTOWN](https:/
 </p>
 
 ## 連絡
-データセットに関する質問等は, 次のメールアドレスにご連絡いただくようお願いいたします: saito at hanjuku-kaso.com
+データセットに関する質問等は, 次のメールアドレスにご連絡いただくようお願いいたします:
+
+論文の著者: saito.y.bj@m.titech.ac.jp
+ZOZO研究所: zozo-reseaech@zozo.com

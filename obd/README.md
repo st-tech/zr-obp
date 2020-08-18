@@ -52,4 +52,7 @@ Here is a detailed description of the fields (they are comma-separated in the CS
 
 
 ## Contact
-For any question, feel free to contact: saito at hanjuku-kaso.com
+For any question, feel free to contact:
+
+The authors of the paper: saito.y.bj@m.titech.ac.jp
+ZOZO Research: zozo-reseaech@zozo.com

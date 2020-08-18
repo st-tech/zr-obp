@@ -264,7 +264,7 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 # Project Team
 
 - [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Tokyo Institute of Technology)
-- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (Hanjuku-kaso Co., Ltd. / ZOZO Technologies, Inc.)
+- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Technologies, Inc.)
 - Megumi Matsutani (ZOZO Technologies, Inc.)
 - [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
 

@@ -267,7 +267,7 @@ Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 # プロジェクトチーム
 
 - [齋藤優太](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / 東京工業大学)
-- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (半熟仮想株式会社 / ZOZO Technologies, Inc.)
+- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Technologies, Inc.)
 - 松谷恵 (ZOZO Technologies, Inc.)
 - [成田悠輔](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
 
