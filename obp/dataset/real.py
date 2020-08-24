@@ -24,7 +24,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     Users are free to implement their own feature engineering by overriding `pre_process` method.
 
     Parameters
-    ----------
+    -----------
     behavior_policy: str
         Name of the behavior policy that generated the log data.
         Must be 'random' or 'bts'.
@@ -37,6 +37,11 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     dataset_name: str, default: 'obd'
         Name of the dataset.
+
+    References
+    ------------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
+    "A Large-scale Open Dataset for Bandit Algorithms.", 2020.
 
     """
 

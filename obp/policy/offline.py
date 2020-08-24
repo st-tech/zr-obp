@@ -19,8 +19,8 @@ class IPWLearner(BaseOffPolicyLearner):
     base_model: ClassifierMixin
         Machine learning classifier to be used to create the decision making policy.
 
-    Reference
-    -----------
+    References
+    ------------
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
 

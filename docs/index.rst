@@ -3,20 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to obp's documentation!
-====================================
-
 .. image:: ./_static/images/logo.png
    :scale: 20%
    :align: center
 
-Open Bandit Dataset and Pipeline
-=====================================
+Open Bandit Pipeline; a python library for bandit algorithms and off-policy evaluation
+=========================================================================================
 
 Overview
 ~~~~~~~~~~~~
 
-*Open Bandit Pipeline (OBP)* is a Python 3.7+ toolkit for bandit algorithms and off-policy evaluation (OPE).
+*Open Bandit Pipeline (OBP)* is an open source end-to-end python library for bandit algorithms and off-policy evaluation (OPE).
 The toolkit comes with the *Open Bandit Dataset* , a large-scale logged bandit feedback data collected on a fashion e-commerce platform, `ZOZOTOWN <https://corp.zozo.com/en/service/>`_.
 The purpose of the open data and library is to enable easy, realistic, and reproducible evaluation of bandit algorithms and OPE.
 OBP has a series of implementations of dataset preprocessing, bandit policy interfaces, offline bandit simulator, and standard OPE estimators.
