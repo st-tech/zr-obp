@@ -100,7 +100,7 @@ class OffPolicyEvaluation:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
 
         if self.regression_model is not None:
-            if check_is_fitted(self.regression_model):
+            if check_is_fitted(self.regression_model.base_model):
                 logger.info("a fitted regression model is given.")
             else:
                 logger.info(
