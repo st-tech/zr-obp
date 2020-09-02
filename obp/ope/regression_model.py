@@ -92,7 +92,7 @@ class RegressionModel:
         self,
         context: np.ndarray,
         action_context: np.ndarray,
-        selected_actions: np.ndarray,
+        action: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Predict the mean reward function.
@@ -105,9 +105,8 @@ class RegressionModel:
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing each action.
 
-        selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by counterfactual (or evaluation) policy
-            at each round in offline bandit simulation.
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
 
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given training logged bandit feedback.
@@ -119,13 +118,11 @@ class RegressionModel:
 
         """
         # create context vector to make predictions
-        selected_actions_at_positions = selected_actions[
-            np.arange(position.shape[0]), position
-        ]
         X = self._pre_process_for_reg_model(
             context=context,
-            action=selected_actions_at_positions,
+            action=action,
             action_context=action_context,
+            position=position,
         )
         # make predictions
         if is_classifier(self.base_model):
@@ -134,7 +131,11 @@ class RegressionModel:
             return self.base_model.predict(X)
 
     def _pre_process_for_reg_model(
-        self, context: np.ndarray, action: np.ndarray, action_context: np.ndarray,
+        self,
+        context: np.ndarray,
+        action_context: np.ndarray,
+        action: np.ndarray,
+        position: Optional[int] = None,
     ) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
 
@@ -149,6 +150,9 @@ class RegressionModel:
 
         action: array-like, shape (n_rounds,)
             Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing each action.
