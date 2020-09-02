@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import yaml
 
 import numpy as np
 import pandas as pd
@@ -45,8 +46,9 @@ counterfactual_policy_dict = dict(
     logistic_ucb=LogisticUCB,
 )
 
-# hyperparameters of the regression model
-hyperparams = dict(n_estimators=10, random_state=12345)
+# hyperparameter for the regression model used in model dependent OPE estimators
+with open("./conf/hyperparams.yaml", "rb") as f:
+    hyperparams = yaml.safe_load(f)["random_forest"]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -152,14 +154,14 @@ if __name__ == "__main__":
         # sample a new set of logged bandit feedback
         bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         # run a counterfactual bandit algorithm on logged bandit feedback data
-        selected_actions = run_bandit_simulation(
+        action_dist = run_bandit_simulation(
             bandit_feedback=bandit_feedback, policy=policy
         )
         # estimate the ground-truth policy values of the counterfactual policy
         # using the full expected reward contained in the bandit feedback dictionary
-        ground_truth_policy_value = bandit_feedback["expected_reward"][
-            np.arange(n_rounds), selected_actions.flatten()
-        ].mean()
+        ground_truth_policy_value = np.average(
+            bandit_feedback["expected_reward"], weights=action_dist[:, :, 0]
+        ).mean()
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback,
@@ -168,7 +170,7 @@ if __name__ == "__main__":
             ope_estimators=ope_estimators,
         )
         relative_estimation_errors = ope.evaluate_performance_of_estimators(
-            selected_actions=selected_actions,
+            action_dist=action_dist,
             ground_truth_policy_value=ground_truth_policy_value,
         )
         policy.initialize()
