@@ -171,11 +171,11 @@ bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
 # (2) Offline Bandit Simulation
 counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=dataset.len_list)
-selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
+action_dist = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
 
 # (3) Off-Policy Evaluation
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[ReplayMethod()])
-estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
+estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
 
 # estimated performance of BernoulliTS relative to the ground-truth performance of Random
 relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / bandit_feedback['reward'].mean()
@@ -212,11 +212,12 @@ After preparing a dataset, we now run **offline bandit simulation** on the logge
 ```python
 # define a counterfactual policy (the Bernoulli TS policy here)
 counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=dataset.len_list)
-# `selected_actions` is an array containing selected actions by counterfactual policy in an simulation
-selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
+# action_dist is an array of shape (n_rounds, n_actions, len_list)
+# representing the distribution over actions made by the counterfactual policy
+action_dist = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
 ```
 
-`obp.simulator.run_bandit_simulation` function takes `obp.policy.BanditPolicy` class and `bandit_feedback` (a dictionary storing logged bandit feedback) as inputs and runs offline bandit simulation of a given counterfactual bandit policy. `selected_actions` is an array of selected actions during the offline bandit simulation by the counterfactual policy.
+`obp.simulator.run_bandit_simulation` function takes `obp.policy.BanditPolicy` class and `bandit_feedback` (a dictionary storing logged bandit feedback) as inputs and runs offline bandit simulation of a given counterfactual bandit policy. `action_dist` is an array representing the distribution over actions made by the counterfactual policy.
 Users can implement their own bandit algorithms by following the interfaces implemented in [`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py).
 
 ## (3) Off-Policy Evaluation
@@ -225,10 +226,10 @@ Our final step is **off-policy evaluation** (OPE), which attempts to estimate th
 Our pipeline also provides an easy procedure for doing OPE as follows.
 
 ```python
-# estimate the policy value of BernoulliTS based on actions selected by that policy in offline bandit simulation
+# estimate the policy value of BernoulliTS based on the distribution over actions by that policy
 # it is possible to set multiple OPE estimators to the `ope_estimators` argument
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[ReplayMethod()])
-estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
+estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
 print(estimated_policy_value) # {'rm': 0.005155..} dictionary containing estimated policy values by each OPE estimator.
 
 # compare the estimated performance of BernoulliTS (counterfactual policy)
