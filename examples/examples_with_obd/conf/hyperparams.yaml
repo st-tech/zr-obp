@@ -1,0 +1,4 @@
+random_forest:
+  n_estimators: 100
+  min_samples_leaf: 5
+  random_state: 12345

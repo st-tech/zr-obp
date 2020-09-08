@@ -3,9 +3,9 @@ from pathlib import Path
 import yaml
 
 import pandas as pd
+import numpy as np
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.experimental import enable_hist_gradient_boosting
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier as RandomForest
 
 from custom_dataset import OBDWithInteractionFeatures
 from obp.policy import (
@@ -25,9 +25,9 @@ from obp.ope import (
     DoublyRobust,
 )
 
-# hyperparameter for the regression model (LightGBM) used in model dependent OPE estimators
-with open("./conf/lightgbm.yaml", "rb") as f:
-    hyperparams = yaml.safe_load(f)["model"]
+# hyperparameter for the regression model used in model dependent OPE estimators
+with open("./conf/hyperparams.yaml", "rb") as f:
+    hyperparams = yaml.safe_load(f)["random_forest"]
 
 counterfactual_policy_dict = dict(
     linear_egreedy=LinEpsilonGreedy,
@@ -93,6 +93,7 @@ if __name__ == "__main__":
     behavior_policy = args.behavior_policy
     campaign = args.campaign
     random_state = args.random_state
+    np.random.seed(random_state)
 
     obd = OBDWithInteractionFeatures(
         behavior_policy=behavior_policy,
@@ -120,20 +121,20 @@ if __name__ == "__main__":
     ground_truth = bandit_feedback["reward"].mean()
 
     # a base ML model for regression model used in Direct Method and Doubly Robust
-    base_model = CalibratedClassifierCV(HistGradientBoostingClassifier(**hyperparams))
+    base_model = CalibratedClassifierCV(RandomForest(**hyperparams))
     # run a counterfactual bandit algorithm on logged bandit feedback data
-    selected_actions = run_bandit_simulation(
-        bandit_feedback=bandit_feedback, policy=policy
-    )
+    action_dist = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=policy)
     # estimate the policy value of a given counterfactual algorithm by the three OPE estimators.
     ope = OffPolicyEvaluation(
         bandit_feedback=bandit_feedback,
-        regression_model=RegressionModel(base_model=base_model),
+        regression_model=RegressionModel(
+            n_actions=obd.n_actions, len_list=obd.len_list, base_model=base_model
+        ),
         action_context=obd.action_context,
         ope_estimators=[InverseProbabilityWeighting(), DirectMethod(), DoublyRobust()],
     )
     estimated_policy_value, estimated_interval = ope.summarize_off_policy_estimates(
-        selected_actions=selected_actions
+        action_dist=action_dist
     )
 
     # calculate estimated policy value relative to that of the behavior policy
@@ -152,7 +153,5 @@ if __name__ == "__main__":
     pd.DataFrame(estimated_policy_value).to_csv(save_path / f"{policy_name}.csv")
     # save visualization of the off-policy evaluation results in `./logs` directory
     ope.visualize_off_policy_estimates(
-        selected_actions=selected_actions,
-        fig_dir=save_path,
-        fig_name=f"{policy_name}.png",
+        action_dist=action_dist, fig_dir=save_path, fig_name=f"{policy_name}.png",
     )

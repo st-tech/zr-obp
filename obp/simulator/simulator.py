@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import numpy as np
 
-from ..utils import check_bandit_feedback_inputs
+from ..utils import check_bandit_feedback_inputs, convert_to_action_dist
 from ..types import BanditFeedback, BanditPolicy
 
 
@@ -21,13 +21,12 @@ def run_bandit_simulation(
         Logged bandit feedback data to be used in offline bandit simulation.
 
     policy: BanditPolicy
-        Bandit policy to be evaluated in offline bandit simulation (i.e., counterfactual or evaluation policy).
+        Bandit policy to be evaluated in offline bandit simulation (i.e., evaluation policy).
 
     Returns
     --------
-    selected_actions: array-like, shape (n_rounds, len_list)
-        Sequence of list of actions selected by counterfactual (or evaluation) policy
-        at each round in offline bandit simulation.
+    action_dist: array-like shape (n_rounds, n_actions, len_list)
+        Distribution over actions, i.e., probability of items being selected at each position (can be deterministic).
 
     """
     for key_ in ["action", "position", "reward", "pscore", "context"]:
@@ -73,5 +72,8 @@ def run_bandit_simulation(
                 )
         selected_actions_list.append(selected_actions)
 
-    return np.array(selected_actions_list)
-
+    action_dist = convert_to_action_dist(
+        n_actions=bandit_feedback["action"].max() + 1,
+        selected_actions=np.array(selected_actions_list),
+    )
+    return action_dist

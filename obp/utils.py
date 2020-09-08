@@ -59,6 +59,34 @@ def estimate_confidence_interval_by_bootstrap(
     }
 
 
+def convert_to_action_dist(n_actions: int, selected_actions: np.ndarray,) -> np.ndarray:
+    """Convert selected actions (output of `run_bandit_simulation`) to distribution over actions.
+
+    Parameters
+    ----------
+    n_actions: int
+        Number of actions.
+
+    selected_actions: array-like, shape (n_rounds, len_list)
+            Sequence of actions selected by evaluation policy
+            at each round in offline bandit simulation.
+
+    Returns
+    ----------
+    action_dist: array-like shape (n_rounds, n_actions, len_list)
+        Distribution over actions, i.e., probability of items being selected at each position (can be deterministic).
+
+    """
+    n_rounds, len_list = selected_actions.shape
+    action_dist = np.zeros((n_rounds, n_actions, len_list))
+    for pos in np.arange(len_list):
+        selected_actions_ = selected_actions[:, pos]
+        action_dist[
+            np.arange(n_rounds), selected_actions_, pos * np.ones(n_rounds, int),
+        ] = 1
+    return action_dist
+
+
 @_deprecate_positional_args
 def check_is_fitted(
     estimator: BaseEstimator, attributes=None, *, msg: str = None, all_or_any=all

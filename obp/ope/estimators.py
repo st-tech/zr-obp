@@ -16,9 +16,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for off-policy estimators."""
 
     @abstractmethod
-    def _estimate_round_rewards(
-        self, reward: np.ndarray, action_match: np.ndarray
-    ) -> np.ndarray:
+    def _estimate_round_rewards(self) -> np.ndarray:
         """Estimate rewards for each round."""
         raise NotImplementedError
 
@@ -37,11 +35,11 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 class ReplayMethod(BaseOffPolicyEstimator):
     """Estimate the policy value by Relpay Method (RM).
 
-    Replay Method (RM) estimates the policy value of a given counterfactual (or evaluation) policy :math:`\\pi` by
+    Replay Method (RM) estimates the policy value of a given evaluation policy :math:`\\pi` by
 
     .. math::
 
-        \\hat{V}_{RM} (\\pi) =
+        \\hat{V}_{RM} (\\pi; \\mathcal{D}) =
         \\frac{1}{\\sum_{t=1}^T \\mathbb{I} \\{\\pi (x_t) = a_t \\}} \\sum_{t=1}^T \\mathbb{I} \\{ \\pi (x_t) = a_t \\} Y_t
 
 
@@ -63,7 +61,12 @@ class ReplayMethod(BaseOffPolicyEstimator):
     estimator_name: str = "rm"
 
     def _estimate_round_rewards(
-        self, reward: np.ndarray, action_match: np.ndarray, **kwargs
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        action_dist: np.ndarray,
+        **kwargs,
     ) -> np.ndarray:
         """Estimate rewards for each round.
 
@@ -72,10 +75,11 @@ class ReplayMethod(BaseOffPolicyEstimator):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
 
         Returns
         ----------
@@ -83,13 +87,21 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Rewards estimated by the Replay Method for each round.
 
         """
-        estimated_rewards = np.zeros_like(action_match)
-        if np.sum(action_match) > 0.0:
-            estimated_rewards = action_match * reward / np.mean(action_match)
-        return estimated_rewards
+        action_match = np.array(
+            action_dist[np.arange(action.shape[0]), action, position] == 1
+        )
+        round_rewards = np.zeros_like(action_match)
+        if action_match.sum() > 0.0:
+            round_rewards = action_match * reward / action_match.mean()
+        return round_rewards
 
     def estimate_policy_value(
-        self, reward: np.ndarray, action_match: np.ndarray, **kwargs
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        action_dist: np.ndarray,
+        **kwargs,
     ) -> float:
         """Estimate policy value of a counterfactual policy.
 
@@ -98,10 +110,11 @@ class ReplayMethod(BaseOffPolicyEstimator):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t = Y(a_t)`.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
 
         Returns
         ----------
@@ -109,15 +122,16 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         """
-        estimated_rewards = self._estimate_round_rewards(
-            reward=reward, action_match=action_match
-        )
-        return np.mean(estimated_rewards)
+        return self._estimate_round_rewards(
+            reward=reward, action=action, position=position, action_dist=action_dist,
+        ).mean()
 
     def estimate_interval(
         self,
         reward: np.ndarray,
-        action_match: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        action_dist: np.ndarray,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -130,10 +144,11 @@ class ReplayMethod(BaseOffPolicyEstimator):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
 
         alpha: float, default: 0.05
             P-value.
@@ -150,11 +165,11 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        estimated_rewards = self._estimate_round_rewards(
-            reward=reward, action_match=action_match
+        estimated_round_rewards = self._estimate_round_rewards(
+            reward=reward, action=action, position=position, action_dist=action_dist,
         )
         return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_rewards,
+            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -165,14 +180,13 @@ class ReplayMethod(BaseOffPolicyEstimator):
 class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     """Estimate the policy value by Inverse Probability Weighting (IPW).
 
-    Inverse Probability Weighting (IPW) estimates the policy value of a given counterfactual (or evaluation) policy :math:`\\pi` by
+    Inverse Probability Weighting (IPW) estimates the policy value of a given evaluation policy :math:`\\pi` by
 
     .. math::
 
-        \\hat{V}_{IPW} (\\pi) =
-        \\frac{1}{T} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} Y_t
+        \\hat{V}_{IPW} (\\pi; \\mathcal{D}) = \\frac{1}{T} \\sum_{t=1}^T \\frac{\\pi (a_t | x_t)}{\\pi_b (a_t | x_t)} Y_t
 
-    where :math:`p_t` is probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
+    where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
 
     IPW re-weights the rewards by the inverse of the propensity score.
     When the behavior policy is known, the IPW estimator is unbiased and consistent for the policy value.
@@ -201,13 +215,19 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     estimator_name: str = "ipw"
 
     def __post_init__(self) -> None:
-        """Initalize Class."""
+        """Initialize Class."""
         assert (
             self.min_pscore <= 1.0
         ), f"minimum propensity score must be lower than 1, but {self.min_pscore} is given"
 
     def _estimate_round_rewards(
-        self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        **kwargs,
     ) -> np.ndarray:
         """Estimate rewards for each round.
 
@@ -216,13 +236,14 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         pscore: array-like, shape (n_rounds, )
             Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
-
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
 
         Returns
         ----------
@@ -230,10 +251,19 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Rewards estimated by the Replay Method for each round.
 
         """
-        return (action_match * reward) / pscore
+        importance_weight = (
+            action_dist[np.arange(action.shape[0]), action, position] / pscore
+        )
+        return reward * importance_weight
 
     def estimate_policy_value(
-        self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        **kwargs,
     ) -> np.ndarray:
         """Estimate policy value of a counterfactual policy.
 
@@ -242,13 +272,18 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
-        pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
+        pscore: array-like, shape (n_rounds, )
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
+
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
         Returns
         ----------
@@ -256,16 +291,21 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         """
-        estimated_rewards = self._estimate_round_rewards(
-            reward=reward, pscore=pscore, action_match=action_match
-        )
-        return np.mean(estimated_rewards)
+        return self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+        ).mean()
 
     def estimate_interval(
         self,
         reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
         pscore: np.ndarray,
-        action_match: np.ndarray,
+        action_dist: np.ndarray,
         alpha: float,
         n_bootstrap_samples: int,
         random_state: Optional[int] = None,
@@ -278,13 +318,18 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
-        pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
+        pscore: array-like, shape (n_rounds, )
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
+
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
         alpha: float, default: 0.05
             P-value.
@@ -301,11 +346,15 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        estimated_rewards = self._estimate_round_rewards(
-            reward=reward, pscore=pscore, action_match=action_match
+        estimated_round_rewards = self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
         )
         return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_rewards,
+            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -316,14 +365,14 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     """Estimate the policy value by Self-Normalized Inverse Probability Weighting (SNIPW).
 
-    Self-Normalized Inverse Probability Weighting (SNIPW) estimates the policy value of a given counterfactual (or evaluation) policy :math:`\\pi` by
+    Self-Normalized Inverse Probability Weighting (SNIPW) estimates the policy value of a given evaluation policy :math:`\\pi` by
 
     .. math::
 
-        \\hat{V}_{SNIPW} (\\pi) =
-        \\frac{1}{\\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} } \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} Y_t
+        \\hat{V}_{SNIPW} (\\pi; \\mathcal{D}) =
+        \\frac{\\sum_{t=1}^T \\frac{\\pi (a_t | x_t)}{\\pi_b (a_t | x_t)} Y_t}{\\sum_{t=1}^T \\frac{\\pi (a_t | x_t)}{\\pi_b (a_t | x_t)}}
 
-    where :math:`p_t` is probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
+    where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
 
     SNIPW re-weights the observed rewards by the self-normalized importance weihgt.
     This estimator is not unbiased even when the behavior policy is known.
@@ -352,7 +401,13 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     estimator_name: str = "snipw"
 
     def _estimate_round_rewards(
-        self, reward: np.ndarray, pscore: np.ndarray, action_match: np.ndarray, **kwargs
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        **kwargs,
     ) -> np.ndarray:
         """Estimate rewards for each round.
 
@@ -361,13 +416,18 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
-        pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
+        pscore: array-like, shape (n_rounds, )
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
+
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
         Returns
         ----------
@@ -375,7 +435,10 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
             Rewards estimated by the SNIPW estimator for each round.
 
         """
-        return (action_match * reward) / pscore / (action_match / pscore).mean()
+        importance_weight = (
+            action_dist[np.arange(action.shape[0]), action, position] / pscore
+        )
+        return reward * importance_weight / importance_weight.mean()
 
 
 @dataclass
@@ -388,10 +451,10 @@ class DirectMethod(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{DM} (\\pi) =
-        \\frac{1}{T} \\sum_{t=1}^T \\hat{\\mu} (x_t, pi (x_t))
+        \\hat{V}_{DM} (\\pi; \\mathcal{D}) = \\frac{1}{T} \\sum_{t=1}^T \\sum_{a \\in \\mathcal{A}} \\hat{\\mu} (x_t, a) \\pi(a | x_t)
 
-    where :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, pi (x_t))` is an estimated reward for round :math:`t`.
+    where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
+    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x, a)` is an estimated reward given :math:`x` and :math:`a`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`, which supports several fitting methods specific to OPE.
 
     If the regression model is a good approximation to the mean reward function,
@@ -417,14 +480,20 @@ class DirectMethod(BaseOffPolicyEstimator):
     estimator_name: str = "dm"
 
     def _estimate_round_rewards(
-        self, estimated_rewards_by_reg_model: np.ndarray, **kwargs
+        self,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        **kwargs,
     ) -> float:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
         ----------
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, )
-            Estimated rewards by regression model.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         Returns
         ----------
@@ -432,17 +501,25 @@ class DirectMethod(BaseOffPolicyEstimator):
             Rewards estimated by the DM estimator for each round.
 
         """
-        return estimated_rewards_by_reg_model
+        return np.average(
+            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
+        )
 
     def estimate_policy_value(
-        self, estimated_rewards_by_reg_model: np.ndarray, **kwargs
+        self,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        **kwargs,
     ) -> float:
         """Estimate policy value of a counterfactual policy.
 
         Parameters
         ----------
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, )
-            Estimated rewards by regression model.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         Returns
         ----------
@@ -450,10 +527,14 @@ class DirectMethod(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given counterfactual or evaluation policy.
 
         """
-        return np.mean(estimated_rewards_by_reg_model)
+        return self._estimate_round_rewards(
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            action_dist=action_dist,
+        ).mean()
 
     def estimate_interval(
         self,
+        action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         alpha: float,
         n_bootstrap_samples: int,
@@ -464,8 +545,11 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         ----------
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, )
-            Estimated rewards by regression model.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         alpha: float, default: 0.05
             P-value.
@@ -482,8 +566,12 @@ class DirectMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        estimated_round_rewards = self._estimate_round_rewards(
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            action_dist=action_dist,
+        )
         return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_rewards_by_reg_model,
+            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -500,11 +588,11 @@ class DoublyRobust(InverseProbabilityWeighting):
 
     .. math::
 
-            \\hat{V}_{DR} (\\pi) =
-            \\frac{1}{T} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, pi (x_t))) + \\hat{\\mu} (x_t, pi (x_t))
+            \\hat{V}_{DR} (\\pi; \\mathcal{D}) =
+            \\hat{V}_{DM} (\\pi; \\mathcal{D}) + \\frac{1}{T} \\sum_{t=1}^T \\frac{\\pi (a_t | x_t)}{\\pi_b (a_t | x_t)} (Y_t - \\hat{\\mu} (x_t, a_t))
 
-    where :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
-    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, \\pi (x_t))` is an estimated reward for round :math:`t`.
+    where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
+    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x, a)` is an estimated reward given :math:`x` and :math:`a`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
@@ -534,9 +622,11 @@ class DoublyRobust(InverseProbabilityWeighting):
     def _estimate_round_rewards(
         self,
         reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
         pscore: np.ndarray,
+        action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
-        action_match: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
         """Estimate rewards for each round.
@@ -546,16 +636,21 @@ class DoublyRobust(InverseProbabilityWeighting):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
 
-        estimated_rewards: array-like, shape (n_rounds, )
-            Estimated rewards by regression model.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
-        action_match: array
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         Returns
         ----------
@@ -563,15 +658,25 @@ class DoublyRobust(InverseProbabilityWeighting):
             Rewards estimated by the DR estimator for each round.
 
         """
-        return (
-            (action_match * (reward - estimated_rewards_by_reg_model)) / pscore
-        ) + estimated_rewards_by_reg_model
+        round_rewards = np.average(
+            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
+        )
+        importance_weight = (
+            action_dist[np.arange(action.shape[0]), action, position] / pscore
+        )
+        estimated_observed_rewards = estimated_rewards_by_reg_model[
+            np.arange(action.shape[0]), action, position
+        ]
+        round_rewards += importance_weight * (reward - estimated_observed_rewards)
+        return round_rewards
 
     def estimate_policy_value(
         self,
         reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
         pscore: np.ndarray,
-        action_match: np.ndarray,
+        action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
     ) -> float:
         """Estimate policy value of a counterfactual policy.
@@ -581,16 +686,21 @@ class DoublyRobust(InverseProbabilityWeighting):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, )
-            Estimated policy value (performance) of a given counterfactual or evaluation policy.
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         Returns
         ----------
@@ -598,19 +708,22 @@ class DoublyRobust(InverseProbabilityWeighting):
             Estimated policy value by the DR estimator.
 
         """
-        estimated_rewards = self._estimate_round_rewards(
+        return self._estimate_round_rewards(
             reward=reward,
+            action=action,
+            position=position,
             pscore=pscore,
-            action_match=action_match,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-        )
-        return np.mean(estimated_rewards)
+        ).mean()
 
     def estimate_interval(
         self,
         reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
         pscore: np.ndarray,
-        action_match: np.ndarray,
+        action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         alpha: float,
         n_bootstrap_samples: int,
@@ -624,16 +737,21 @@ class DoublyRobust(InverseProbabilityWeighting):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, )
-            Estimated rewards by regression model.
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         alpha: float, default: 0.05
             P-value.
@@ -650,14 +768,16 @@ class DoublyRobust(InverseProbabilityWeighting):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        estimated_rewards = self._estimate_round_rewards(
+        estimated_round_rewards = self._estimate_round_rewards(
             reward=reward,
+            action=action,
+            position=position,
             pscore=pscore,
-            action_match=action_match,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
         return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_rewards,
+            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -668,15 +788,15 @@ class DoublyRobust(InverseProbabilityWeighting):
 class SelfNormalizedDoublyRobust(DoublyRobust):
     """Estimate the policy value by Self-Normalized Doubly Robust (SNDR).
 
-    Self-Normalized Doubly Robust estimates the policy value of a given counterfactual (or evaluation) policy :math:`\\pi` by
+    Self-Normalized Doubly Robust estimates the policy value of a given evaluation policy :math:`\\pi` by
 
     .. math::
 
-            \\hat{V}_{SNDR} (\\pi) =
-            \\frac{1}{\\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t}} \\sum_{t=1}^T \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, pi (x_t))) + \\hat{\\mu} (x_t, pi (x_t))
+            \\hat{V}_{SNDR} (\\pi; \\mathcal{D}) =
+            \\frac{T}{\\sum_{t=1}^T \\frac{\\pi (a_t | x_t)}{\\pi_b (a_t | x_t)}} \\hat{V}_{DR} (\\pi; \\mathcal{D})
 
-    where :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
-    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, a_t)` is an estimated reward for round :math:`t`.
+    where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
+    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x, a)` is an estimated reward given :math:`x` and :math:`a`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
@@ -704,9 +824,11 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     def _estimate_round_rewards(
         self,
         reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
         pscore: np.ndarray,
+        action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
-        action_match: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
         """Estimate rewards for each round.
@@ -716,16 +838,21 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
 
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, )
-            Estimated rewards by regression model.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
-        action_match: array
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         Returns
         ----------
@@ -733,12 +860,17 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Rewards estimated by the SNDR estimator for each round.
 
         """
-        round_rewards = (
-            action_match * (reward - estimated_rewards_by_reg_model) / pscore
+        round_rewards = np.average(
+            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
         )
-        round_rewards += estimated_rewards_by_reg_model
-        round_rewards /= (action_match / pscore).mean()
-        return round_rewards
+        importance_weight = (
+            action_dist[np.arange(action.shape[0]), action, position] / pscore
+        )
+        estimated_observed_rewards = estimated_rewards_by_reg_model[
+            np.arange(action.shape[0]), action, position
+        ]
+        round_rewards += importance_weight * (reward - estimated_observed_rewards)
+        return round_rewards / importance_weight.mean()
 
 
 @dataclass
@@ -747,17 +879,17 @@ class SwitchDoublyRobust(DoublyRobust):
 
     Switch Doubly Robust aims to reduce the variance of the Doubly Robust estimator by using the direct method insted of doubly robust
     when the inverse of the propensity score (or the density ratio) is large.
-    This estimator estimates the policy value of a given counterfactual (or evaluation) policy :math:`\\pi` by
+    This estimator estimates the policy value of a given evaluation policy :math:`\\pi` by
 
     .. math::
 
-            \\hat{V}_{Switch-DR} (\\pi) =
-            \\frac{1}{T} \\sum_{t=1}^T v_t \\mathbb{I} \\{ (p_t)^{-1} \\le \\tau \\} + \{ (p_t)^{-1} > \\tau \\} \\hat{\\mu} (x_t, \\pi (x_t))
+            \\hat{V}_{Switch-DR} (\\pi; \\mathcal{D}) =
+            \\hat{V}_{DM} (\\pi; \\mathcal{D})
+            + \\frac{1}{T} \\sum_{t=1}^T \\frac{\\pi (a_t | x_t)}{\\pi_b (a_t | x_t)} (Y_t - \\hat{\\mu} (x_t, a_t)) \\mathbb{I} \\{ \\frac{\\pi (a_t | x_t)}{\\pi_b (a_t | x_t)} \\le \\tau \\}
 
-    where :math:`v_t =  \\frac{\\mathbb{I} \\{ \\pi (x_t) = a_t \\}}{p_t} (Y_t - \\hat{\\mu} (x_t, \\pi (x_t))) + \\hat{\\mu} (x_t, \\pi (x_t))` is the doubly robust estimated reward of each round
-    and :math:`\\tau (\\ge 1)` is the *switching hyperparameter*, which decides the *threshold* for the inverse of the propensity score.
-    :math:`p_t` is the probability of an action :math:`a` was chosen by behavior policy at round :math:`t` called the *propensity score*.
-    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x_t, \\pi (x_t))` is an estimated reward for round :math:`t`.
+    where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
+    :math:`\\tau (\\ge 1)` is the *switching hyperparameter*, which decides the *threshold* for the inverse of the propensity score.
+    :math:`\\hat{\\mu}` is the regression function and :math:`\\hat{\\mu} (x, a)` is an estimated reward given :math:`x` and :math:`a`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
@@ -792,9 +924,11 @@ class SwitchDoublyRobust(DoublyRobust):
     def _estimate_round_rewards(
         self,
         reward: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
         pscore: np.ndarray,
+        action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
-        action_match: np.ndarray,
         **kwargs,
     ) -> float:
         """Estimate rewards for each round.
@@ -804,16 +938,21 @@ class SwitchDoublyRobust(DoublyRobust):
         reward: array-like, shape (n_rounds, )
             Observed reward (or outcome) for each round, i.e., :math:`Y_t=Y(a_t)`.
 
+        action: array-like, shape (n_rounds,)
+            Selected actions by behavior policy in the given training logged bandit feedback.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         pscore: array-like, shape (n_rounds, )
-            Propensity score for each round, i.e., :math:`p_t=E[A=a_t | X=x_t]`.
+            Propensity score (probability of an action being selected by the behavior policy)
+            for each round, i.e., :math:`\\pi_b (a_t | x_t) =E[A=a_t | X=x_t]`.
 
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, )
-            Estimated rewards by regression model.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
-        action_match: array-like, shape (n_rounds, )
-            Indicators representing wether counterfactual policy selected the same action selected by behavior policy.
-            :math:`\\mathbb{I} \\{ \\pi (x_t) = a_t \\}` where :math:`\\pi (x_t)` is an action selected by counterfactual policy
-            and :math:`a_t` is an action selected by behavior policy in round :math:`t`.
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{\\mu}`.
 
         Returns
         ----------
@@ -821,15 +960,17 @@ class SwitchDoublyRobust(DoublyRobust):
             Rewards estimated by the Switch-DR estimator for each round.
 
         """
-        switch_indicator = np.array((1.0 / pscore) <= self.tau, dtype=int)
-        dr_estimated_rewards = (
-            action_match * (reward - estimated_rewards_by_reg_model)
-        ) / pscore
-        dr_estimated_rewards += estimated_rewards_by_reg_model
-        switch_dr_estimated_rewards = switch_indicator * dr_estimated_rewards
-        switch_dr_estimated_rewards += (
-            1 - switch_indicator
-        ) * estimated_rewards_by_reg_model
-
-        return switch_dr_estimated_rewards
-
+        round_rewards = np.average(
+            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
+        )
+        importance_weight = (
+            action_dist[np.arange(action.shape[0]), action, position] / pscore
+        )
+        estimated_observed_rewards = estimated_rewards_by_reg_model[
+            np.arange(action.shape[0]), action, position
+        ]
+        switch_indicator = np.array(importance_weight <= self.tau, dtype=int)
+        round_rewards += (
+            switch_indicator * importance_weight * (reward - estimated_observed_rewards)
+        )
+        return round_rewards

@@ -5,8 +5,7 @@ import yaml
 import numpy as np
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.experimental import enable_hist_gradient_boosting
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier as RandomForest
 
 from obp.dataset import OpenBanditDataset
 from obp.simulator import run_bandit_simulation
@@ -21,8 +20,9 @@ from obp.ope import (
 from obp.utils import estimate_confidence_interval_by_bootstrap
 
 
-with open("./conf/lightgbm.yaml", "rb") as f:
-    hyperparams = yaml.safe_load(f)["model"]
+# hyperparameter for the regression model used in model dependent OPE estimators
+with open("./conf/hyperparams.yaml", "rb") as f:
+    hyperparams = yaml.safe_load(f)["random_forest"]
 
 # configurations to reproduce the Bernoulli Thompson Sampling policy
 # used in ZOZOTOWN production
@@ -72,6 +72,7 @@ if __name__ == "__main__":
     behavior_policy = args.behavior_policy
     campaign = args.campaign
     random_state = args.random_state
+    np.random.seed(random_state)
     data_path = Path(".").resolve().parents[1] / "obd"
 
     obd = OpenBanditDataset(
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     # compared OPE estimators
     ope_estimators = [DirectMethod(), InverseProbabilityWeighting(), DoublyRobust()]
     # a base ML model for regression model used in model dependent OPE estimators
-    base_model = CalibratedClassifierCV(HistGradientBoostingClassifier(**hyperparams))
+    base_model = CalibratedClassifierCV(RandomForest(**hyperparams))
     # ground-truth policy value of a counterfactual policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
     ground_truth_policy_value = OpenBanditDataset.calc_on_policy_policy_value_estimate(
@@ -103,19 +104,27 @@ if __name__ == "__main__":
     for b in np.arange(n_boot_samples):
         # sample bootstrap from batch logged bandit feedback
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(random_state=b)
-        # run a counterfactual bandit algorithm on logged bandit feedback data
-        selected_actions = run_bandit_simulation(
-            bandit_feedback=boot_bandit_feedback, policy=policy
-        )
+        if counterfactual_policy == "bts":
+            # run a counterfactual bandit algorithm on logged bandit feedback data
+            action_dist = run_bandit_simulation(
+                bandit_feedback=boot_bandit_feedback, policy=policy
+            )
+        else:
+            # the random policy has uniformally random distribution over actions
+            action_dist = np.ones((obd.n_rounds, obd.n_actions, obd.len_list)) * (
+                1 / obd.n_actions
+            )
         # evaluate the estimation performance of OPE estimators by relative estimation errors
         ope = OffPolicyEvaluation(
             bandit_feedback=boot_bandit_feedback,
             action_context=obd.action_context,
-            regression_model=RegressionModel(base_model=base_model),
+            regression_model=RegressionModel(
+                n_actions=obd.n_actions, len_list=obd.len_list, base_model=base_model
+            ),
             ope_estimators=ope_estimators,
         )
         relative_estimation_errors = ope.evaluate_performance_of_estimators(
-            selected_actions=selected_actions,
+            action_dist=action_dist,
             ground_truth_policy_value=ground_truth_policy_value,
         )
         policy.initialize()

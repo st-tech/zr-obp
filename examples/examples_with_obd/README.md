@@ -54,9 +54,9 @@ python evaluate_off_policy_estimators.py\
 # random_state=12345
 # --------------------------------------------------
 #          mean  95.0% CI (lower)  95.0% CI (upper)
-# dm   0.213823          0.141678          0.277700
+# dm   0.693300          0.649553          0.731233
 # ipw  1.158730          0.961905          1.533333
-# dr   1.105379          0.901894          1.425447
+# dr   1.219538          0.948628          1.588770
 # ==================================================
 ```
 
@@ -97,15 +97,15 @@ python evaluate_counterfactual_policy.py\
 
 # estimated policy values relative to the behavior policy (Random) of a counterfactual policy (linear epsilon greedy with Context Set 1)
 # by the three OPE estimators (IPW: inverse probability weighting, DM; Direct Method, DR; Doubly Robust)
-# in this example, DM predicts that the counterfactual policy outperforms the behavior policy by about 5.49%
+# in this example, DM predicts that the counterfactual policy outperforms the behavior policy by about 2.68%
 # (Note that this result is with the small sample data, and please use the full size data for a more reasonable experiment)
 # ======================================================================
 # random_state=12345: counterfactual policy=linear_epsilon_greedy_0.1_1
 # ----------------------------------------------------------------------
 #      estimated_policy_value  relative_estimated_policy_value
 # ipw                0.004600                         1.000000
-# dm                 0.004853                         1.054967
-# dr                 0.004642                         1.009075
+# dm                 0.001679                         0.365045
+# dr                 0.005046                         1.096965
 # ======================================================================
 ```
 
