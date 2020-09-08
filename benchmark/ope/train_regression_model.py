@@ -55,6 +55,17 @@ if __name__ == "__main__":
         required=True,
         help="campaign name, men, women, or all.",
     )
+    parser.add_argument(
+        "--test_size",
+        type=float,
+        default=0.3,
+        help="the proportion of the dataset to include in the test split.",
+    )
+    parser.add_argument(
+        "--is_timeseries_split",
+        action="store_true",
+        help="If true, split the original logged badnit feedback data by time series.",
+    )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
@@ -64,11 +75,17 @@ if __name__ == "__main__":
     base_model = args.base_model
     behavior_policy = args.behavior_policy
     campaign = args.campaign
+    test_size = args.test_size
+    is_timeseries_split = args.is_timeseries_split
     random_state = args.random_state
     data_path = Path("../open_bandit_dataset")
     # prepare path
     log_path = Path("./logs") / behavior_policy / campaign / base_model
-    reg_model_path = log_path / "trained_reg_models"
+    reg_model_path = (
+        log_path / "trained_reg_models_out_sample"
+        if is_timeseries_split
+        else log_path / "trained_reg_models"
+    )
     reg_model_path.mkdir(exist_ok=True, parents=True)
 
     obd = OpenBanditDataset(
@@ -87,7 +104,9 @@ if __name__ == "__main__":
     }
     for b in np.arange(n_boot_samples):
         # sample bootstrap from batch logged bandit feedback
-        boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(random_state=b)
+        boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(
+            test_size=test_size, is_timeseries_split=is_timeseries_split, random_state=b
+        )
         # train a regression model on logged bandit feedback data
         reg_model.fit(
             context=boot_bandit_feedback["context"],
@@ -97,11 +116,12 @@ if __name__ == "__main__":
             action_context=boot_bandit_feedback["action_context"],
         )
         # evaluate the (in-sample) estimation performance of the regression model by AUC and RCE
+        # TODO: out-sample?
         predicted_rewards = reg_model.predict(
             context=boot_bandit_feedback["context"],
             action_context=boot_bandit_feedback["action_context"],
             selected_actions=np.expand_dims(boot_bandit_feedback["action"], 1),
-            position=np.zeros(boot_bandit_feedback["n_rounds"], dtype=int),
+            position=np.zeros_like(boot_bandit_feedback["action"], int),
         )
         rewards = boot_bandit_feedback["reward"]
         performance_of_reg_model["auc"][b] = roc_auc_score(
