@@ -166,7 +166,11 @@ if __name__ == "__main__":
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback,
             action_context=dataset.action_context,
-            regression_model=RegressionModel(base_model=base_model),
+            regression_model=RegressionModel(
+                n_actions=dataset.n_actions,
+                len_list=dataset.len_list,
+                base_model=base_model,
+            ),
             ope_estimators=ope_estimators,
         )
         relative_estimation_errors = ope.evaluate_performance_of_estimators(

@@ -112,13 +112,15 @@ if __name__ == "__main__":
         else:
             # the random policy has uniformally random distribution over actions
             action_dist = np.ones((obd.n_rounds, obd.n_actions, obd.len_list)) * (
-                1 / obd.n_actions * obd.len_list
+                1 / obd.n_actions
             )
         # evaluate the estimation performance of OPE estimators by relative estimation errors
         ope = OffPolicyEvaluation(
             bandit_feedback=boot_bandit_feedback,
             action_context=obd.action_context,
-            regression_model=RegressionModel(base_model=base_model),
+            regression_model=RegressionModel(
+                n_actions=obd.n_actions, len_list=obd.len_list, base_model=base_model
+            ),
             ope_estimators=ope_estimators,
         )
         relative_estimation_errors = ope.evaluate_performance_of_estimators(

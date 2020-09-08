@@ -127,7 +127,9 @@ if __name__ == "__main__":
     # estimate the policy value of a given counterfactual algorithm by the three OPE estimators.
     ope = OffPolicyEvaluation(
         bandit_feedback=bandit_feedback,
-        regression_model=RegressionModel(base_model=base_model),
+        regression_model=RegressionModel(
+            n_actions=obd.n_actions, len_list=obd.len_list, base_model=base_model
+        ),
         action_context=obd.action_context,
         ope_estimators=[InverseProbabilityWeighting(), DirectMethod(), DoublyRobust()],
     )
