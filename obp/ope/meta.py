@@ -15,7 +15,7 @@ import seaborn as sns
 from .estimators import BaseOffPolicyEstimator
 from .regression_model import RegressionModel
 from ..types import BanditFeedback
-from ..utils import check_is_fitted, check_bandit_feedback_inputs
+from ..utils import check_is_fitted
 
 logger = getLogger(__name__)
 
@@ -98,9 +98,6 @@ class OffPolicyEvaluation:
         for key_ in ["action", "position", "reward", "pscore", "context"]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
-        self.n_rounds = self.bandit_feedback["action"].shape[0]
-        self.n_actions = self.bandit_feedback["action"].max() + 1
-        self.len_list = self.bandit_feedback["position"].max() + 1
 
         if self.regression_model is not None:
             if check_is_fitted(self.regression_model.base_model):
@@ -109,19 +106,13 @@ class OffPolicyEvaluation:
                 logger.info(
                     "the given regression model is not fitted, and thus train it here..."
                 )
-                check_bandit_feedback_inputs(
-                    context=self.bandit_feedback["context"],
-                    action=self.bandit_feedback["action"],
-                    reward=self.bandit_feedback["reward"],
-                    pscore=self.bandit_feedback["pscore"],
-                    action_context=self.action_context,
-                )
                 self.regression_model.fit(
                     context=self.bandit_feedback["context"],
                     action=self.bandit_feedback["action"],
                     reward=self.bandit_feedback["reward"],
                     pscore=self.bandit_feedback["pscore"],
                     action_context=self.action_context,
+                    position=self.bandit_feedback["position"],
                 )
         else:
             logger.warning(
@@ -142,25 +133,13 @@ class OffPolicyEvaluation:
         }
         estimator_inputs["action_dist"] = action_dist
         if self.regression_model is not None:
-            ones_n_rounds_arr = np.ones(self.n_rounds, int)
-            estimated_rewards_by_reg_model = np.zeros(
-                (self.n_rounds, self.n_actions, self.len_list)
+            estimated_rewards_by_reg_model = self.regression_model.predict(
+                context=self.bandit_feedback["context"],
+                action_context=self.action_context,
             )
-            for action_ in np.arange(self.n_actions):
-                for position_ in np.arange(self.len_list):
-                    estimated_rewards_by_reg_model[
-                        np.arange(self.n_rounds),
-                        action_ * ones_n_rounds_arr,
-                        position_ * ones_n_rounds_arr,
-                    ] = self.regression_model.predict(
-                        context=self.bandit_feedback["context"],
-                        action=action_ * ones_n_rounds_arr,
-                        position=position_ * ones_n_rounds_arr,
-                        action_context=self.action_context,
-                    )
-        estimator_inputs[
-            "estimated_rewards_by_reg_model"
-        ] = estimated_rewards_by_reg_model
+            estimator_inputs[
+                "estimated_rewards_by_reg_model"
+            ] = estimated_rewards_by_reg_model
 
         return estimator_inputs
 
