@@ -8,7 +8,7 @@ import pandas as pd
 
 from obp.dataset import OpenBanditDataset
 from obp.simulator import run_bandit_simulation
-from obp.policy import Random, BernoulliTS
+from obp.policy import BernoulliTS
 from obp.ope import (
     OffPolicyEvaluation,
     InverseProbabilityWeighting,
@@ -27,8 +27,6 @@ with open("./conf/prior_bts.yaml", "rb") as f:
 with open("./conf/batch_size_bts.yaml", "rb") as f:
     production_batch_size_for_bts = yaml.safe_load(f)
 
-counterfactual_policy_dict = dict(bts=BernoulliTS, random=Random)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
     parser.add_argument(
@@ -43,13 +41,6 @@ if __name__ == "__main__":
         choices=["logistic_regression", "lightgbm"],
         required=True,
         help="base ML model for regression model, logistic_regression or lightgbm.",
-    )
-    parser.add_argument(
-        "--counterfactual_policy",
-        type=str,
-        choices=["bts", "random"],
-        required=True,
-        help="counterfactual policy, bts or random.",
     )
     parser.add_argument(
         "--behavior_policy",
@@ -83,15 +74,17 @@ if __name__ == "__main__":
     # configurations of the benchmark experiment
     n_boot_samples = args.n_boot_samples
     base_model = args.base_model
-    counterfactual_policy = args.counterfactual_policy
     behavior_policy = args.behavior_policy
+    counterfactual_policy = "bts" if behavior_policy == "random" else "random"
     campaign = args.campaign
     test_size = args.test_size
     is_timeseries_split = args.is_timeseries_split
     random_state = args.random_state
     data_path = Path("../open_bandit_dataset")
     # prepare path
-    log_path = Path("./logs") / behavior_policy / campaign / base_model
+    log_path = (
+        Path("./logs") / behavior_policy / campaign / "benchmark_of_ope" / base_model
+    )
     reg_model_path = (
         log_path / "trained_reg_models_out_sample"
         if is_timeseries_split
@@ -106,11 +99,9 @@ if __name__ == "__main__":
     kwargs = dict(
         n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state
     )
-    if counterfactual_policy == "bts":
-        kwargs["alpha"] = production_prior_for_bts[campaign]["alpha"]
-        kwargs["beta"] = production_prior_for_bts[campaign]["beta"]
-        kwargs["batch_size"] = production_batch_size_for_bts[campaign]
-    policy = counterfactual_policy_dict[counterfactual_policy](**kwargs)
+    kwargs["alpha"] = production_prior_for_bts[campaign]["alpha"]
+    kwargs["beta"] = production_prior_for_bts[campaign]["beta"]
+    kwargs["batch_size"] = production_batch_size_for_bts[campaign]
     # compared OPE estimators
     ope_estimators = [
         DirectMethod(),
@@ -143,25 +134,28 @@ if __name__ == "__main__":
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(
             test_size=test_size, is_timeseries_split=is_timeseries_split, random_state=b
         )
-        # run a counterfactual bandit algorithm on logged bandit feedback data
-        selected_actions = run_bandit_simulation(
-            bandit_feedback=boot_bandit_feedback, policy=policy
-        )
+        if counterfactual_policy == "bts":
+            policy = BernoulliTS(**kwargs)
+            # run a counterfactual bandit algorithm on logged bandit feedback data
+            action_dist = run_bandit_simulation(
+                bandit_feedback=boot_bandit_feedback, policy=policy
+            )
+        else:
+            # the random policy has uniformally random distribution over actions
+            action_dist = np.ones((obd.n_rounds, obd.n_actions, obd.len_list)) * (
+                1 / obd.n_actions
+            )
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
             bandit_feedback=boot_bandit_feedback,
-            action_context=obd.action_context,
             regression_model=reg_model,
             ope_estimators=ope_estimators,
         )
-        estimated_policy_values = ope.estimate_policy_values(
-            selected_actions=selected_actions,
-        )
+        estimated_policy_values = ope.estimate_policy_values(action_dist=action_dist,)
         relative_estimation_errors = ope.evaluate_performance_of_estimators(
-            selected_actions=selected_actions,
+            action_dist=action_dist,
             ground_truth_policy_value=ground_truth_policy_value,
         )
-        policy.initialize()
         # store estimated policy values by OPE estimators at each bootstrap
         for (
             estimator_name,

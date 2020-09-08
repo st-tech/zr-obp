@@ -17,7 +17,7 @@ from obp.ope import RegressionModel
 from obp.utils import estimate_confidence_interval_by_bootstrap
 
 
-with open("./conf/hyperparam.yaml", "rb") as f:
+with open("./conf/hyperparams.yaml", "rb") as f:
     hyperparams = yaml.safe_load(f)
 
 base_model_dict = dict(
@@ -80,7 +80,9 @@ if __name__ == "__main__":
     random_state = args.random_state
     data_path = Path("../open_bandit_dataset")
     # prepare path
-    log_path = Path("./logs") / behavior_policy / campaign / base_model
+    log_path = (
+        Path("./logs") / behavior_policy / campaign / "benchmark_of_ope" / base_model
+    )
     reg_model_path = (
         log_path / "trained_reg_models_out_sample"
         if is_timeseries_split
@@ -91,13 +93,6 @@ if __name__ == "__main__":
     obd = OpenBanditDataset(
         behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
     )
-    # a base ML model for regression model
-    reg_model = RegressionModel(
-        base_model=CalibratedClassifierCV(
-            base_model_dict[base_model](**hyperparams[base_model])
-        )
-    )
-
     start_time = time.time()
     performance_of_reg_model = {
         metrics[i]: np.zeros(n_boot_samples) for i in np.arange(len(metrics))
@@ -107,31 +102,52 @@ if __name__ == "__main__":
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(
             test_size=test_size, is_timeseries_split=is_timeseries_split, random_state=b
         )
+        # define a regression model
+        reg_model = RegressionModel(
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            action_context=boot_bandit_feedback["action_context"],
+            base_model=CalibratedClassifierCV(
+                base_model_dict[base_model](**hyperparams[base_model])
+            ),
+        )
         # train a regression model on logged bandit feedback data
         reg_model.fit(
             context=boot_bandit_feedback["context"],
             action=boot_bandit_feedback["action"],
             reward=boot_bandit_feedback["reward"],
             pscore=boot_bandit_feedback["pscore"],
-            action_context=boot_bandit_feedback["action_context"],
+            position=boot_bandit_feedback["position"],
         )
-        # evaluate the (in-sample) estimation performance of the regression model by AUC and RCE
-        # TODO: out-sample?
-        predicted_rewards = reg_model.predict(
-            context=boot_bandit_feedback["context"],
-            action_context=boot_bandit_feedback["action_context"],
-            selected_actions=np.expand_dims(boot_bandit_feedback["action"], 1),
-            position=np.zeros_like(boot_bandit_feedback["action"], int),
-        )
-        rewards = boot_bandit_feedback["reward"]
+        # evaluate the estimation performance of the regression model by AUC and RCE
+        if is_timeseries_split:
+            estimated_reward_by_reg_model = reg_model.predict(
+                context=boot_bandit_feedback["context_test"],
+            )
+            rewards = boot_bandit_feedback["reward_test"]
+            estimated_rewards_ = estimated_reward_by_reg_model[
+                np.arange(rewards.shape[0]),
+                boot_bandit_feedback["action_test"].astype(int),
+                boot_bandit_feedback["position_test"].astype(int),
+            ]
+        else:
+            estimated_reward_by_reg_model = reg_model.predict(
+                context=boot_bandit_feedback["context"],
+            )
+            rewards = boot_bandit_feedback["reward"]
+            estimated_rewards_ = estimated_reward_by_reg_model[
+                np.arange(boot_bandit_feedback["n_rounds"]),
+                boot_bandit_feedback["action"].astype(int),
+                boot_bandit_feedback["position"].astype(int),
+            ]
         performance_of_reg_model["auc"][b] = roc_auc_score(
-            y_true=rewards, y_score=predicted_rewards
+            y_true=rewards, y_score=estimated_rewards_
         )
-        rce_mean = log_loss(
+        rce_mean = -log_loss(
             y_true=rewards, y_pred=np.ones_like(rewards) * np.mean(rewards)
         )
-        rce_clf = log_loss(y_true=rewards, y_pred=predicted_rewards)
-        performance_of_reg_model["rce"][b] = (rce_mean - rce_clf) / rce_clf
+        rce_clf = -log_loss(y_true=rewards, y_pred=estimated_rewards_)
+        performance_of_reg_model["rce"][b] = (rce_mean - rce_clf) / rce_mean
 
         # save trained regression model in a pickled form
         pickle.dump(
@@ -159,4 +175,8 @@ if __name__ == "__main__":
     print("=" * 50)
 
     # save performance of the regression model in './logs' directory.
-    performance_of_reg_model_df.to_csv(log_path / f"performance_of_reg_model.csv")
+    performance_of_reg_model_df.to_csv(
+        log_path / f"performance_of_reg_model_out_sample.csv"
+    ) if is_timeseries_split else performance_of_reg_model_df.to_csv(
+        log_path / f"performance_of_reg_model_in_sample.csv"
+    )
