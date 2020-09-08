@@ -153,7 +153,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         alpha: float, default: 0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 100
+        n_bootstrap_samples: int, default: 10000
             Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
@@ -306,8 +306,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: np.ndarray,
         pscore: np.ndarray,
         action_dist: np.ndarray,
-        alpha: float,
-        n_bootstrap_samples: int,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
@@ -334,7 +334,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         alpha: float, default: 0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 100
+        n_bootstrap_samples: int, default: 10000
             Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
@@ -536,8 +536,8 @@ class DirectMethod(BaseOffPolicyEstimator):
         self,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
-        alpha: float,
-        n_bootstrap_samples: int,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
@@ -554,7 +554,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         alpha: float, default: 0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 100
+        n_bootstrap_samples: int, default: 10000
             Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
@@ -725,8 +725,8 @@ class DoublyRobust(InverseProbabilityWeighting):
         pscore: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
-        alpha: float,
-        n_bootstrap_samples: int,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
@@ -756,7 +756,7 @@ class DoublyRobust(InverseProbabilityWeighting):
         alpha: float, default: 0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 100
+        n_bootstrap_samples: int, default: 10000
             Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default: None
