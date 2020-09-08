@@ -128,9 +128,11 @@ if __name__ == "__main__":
     ope = OffPolicyEvaluation(
         bandit_feedback=bandit_feedback,
         regression_model=RegressionModel(
-            n_actions=obd.n_actions, len_list=obd.len_list, base_model=base_model
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            action_context=obd.action_context,
+            base_model=base_model,
         ),
-        action_context=obd.action_context,
         ope_estimators=[InverseProbabilityWeighting(), DirectMethod(), DoublyRobust()],
     )
     estimated_policy_value, estimated_interval = ope.summarize_off_policy_estimates(

@@ -117,9 +117,11 @@ if __name__ == "__main__":
         # evaluate the estimation performance of OPE estimators by relative estimation errors
         ope = OffPolicyEvaluation(
             bandit_feedback=boot_bandit_feedback,
-            action_context=obd.action_context,
             regression_model=RegressionModel(
-                n_actions=obd.n_actions, len_list=obd.len_list, base_model=base_model
+                n_actions=obd.n_actions,
+                len_list=obd.len_list,
+                action_context=obd.action_context,
+                base_model=base_model,
             ),
             ope_estimators=ope_estimators,
         )

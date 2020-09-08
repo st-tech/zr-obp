@@ -165,10 +165,10 @@ if __name__ == "__main__":
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback,
-            action_context=dataset.action_context,
             regression_model=RegressionModel(
                 n_actions=dataset.n_actions,
                 len_list=dataset.len_list,
+                action_context=dataset.action_context,
                 base_model=base_model,
             ),
             ope_estimators=ope_estimators,
