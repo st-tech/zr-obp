@@ -33,7 +33,7 @@ setup(
         "tqdm>=4.41.1",
     ],
     license="Apache License",
-    packages=find_packages(exclude=["obd", "examples", "tests", "docs"]),
+    packages=find_packages(exclude=["benchmark", "docs", "examples", "obd", "tests"]),
     classifiers=[
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Intended Audience :: Science/Research",
