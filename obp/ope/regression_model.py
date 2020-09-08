@@ -31,6 +31,9 @@ class RegressionModel:
         Length of a list of recommended actions in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
+    action_context: array-like, shape (n_actions, dim_action_context), default=None
+            Context vector characterizing each action.
+
     fitting_method: str, default='normal'
         Method to fit the regression method.
         Must be one of ['normal', 'iw', 'mrdr'] where 'iw' stands for importance weighting and
@@ -46,6 +49,7 @@ class RegressionModel:
     base_model: BaseEstimator
     n_actions: int
     len_list: int = 1
+    action_context: Optional[np.ndarray] = None
     fitting_method: str = "normal"
 
     def __post_init__(self) -> None:
@@ -71,7 +75,6 @@ class RegressionModel:
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        action_context: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> None:
         """Fit the regression model on given logged bandit feedback data.
@@ -91,9 +94,6 @@ class RegressionModel:
             Propensity scores, the probability of selecting each action by behavior policy,
             in the given training logged bandit feedback.
 
-        action_context: array-like, shape (n_actions, dim_action_context)
-            Context vector characterizing each action.
-
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given training logged bandit feedback.
             If None is given, a learner assumes that there is only one position.
@@ -106,7 +106,7 @@ class RegressionModel:
             reward=reward,
             pscore=pscore,
             position=position,
-            action_context=action_context,
+            action_context=self.action_context,
         )
         if position is None:
             assert self.len_list == 1, "position has to be set when len_list is 1"
@@ -116,7 +116,7 @@ class RegressionModel:
             X = self._pre_process_for_reg_model(
                 context=context[position == position_],
                 action=action[position == position_],
-                action_context=action_context,
+                action_context=self.action_context,
             )
             # train the base model according to the given `fitting method`
             if self.fitting_method == "normal":
@@ -134,16 +134,13 @@ class RegressionModel:
                     X, reward[position == position_], sample_weight=sample_weight
                 )
 
-    def predict(self, context: np.ndarray, action_context: np.ndarray,) -> np.ndarray:
+    def predict(self, context: np.ndarray) -> np.ndarray:
         """Predict the mean reward function.
 
         Parameters
         -----------
         context: array-like, shape (n_rounds_of_new_data, dim_context)
             Context vectors for new data.
-
-        action_context: array-like, shape shape (n_actions, dim_action_context)
-            Context vector characterizing each action.
 
         Returns
         -----------
@@ -162,7 +159,7 @@ class RegressionModel:
                 X = self._pre_process_for_reg_model(
                     context=context,
                     action=action_ * ones_n_rounds_arr,
-                    action_context=action_context,
+                    action_context=self.action_context,
                 )
             # make predictions
             estimated_rewards_ = (
@@ -178,7 +175,10 @@ class RegressionModel:
         return estimated_rewards_by_reg_model
 
     def _pre_process_for_reg_model(
-        self, context: np.ndarray, action: np.ndarray, action_context: np.ndarray,
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        action_context: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
 
@@ -195,8 +195,11 @@ class RegressionModel:
         action: array-like, shape (n_rounds,)
             Selected actions by behavior policy in the given training logged bandit feedback.
 
-        action_context: array-like, shape shape (n_actions, dim_action_context)
+        action_context: array-like, shape shape (n_actions, dim_action_context), default=None
             Context vector characterizing each action.
 
         """
-        return np.c_[context, action_context[action]]
+        if action_context is None:
+            return context
+        else:
+            return np.c_[context, action_context[action]]

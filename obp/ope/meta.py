@@ -38,9 +38,6 @@ class OffPolicyEvaluation:
         List of OPE estimators used to evaluate the policy value of evaluation policy.
         Estimators must follow the interface of `obp.ope.BaseOffPolicyEstimator`.
 
-    action_context: array-like, shape (n_actions, dim_action_context), default: None
-        Context vectors used as input to predict the mean reward function.
-
     regression_model: RegressionModel, default: None
         Regression model that predicts the mean reward function :math:`E[Y | X, A]`.
 
@@ -90,7 +87,6 @@ class OffPolicyEvaluation:
 
     bandit_feedback: BanditFeedback
     ope_estimators: List[BaseOffPolicyEstimator]
-    action_context: Optional[np.ndarray] = None
     regression_model: Optional[RegressionModel] = None
 
     def __post_init__(self) -> None:
@@ -111,7 +107,6 @@ class OffPolicyEvaluation:
                     action=self.bandit_feedback["action"],
                     reward=self.bandit_feedback["reward"],
                     pscore=self.bandit_feedback["pscore"],
-                    action_context=self.action_context,
                     position=self.bandit_feedback["position"],
                 )
         else:
@@ -134,8 +129,7 @@ class OffPolicyEvaluation:
         estimator_inputs["action_dist"] = action_dist
         if self.regression_model is not None:
             estimated_rewards_by_reg_model = self.regression_model.predict(
-                context=self.bandit_feedback["context"],
-                action_context=self.action_context,
+                context=self.bandit_feedback["context"]
             )
             estimator_inputs[
                 "estimated_rewards_by_reg_model"
