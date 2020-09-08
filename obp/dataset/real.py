@@ -195,11 +195,15 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 n_rounds=n_rounds_train,
                 n_actions=self.n_actions,
                 action=self.action[:n_rounds_train],
+                action_test=self.action[n_rounds_train:],
                 position=self.position[:n_rounds_train],
+                position_test=self.position[n_rounds_train:],
                 reward=self.reward[:n_rounds_train],
                 reward_test=self.reward[n_rounds_train:],
                 pscore=self.pscore[:n_rounds_train],
+                pscore_test=self.pscore[n_rounds_train:],
                 context=self.context[:n_rounds_train],
+                context_test=self.context[n_rounds_train:],
                 action_context=self.action_context,
             )
         else:
