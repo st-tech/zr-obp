@@ -161,17 +161,17 @@ class RegressionModel:
                     action=action_ * ones_n_rounds_arr,
                     action_context=self.action_context,
                 )
-            # make predictions
-            estimated_rewards_ = (
-                self.base_model_list[position_].predict_proba(X)[:, 1]
-                if is_classifier(self.base_model_list[position_])
-                else self.base_model_list[position_].predict(X)
-            )
-            estimated_rewards_by_reg_model[
-                np.arange(n_rounds_of_new_data),
-                action_ * ones_n_rounds_arr,
-                position_ * ones_n_rounds_arr,
-            ] = estimated_rewards_
+                # make predictions
+                estimated_rewards_ = (
+                    self.base_model_list[position_].predict_proba(X)[:, 1]
+                    if is_classifier(self.base_model_list[position_])
+                    else self.base_model_list[position_].predict(X)
+                )
+                estimated_rewards_by_reg_model[
+                    np.arange(n_rounds_of_new_data),
+                    action_ * ones_n_rounds_arr,
+                    position_ * ones_n_rounds_arr,
+                ] = estimated_rewards_
         return estimated_rewards_by_reg_model
 
     def _pre_process_for_reg_model(
