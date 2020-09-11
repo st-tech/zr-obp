@@ -1,5 +1,6 @@
 import argparse
 import pickle
+import time
 from pathlib import Path
 import yaml
 
@@ -108,7 +109,7 @@ if __name__ == "__main__":
         InverseProbabilityWeighting(),
         SelfNormalizedInverseProbabilityWeighting(),
         DoublyRobust(),
-        SwitchDoublyRobust(tau=1000),
+        SwitchDoublyRobust(tau=100),
     ]
     # ground-truth policy value of a counterfactual policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
@@ -126,6 +127,7 @@ if __name__ == "__main__":
     evaluation_of_ope_results = {
         est.estimator_name: np.zeros(n_boot_samples) for est in ope_estimators
     }
+    start = time.time()
     for b in np.arange(n_boot_samples):
         # load the pre-trained regression model
         with open(reg_model_path / f"reg_model_{b}.pkl", "rb") as f:
@@ -169,6 +171,8 @@ if __name__ == "__main__":
         ) in relative_estimation_errors.items():
             evaluation_of_ope_results[estimator_name][b] = relative_estimation_error
 
+        print(f"{b+1}th iteration: {np.round((time.time() - start) / 60, 2)}min")
+
     # estimate confidence intervals of relative estimation by nonparametric bootstrap method
     ope_results_with_ci = {est.estimator_name: dict() for est in ope_estimators}
     evaluation_of_ope_results_with_ci = {
@@ -193,5 +197,13 @@ if __name__ == "__main__":
     print("=" * 50)
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
-    ope_results_df.to_csv(log_path / f"estimated_policy_values_by_ope_estimators.csv")
-    evaluation_of_ope_results_df.to_csv(log_path / f"comparison_of_ope_estimators.csv")
+    ope_results_df.to_csv(
+        log_path / f"estimated_policy_values_by_ope_estimators_out_sample.csv"
+    ) if is_timeseries_split else ope_results_df.to_csv(
+        log_path / f"estimated_policy_values_by_ope_estimators.csv"
+    )
+    evaluation_of_ope_results_df.to_csv(
+        log_path / f"comparison_of_ope_estimators_out_sample.csv"
+    ) if is_timeseries_split else ope_results_df.to_csv(
+        log_path / f"comparison_of_ope_estimators.csv"
+    )
