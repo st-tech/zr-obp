@@ -8,15 +8,14 @@ import numpy as np
 import pandas as pd
 
 from obp.dataset import OpenBanditDataset
-from obp.simulator import run_bandit_simulation
 from obp.policy import BernoulliTS
 from obp.ope import (
     OffPolicyEvaluation,
     InverseProbabilityWeighting,
     SelfNormalizedInverseProbabilityWeighting,
+    SwitchDoublyRobust,
     DirectMethod,
     DoublyRobust,
-    SwitchDoublyRobust,
 )
 from obp.utils import estimate_confidence_interval_by_bootstrap
 
@@ -24,9 +23,6 @@ from obp.utils import estimate_confidence_interval_by_bootstrap
 # used in ZOZOTOWN production
 with open("./conf/prior_bts.yaml", "rb") as f:
     production_prior_for_bts = yaml.safe_load(f)
-
-with open("./conf/batch_size_bts.yaml", "rb") as f:
-    production_batch_size_for_bts = yaml.safe_load(f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
@@ -58,6 +54,12 @@ if __name__ == "__main__":
         help="campaign name, men, women, or all.",
     )
     parser.add_argument(
+        "--n_sim_for_action_dist",
+        type=float,
+        default=1000000,
+        help="number of monte carlo simulation to compute the action distribution of bts.",
+    )
+    parser.add_argument(
         "--test_size",
         type=float,
         default=0.3,
@@ -78,19 +80,18 @@ if __name__ == "__main__":
     behavior_policy = args.behavior_policy
     counterfactual_policy = "bts" if behavior_policy == "random" else "random"
     campaign = args.campaign
+    n_sim_for_action_dist = args.n_sim_for_action_dist
     test_size = args.test_size
     is_timeseries_split = args.is_timeseries_split
     random_state = args.random_state
     data_path = Path("../open_bandit_dataset")
     # prepare path
     log_path = (
-        Path("./logs") / behavior_policy / campaign / "benchmark_of_ope" / base_model
-    )
-    reg_model_path = (
-        log_path / "trained_reg_models_out_sample"
+        Path("./logs") / behavior_policy / campaign / "out_sample" / base_model
         if is_timeseries_split
-        else log_path / "trained_reg_models"
+        else Path("./logs") / behavior_policy / campaign / "in_sample" / base_model
     )
+    reg_model_path = log_path / "trained_reg_models"
     reg_model_path.mkdir(exist_ok=True, parents=True)
 
     obd = OpenBanditDataset(
@@ -102,14 +103,15 @@ if __name__ == "__main__":
     )
     kwargs["alpha"] = production_prior_for_bts[campaign]["alpha"]
     kwargs["beta"] = production_prior_for_bts[campaign]["beta"]
-    kwargs["batch_size"] = production_batch_size_for_bts[campaign]
     # compared OPE estimators
     ope_estimators = [
         DirectMethod(),
         InverseProbabilityWeighting(),
         SelfNormalizedInverseProbabilityWeighting(),
         DoublyRobust(),
-        SwitchDoublyRobust(tau=100),
+        SwitchDoublyRobust(tau=0.1, estimator_name="switch-dr(0.1)"),
+        SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr(1.0)"),
+        SwitchDoublyRobust(tau=10, estimator_name="switch-dr(10)"),
     ]
     # ground-truth policy value of a counterfactual policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
@@ -132,21 +134,30 @@ if __name__ == "__main__":
         # load the pre-trained regression model
         with open(reg_model_path / f"reg_model_{b}.pkl", "rb") as f:
             reg_model = pickle.load(f)
+        with open(reg_model_path / f"is_for_reg_model_{b}.pkl", "rb") as f:
+            is_for_reg_model = pickle.load(f)
         # sample bootstrap from batch logged bandit feedback
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(
             test_size=test_size, is_timeseries_split=is_timeseries_split, random_state=b
         )
+        for key_ in ["context", "action", "reward", "pscore", "position"]:
+            boot_bandit_feedback[key_] = boot_bandit_feedback[key_][~is_for_reg_model]
         if counterfactual_policy == "bts":
             policy = BernoulliTS(**kwargs)
-            # run a counterfactual bandit algorithm on logged bandit feedback data
-            action_dist = run_bandit_simulation(
-                bandit_feedback=boot_bandit_feedback, policy=policy
+            action_count = np.zeros((policy.n_actions, policy.len_list))
+            for _ in np.arange(n_sim_for_action_dist):
+                selected_actions = policy.select_action()
+                for pos in np.arange(policy.len_list):
+                    action_count[selected_actions[pos], pos] += 1
+            action_dist = np.tile(
+                action_count / n_sim_for_action_dist,
+                (boot_bandit_feedback["n_rounds"], 1, 1),
             )
         else:
             # the random policy has uniformally random distribution over actions
-            action_dist = np.ones((obd.n_rounds, obd.n_actions, obd.len_list)) * (
-                1 / obd.n_actions
-            )
+            action_dist = np.ones(
+                (boot_bandit_feedback["n_rounds"], obd.n_actions, obd.len_list)
+            ) * (1 / obd.n_actions)
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
             bandit_feedback=boot_bandit_feedback,
@@ -187,6 +198,12 @@ if __name__ == "__main__":
         ] = estimate_confidence_interval_by_bootstrap(
             samples=evaluation_of_ope_results[estimator_name], random_state=random_state
         )
+        evaluation_of_ope_results_with_ci[estimator_name][
+            "mean(no-boot)"
+        ] = evaluation_of_ope_results[estimator_name].mean()
+        evaluation_of_ope_results_with_ci[estimator_name]["std"] = np.std(
+            evaluation_of_ope_results[estimator_name], ddof=1
+        )
     ope_results_df = pd.DataFrame(ope_results_with_ci).T
     evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results_with_ci).T
 
@@ -197,13 +214,6 @@ if __name__ == "__main__":
     print("=" * 50)
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
-    ope_results_df.to_csv(
-        log_path / f"estimated_policy_values_by_ope_estimators_out_sample.csv"
-    ) if is_timeseries_split else ope_results_df.to_csv(
-        log_path / f"estimated_policy_values_by_ope_estimators.csv"
-    )
-    evaluation_of_ope_results_df.to_csv(
-        log_path / f"comparison_of_ope_estimators_out_sample.csv"
-    ) if is_timeseries_split else ope_results_df.to_csv(
-        log_path / f"comparison_of_ope_estimators.csv"
-    )
+    ope_results_df.to_csv(log_path / f"estimated_policy_values_by_ope_estimators.csv")
+    evaluation_of_ope_results_df.to_csv(log_path / f"relative_ee_of_ope_estimators.csv")
+
