@@ -481,6 +481,7 @@ class DirectMethod(BaseOffPolicyEstimator):
 
     def _estimate_round_rewards(
         self,
+        position: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
@@ -489,6 +490,9 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         ----------
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         action_dist: array-like shape (n_rounds, n_actions, len_list)
             Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
@@ -501,12 +505,20 @@ class DirectMethod(BaseOffPolicyEstimator):
             Rewards estimated by the DM estimator for each round.
 
         """
+        n_rounds = position.shape[0]
+        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), :, position
+        ]
+        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
         return np.average(
-            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
+            estimated_rewards_by_reg_model_at_position,
+            weights=action_dist_at_position,
+            axis=1,
         )
 
     def estimate_policy_value(
         self,
+        position: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
@@ -515,6 +527,9 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         ----------
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         action_dist: array-like shape (n_rounds, n_actions, len_list)
             Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
@@ -528,12 +543,14 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         """
         return self._estimate_round_rewards(
+            position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             action_dist=action_dist,
         ).mean()
 
     def estimate_interval(
         self,
+        position: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         alpha: float = 0.05,
@@ -545,6 +562,9 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         ----------
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+
         action_dist: array-like shape (n_rounds, n_actions, len_list)
             Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
 
@@ -567,6 +587,7 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         """
         estimated_round_rewards = self._estimate_round_rewards(
+            position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             action_dist=action_dist,
         )
@@ -658,8 +679,15 @@ class DoublyRobust(InverseProbabilityWeighting):
             Rewards estimated by the DR estimator for each round.
 
         """
+        n_rounds = position.shape[0]
+        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), :, position
+        ]
+        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
         round_rewards = np.average(
-            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
+            estimated_rewards_by_reg_model_at_position,
+            weights=action_dist_at_position,
+            axis=1,
         )
         importance_weight = (
             action_dist[np.arange(action.shape[0]), action, position] / pscore
@@ -860,8 +888,15 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Rewards estimated by the SNDR estimator for each round.
 
         """
+        n_rounds = position.shape[0]
+        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), :, position
+        ]
+        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
         round_rewards = np.average(
-            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
+            estimated_rewards_by_reg_model_at_position,
+            weights=action_dist_at_position,
+            axis=1,
         )
         importance_weight = (
             action_dist[np.arange(action.shape[0]), action, position] / pscore
@@ -918,7 +953,7 @@ class SwitchDoublyRobust(DoublyRobust):
     def __post_init__(self) -> None:
         """Initialize Class."""
         assert (
-            self.tau >= 1.0
+            self.tau >= 0.0
         ), f"switching hyperparameter should be larger than 1. but {self.tau} is given"
 
     def _estimate_round_rewards(
@@ -960,8 +995,15 @@ class SwitchDoublyRobust(DoublyRobust):
             Rewards estimated by the Switch-DR estimator for each round.
 
         """
+        n_rounds = position.shape[0]
+        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), :, position
+        ]
+        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
         round_rewards = np.average(
-            estimated_rewards_by_reg_model, weights=action_dist, axis=(1, 2)
+            estimated_rewards_by_reg_model_at_position,
+            weights=action_dist_at_position,
+            axis=1,
         )
         importance_weight = (
             action_dist[np.arange(action.shape[0]), action, position] / pscore
