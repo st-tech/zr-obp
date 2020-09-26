@@ -112,6 +112,7 @@ if __name__ == "__main__":
         SwitchDoublyRobust(tau=0.1, estimator_name="switch-dr(0.1)"),
         SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr(1.0)"),
         SwitchDoublyRobust(tau=10, estimator_name="switch-dr(10)"),
+        SwitchDoublyRobust(tau=100, estimator_name="switch-dr(100)"),
     ]
     # ground-truth policy value of a counterfactual policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
