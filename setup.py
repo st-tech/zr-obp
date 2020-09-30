@@ -12,13 +12,15 @@ print(__version__)
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+package_data_list = ["obp/policy/conf/prior_bts.yaml"]
+
 setup(
     name="obp",
     version=__version__,
-    description="Open Bandit Dataset and Pipeline",
+    description="Open Bandit Pipeline: a python library for bandit algorithms and off-policy evaluation",
     url="https://github.com/st-tech/zr-obp",
     author="Yuta Saito",
-    author_email="saito@hanjuku-kaso.com",
+    author_email="open-bandit-project@googlegroups.com",
     keywords=["bandit algorithms", "off-policy evaluation"],
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -34,6 +36,8 @@ setup(
     ],
     license="Apache License",
     packages=find_packages(exclude=["benchmark", "docs", "examples", "obd", "tests"]),
+    package_data={"obp": package_data_list},
+    include_package_data=True,
     classifiers=[
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Intended Audience :: Science/Research",
