@@ -1,4 +1,8 @@
-### run cf policy search
+# Counterfactual Policy Search
+
+## Description
+
+## Running Counterfactual Policy Search
 
 ```
 for model in lightgbm
@@ -20,3 +24,5 @@ done
 ```
 python run_cf_policy_search.py --context_set 1 --base_model logistic_regression --campaign men --n_boot_samples 2 --test_size 0.9
 ```
+
+## Results

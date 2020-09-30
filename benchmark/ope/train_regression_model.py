@@ -1,8 +1,8 @@
 import time
 import argparse
-from pathlib import Path
 import yaml
 import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd

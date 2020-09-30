@@ -26,7 +26,7 @@ base_model_dict = dict(
 )
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="run counterfactual policy selection.")
+    parser = argparse.ArgumentParser(description="run evaluation policy selection.")
     parser.add_argument(
         "--n_boot_samples",
         type=int,
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         type=str,
         choices=["logistic_regression", "lightgbm", "random_forest"],
         required=True,
-        help="base model for a counterfactual policy to be evaluated",
+        help="base model for a evaluation policy to be evaluated",
     )
     parser.add_argument(
         "--behavior_policy",
@@ -89,8 +89,8 @@ if __name__ == "__main__":
         data_path=data_path,
         context_set=context_set,
     )
-    # define a counterfactual policy
-    counterfactual_policy = IPWLearner(
+    # define a evaluation policy
+    evaluation_policy = IPWLearner(
         base_model=base_model_dict[base_model](**hyperparams[base_model]),
         n_actions=obd.n_actions,
         len_list=obd.len_list,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             test_size=test_size, is_timeseries_split=True, random_state=b
         )
         # train an evaluation on the training set of the logged bandit feedback data
-        action_dist = counterfactual_policy.fit(
+        action_dist = evaluation_policy.fit(
             context=boot_bandit_feedback["context"],
             action=boot_bandit_feedback["action"],
             reward=boot_bandit_feedback["reward"],
@@ -123,7 +123,7 @@ if __name__ == "__main__":
             position=boot_bandit_feedback["position"],
         )
         # make action selections (predictions)
-        action_dist = counterfactual_policy.predict(
+        action_dist = evaluation_policy.predict(
             context=boot_bandit_feedback["context_test"]
         )
         # estimate the policy value of a given counterfactual algorithm by the three OPE estimators.
@@ -149,12 +149,12 @@ if __name__ == "__main__":
 
     # calculate estimated policy value relative to that of the behavior policy
     print("=" * 70)
-    print(f"random_state={random_state}: counterfactual policy={policy_name}")
+    print(f"random_state={random_state}: evaluation policy={policy_name}")
     print("-" * 70)
     print(ope_results_df)
     print("=" * 70)
 
-    # save counterfactual policy evaluation results in `./logs` directory
+    # save evaluation policy evaluation results in `./logs` directory
     save_path = Path("./logs") / behavior_policy / campaign
     save_path.mkdir(exist_ok=True, parents=True)
     ope_results_df.to_csv(save_path / f"{policy_name}.csv")
