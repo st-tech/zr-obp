@@ -1,27 +1,20 @@
 import argparse
-from pathlib import Path
+import time
 import yaml
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import RandomForestClassifier as RandomForest
+from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+
 from obp.dataset import (
     SyntheticBanditDataset,
     linear_behavior_policy,
     logistic_reward_function,
 )
-from obp.simulator import run_bandit_simulation
-from obp.policy import (
-    Random,
-    BernoulliTS,
-    LinEpsilonGreedy,
-    LinTS,
-    LinUCB,
-    LogisticEpsilonGreedy,
-    LogisticTS,
-    LogisticUCB,
-)
+from obp.policy import IPWLearner
 from obp.ope import (
     RegressionModel,
     OffPolicyEvaluation,
@@ -32,23 +25,17 @@ from obp.ope import (
     SelfNormalizedDoublyRobust,
     SwitchDoublyRobust,
 )
-from obp.utils import estimate_confidence_interval_by_bootstrap
 
-
-counterfactual_policy_dict = dict(
-    bts=BernoulliTS,
-    random=Random,
-    linear_egreedy=LinEpsilonGreedy,
-    linear_ts=LinTS,
-    linear_ucb=LinUCB,
-    logistic_egreedy=LogisticEpsilonGreedy,
-    logistic_ts=LogisticTS,
-    logistic_ucb=LogisticUCB,
-)
 
 # hyperparameter for the regression model used in model dependent OPE estimators
 with open("./conf/hyperparams.yaml", "rb") as f:
-    hyperparams = yaml.safe_load(f)["random_forest"]
+    hyperparams = yaml.safe_load(f)
+
+base_model_dict = dict(
+    logistic_regression=LogisticRegression,
+    lightgbm=HistGradientBoostingClassifier,
+    random_forest=RandomForestClassifier,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -82,34 +69,35 @@ if __name__ == "__main__":
         help="dimensions of context vectors characterizing each action.",
     )
     parser.add_argument(
-        "--counterfactual_policy",
+        "--base_model_for_evaluation_policy",
         type=str,
+        choices=["logistic_regression", "lightgbm", "random_forest"],
         required=True,
-        choices=[
-            "bts",
-            "random",
-            "linear_egreedy",
-            "linear_ts",
-            "linear_ucb",
-            "logistic_ts",
-            "logistic_ucb",
-            "logistic_egreedy",
-        ],
-        help="counterfactual policy",
+        help="base ML model for evaluation policy, logistic_regression, random_forest or lightgbm.",
+    )
+    parser.add_argument(
+        "--base_model_for_reg_model",
+        type=str,
+        choices=["logistic_regression", "lightgbm", "random_forest"],
+        required=True,
+        help="base ML model for regression model, logistic_regression, random_forest or lightgbm.",
     )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
 
+    # configurations
     n_runs = args.n_runs
     n_rounds = args.n_rounds
     n_actions = args.n_actions
     dim_context = args.dim_context
     dim_action_context = args.dim_action_context
-    counterfactual_policy = args.counterfactual_policy
+    base_model_for_evaluation_policy = args.base_model_for_evaluation_policy
+    base_model_for_reg_model = args.base_model_for_reg_model
     random_state = args.random_state
     np.random.seed(random_state)
 
+    # synthetic data generator
     dataset = SyntheticBanditDataset(
         n_actions=n_actions,
         dim_context=dim_context,
@@ -118,23 +106,14 @@ if __name__ == "__main__":
         behavior_policy_function=linear_behavior_policy,
         random_state=random_state,
     )
-
-    # hyparparameters for counterfactual policies
-    kwargs = dict(
+    # define evaluation policy using IPWLearner
+    evaluation_policy = IPWLearner(
         n_actions=dataset.n_actions,
         len_list=dataset.len_list,
-        random_state=random_state,
+        base_model=base_model_dict[base_model_for_evaluation_policy](
+            **hyperparams[base_model_for_evaluation_policy]
+        ),
     )
-    if ("logistic" in counterfactual_policy) or ("linear" in counterfactual_policy):
-        kwargs["dim"] = dim_context
-    if counterfactual_policy in [
-        "linear_ucb",
-        "linear_egreedy",
-        "logistic_ucb",
-        "logistic_egreedy",
-    ]:
-        kwargs["epsilon"] = 0.01
-    policy = counterfactual_policy_dict[counterfactual_policy](**kwargs)
     # compared OPE estimators
     ope_estimators = [
         DirectMethod(),
@@ -144,32 +123,41 @@ if __name__ == "__main__":
         SelfNormalizedDoublyRobust(),
         SwitchDoublyRobust(),
     ]
-    # a base ML model for regression model used in Direct Method and Doubly Robust
-    base_model = CalibratedClassifierCV(RandomForest(**hyperparams))
 
-    evaluation_of_ope_results = {
-        est.estimator_name: np.zeros(n_runs) for est in ope_estimators
-    }
+    start = time.time()
+    relative_ee = {est.estimator_name: np.zeros(n_runs) for est in ope_estimators}
     for i in np.arange(n_runs):
-        # sample a new set of logged bandit feedback
-        bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        # run a counterfactual bandit algorithm on logged bandit feedback data
-        action_dist = run_bandit_simulation(
-            bandit_feedback=bandit_feedback, policy=policy
+        # sample new training and test sets of synthetic logged bandit feedback
+        bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        # train the evaluation policy on the training set of the synthetic logged bandit feedback
+        evaluation_policy.fit(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            pscore=bandit_feedback_train["pscore"],
         )
-        # estimate the ground-truth policy values of the counterfactual policy
+        # predict the action decisions for the test set of the synthetic logged bandit feedback
+        action_dist = evaluation_policy.predict_proba(
+            context=bandit_feedback_test["context"]
+        )
+        # estimate the ground-truth policy values of the evaluation policy
         # using the full expected reward contained in the bandit feedback dictionary
         ground_truth_policy_value = np.average(
-            bandit_feedback["expected_reward"], weights=action_dist[:, :, 0]
+            bandit_feedback_test["expected_reward"],
+            weights=action_dist[:, :, 0],
+            axis=1,
         ).mean()
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
-            bandit_feedback=bandit_feedback,
+            bandit_feedback=bandit_feedback_test,
             regression_model=RegressionModel(
                 n_actions=dataset.n_actions,
                 len_list=dataset.len_list,
                 action_context=dataset.action_context,
-                base_model=base_model,
+                base_model=base_model_dict[base_model_for_reg_model](
+                    **hyperparams[base_model_for_reg_model]
+                ),
             ),
             ope_estimators=ope_estimators,
         )
@@ -177,33 +165,32 @@ if __name__ == "__main__":
             action_dist=action_dist,
             ground_truth_policy_value=ground_truth_policy_value,
         )
-        policy.initialize()
         # store relative estimation errors of OPE estimators at each split
         for (
             estimator_name,
             relative_estimation_error,
         ) in relative_estimation_errors.items():
-            evaluation_of_ope_results[estimator_name][i] = relative_estimation_error
+            relative_ee[estimator_name][i] = relative_estimation_error
 
-    # estimate confidence intervals of relative estimation by nonparametric bootstrap method
-    evaluation_of_ope_results_with_ci = {
-        est.estimator_name: dict() for est in ope_estimators
-    }
-    for estimator_name in evaluation_of_ope_results_with_ci.keys():
-        evaluation_of_ope_results_with_ci[
+        print(f"{i+1}th iteration: {np.round((time.time() - start) / 60, 2)}min")
+
+    # estimate mean and standard deviations of the relative estimation errors
+    evaluation_of_ope_results = {est.estimator_name: dict() for est in ope_estimators}
+    for estimator_name in evaluation_of_ope_results.keys():
+        evaluation_of_ope_results[estimator_name]["mean"] = relative_ee[
             estimator_name
-        ] = estimate_confidence_interval_by_bootstrap(
-            samples=evaluation_of_ope_results[estimator_name], random_state=random_state
+        ].mean()
+        evaluation_of_ope_results[estimator_name]["std"] = np.std(
+            relative_ee[estimator_name], ddof=1
         )
-    evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results_with_ci).T
-
-    print("=" * 60)
+    evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results).T
+    print("=" * 30)
     print(f"random_state={random_state}")
-    print("-" * 60)
+    print("-" * 30)
     print(evaluation_of_ope_results_df)
-    print("=" * 60)
+    print("=" * 30)
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
     log_path = Path("./logs")
     log_path.mkdir(exist_ok=True, parents=True)
-    evaluation_of_ope_results_df.to_csv(log_path / "comparison_of_ope_estimators.csv")
+    evaluation_of_ope_results_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")
