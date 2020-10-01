@@ -13,7 +13,7 @@ from ..utils import check_bandit_feedback_inputs
 
 @dataclass
 class RegressionModel:
-    """ML model to predict the mean reward function (:math:`E[Y | X, A]`).
+    """ML model to estimate the mean reward function (:math:`\\mu(x, a) = \\mathbbb{E} [Y(a) | X=x]`).
 
     Note
     -------
@@ -32,7 +32,8 @@ class RegressionModel:
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
-            Context vector characterizing each action.
+        Context vector characterizing each action.
+        If not given, then one-hot encoding of the action variable is automatically used as `action_context`.
 
     fitting_method: str, default='normal'
         Method to fit the regression method.
@@ -68,13 +69,15 @@ class RegressionModel:
         self.base_model_list = [
             clone(self.base_model) for _ in np.arange(self.len_list)
         ]
+        if self.action_context is None:
+            self.action_context = np.eye(self.n_actions, dtype=int)
 
     def fit(
         self,
         context: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
-        pscore: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
     ) -> None:
         """Fit the regression model on given logged bandit feedback data.
@@ -112,26 +115,24 @@ class RegressionModel:
             assert self.len_list == 1, "position has to be set when len_list is 1"
             position = np.zeros_like(action)
         for position_ in np.arange(self.len_list):
-            # create context vector to make predictions
+            idx = position == position_
             X = self._pre_process_for_reg_model(
-                context=context[position == position_],
-                action=action[position == position_],
+                context=context[idx],
+                action=action[idx],
                 action_context=self.action_context,
             )
             # train the base model according to the given `fitting method`
             if self.fitting_method == "normal":
-                self.base_model_list[position_].fit(X, reward[position == position_])
+                self.base_model_list[position_].fit(X, reward[idx])
             elif self.fitting_method == "iw":
-                sample_weight = 1.0 / pscore[position == position_]
+                sample_weight = 1.0 / pscore[idx]
                 self.base_model_list[position_].fit(
-                    X, reward[position == position_], sample_weight=sample_weight
+                    X, reward[idx], sample_weight=sample_weight
                 )
             elif self.fitting_method == "mrdr":
-                sample_weight = (1.0 - pscore[position == position_]) / (
-                    pscore[position == position_] ** 2
-                )
+                sample_weight = (1.0 - pscore[idx]) / (pscore[idx] ** 2)
                 self.base_model_list[position_].fit(
-                    X, reward[position == position_], sample_weight=sample_weight
+                    X, reward[idx], sample_weight=sample_weight
                 )
 
     def predict(self, context: np.ndarray) -> np.ndarray:
@@ -145,7 +146,7 @@ class RegressionModel:
         Returns
         -----------
         estimated_rewards_by_reg_model: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Estimated rewards by regression model for new data.
+            Estimated expected rewards for new data given each item and position by the regression model.
 
         """
         n_rounds_of_new_data = context.shape[0]
@@ -153,7 +154,6 @@ class RegressionModel:
         estimated_rewards_by_reg_model = np.zeros(
             (n_rounds_of_new_data, self.n_actions, self.len_list)
         )
-        # create context vector to make predictions
         for action_ in np.arange(self.n_actions):
             for position_ in np.arange(self.len_list):
                 X = self._pre_process_for_reg_model(
@@ -161,7 +161,6 @@ class RegressionModel:
                     action=action_ * ones_n_rounds_arr,
                     action_context=self.action_context,
                 )
-                # make predictions
                 estimated_rewards_ = (
                     self.base_model_list[position_].predict_proba(X)[:, 1]
                     if is_classifier(self.base_model_list[position_])
@@ -199,7 +198,4 @@ class RegressionModel:
             Context vector characterizing each action.
 
         """
-        if action_context is None:
-            return context
-        else:
-            return np.c_[context, action_context[action]]
+        return np.c_[context, action_context[action]]
