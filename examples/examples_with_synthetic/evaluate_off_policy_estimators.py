@@ -24,6 +24,8 @@ from obp.ope import (
     DoublyRobust,
     SelfNormalizedDoublyRobust,
     SwitchDoublyRobust,
+    SwitchInverseProbabilityWeighting,
+    DoublyRobustWithShrinkage,
 )
 
 
@@ -121,7 +123,14 @@ if __name__ == "__main__":
         SelfNormalizedInverseProbabilityWeighting(),
         DoublyRobust(),
         SelfNormalizedDoublyRobust(),
-        SwitchDoublyRobust(),
+        SwitchInverseProbabilityWeighting(tau=1, estimator_name="switch-ipw (tau=1)"),
+        SwitchInverseProbabilityWeighting(
+            tau=100, estimator_name="switch-ipw (tau=100)"
+        ),
+        SwitchDoublyRobust(tau=1, estimator_name="switch-dr (tau=1)"),
+        SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
+        DoublyRobustWithShrinkage(lambda_=1, estimator_name="dr-os (lambda=1)"),
+        DoublyRobustWithShrinkage(lambda_=100, estimator_name="dr-os (lambda=100)"),
     ]
 
     start = time.time()
@@ -184,11 +193,11 @@ if __name__ == "__main__":
             relative_ee[estimator_name], ddof=1
         )
     evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results).T
-    print("=" * 30)
+    print("=" * 40)
     print(f"random_state={random_state}")
-    print("-" * 30)
+    print("-" * 40)
     print(evaluation_of_ope_results_df)
-    print("=" * 30)
+    print("=" * 40)
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
     log_path = Path("./logs")

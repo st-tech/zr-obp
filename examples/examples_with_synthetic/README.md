@@ -8,7 +8,8 @@ Specifically, we evaluate the estimation performances of well-known off-policy e
 
 ## Evaluating Off-Policy Estimators
 
-In the following, we evaluate the estimation performances of Direct Method (DM), Inverse Probability Weighting (IPW), Self-Normalized Inverse Probability Weighting (SNIPW), Doubly Robust (DR), Self-Normalized Doubly Robust (SNDR), and Switch Doubly Robust (Switch-DR).
+In the following, we evaluate the estimation performances of Direct Method (DM), Inverse Probability Weighting (IPW), Self-Normalized Inverse Probability Weighting (SNIPW), Doubly Robust (DR), Self-Normalized Doubly Robust (SNDR), Switch Inverse Probability Weighting (Switch-IPW), Switch Doubly Robust (Switch-DR), and Doubly Robust with Optimistic Shrinkage (DRos).
+For Switch-IPW, Switch-DR, and DRos, we tried some different values of hyperparameters.
 
 [`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using the synthetic bandit feedback data.
 
@@ -45,18 +46,24 @@ python evaluate_off_policy_estimators.py\
     --random_state 12345
 
 # relative estimation errors (lower is better) and their standard deviations of OPE estimators.
-# our evaluation of OPE procedure suggests that Switch-DR performs better than the other estimators.
-# ==============================
+# our evaluation of OPE procedure suggests that Switch-DR(tau=100) performs better than the other estimators.
+# Moreover, it appears that the performance of OPE estimators depend on the choice of hyperparameters.
+# ========================================
 # random_state=12345
-# ------------------------------
-#                mean       std
-# dm         0.025025  0.005871
-# ipw        0.011111  0.016634
-# snipw      0.010181  0.007922
-# dr         0.008184  0.007690
-# sndr       0.011609  0.007727
-# switch-dr  0.004839  0.004315
-# ==============================
+# ----------------------------------------
+#                           mean       std
+# dm                    0.025025  0.005871
+# ipw                   0.011111  0.016634
+# snipw                 0.010181  0.007922
+# dr                    0.008184  0.007690
+# sndr                  0.013489  0.016228
+# switch-ipw (tau=1)    0.394692  0.003630
+# switch-ipw (tau=100)  0.010049  0.008941
+# switch-dr (tau=1)     0.027602  0.005770
+# switch-dr (tau=100)   0.004199  0.003130
+# dr-os (lambda=1)      0.025708  0.005849
+# dr-os (lambda=100)    0.008081  0.005060
+# ========================================
 ```
 
 The above result can change with different situations.
