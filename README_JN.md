@@ -109,6 +109,8 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
   - Doubly Robust [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
   - Switch Estimator [[Wang et al. 2016]](https://arxiv.org/abs/1612.01205)
   - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
+  - Doubly Robust with Shrinkage [[Su et al. 2019]](https://arxiv.org/abs/1907.09623)
+  - Double Machine Learning [[Narita et al. 2020]](https://arxiv.org/abs/2002.08536)
 
 私たちのパイプラインは, 上記のアルゴリズムや推定量に加えて柔軟なインターフェースも提供しています.
 したがって研究者は, 独自のバンディットアルゴリズムやオフ方策推定量を容易に実装し, 我々のデータとパイプラインを用いてそれらの性能を評価することができます.
@@ -244,7 +246,7 @@ action_dist = evaluation_policy.compute_batch_action_dist(
 我々のパイプラインでは, 以下のような手順でオフライン方策評価を行うことができます.
 
 ```python
-# オフライン方策シミュレーションの結果に基づき, リプレイ推定量を用いてトンプソン抽出方策の性能をオフライン評価する.
+# オフライン方策シミュレーションの結果に基づき, IPW推定量を用いてトンプソン抽出方策の性能をオフライン評価する.
 # OffPolicyEvaluationクラスには, シミュレーションに用いたデータセットと用いる推定量を渡す（複数設定可）.
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW()])
 estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
@@ -252,8 +254,8 @@ print(estimated_policy_value)
 {'ipw': 0.004553...}　# オフ方策推定量ごとの推定値を含んだ辞書.
 
 # トンプソン抽出方策の性能の推定値とランダム方策の真の性能を比較する.
-relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / bandit_feedback['reward'].mean()
-# オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を12.05%上回ると推定された.
+relative_policy_value_of_bernoulli_ts = estimated_policy_value['ipw'] / bandit_feedback['reward'].mean()
+# オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を19.81%上回ると推定された.
 print(relative_policy_value_of_bernoulli_ts)
 1.198126...
 ```
@@ -318,9 +320,11 @@ Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 
 12. Nathan Kallus and Masatoshi Uehara. [Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1906.03735). In *Advances in Neural Information Processing Systems*. 2019.
 
-13.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+13. Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík. [Doubly Robust Off-policy Evaluation with Shrinkage](https://arxiv.org/abs/1907.09623). In *Proceedings of the 37th International Conference on Machine Learning*, 2020.
 
-14. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
+14.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+
+15. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
 
 ## 実装
 本プロジェクトは **Open Graph Benchmark** ([[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)]) を参考にしています.
