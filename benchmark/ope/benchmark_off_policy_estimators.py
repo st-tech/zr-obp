@@ -12,10 +12,28 @@ from obp.ope import (
     OffPolicyEvaluation,
     InverseProbabilityWeighting,
     SelfNormalizedInverseProbabilityWeighting,
-    SwitchDoublyRobust,
     DirectMethod,
     DoublyRobust,
+    SelfNormalizedDoublyRobust,
+    SwitchDoublyRobust,
+    SwitchInverseProbabilityWeighting,
+    DoublyRobustWithShrinkage,
 )
+
+# compared OPE estimators
+ope_estimators = [
+    DirectMethod(),
+    InverseProbabilityWeighting(),
+    SelfNormalizedInverseProbabilityWeighting(),
+    DoublyRobust(),
+    SelfNormalizedDoublyRobust(),
+    SwitchInverseProbabilityWeighting(tau=1, estimator_name="switch-ipw (tau=1)"),
+    SwitchInverseProbabilityWeighting(tau=100, estimator_name="switch-ipw (tau=100)"),
+    SwitchDoublyRobust(tau=1, estimator_name="switch-dr (tau=1)"),
+    SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
+    DoublyRobustWithShrinkage(lambda_=1, estimator_name="dr-os (lambda=1)"),
+    DoublyRobustWithShrinkage(lambda_=100, estimator_name="dr-os (lambda=100)"),
+]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
@@ -97,17 +115,6 @@ if __name__ == "__main__":
     obd = OpenBanditDataset(
         behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
     )
-    # compared OPE estimators
-    ope_estimators = [
-        DirectMethod(),
-        InverseProbabilityWeighting(),
-        SelfNormalizedInverseProbabilityWeighting(),
-        DoublyRobust(),
-        SwitchDoublyRobust(tau=0.1, estimator_name="switch-dr(0.1)"),
-        SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr(1.0)"),
-        SwitchDoublyRobust(tau=10, estimator_name="switch-dr(10)"),
-        SwitchDoublyRobust(tau=100, estimator_name="switch-dr(100)"),
-    ]
     # ground-truth policy value of a evaluation policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
     ground_truth_policy_value = OpenBanditDataset.calc_on_policy_policy_value_estimate(
@@ -128,7 +135,7 @@ if __name__ == "__main__":
             reg_model = pickle.load(f)
         with open(reg_model_path / f"is_for_reg_model_{b}.pkl", "rb") as f:
             is_for_reg_model = pickle.load(f)
-        # sample bootstrap from batch logged bandit feedback
+        # sample bootstrap samples from batch logged bandit feedback
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(
             test_size=test_size, is_timeseries_split=is_timeseries_split, random_state=b
         )
@@ -154,16 +161,18 @@ if __name__ == "__main__":
             action_dist = policy.compute_batch_action_dist(
                 n_sim=100000, n_rounds=boot_bandit_feedback["n_rounds"]
             )
+        # estimate the mean reward function using the pre-trained reg_model
+        estimated_rewards_by_reg_model = reg_model.predict(
+            context=boot_bandit_feedback["context"],
+        )
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
-            bandit_feedback=boot_bandit_feedback,
-            regression_model=reg_model,
-            ope_estimators=ope_estimators,
+            bandit_feedback=boot_bandit_feedback, ope_estimators=ope_estimators,
         )
-        estimated_policy_values = ope.estimate_policy_values(action_dist=action_dist,)
         relative_estimation_errors = ope.evaluate_performance_of_estimators(
-            action_dist=action_dist,
             ground_truth_policy_value=ground_truth_policy_value,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
         # store relative estimation errors of OPE estimators at each bootstrap
         for (
@@ -174,7 +183,7 @@ if __name__ == "__main__":
 
         print(f"{b+1}th iteration: {np.round((time.time() - start) / 60, 2)}min")
 
-    # estimate confidence intervals of relative estimation by nonparametric bootstrap method
+    # estimate means and standard deviations of relative estimation by nonparametric bootstrap method
     evaluation_of_ope_results = {est.estimator_name: dict() for est in ope_estimators}
     for estimator_name in evaluation_of_ope_results.keys():
         evaluation_of_ope_results[estimator_name]["mean"] = relative_ee[

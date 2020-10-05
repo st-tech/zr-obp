@@ -13,9 +13,8 @@ from sklearn.metrics import log_loss, roc_auc_score
 
 from obp.dataset import OpenBanditDataset
 from obp.ope import RegressionModel
-from obp.utils import estimate_confidence_interval_by_bootstrap
 
-
+# hyperparameter settings for the base ML model in regression model
 with open("./conf/hyperparams.yaml", "rb") as f:
     hyperparams = yaml.safe_load(f)
 
@@ -95,27 +94,26 @@ if __name__ == "__main__":
         metrics[i]: np.zeros(n_boot_samples) for i in np.arange(len(metrics))
     }
     for b in np.arange(n_boot_samples):
-        # sample bootstrap from batch logged bandit feedback
+        # sample bootstrap samples from batch logged bandit feedback
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(
             test_size=test_size, is_timeseries_split=is_timeseries_split, random_state=b
         )
-        # split data into two folds (data for training reg_model and for doing ope)
+        # split data into two folds (data for training reg_model and for ope)
         is_for_reg_model = np.random.binomial(
             n=1, p=0.3, size=boot_bandit_feedback["n_rounds"]
         ).astype(bool)
-        # define a regression model
+        # define regression model
         reg_model = RegressionModel(
             n_actions=obd.n_actions,
             len_list=obd.len_list,
             action_context=boot_bandit_feedback["action_context"],
             base_model=base_model_dict[base_model](**hyperparams[base_model]),
         )
-        # train a regression model on logged bandit feedback data
+        # train regression model on logged bandit feedback data
         reg_model.fit(
             context=boot_bandit_feedback["context"][is_for_reg_model],
             action=boot_bandit_feedback["action"][is_for_reg_model],
             reward=boot_bandit_feedback["reward"][is_for_reg_model],
-            pscore=boot_bandit_feedback["pscore"][is_for_reg_model],
             position=boot_bandit_feedback["position"][is_for_reg_model],
         )
         # evaluate the estimation performance of the regression model by AUC and RCE
@@ -162,15 +160,16 @@ if __name__ == "__main__":
             f"{np.round((time.time() - start_time) / 60, 1)}min",
         )
 
-    # estimate confidence intervals of the performances of the regression model
-    performance_of_reg_model_with_ci = {}
-    for metric in metrics:
-        performance_of_reg_model_with_ci[
+    # estimate means and standard deviations of the performances of the regression model
+    performance_of_reg_model_ = {metric: dict() for metric in metrics}
+    for metric in performance_of_reg_model_.keys():
+        performance_of_reg_model_[metric]["mean"] = performance_of_reg_model[
             metric
-        ] = estimate_confidence_interval_by_bootstrap(
-            samples=performance_of_reg_model[metric], random_state=random_state
+        ].mean()
+        performance_of_reg_model_[metric]["std"] = np.std(
+            performance_of_reg_model[metric], ddof=1
         )
-    performance_of_reg_model_df = pd.DataFrame(performance_of_reg_model_with_ci).T
+    performance_of_reg_model_df = pd.DataFrame(performance_of_reg_model_).T
 
     print("=" * 50)
     print(f"random_state={random_state}")
