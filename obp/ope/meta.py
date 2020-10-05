@@ -13,9 +13,7 @@ import pandas as pd
 import seaborn as sns
 
 from .estimators import BaseOffPolicyEstimator
-from .regression_model import RegressionModel
 from ..types import BanditFeedback
-from ..utils import check_is_fitted
 
 logger = getLogger(__name__)
 
@@ -28,6 +26,7 @@ class OffPolicyEvaluation:
     ------
     When you use model dependent estimators such as Direct Method and Doubly Robust,
     you must give action context and regression model when defining this class.
+    Note that the RegressionModel can be pre-trained.
 
     Parameters
     -----------
@@ -37,9 +36,6 @@ class OffPolicyEvaluation:
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
         Estimators must follow the interface of `obp.ope.BaseOffPolicyEstimator`.
-
-    regression_model: RegressionModel, default: None
-        Regression model that predicts the mean reward function :math:`E[Y | X, A]`.
 
     Examples
     ----------
@@ -86,39 +82,18 @@ class OffPolicyEvaluation:
 
     bandit_feedback: BanditFeedback
     ope_estimators: List[BaseOffPolicyEstimator]
-    regression_model: Optional[RegressionModel] = None
 
     def __post_init__(self) -> None:
         """Initialize class."""
         for key_ in ["action", "position", "reward", "pscore", "context"]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
-
-        if self.regression_model is not None:
-            if check_is_fitted(self.regression_model.base_model):
-                logger.info("a fitted regression model is given.")
-            else:
-                logger.info(
-                    "the given regression model is not fitted, and thus train it here..."
-                )
-                self.regression_model.fit(
-                    context=self.bandit_feedback["context"],
-                    action=self.bandit_feedback["action"],
-                    reward=self.bandit_feedback["reward"],
-                    pscore=self.bandit_feedback["pscore"],
-                    position=self.bandit_feedback["position"],
-                )
-        else:
-            logger.warning(
-                "regression model is not given; model dependent estimators such as DM or DR cannot be used."
-            )
-
         self.ope_estimators_ = dict()
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
 
     def _create_estimator_inputs(
-        self, action_dist: np.ndarray
+        self, action_dist: np.ndarray, estimated_rewards_by_reg_model: np.ndarray
     ) -> Dict[str, np.ndarray]:
         """Create input dictionary to estimate policy value by subclasses of `BaseOffPolicyEstimator`"""
         estimator_inputs = {
@@ -126,24 +101,27 @@ class OffPolicyEvaluation:
             for input_ in ["reward", "action", "position", "pscore"]
         }
         estimator_inputs["action_dist"] = action_dist
-        if self.regression_model is not None:
-            estimated_rewards_by_reg_model = self.regression_model.predict(
-                context=self.bandit_feedback["context"]
-            )
-            estimator_inputs[
-                "estimated_rewards_by_reg_model"
-            ] = estimated_rewards_by_reg_model
+        estimator_inputs[
+            "estimated_rewards_by_reg_model"
+        ] = estimated_rewards_by_reg_model
 
         return estimator_inputs
 
-    def estimate_policy_values(self, action_dist: np.ndarray) -> Dict[str, float]:
+    def estimate_policy_values(
+        self,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+    ) -> Dict[str, float]:
         """Estimate policy value of a evaluation policy.
 
         Parameters
         ------------
-        selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by evaluation policy
-            at each round in offline bandit simulation.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            When it is not given, then model-dependent estimators such as DM and DR cannot be used.
 
         Returns
         ----------
@@ -153,9 +131,16 @@ class OffPolicyEvaluation:
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
         assert action_dist.ndim == 3, "action_dist must be 3-dimensional"
+        if estimated_rewards_by_reg_model is None:
+            logger.warning(
+                "`estimated_rewards_by_reg_model` is not given; model dependent estimators such as DM or DR cannot be used."
+            )
 
         policy_value_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(action_dist=action_dist)
+        estimator_inputs = self._create_estimator_inputs(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_dict[estimator_name] = estimator.estimate_policy_value(
                 **estimator_inputs
@@ -166,6 +151,7 @@ class OffPolicyEvaluation:
     def estimate_intervals(
         self,
         action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -174,9 +160,12 @@ class OffPolicyEvaluation:
 
         Parameters
         ------------
-        selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by evaluation policy
-            at each round in offline bandit simulation.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            When it is not given, then model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default: 0.05
             P-value.
@@ -191,14 +180,21 @@ class OffPolicyEvaluation:
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
             Dictionary containing confidence intervals of policy value estimated
-            by nonparametric booststrap procedure.
+            by nonparametric bootstrap procedure.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
         assert action_dist.ndim == 3, "action_dist must be 3-dimensional"
+        if estimated_rewards_by_reg_model is None:
+            logger.warning(
+                "`estimated_rewards_by_reg_model` is not given; model dependent estimators such as DM or DR cannot be used."
+            )
 
         policy_value_interval_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(action_dist=action_dist)
+        estimator_inputs = self._create_estimator_inputs(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_interval_dict[estimator_name] = estimator.estimate_interval(
                 **estimator_inputs,
@@ -212,6 +208,7 @@ class OffPolicyEvaluation:
     def summarize_off_policy_estimates(
         self,
         action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -221,9 +218,12 @@ class OffPolicyEvaluation:
 
         Parameters
         ------------
-        selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by evaluation policy
-            at each round in offline bandit simulation.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            When it is not given, then model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default: 0.05
             P-value.
@@ -244,12 +244,16 @@ class OffPolicyEvaluation:
         assert action_dist.ndim == 3, "action_dist must be 3-dimensional"
 
         policy_value_df = pd.DataFrame(
-            self.estimate_policy_values(action_dist=action_dist),
+            self.estimate_policy_values(
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            ),
             index=["estimated_policy_value"],
         )
         policy_value_interval_df = pd.DataFrame(
             self.estimate_intervals(
                 action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
@@ -261,6 +265,7 @@ class OffPolicyEvaluation:
     def visualize_off_policy_estimates(
         self,
         action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -271,9 +276,12 @@ class OffPolicyEvaluation:
 
         Parameters
         ----------
-        selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by evaluation policy
-            at each round in offline bandit simulation.
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            When it is not given, then model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default: 0.05
             P-value.
@@ -300,9 +308,16 @@ class OffPolicyEvaluation:
             assert isinstance(fig_dir, Path), "fig_dir must be a Path"
         if fig_name is not None:
             assert isinstance(fig_name, str), "fig_dir must be a string"
+        if estimated_rewards_by_reg_model is None:
+            logger.warning(
+                "`estimated_rewards_by_reg_model` is not given; model dependent estimators such as DM or DR cannot be used."
+            )
 
         estimated_round_rewards_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(action_dist=action_dist)
+        estimator_inputs = self._create_estimator_inputs(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_round_rewards_dict[
                 estimator_name
@@ -336,7 +351,10 @@ class OffPolicyEvaluation:
             fig.savefig(str(fig_dir / fig_name))
 
     def evaluate_performance_of_estimators(
-        self, action_dist: np.ndarray, ground_truth_policy_value: float
+        self,
+        ground_truth_policy_value: float,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
     ) -> Dict[str, float]:
         """Evaluate estimation accuracies of off-policy estimators by relative estimation error.
 
@@ -351,12 +369,16 @@ class OffPolicyEvaluation:
 
         Parameters
         ----------
-        selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by evaluation policy at each round in offline bandit simulation.
-
-        ground_truth policy value: int
+        ground_truth policy value: float
             Ground_truth policy value of a evaluation policy, i.e., :math:`V(\\pi)`.
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
+
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            When it is not given, then model-dependent estimators such as DM and DR cannot be used.
 
         Returns
         ----------
@@ -369,25 +391,44 @@ class OffPolicyEvaluation:
         assert isinstance(
             ground_truth_policy_value, float
         ), "ground_truth_policy_value must be a float"
+        if estimated_rewards_by_reg_model is None:
+            logger.warning(
+                "`estimated_rewards_by_reg_model` is not given; model dependent estimators such as DM or DR cannot be used."
+            )
 
         relative_estimation_error_dict = dict()
-        estimator_inputs = self._create_estimator_inputs(action_dist=action_dist)
+        estimator_inputs = self._create_estimator_inputs(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_policy_value = estimator.estimate_policy_value(**estimator_inputs)
             relative_estimation_error_dict[estimator_name] = np.abs(
                 (estimated_policy_value - ground_truth_policy_value)
                 / ground_truth_policy_value
             )
-
         return relative_estimation_error_dict
 
-    def summarize_estimators_comparison(self, action_dist: np.ndarray) -> pd.DataFrame:
+    def summarize_estimators_comparison(
+        self,
+        ground_truth_policy_value: float,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+    ) -> pd.DataFrame:
         """Summarize performance comparison of given off-policy estimators.
 
         Parameters
         ----------
-        selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by evaluation policy at each round in offline bandit simulation.
+        ground_truth policy value: float
+            Ground_truth policy value of a evaluation policy, i.e., :math:`V(\\pi)`.
+            With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
+
+        action_dist: array-like shape (n_rounds, n_actions, len_list)
+            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            When it is not given, then model-dependent estimators such as DM and DR cannot be used.
 
         Returns
         ----------
@@ -399,8 +440,11 @@ class OffPolicyEvaluation:
         assert action_dist.ndim == 3, "action_dist must be 3-dimensional"
 
         relative_estimation_error_df = pd.DataFrame(
-            self.evaluate_performance_of_estimators(action_dist=action_dist),
+            self.evaluate_performance_of_estimators(
+                ground_truth_policy_value=ground_truth_policy_value,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            ),
             index=["relative_estimation_error"],
         )
-
         return relative_estimation_error_df.T
