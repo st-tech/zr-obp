@@ -123,22 +123,30 @@ if __name__ == "__main__":
             action_dist = policy.compute_batch_action_dist(
                 n_rounds=boot_bandit_feedback["n_rounds"],
             )
+        # estimate the mean reward function with an ML model
+        regression_model = RegressionModel(
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            action_context=obd.action_context,
+            base_model=base_model_dict[base_model](**hyperparams[base_model]),
+        )
+        estimated_rewards_by_reg_model = regression_model.fit_predict(
+            context=boot_bandit_feedback["context"],
+            action=boot_bandit_feedback["action"],
+            reward=boot_bandit_feedback["reward"],
+            position=boot_bandit_feedback["position"],
+            pscore=boot_bandit_feedback["pscore"],
+            n_folds=3,  # 3-fold cross-fitting
+        )
         # evaluate the estimation performance of OPE estimators by relative estimation errors
         ope = OffPolicyEvaluation(
-            bandit_feedback=boot_bandit_feedback,
-            regression_model=RegressionModel(
-                n_actions=obd.n_actions,
-                len_list=obd.len_list,
-                action_context=obd.action_context,
-                base_model=base_model_dict[base_model](**hyperparams[base_model]),
-            ),
-            ope_estimators=ope_estimators,
+            bandit_feedback=boot_bandit_feedback, ope_estimators=ope_estimators,
         )
         relative_estimation_errors = ope.evaluate_performance_of_estimators(
-            action_dist=action_dist,
             ground_truth_policy_value=ground_truth_policy_value,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-        policy.initialize()
         # store relative estimation errors of OPE estimators estimated with each sample
         for (
             estimator_name,

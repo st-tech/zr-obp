@@ -157,22 +157,31 @@ if __name__ == "__main__":
             weights=action_dist[:, :, 0],
             axis=1,
         ).mean()
+        # estimate the mean reward function with an ML model
+        regression_model = RegressionModel(
+            n_actions=dataset.n_actions,
+            len_list=dataset.len_list,
+            action_context=dataset.action_context,
+            base_model=base_model_dict[base_model_for_reg_model](
+                **hyperparams[base_model_for_reg_model]
+            ),
+        )
+        estimated_rewards_by_reg_model = regression_model.fit_predict(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            position=bandit_feedback_train["position"],
+            pscore=bandit_feedback_train["pscore"],
+            n_folds=3,  # 3-fold cross-fitting
+        )
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
-            bandit_feedback=bandit_feedback_test,
-            regression_model=RegressionModel(
-                n_actions=dataset.n_actions,
-                len_list=dataset.len_list,
-                action_context=dataset.action_context,
-                base_model=base_model_dict[base_model_for_reg_model](
-                    **hyperparams[base_model_for_reg_model]
-                ),
-            ),
-            ope_estimators=ope_estimators,
+            bandit_feedback=bandit_feedback_test, ope_estimators=ope_estimators,
         )
         relative_estimation_errors = ope.evaluate_performance_of_estimators(
-            action_dist=action_dist,
             ground_truth_policy_value=ground_truth_policy_value,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
         # store relative estimation errors of OPE estimators at each split
         for (
