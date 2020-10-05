@@ -35,7 +35,9 @@ setup(
         "tqdm>=4.41.1",
     ],
     license="Apache License",
-    packages=find_packages(exclude=["benchmark", "docs", "examples", "obd", "tests"]),
+    packages=find_packages(
+        exclude=["benchmark", "docs", "examples", "obd", "tests", "slides"]
+    ),
     package_data={"obp": package_data_list},
     include_package_data=True,
     classifiers=[
