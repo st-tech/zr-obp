@@ -39,6 +39,21 @@ base_model_dict = dict(
     random_forest=RandomForestClassifier,
 )
 
+# compared OPE estimators
+ope_estimators = [
+    DirectMethod(),
+    InverseProbabilityWeighting(),
+    SelfNormalizedInverseProbabilityWeighting(),
+    DoublyRobust(),
+    SelfNormalizedDoublyRobust(),
+    SwitchInverseProbabilityWeighting(tau=1, estimator_name="switch-ipw (tau=1)"),
+    SwitchInverseProbabilityWeighting(tau=100, estimator_name="switch-ipw (tau=100)"),
+    SwitchDoublyRobust(tau=1, estimator_name="switch-dr (tau=1)"),
+    SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
+    DoublyRobustWithShrinkage(lambda_=1, estimator_name="dr-os (lambda=1)"),
+    DoublyRobustWithShrinkage(lambda_=100, estimator_name="dr-os (lambda=100)"),
+]
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="evaluate off-policy estimators with synthetic data."
@@ -116,22 +131,6 @@ if __name__ == "__main__":
             **hyperparams[base_model_for_evaluation_policy]
         ),
     )
-    # compared OPE estimators
-    ope_estimators = [
-        DirectMethod(),
-        InverseProbabilityWeighting(),
-        SelfNormalizedInverseProbabilityWeighting(),
-        DoublyRobust(),
-        SelfNormalizedDoublyRobust(),
-        SwitchInverseProbabilityWeighting(tau=1, estimator_name="switch-ipw (tau=1)"),
-        SwitchInverseProbabilityWeighting(
-            tau=100, estimator_name="switch-ipw (tau=100)"
-        ),
-        SwitchDoublyRobust(tau=1, estimator_name="switch-dr (tau=1)"),
-        SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
-        DoublyRobustWithShrinkage(lambda_=1, estimator_name="dr-os (lambda=1)"),
-        DoublyRobustWithShrinkage(lambda_=100, estimator_name="dr-os (lambda=100)"),
-    ]
 
     start = time.time()
     relative_ee = {est.estimator_name: np.zeros(n_runs) for est in ope_estimators}
@@ -151,13 +150,13 @@ if __name__ == "__main__":
             context=bandit_feedback_test["context"]
         )
         # estimate the ground-truth policy values of the evaluation policy
-        # using the full expected reward contained in the bandit feedback dictionary
+        # using the full expected reward contained in the test set of synthetic bandit feedback
         ground_truth_policy_value = np.average(
             bandit_feedback_test["expected_reward"],
             weights=action_dist[:, :, 0],
             axis=1,
         ).mean()
-        # estimate the mean reward function with an ML model
+        # estimate the mean reward function of the test set of synthetic bandit feedback with ML model
         regression_model = RegressionModel(
             n_actions=dataset.n_actions,
             len_list=dataset.len_list,
@@ -167,14 +166,14 @@ if __name__ == "__main__":
             ),
         )
         estimated_rewards_by_reg_model = regression_model.fit_predict(
-            context=bandit_feedback_train["context"],
-            action=bandit_feedback_train["action"],
-            reward=bandit_feedback_train["reward"],
-            position=bandit_feedback_train["position"],
-            pscore=bandit_feedback_train["pscore"],
+            context=bandit_feedback_test["context"],
+            action=bandit_feedback_test["action"],
+            reward=bandit_feedback_test["reward"],
+            position=bandit_feedback_test["position"],
+            pscore=bandit_feedback_test["pscore"],
             n_folds=3,  # 3-fold cross-fitting
         )
-        # evaluate the estimation performance of OPE estimators
+        # evaluate the estimation performance of OPE estimators using the test set of synthetic bandit feedback
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback_test, ope_estimators=ope_estimators,
         )
@@ -183,7 +182,6 @@ if __name__ == "__main__":
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-        # store relative estimation errors of OPE estimators at each split
         for (
             estimator_name,
             relative_estimation_error,

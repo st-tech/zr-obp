@@ -31,6 +31,9 @@ base_model_dict = dict(
     random_forest=RandomForestClassifier,
 )
 
+# compared OPE estimators
+ope_estimators = [DirectMethod(), InverseProbabilityWeighting(), DoublyRobust()]
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
     parser.add_argument(
@@ -90,7 +93,6 @@ if __name__ == "__main__":
     obd = OpenBanditDataset(
         behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
     )
-
     # hyparparameters for evaluation policies
     kwargs = dict(
         n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state
@@ -99,8 +101,6 @@ if __name__ == "__main__":
         kwargs["is_zozotown_prior"] = True
         kwargs["campaign"] = campaign
     policy = evaluation_policy_dict[evaluation_policy](**kwargs)
-    # compared OPE estimators
-    ope_estimators = [DirectMethod(), InverseProbabilityWeighting(), DoublyRobust()]
     # ground-truth policy value of an evaluation policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
     ground_truth_policy_value = OpenBanditDataset.calc_on_policy_policy_value_estimate(
@@ -147,7 +147,6 @@ if __name__ == "__main__":
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-        # store relative estimation errors of OPE estimators estimated with each sample
         for (
             estimator_name,
             relative_estimation_error,
