@@ -330,6 +330,7 @@ class OffPolicyEvaluation:
         if relative:
             estimated_round_rewards_df /= self.bandit_feedback["reward"].mean()
 
+        plt.style.use("ggplot")
         fig, ax = plt.subplots(figsize=(8, 6))
         sns.barplot(
             data=estimated_round_rewards_df,
