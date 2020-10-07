@@ -278,7 +278,7 @@ Bibtex:
 ```
 @article{saito2020large,
   title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
-  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+  author={Saito, Yuta and Shunsuke Aihara and Megumi Matsutani and Yusuke Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
