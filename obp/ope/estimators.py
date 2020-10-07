@@ -183,7 +183,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{IPW} (\\pi_e; \\mathcal{D}) = \\frac{1}{T} \\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} Y_t
+        \\hat{V}_{IPW} (\\pi_e; \\mathcal{D}) = \\frac{1}{T} \\sum_{t=1}^T Y_t \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}
 
     where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
 
@@ -368,7 +368,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     .. math::
 
         \\hat{V}_{SNIPW} (\\pi_e; \\mathcal{D}) =
-        \\frac{\\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} Y_t}{\\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}}
+        \\frac{\\sum_{t=1}^T \\frac{Y_t \\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}}{\\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}}
 
     where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
 
@@ -823,6 +823,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     """Estimate the policy value by Self-Normalized Doubly Robust (SNDR).
 
     Self-Normalized Doubly Robust estimates the policy value of a given evaluation policy :math:`\\pi_e` by
+
     .. math::
 
             \\hat{V}_{SNDR} (\\pi_e; \\mathcal{D}, \\hat{\\mu}) =
@@ -921,8 +922,8 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
 
     .. math::
 
-            \\hat{V}_{Switch-IPW} (\\pi_e; \\mathcal{D}, \\hat{\\mu}) =
-            \\hat{V}_{DM} (\\pi_e; \\mathcal{D}, \\hat{\\mu}) \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} > \\tau \\}
+            & \\hat{V}_{Switch-IPW} (\\pi_e; \\mathcal{D}, \\hat{\\mu}, \\tau) \\
+            & =  \\frac{1}{T} \\sum_{t=1}^T \\sum_{a \\in \\mathcal{A}} \\hat{\\mu} (X_t, a) \\pi(a | X_t) \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} > \\tau \\}
             + \\frac{1}{T} \\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\le \\tau \\}
 
     where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
@@ -1025,8 +1026,8 @@ class SwitchDoublyRobust(DoublyRobust):
 
     .. math::
 
-            \\hat{V}_{Switch-DR} (\\pi_e; \\mathcal{D}, \\hat{\\mu}) =
-            \\hat{V}_{DM} (\\pi_e; \\mathcal{D}, \\hat{\\mu})
+            & \\hat{V}_{Switch-DR} (\\pi_e; \\mathcal{D}, \\hat{\\mu}, \\tau) \\
+            & = \\hat{V}_{DM} (\\pi_e; \\mathcal{D}, \\hat{\\mu})
             + \\frac{1}{T} \\sum_{t=1}^T (Y_t - \\hat{\\mu} (X_t, A_t)) \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\le \\tau \\}
 
     where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
@@ -1143,10 +1144,13 @@ class DoublyRobustWithShrinkage(DoublyRobust):
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
     :math:`w_{o,\\lambda} (X_t, A_t)` is a new weight by the shrinkage technique which is defined as
 
+    .. math::
 
-    where :math:`\\lambda` is a hyperparameter.
+        w_{o,\\lambda} (X_t, A_t) := \\frac{\\lambda}{w^2(X_t, A_t) + \\lambda} w(X_t, A_t)
+
+    where :math:`\\lambda` is a hyperparameter and :math:`w(X_t, A_t) = \\pi_e(X_t, A_t) / \\pi_b(X_t, A_t)` is the importance weight.
     When :math:`\\lambda=0`, we have :math:`w_{o,\\lambda} (X_t, A_t)=0` corresponding to the DM estimator.
-    In contrast, as :math:`\\lambda \\rightarrow \\infinity`, the weights increase and in the limit become equal to
+    In contrast, as :math:`\\lambda \\rightarrow \\infty`, the weights increase and in the limit become equal to
     the original importance weight, corresponding to the standard DR estimator.
     Note that there is the other kind of the shrinkage technique called *pessimistic shrinkage*.
     DR with pessimistic shrinkage can be achieved by controlling the clipping hyperparameter of the original DR estimator

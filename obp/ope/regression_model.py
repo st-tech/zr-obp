@@ -14,7 +14,7 @@ from ..utils import check_bandit_feedback_inputs
 
 @dataclass
 class RegressionModel(BaseEstimator):
-    """Machine Learning model to estimate the mean reward function (:math:`\\mu(x, a) = \\mathbbb{E} [Y(a) | X=x]`).
+    """Machine Learning model to estimate the mean reward function (:math:`\\mu(x, a) = \\mathbb{E} [Y(a) | X=x]`).
 
     Note
     -------
@@ -211,8 +211,7 @@ class RegressionModel(BaseEstimator):
         action_dist: Optional[np.ndarray] = None,
         n_folds: int = 1,
     ) -> None:
-        """Fit the regression model on given logged bandit feedback data
-           and then predict the mean reward function of the same data.
+        """Fit the regression model on given logged bandit feedback data and then predict the mean reward function of the same data.
 
         Note
         ------

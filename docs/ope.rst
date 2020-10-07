@@ -12,11 +12,11 @@ Let :math:`Y(\cdot): {\cal A}\rightarrow \mathbb{R}` denote a potential reward f
 Let :math:`X` denote a *context* vector (e.g., the user's demographic profile) that the decision maker observes when picking an action.
 We denote the finite set of possible contexts by :math:`{\cal X}`.
 We think of :math:`(Y(\cdot),X)` as a random vector with unknown distribution :math:`G`.
-Given a vector of :math:`(Y(\cdot),X)`, we define the mean reward function :math:`\mu: {\cal X} \times {\cal A} \rightarrow \mathbb{R}$ as $\mu (x, a) := \mathbb{E} [Y (a) | X=x ]`.
+Given a vector of :math:`(Y(\cdot),X)`, we define the mean reward function :math:`\mu: {\cal X} \times {\cal A} \rightarrow \mathbb{R}` as :math:`\mu (x, a) := \mathbb{E} [Y (a) | X=x ]`.
 
 Let :math:`\mathcal{D} := \{(X_t,A_t,Y_t)\}_{t=1}^T` be historical logged bandit feedback with :math:`T` rounds of observations.
 :math:`A_{t}` is a discrete variable indicating which action in :math:`\mathcal{A}` is chosen in round :math:`t`.
-:math:`Y_t := Y_t(A_t)` and :math:`X_t` denote the reward and the context observed in round $t$, respectively.
+:math:`Y_t := Y_t(A_t)` and :math:`X_t` denote the reward and the context observed in round :math:`t`, respectively.
 
 We call a function :math:`\pi: {\cal X} \rightarrow \Delta({\cal A})` a *policy*.
 It maps each context :math:`x \in {\cal X}` into a distribution over actions, where :math:`\pi (a | x)` is the probability of taking action :math:`a` given :math:`x`.
@@ -99,8 +99,8 @@ Doubly Robust (DR)
 The final approach is DR :cite:`Dudik2014`, which combines the above two estimators as
 
 .. math::
-    \hat{V}_{DR} (\pi_e; \mathcal{D}, \hat{\mu}) \\
-    &=\hat{V}_{DM} (\pi_e; \mathcal{D}, \hat{\mu})+\frac{1}{T}\sum_{t=1}^T  (Y_t-\hat{\mu}(X_t, A_t) ) \frac{\pi_e(A_t|X_t)}{\pi_b(A_t|X_t)}.
+    \hat{V}_{DR} (\pi_e; \mathcal{D}, \hat{\mu})
+    =\hat{V}_{DM} (\pi_e; \mathcal{D}, \hat{\mu})+\frac{1}{T}\sum_{t=1}^T  (Y_t-\hat{\mu}(X_t, A_t) ) \frac{\pi_e(A_t|X_t)}{\pi_b(A_t|X_t)}.
 
 DR mimics IPW to use a weighted version of rewards, but DR also uses the estimated mean reward function as a control variate to decrease the variance.
 It preserves the consistency of IPW if either the importance weight or the mean reward estimator is accurate (a property called *double robustness*).
