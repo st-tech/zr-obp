@@ -368,7 +368,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     .. math::
 
         \\hat{V}_{SNIPW} (\\pi_e; \\mathcal{D}) =
-        \\frac{\\sum_{t=1}^T \\frac{Y_t \\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}}{\\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}}
+        \\frac{\\sum_{t=1}^T Y_t \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}}{\\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)}}
 
     where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
 
@@ -922,8 +922,8 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
 
     .. math::
 
-            & \\hat{V}_{Switch-IPW} (\\pi_e; \\mathcal{D}, \\hat{\\mu}, \\tau) \\
-            & =  \\frac{1}{T} \\sum_{t=1}^T \\sum_{a \\in \\mathcal{A}} \\hat{\\mu} (X_t, a) \\pi(a | X_t) \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} > \\tau \\}
+            \\hat{V}_{Switch-IPW} (\\pi_e; \\mathcal{D}, \\hat{\\mu}, \\tau)
+            =  \\frac{1}{T} \\sum_{t=1}^T \\sum_{a \\in \\mathcal{A}} \\hat{\\mu} (X_t, a) \\pi(a | X_t) \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} > \\tau \\}
             + \\frac{1}{T} \\sum_{t=1}^T \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\le \\tau \\}
 
     where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
@@ -1026,8 +1026,8 @@ class SwitchDoublyRobust(DoublyRobust):
 
     .. math::
 
-            & \\hat{V}_{Switch-DR} (\\pi_e; \\mathcal{D}, \\hat{\\mu}, \\tau) \\
-            & = \\hat{V}_{DM} (\\pi_e; \\mathcal{D}, \\hat{\\mu})
+            \\hat{V}_{Switch-DR} (\\pi_e; \\mathcal{D}, \\hat{\\mu}, \\tau)
+            = \\hat{V}_{DM} (\\pi_e; \\mathcal{D}, \\hat{\\mu})
             + \\frac{1}{T} \\sum_{t=1}^T (Y_t - \\hat{\\mu} (X_t, A_t)) \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\mathbb{I} \\{ \\frac{\\pi_e (A_t | X_t)}{\\pi_b (A_t | X_t)} \\le \\tau \\}
 
     where :math:`\\mathcal{D}=\\{ (X_t,A_t,Y_t) \\}_{t=1}^{T}` is logged bandit feedback data collected by :math:`\\pi_b`.
