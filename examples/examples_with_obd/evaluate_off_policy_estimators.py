@@ -1,15 +1,15 @@
 import argparse
-from pathlib import Path
 import yaml
+import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.experimental import enable_hist_gradient_boosting
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 from obp.dataset import OpenBanditDataset
-from obp.simulator import run_bandit_simulation
 from obp.policy import Random, BernoulliTS
 from obp.ope import (
     RegressionModel,
@@ -18,21 +18,21 @@ from obp.ope import (
     DirectMethod,
     DoublyRobust,
 )
-from obp.utils import estimate_confidence_interval_by_bootstrap
 
+evaluation_policy_dict = dict(bts=BernoulliTS, random=Random)
 
-with open("./conf/lightgbm.yaml", "rb") as f:
-    hyperparams = yaml.safe_load(f)["model"]
+# hyperparameter for the regression model used in model dependent OPE estimators
+with open("./conf/hyperparams.yaml", "rb") as f:
+    hyperparams = yaml.safe_load(f)
 
-# configurations to reproduce the Bernoulli Thompson Sampling policy
-# used in ZOZOTOWN production
-with open("./conf/prior_bts.yaml", "rb") as f:
-    production_prior_for_bts = yaml.safe_load(f)
+base_model_dict = dict(
+    logistic_regression=LogisticRegression,
+    lightgbm=HistGradientBoostingClassifier,
+    random_forest=RandomForestClassifier,
+)
 
-with open("./conf/batch_size_bts.yaml", "rb") as f:
-    production_batch_size_for_bts = yaml.safe_load(f)
-
-counterfactual_policy_dict = dict(bts=BernoulliTS, random=Random)
+# compared OPE estimators
+ope_estimators = [DirectMethod(), InverseProbabilityWeighting(), DoublyRobust()]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
@@ -43,11 +43,18 @@ if __name__ == "__main__":
         help="number of bootstrap samples in the experiment.",
     )
     parser.add_argument(
-        "--counterfactual_policy",
+        "--evaluation_policy",
         type=str,
         choices=["bts", "random"],
         required=True,
-        help="counterfactual policy, bts or random.",
+        help="evaluation policy, bts or random.",
+    )
+    parser.add_argument(
+        "--base_model",
+        type=str,
+        choices=["logistic_regression", "lightgbm", "random_forest"],
+        required=True,
+        help="base ML model for regression model, logistic_regression, random_forest or lightgbm.",
     )
     parser.add_argument(
         "--behavior_policy",
@@ -63,88 +70,108 @@ if __name__ == "__main__":
         required=True,
         help="campaign name, men, women, or all.",
     )
+    parser.add_argument(
+        "--n_sim_to_compute_action_dist",
+        type=float,
+        default=1000000,
+        help="number of monte carlo simulation to compute the action distribution of bts.",
+    )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
 
     n_boot_samples = args.n_boot_samples
-    counterfactual_policy = args.counterfactual_policy
+    base_model = args.base_model
+    evaluation_policy = args.evaluation_policy
     behavior_policy = args.behavior_policy
     campaign = args.campaign
+    n_sim_to_compute_action_dist = args.n_sim_to_compute_action_dist
     random_state = args.random_state
+    np.random.seed(random_state)
     data_path = Path(".").resolve().parents[1] / "obd"
 
     obd = OpenBanditDataset(
         behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
     )
-
-    # hyparparameters for counterfactual policies
+    # hyparparameters for evaluation policies
     kwargs = dict(
         n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state
     )
-    if counterfactual_policy == "bts":
-        kwargs["alpha"] = production_prior_for_bts[campaign]["alpha"]
-        kwargs["beta"] = production_prior_for_bts[campaign]["beta"]
-        kwargs["batch_size"] = production_batch_size_for_bts[campaign]
-    policy = counterfactual_policy_dict[counterfactual_policy](**kwargs)
-    # compared OPE estimators
-    ope_estimators = [DirectMethod(), InverseProbabilityWeighting(), DoublyRobust()]
-    # a base ML model for regression model used in model dependent OPE estimators
-    base_model = CalibratedClassifierCV(HistGradientBoostingClassifier(**hyperparams))
-    # ground-truth policy value of a counterfactual policy
+    if evaluation_policy == "bts":
+        kwargs["is_zozotown_prior"] = True
+        kwargs["campaign"] = campaign
+    policy = evaluation_policy_dict[evaluation_policy](**kwargs)
+    # ground-truth policy value of an evaluation policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
     ground_truth_policy_value = OpenBanditDataset.calc_on_policy_policy_value_estimate(
-        behavior_policy=counterfactual_policy, campaign=campaign, data_path=data_path
+        behavior_policy=evaluation_policy, campaign=campaign, data_path=data_path
     )
 
-    evaluation_of_ope_results = {
+    relative_ee = {
         est.estimator_name: np.zeros(n_boot_samples) for est in ope_estimators
     }
+    start = time.time()
     for b in np.arange(n_boot_samples):
         # sample bootstrap from batch logged bandit feedback
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(random_state=b)
-        # run a counterfactual bandit algorithm on logged bandit feedback data
-        selected_actions = run_bandit_simulation(
-            bandit_feedback=boot_bandit_feedback, policy=policy
+        if evaluation_policy == "bts":
+            action_dist = policy.compute_batch_action_dist(
+                n_sim=n_sim_to_compute_action_dist,
+                n_rounds=boot_bandit_feedback["n_rounds"],
+            )
+        else:
+            action_dist = policy.compute_batch_action_dist(
+                n_rounds=boot_bandit_feedback["n_rounds"],
+            )
+        # estimate the mean reward function with an ML model
+        regression_model = RegressionModel(
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            action_context=obd.action_context,
+            base_model=base_model_dict[base_model](**hyperparams[base_model]),
+        )
+        estimated_rewards_by_reg_model = regression_model.fit_predict(
+            context=boot_bandit_feedback["context"],
+            action=boot_bandit_feedback["action"],
+            reward=boot_bandit_feedback["reward"],
+            position=boot_bandit_feedback["position"],
+            pscore=boot_bandit_feedback["pscore"],
+            n_folds=3,  # 3-fold cross-fitting
         )
         # evaluate the estimation performance of OPE estimators by relative estimation errors
         ope = OffPolicyEvaluation(
-            bandit_feedback=boot_bandit_feedback,
-            action_context=obd.action_context,
-            regression_model=RegressionModel(base_model=base_model),
-            ope_estimators=ope_estimators,
+            bandit_feedback=boot_bandit_feedback, ope_estimators=ope_estimators,
         )
         relative_estimation_errors = ope.evaluate_performance_of_estimators(
-            selected_actions=selected_actions,
             ground_truth_policy_value=ground_truth_policy_value,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-        policy.initialize()
-        # store relative estimation errors of OPE estimators estimated with each sample
         for (
             estimator_name,
             relative_estimation_error,
         ) in relative_estimation_errors.items():
-            evaluation_of_ope_results[estimator_name][b] = relative_estimation_error
+            relative_ee[estimator_name][b] = relative_estimation_error
 
-    # estimate confidence intervals of relative estimation errors by the nonparametric bootstrap
-    evaluation_of_ope_results_with_ci = {
-        est.estimator_name: dict() for est in ope_estimators
-    }
-    for estimator_name in evaluation_of_ope_results_with_ci.keys():
-        evaluation_of_ope_results_with_ci[
+        print(f"{b+1}th iteration: {np.round((time.time() - start) / 60, 2)}min")
+
+    # estimate mean and standard deviations of the relative estimation errors
+    evaluation_of_ope_results = {est.estimator_name: dict() for est in ope_estimators}
+    for estimator_name in evaluation_of_ope_results.keys():
+        evaluation_of_ope_results[estimator_name]["mean"] = relative_ee[
             estimator_name
-        ] = estimate_confidence_interval_by_bootstrap(
-            samples=evaluation_of_ope_results[estimator_name], random_state=random_state
+        ].mean()
+        evaluation_of_ope_results[estimator_name]["std"] = np.std(
+            relative_ee[estimator_name], ddof=1
         )
-    evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results_with_ci).T
-
-    print("=" * 50)
+    evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results).T
+    print("=" * 30)
     print(f"random_state={random_state}")
-    print("-" * 50)
+    print("-" * 30)
     print(evaluation_of_ope_results_df)
-    print("=" * 50)
+    print("=" * 30)
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
     log_path = Path("./logs") / behavior_policy / campaign
     log_path.mkdir(exist_ok=True, parents=True)
-    evaluation_of_ope_results_df.to_csv(log_path / "comparison_of_ope_estimators.csv")
+    evaluation_of_ope_results_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")

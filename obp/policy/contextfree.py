@@ -2,12 +2,23 @@
 # Licensed under the Apache 2.0 License.
 
 """Context-Free Bandit Algorithms."""
+import os
+
+# import pkg_resources
+import yaml
 from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 
 from .base import BaseContextFreePolicy
+
+
+# configurations to replicate the Bernoulli Thompson Sampling policy used in ZOZOTOWN production
+prior_bts_file = os.path.join(os.path.dirname(__file__), "conf", "prior_bts.yaml")
+# prior_bts_file = pkg_resources.resource_stream(__name__, "data/emperors.csv")
+with open(prior_bts_file, "rb") as f:
+    production_prior_for_bts = yaml.safe_load(f)
 
 
 @dataclass
@@ -114,6 +125,28 @@ class Random(EpsilonGreedy):
 
     policy_name: str = "random"
 
+    def compute_batch_action_dist(
+        self, n_rounds: int = 1, n_sim: int = 100000,
+    ) -> np.ndarray:
+        """Compute the distribution over actions by Monte Carlo simulation.
+
+        Parameters
+        ----------
+        n_rounds: int, default: 1
+            Number of rounds in the distribution over actions.
+            (the size of the first axis of `action_dist`)
+
+        Returns
+        ----------
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Probability estimates of each arm being the best one for each sample, action, and position.
+
+        """
+        action_dist = np.ones((n_rounds, self.n_actions, self.len_list)) * (
+            1 / self.n_actions
+        )
+        return action_dist
+
 
 @dataclass
 class BernoulliTS(BaseContextFreePolicy):
@@ -140,6 +173,13 @@ class BernoulliTS(BaseContextFreePolicy):
     beta: array-like, shape (n_actions, ), default: None
         Prior parameter vector for Beta distributions.
 
+    is_zozotown_prior: bool, default: False
+        Whether to use hyperparameters for the beta distribution used
+        at the start of the data collection period in ZOZOTOWN.
+
+    campaign: str, default: None
+        One of the three possible campaigns, "all", "men", and "women".
+
     policy_name: str, default: 'bts'
         Name of bandit policy.
 
@@ -147,13 +187,22 @@ class BernoulliTS(BaseContextFreePolicy):
 
     alpha: Optional[np.ndarray] = None
     beta: Optional[np.ndarray] = None
+    is_zozotown_prior: bool = False
+    campaign: Optional[str] = None
     policy_name: str = "bts"
 
     def __post_init__(self) -> None:
         """Initialize class."""
         super().__post_init__()
-        self.alpha = np.ones(self.n_actions) if self.alpha is None else self.alpha
-        self.beta = np.ones(self.n_actions) if self.beta is None else self.beta
+        if self.is_zozotown_prior:
+            assert (
+                self.campaign is not None
+            ), "`campaign` must be specified when `is_zozotown_prior` is True."
+            self.alpha = production_prior_for_bts[self.campaign]["alpha"]
+            self.beta = production_prior_for_bts[self.campaign]["beta"]
+        else:
+            self.alpha = np.ones(self.n_actions) if self.alpha is None else self.alpha
+            self.beta = np.ones(self.n_actions) if self.beta is None else self.beta
 
     def select_action(self) -> np.ndarray:
         """Select a list of actions.
@@ -188,3 +237,31 @@ class BernoulliTS(BaseContextFreePolicy):
         if self.n_trial % self.batch_size == 0:
             self.action_counts = np.copy(self.action_counts_temp)
             self.reward_counts = np.copy(self.reward_counts_temp)
+
+    def compute_batch_action_dist(
+        self, n_rounds: int = 1, n_sim: int = 100000,
+    ) -> np.ndarray:
+        """Compute the distribution over actions by Monte Carlo simulation.
+
+        Parameters
+        ----------
+        n_rounds: int, default: 1
+            Number of rounds in the distribution over actions.
+            (the size of the first axis of `action_dist`)
+
+        n_sim: int, default: 100000
+            Number of simulations in the Monte Carlo simulation to compute the distribution over actions.
+
+        Returns
+        ----------
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Probability estimates of each arm being the best one for each sample, action, and position.
+
+        """
+        action_count = np.zeros((self.n_actions, self.len_list))
+        for _ in np.arange(n_sim):
+            selected_actions = self.select_action()
+            for pos in np.arange(self.len_list):
+                action_count[selected_actions[pos], pos] += 1
+        action_dist = np.tile(action_count / n_sim, (n_rounds, 1, 1),)
+        return action_dist

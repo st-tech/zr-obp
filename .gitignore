@@ -137,6 +137,7 @@ dist/
 .vscode/
 .DS_Store
 logs/
+open_bandit_dataset/
 note.ipynb
 *.npy
 *.html

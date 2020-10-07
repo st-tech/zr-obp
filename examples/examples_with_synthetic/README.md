@@ -1,56 +1,68 @@
 # Examples with Synthetic Data
-Here, we use synthetic bandit dataset and pipeline to evaluate OPE estimators.
 
 
-## Running experiments
+## Description
 
-**Evaluating Off-Policy Estimators**
+Here, we use synthetic bandit datasets and pipeline to evaluate OPE estimators.
+Specifically, we evaluate the estimation performances of well-known off-policy estimators using the ground-truth policy value of an evaluation policy, which is calculable with synthetic data.
 
-We evaluate the estimation performances of Direct Method (DM), Inverse Probability Weighting (IPW), Self-Normalized Inverse Probability Weighting (SNIPW), Doubly Robust (DR), Self-Normalized Doubly Robust (SNDR), and Switch Doubly Robust (Switch-DR).
-[`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using the synthetic bandit feedback data.
+## Evaluating Off-Policy Estimators
+
+In the following, we evaluate the estimation performances of Direct Method (DM), Inverse Probability Weighting (IPW), Self-Normalized Inverse Probability Weighting (SNIPW), Doubly Robust (DR), Self-Normalized Doubly Robust (SNDR), Switch Inverse Probability Weighting (Switch-IPW), Switch Doubly Robust (Switch-DR), and Doubly Robust with Optimistic Shrinkage (DRos).
+For Switch-IPW, Switch-DR, and DRos, we tried some different values of hyperparameters.
+
+[`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using synthetic bandit feedback datasets.
 
 ```bash
-# run evaluation of OPE estimators.
+# run evaluation of OPE estimators with synthetic bandit data
 python evaluate_off_policy_estimators.py\
     --n_runs $n_runs\
     --n_rounds $n_rounds\
     --n_actions $n_actions\
     --dim_context $dim_context\
     --dim_action_context $dim_action_context\
-    --counterfactual_policy $counterfactual_policy\
+    --base_model_for_evaluation_policy $base_model_for_evaluation_policy\
+    --base_model_for_reg_model $base_model_for_reg_model\
     --random_state $random_state
 ```
-where `$n_runs` specifies the number of simulation runs in the experiment to estimate confidence intervals of the performance of OPE estimators.
-`$n_rounds` and `$n_actions` specify the number of rounds and the number of actions of the synthetic bandit data.
+where `$n_runs` specifies the number of simulation runs in the experiment to estimate standard deviations of the performance of OPE estimators.
+`$n_rounds` and `$n_actions` specify the number of rounds (or samples) and the number of actions of the synthetic bandit data.
 `$dim_context` and `$dim_action_context` specify the dimension of context vectors characterizing each round and action, respectively.
-`$counterfactual_policy` specifies the counterfactual policy.
-It should be one of 'bts', 'random', 'linear_ts', 'linear_ucb', 'linear_egreedy', 'logistic_ts', 'logistic_ucb', and 'logistic_egreedy'.
+`$base_model_for_evaluation_policy` specifies the base ML model for defining evaluation policy and should be one of "logistic_regression", "random_forest", or "lightgbm".
+`$base_model_for_reg_model` specifies the base ML model for defining regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
 
-For example, the following command compares the estimation performances of the OPE estimators using the synthetic bandit feedback data with 100,000 rounds, 10 actions, context vectors with five dimensions.
+For example, the following command compares the estimation performances of the OPE estimators using the synthetic bandit feedback data with 100,000 rounds, 30 actions, context vectors with five dimensions.
 
 ```bash
 python evaluate_off_policy_estimators.py\
-    --n_runs 10\
+    --n_runs 20\
     --n_rounds 100000\
-    --n_actions 10\
+    --n_actions 30\
     --dim_context 5\
     --dim_action_context 5\
-    --counterfactual_policy linear_egreedy\
+    --base_model_for_evaluation_policy logistic_regression\
+    --base_model_for_reg_model logistic_regression\
     --random_state 12345
 
-# relative estimation errors (lower is better) and their 95% confidence intervals of OPE estimators.
-# our evaluation of OPE procedure suggests that IPW performs better than the other model dependent estimators such as DM and DR.
-# ============================================================
+# relative estimation errors of OPE estimators and their standard deviations (lower is better).
+# our evaluation of OPE procedure suggests that Switch-DR(tau=100) performs better than the other estimators.
+# Moreover, it appears that the performances of some OPE estimators depend on the choice of hyperparameters.
+# ========================================
 # random_state=12345
-# ------------------------------------------------------------
-#                mean  95.0% CI (lower)  95.0% CI (upper)
-# dm         0.018156           0.01543           0.02065
-# ipw        0.006241           0.00392           0.00873
-# snipw      0.011473           0.00806           0.01463
-# dr         0.010468           0.00679           0.01421
-# sndr       0.017165           0.01053           0.02461
-# switch-dr  0.011973           0.00888           0.01494
-# ============================================================
+# ----------------------------------------
+#                           mean       std
+# dm                    0.025029  0.005872
+# ipw                   0.011111  0.016634
+# snipw                 0.010181  0.007922
+# dr                    0.008107  0.007527
+# sndr                  0.013401  0.016041
+# switch-ipw (tau=1)    0.394694  0.003630
+# switch-ipw (tau=100)  0.010049  0.008941
+# switch-dr (tau=1)     0.027607  0.005774
+# switch-dr (tau=100)   0.004197  0.003110
+# dr-os (lambda=1)      0.025713  0.005852
+# dr-os (lambda=100)    0.008080  0.005056
+# ========================================
 ```
 
 The above result can change with different situations.

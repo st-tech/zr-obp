@@ -2,7 +2,7 @@
   <img width="60%" src="./images/logo.png" />
 </p>
 
-**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[概要](#概要)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[参考](#参考)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)**
+**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[スライド](https://github.com/st-tech/zr-obp/tree/master/slides/slides_JN.md)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -109,6 +109,8 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
   - Doubly Robust [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
   - Switch Estimator [[Wang et al. 2016]](https://arxiv.org/abs/1612.01205)
   - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
+  - Doubly Robust with Shrinkage [[Su et al. 2019]](https://arxiv.org/abs/1907.09623)
+  - Double Machine Learning [[Narita et al. 2020]](https://arxiv.org/abs/2002.08536)
 
 私たちのパイプラインは, 上記のアルゴリズムや推定量に加えて柔軟なインターフェースも提供しています.
 したがって研究者は, 独自のバンディットアルゴリズムやオフ方策推定量を容易に実装し, 我々のデータとパイプラインを用いてそれらの性能を評価することができます.
@@ -156,31 +158,39 @@ python setup.py install
 # 使用方法
 
 ここでは, Open Bandit Pipelineの使用法を説明します.
-具体例として, リプレイ推定量とランダム方策によって生成されたログデータを用いて, トンプソン抽出方策の性能をオフラインで評価する例を使います.
+具体例として, Inverse Probability Weightingとランダム方策によって生成されたログデータを用いて, トンプソン抽出方策の性能をオフラインで評価する例を使います.
 以下に示すように, 約10行のコードでオフライン方策評価を行うことができます.
 
 ```python
-# リプレイ推定量とランダム方策によって生成されたログデータを用いて, BernoulliTSの性能をオフラインで評価する
+# Inverse Probability Weightingとランダム方策によって生成されたログデータを用いて, BernoulliTSの性能をオフラインで評価する
 from obp.dataset import OpenBanditDataset
 from obp.policy import BernoulliTS
-from obp.simulator import run_bandit_simulation
-from obp.ope import OffPolicyEvaluation, ReplayMethod
+from obp.ope import OffPolicyEvaluation, Inverse Probability Weighting as IPW
 
 # (1) データの読み込みと前処理
-dataset = OpenBanditDataset(behavior_policy='random', campaign='women')
+dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
 # (2) オフライン方策シミュレーション
-counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=dataset.len_list)
-selected_actions = run_bandit_simulation(train=train, policy=counterfactual_policy)
+evaluation_policy = BernoulliTS(
+    n_actions=dataset.n_actions,
+    len_list=dataset.len_list,
+    is_zozotown_prior=True,
+    campaign="all",
+    random_state=12345
+)
+action_dist = evaluation_policy.compute_batch_action_dist(
+    n_sim=100000, n_rounds=bandit_feedback["n_rounds"]
+)
 
 # (3) オフライン方策評価
-ope = OffPolicyEvaluation(train=train, ope_estimators=[ReplayMethod()])
-estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
+ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW()])
+estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
 
 # ランダム方策に対するトンプソン抽出方策の性能の改善率（相対クリック率）
-relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / test['reward'].mean()
-print(relative_policy_value_of_bernoulli_ts) # 1.120574...
+relative_policy_value_of_bernoulli_ts = estimated_policy_value['ipw'] / bandit_feedback['reward'].mean()
+print(relative_policy_value_of_bernoulli_ts)
+1.198126...
 ```
 
 同じ例を使った詳細な実装例は[quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/)にあり, 実際に動かして試してみることが可能です.
@@ -192,9 +202,9 @@ Open Bandit Dataset用のデータ読み込みインターフェースを用意�
 これにより, Open Bandit Datasetの読み込みや前処理を簡潔に行うことができます.
 
 ```python
-# 「女性向けキャンペーン」においてランダム方策が集めたログデータを読み込む.
+# 「全アイテムキャンペーン」においてランダム方策が集めたログデータを読み込む.
 # OpenBanditDatasetクラスにはデータを収集した方策とキャンペーンを指定する.
-dataset = OpenBanditDataset(behavior_policy='random', campaign='women')
+dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
 # オフライン方策シミュレーション用データを得る.
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
@@ -214,12 +224,20 @@ print(bandit_feedback.keys())
 # オフライン方策シミュレーション.
 # 評価対象の反実仮想アルゴリズム. ここでは, トンプソン抽出方策の性能をオフライン評価する.
 # 研究者が独自に実装したバンディット方策を用いることもできる.
-counterfactual_policy = BernoulliTS(n_actions=dataset.n_actions, len_list=dataset.len_list)
-# シミュレーション用データ(bandit_feedback)上でトンプソン抽出方策を動作させる.
-selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=counterfactual_policy)
+evaluation_policy = BernoulliTS(
+    n_actions=dataset.n_actions,
+    len_list=dataset.len_list,
+    is_zozotown_prior=True, # ZOZOTOWN上での挙動を再現
+    campaign="all",
+    random_state=12345
+)
+# シミュレーションを用いて、トンプソン抽出方策による行動選択確率を算出.
+action_dist = evaluation_policy.compute_batch_action_dist(
+    n_sim=100000, n_rounds=bandit_feedback["n_rounds"]
+)
 ```
 
-オフライン方策シミュレーションを行うための関数である `obp.simulator.run_bandit_simulation`は `obp.policy.BanditPolicy` クラスと `bandit_feedback` (シミュレーション用データを格納したdictionary) を入力として受け取り, 与えられたバンディット方策（ここでは`BernoulliTS`）をシミュレーション用データ上で動作させます. そしてシミュレーション中にバンディット方策が選択したアクション (ここでは, `selected_actions`) を返します. またユーザーは[`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py)に実装されているインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
+`BernoulliTS`の`compute_batch_action_dist`メソッドは、与えられたベータ分布のパラメータに基づいた行動選択確率をシミュレーションによって 算出します。そしてシミュレーション中にバンディット方策が選択したアクション上の分布 (ここでは, `action_dist`) を返します. またユーザーは[`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py)に実装されているインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
 
 
 ## (3) オフライン方策評価 （Off-Policy Evaluation）
@@ -228,16 +246,18 @@ selected_actions = run_bandit_simulation(bandit_feedback=bandit_feedback, policy
 我々のパイプラインでは, 以下のような手順でオフライン方策評価を行うことができます.
 
 ```python
-# オフライン方策シミュレーションの結果に基づき, リプレイ推定量を用いてトンプソン抽出方策の性能をオフライン評価する.
+# オフライン方策シミュレーションの結果に基づき, IPW推定量を用いてトンプソン抽出方策の性能をオフライン評価する.
 # OffPolicyEvaluationクラスには, シミュレーションに用いたデータセットと用いる推定量を渡す（複数設定可）.
-ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[ReplayMethod()])
-estimated_policy_value = ope.estimate_policy_values(selected_actions=selected_actions)
-print(estimated_policy_value) # {'rm': 0.005155..}　オフ方策推定量ごとの推定値を含んだ辞書.
+ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW()])
+estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
+print(estimated_policy_value)
+{'ipw': 0.004553...}　# オフ方策推定量ごとの推定値を含んだ辞書.
 
 # トンプソン抽出方策の性能の推定値とランダム方策の真の性能を比較する.
-relative_policy_value_of_bernoulli_ts = estimated_policy_value['rm'] / bandit_feedback['reward'].mean()
-# オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を12.05%上回ると推定された.
-print(relative_policy_value_of_bernoulli_ts) # 1.120574...
+relative_policy_value_of_bernoulli_ts = estimated_policy_value['ipw'] / bandit_feedback['reward'].mean()
+# オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を19.81%上回ると推定された.
+print(relative_policy_value_of_bernoulli_ts)
+1.198126...
 ```
 ユーザーは独自のオフ方策推定量を `obp.ope.BaseOffPolicyEstimator` クラスのインターフェースに従って実装することができます.
 これにより新たなオフ方策推定量の推定精度をすぐに検証することが可能です.
@@ -248,12 +268,12 @@ print(relative_policy_value_of_bernoulli_ts) # 1.120574...
 本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようよろしくお願いいたします.
 
 Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-**A Large-scale Open Dataset for Bandit Algorithms.** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
+**Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 ```
 @article{saito2020large,
-  title={A Large-scale Open Dataset for Bandit Algorithms},
-  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+  title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
+  author={Saito, Yuta and Shunsuke Aihara and Megumi Matsutani and Yusuke Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
@@ -300,9 +320,11 @@ Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 
 12. Nathan Kallus and Masatoshi Uehara. [Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1906.03735). In *Advances in Neural Information Processing Systems*. 2019.
 
-13.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+13. Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík. [Doubly Robust Off-policy Evaluation with Shrinkage](https://arxiv.org/abs/1907.09623). In *Proceedings of the 37th International Conference on Machine Learning*, 2020.
 
-14. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
+14.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+
+15. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
 
 ## 実装
 本プロジェクトは **Open Graph Benchmark** ([[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)]) を参考にしています.

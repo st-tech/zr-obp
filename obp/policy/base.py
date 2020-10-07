@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import numpy as np
-from sklearn.base import ClassifierMixin, is_classifier
+from sklearn.base import clone, ClassifierMixin, is_classifier
 from sklearn.utils import check_random_state
 
 from ..utils import check_bandit_feedback_inputs
@@ -175,8 +175,14 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
     Parameters
     -----------
     base_model: ClassifierMixin
-        Machine learning classifier to be used to estimate the loss function
-        for learning the decision making policy.
+        Machine learning classifier to be used to train an offline decision making policy.
+
+    n_actions: int
+        Number of actions.
+
+    len_list: int, default: 1
+        Length of a list of recommended actions in each impression.
+        When Open Bandit Dataset is used, 3 should be set.
 
     Reference
     -----------
@@ -186,10 +192,21 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
     """
 
     base_model: ClassifierMixin
+    n_actions: int
+    len_list: int = 1
 
     def __post_init__(self) -> None:
         """Initialize class."""
         assert is_classifier(self.base_model), "base_model must be a classifier."
+        assert self.n_actions > 1 and isinstance(
+            self.n_actions, int
+        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+        assert self.len_list > 0 and isinstance(
+            self.len_list, int
+        ), f"len_list must be a positive integer, but {self.len_list} is given"
+        self.base_model_list = [
+            clone(self.base_model) for _ in np.arange(self.len_list)
+        ]
 
     @property
     def policy_type(self) -> str:
@@ -202,7 +219,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         context: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
-        pscore: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Create training data for off-policy learning.
 
@@ -235,6 +252,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
     ) -> None:
         """Fits the offline bandit policy according to the given logged bandit feedback data.
 
@@ -253,14 +271,33 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
             Propensity scores, the probability of selecting each action by behavior policy,
             in the given training logged bandit feedback.
 
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given training logged bandit feedback.
+            If None is given, a learner assumes that there is only one position.
+            When `len_list` > 1, position has to be set.
+
         """
         check_bandit_feedback_inputs(
-            context=context, action=action, reward=reward, pscore=pscore,
+            context=context,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
         )
-        X, sample_weight, y = self._create_train_data_for_opl(
-            context=context, action=action, reward=reward, pscore=pscore,
-        )
-        self.base_model.fit(X=X, y=y, sample_weight=sample_weight)
+        if pscore is None:
+            n_actions = np.int(action.max() + 1)
+            pscore = np.ones_like(action) / n_actions
+        if position is None:
+            assert self.len_list == 1, "position has to be set when len_list is 1"
+            position = np.zeros_like(action)
+        for position_ in np.arange(self.len_list):
+            X, sample_weight, y = self._create_train_data_for_opl(
+                context=context[position == position_],
+                action=action[position == position_],
+                reward=reward[position == position_],
+                pscore=pscore[position == position_],
+            )
+            self.base_model_list[position_].fit(X=X, y=y, sample_weight=sample_weight)
 
     def predict(self, context: np.ndarray) -> None:
         """Predict best action for new data.
@@ -272,16 +309,26 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
 
         Returns
         -----------
-        pred: array-like, shape (n_rounds_of_new_data, 1)
+        action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
             Predicted best action for new data.
+            The resulting distribution is deterministic.
 
         """
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
         ), "context must be 2-dimensional ndarray"
-        predicted_actions = self.base_model.predict(context)
-
-        return np.expand_dims(predicted_actions, 1)
+        n_rounds_of_new_data = context.shape[0]
+        action_dist = np.zeros((n_rounds_of_new_data, self.n_actions, self.len_list))
+        for position_ in np.arange(self.len_list):
+            predicted_actions_for_the_position = (
+                self.base_model_list[position_].predict(context).astype(int)
+            )
+            action_dist[
+                np.arange(n_rounds_of_new_data),
+                predicted_actions_for_the_position,
+                np.ones(n_rounds_of_new_data, dtype=int) * position_,
+            ] = 1
+        return action_dist
 
     def predict_proba(self, context: np.ndarray) -> None:
         """Predict probabilities of each action being the best one for new data.
@@ -293,7 +340,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
 
         Returns
         -----------
-        pred_proba: array-like, shape (n_rounds_of_new_data, n_actions)
+        action_dist: array-like, shape (n_rounds_of_new_data, n_actions)
             Probability estimates of each arm being the best one for new data.
             The returned estimates for all classes are ordered by the label of classes.
 
@@ -301,5 +348,11 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
         ), "context must be 2-dimensional ndarray"
-
-        return self.base_model.predict_proba(context)
+        n_rounds_of_new_data = context.shape[0]
+        action_dist = np.zeros((n_rounds_of_new_data, self.n_actions, self.len_list))
+        for position_ in np.arange(self.len_list):
+            predicted_probas_for_the_position = self.base_model_list[
+                position_
+            ].predict_proba(context)
+            action_dist[:, :, position_] = predicted_probas_for_the_position
+        return action_dist
