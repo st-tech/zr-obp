@@ -7,7 +7,7 @@ from typing import Optional
 
 import numpy as np
 from sklearn.base import BaseEstimator, clone, is_classifier
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
 
 from ..utils import check_bandit_feedback_inputs
 
@@ -132,7 +132,10 @@ class RegressionModel(BaseEstimator):
         if self.fitting_method in ["iw", "mrdr"]:
             assert (
                 action_dist is not None
-            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given"
+            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then action_dist must be given"
+            assert (
+                pscore is not None
+            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then pscore must be given"
         n_data = context.shape[0]
         for position_ in np.arange(self.len_list):
             idx = position == position_
@@ -252,9 +255,22 @@ class RegressionModel(BaseEstimator):
             Estimated expected rewards for the given logged bandit feedback at each item and position by the regression model.
 
         """
-        assert n_folds > 1 and isinstance(
+        assert n_folds > 0 and isinstance(
             n_folds, int
-        ), f"n_folds must be an integer larger than 1, but {n_folds} is given"
+        ), f"n_folds must be a positive integer, but {n_folds} is given"
+        if self.len_list == 1:
+            position = np.zeros_like(action)
+        else:
+            assert (
+                position is not None
+            ), "position has to be set when len_list is larger than 1"
+        if self.fitting_method in ["iw", "mrdr"]:
+            assert (
+                action_dist is not None
+            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then action_dist must be given"
+            assert (
+                pscore is not None
+            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then pscore must be given"
 
         if n_folds == 1:
             self.fit(
@@ -270,8 +286,8 @@ class RegressionModel(BaseEstimator):
             estimated_rewards_by_reg_model = np.zeros(
                 (context.shape[0], self.n_actions, self.len_list)
             )
-        skf = StratifiedKFold(n_splits=n_folds)
-        skf.get_n_splits(context, reward)
+        skf = KFold(n_splits=n_folds, shuffle=True)
+        skf.get_n_splits(context)
         for train_idx, test_idx in skf.split(context, reward):
             action_dist_tr = (
                 action_dist[train_idx] if action_dist is not None else action_dist
