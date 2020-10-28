@@ -1,11 +1,11 @@
 import argparse
 import pickle
-import time
 from pathlib import Path
 from distutils.util import strtobool
 
 import numpy as np
-import pandas as pd
+from pandas import DataFrame
+from joblib import Parallel, delayed
 
 from obp.dataset import OpenBanditDataset
 from obp.policy import BernoulliTS, Random
@@ -59,9 +59,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--base_model",
         type=str,
-        choices=["logistic_regression", "lightgbm"],
+        choices=["logistic_regression", "random_forest", "lightgbm"],
         required=True,
-        help="base ML model for regression model, logistic_regression or lightgbm.",
+        help="base ML model for regression model, logistic_regression, random_forest, or lightgbm.",
     )
     parser.add_argument(
         "--behavior_policy",
@@ -95,6 +95,12 @@ if __name__ == "__main__":
         default=1000000,
         help="number of monte carlo simulation to compute the action distribution of bts.",
     )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=1,
+        help="the maximum number of concurrently running jobs.",
+    )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
@@ -108,7 +114,9 @@ if __name__ == "__main__":
     test_size = args.test_size
     is_timeseries_split = args.is_timeseries_split
     n_sim_to_compute_action_dist = args.n_sim_to_compute_action_dist
+    n_jobs = args.n_jobs
     random_state = args.random_state
+    np.random.seed(random_state)
     data_path = Path("../open_bandit_dataset")
 
     # prepare path
@@ -132,11 +140,24 @@ if __name__ == "__main__":
         test_size=test_size,
         is_timeseries_split=is_timeseries_split,
     )
+    # compute action distribution by evaluation policy
+    if evaluation_policy == "bts":
+        policy = BernoulliTS(
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            is_zozotown_prior=True,  # replicate the policy in the ZOZOTOWN production
+            campaign=campaign,
+            random_state=random_state,
+        )
+    else:
+        policy = Random(
+            n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state,
+        )
+    action_dist_single_round = policy.compute_batch_action_dist(
+        n_sim=n_sim_to_compute_action_dist
+    )
 
-    start = time.time()
-    estimator_names = [est.estimator_name for est in ope_estimators] + ["mrdr"]
-    relative_ee = {est: np.zeros(n_runs) for est in estimator_names}
-    for b in np.arange(n_runs):
+    def process(b: int):
         # load the pre-trained regression model
         with open(reg_model_path / f"reg_model_{b}.pkl", "rb") as f:
             reg_model = pickle.load(f)
@@ -152,23 +173,6 @@ if __name__ == "__main__":
         )
         for key_ in ["context", "action", "reward", "pscore", "position"]:
             bandit_feedback[key_] = bandit_feedback[key_][~is_for_reg_model]
-        if evaluation_policy == "bts":
-            policy = BernoulliTS(
-                n_actions=obd.n_actions,
-                len_list=obd.len_list,
-                is_zozotown_prior=True,  # replicate the policy in the ZOZOTOWN production
-                campaign=campaign,
-                random_state=random_state,
-            )
-        else:
-            policy = Random(
-                n_actions=obd.n_actions,
-                len_list=obd.len_list,
-                random_state=random_state,
-            )
-        action_dist = policy.compute_batch_action_dist(
-            n_sim=100000, n_rounds=bandit_feedback["n_rounds"]
-        )
         # estimate the mean reward function using the pre-trained reg_model
         estimated_rewards_by_reg_model = reg_model.predict(
             context=bandit_feedback["context"],
@@ -180,42 +184,33 @@ if __name__ == "__main__":
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback, ope_estimators=ope_estimators,
         )
-        relative_estimation_errors = ope.evaluate_performance_of_estimators(
+        action_dist = np.tile(
+            action_dist_single_round, (bandit_feedback["n_rounds"], 1, 1)
+        )
+        relative_ee_b = ope.evaluate_performance_of_estimators(
             ground_truth_policy_value=ground_truth_policy_value,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-        relative_estimation_errors["mrdr"] = ope.evaluate_performance_of_estimators(
+        relative_ee_b["mrdr"] = ope.evaluate_performance_of_estimators(
             ground_truth_policy_value=ground_truth_policy_value,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model_mrdr,
         )["dr"]
-        # store relative estimation errors of OPE estimators at each bootstrap
-        for (
-            estimator_name,
-            relative_estimation_error,
-        ) in relative_estimation_errors.items():
-            relative_ee[estimator_name][b] = relative_estimation_error
 
-        print(f"{b+1}th iteration: {np.round((time.time() - start) / 60, 2)}min")
+        return relative_ee_b
 
-    # estimate means and standard deviations of relative estimation by nonparametric bootstrap method
-    evaluation_of_ope_results = {est: dict() for est in estimator_names}
-    for estimator_name in evaluation_of_ope_results.keys():
-        evaluation_of_ope_results[estimator_name]["relative-ee"] = relative_ee[
-            estimator_name
-        ].mean()
-        evaluation_of_ope_results[estimator_name]["std"] = np.std(
-            relative_ee[estimator_name], ddof=1
-        )
+    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
+        [delayed(process)(i) for i in np.arange(n_runs)]
+    )
 
-    evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results).T.round(6)
-    print("=" * 50)
-    print(f"random_state={random_state}")
-    print("-" * 50)
-    print(evaluation_of_ope_results_df)
-    print("=" * 50)
-
-    # save results of the evaluation of off-policy estimators in './logs' directory.
-    evaluation_of_ope_results_df.to_csv(log_path / f"relative_ee_of_ope_estimators.csv")
+    # save results of the evaluation of ope in './logs' directory.
+    estimator_names = [est.estimator_name for est in ope_estimators] + ["mrdr"]
+    relative_ee = {est: np.zeros(n_runs) for est in estimator_names}
+    for b, relative_ee_b in enumerate(processed):
+        for (estimator_name, relative_ee_,) in relative_ee_b.items():
+            relative_ee[estimator_name][b] = relative_ee_
+    DataFrame(relative_ee).describe().T.round(6).to_csv(
+        log_path / f"eval_ope_results.csv"
+    )
 

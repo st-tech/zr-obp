@@ -51,18 +51,18 @@ python train_regression_model.py\
 
 
 ```
-for model in logistic_regression
+for model in random_forest
 do
-    for pi_b in bts
+    for pi_b in random
     do
-        for camp in all
+        for camp in men
         do
-            for is_mrdr in True False
+            for is_mrdr in False
             do
-                for is_timeseries in True False
+                for is_timeseries in True
                 do
-                    screen python train_regression_model.py\
-                        --n_runs 10\
+                    python train_regression_model.py\
+                        --n_runs 30\
                         --base_model $model\
                         --behavior_policy $pi_b\
                         --campaign $camp\
@@ -136,13 +136,14 @@ do
     do
         for camp in all
         do
-            for is_timeseries in True False
+            for is_timeseries in False
             do
-                screen python benchmark_off_policy_estimators.py\
-                    --n_runs 10\
+                python benchmark_off_policy_estimators.py\
+                    --n_runs 30\
                     --base_model $model\
                     --behavior_policy $pi_b\
                     --campaign $camp\
+                    --n_jobs 1\
                     --is_timeseries_split $is_timeseries
             done
         done
