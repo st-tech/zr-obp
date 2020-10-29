@@ -1,10 +1,10 @@
 import argparse
 import yaml
-import time
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
+from pandas import DataFrame
+from joblib import Parallel, delayed
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -31,16 +31,16 @@ base_model_dict = dict(
     random_forest=RandomForestClassifier,
 )
 
-# compared OPE estimators
+# OPE estimators compared
 ope_estimators = [DirectMethod(), InverseProbabilityWeighting(), DoublyRobust()]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
     parser.add_argument(
-        "--n_boot_samples",
+        "--n_runs",
         type=int,
         default=1,
-        help="number of bootstrap samples in the experiment.",
+        help="number of bootstrap sampling in the experiment.",
     )
     parser.add_argument(
         "--evaluation_policy",
@@ -76,16 +76,24 @@ if __name__ == "__main__":
         default=1000000,
         help="number of monte carlo simulation to compute the action distribution of bts.",
     )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=1,
+        help="the maximum number of concurrently running jobs.",
+    )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
 
-    n_boot_samples = args.n_boot_samples
+    # configurations
+    n_runs = args.n_runs
     base_model = args.base_model
     evaluation_policy = args.evaluation_policy
     behavior_policy = args.behavior_policy
     campaign = args.campaign
     n_sim_to_compute_action_dist = args.n_sim_to_compute_action_dist
+    n_jobs = args.n_jobs
     random_state = args.random_state
     np.random.seed(random_state)
     data_path = Path(".").resolve().parents[1] / "obd"
@@ -93,7 +101,7 @@ if __name__ == "__main__":
     obd = OpenBanditDataset(
         behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
     )
-    # hyparparameters for evaluation policies
+    # compute action distribution by evaluation policy
     kwargs = dict(
         n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state
     )
@@ -101,28 +109,18 @@ if __name__ == "__main__":
         kwargs["is_zozotown_prior"] = True
         kwargs["campaign"] = campaign
     policy = evaluation_policy_dict[evaluation_policy](**kwargs)
+    action_dist_single_round = policy.compute_batch_action_dist(
+        n_sim=n_sim_to_compute_action_dist
+    )
     # ground-truth policy value of an evaluation policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
     ground_truth_policy_value = OpenBanditDataset.calc_on_policy_policy_value_estimate(
         behavior_policy=evaluation_policy, campaign=campaign, data_path=data_path
     )
 
-    relative_ee = {
-        est.estimator_name: np.zeros(n_boot_samples) for est in ope_estimators
-    }
-    start = time.time()
-    for b in np.arange(n_boot_samples):
+    def process(b: int):
         # sample bootstrap from batch logged bandit feedback
-        boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(random_state=b)
-        if evaluation_policy == "bts":
-            action_dist = policy.compute_batch_action_dist(
-                n_sim=n_sim_to_compute_action_dist,
-                n_rounds=boot_bandit_feedback["n_rounds"],
-            )
-        else:
-            action_dist = policy.compute_batch_action_dist(
-                n_rounds=boot_bandit_feedback["n_rounds"],
-            )
+        bandit_feedback = obd.sample_bootstrap_bandit_feedback(random_state=b)
         # estimate the mean reward function with an ML model
         regression_model = RegressionModel(
             n_actions=obd.n_actions,
@@ -131,47 +129,44 @@ if __name__ == "__main__":
             base_model=base_model_dict[base_model](**hyperparams[base_model]),
         )
         estimated_rewards_by_reg_model = regression_model.fit_predict(
-            context=boot_bandit_feedback["context"],
-            action=boot_bandit_feedback["action"],
-            reward=boot_bandit_feedback["reward"],
-            position=boot_bandit_feedback["position"],
-            pscore=boot_bandit_feedback["pscore"],
+            context=bandit_feedback["context"],
+            action=bandit_feedback["action"],
+            reward=bandit_feedback["reward"],
+            position=bandit_feedback["position"],
+            pscore=bandit_feedback["pscore"],
             n_folds=3,  # 3-fold cross-fitting
         )
-        # evaluate the estimation performance of OPE estimators by relative estimation errors
+        # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
-            bandit_feedback=boot_bandit_feedback, ope_estimators=ope_estimators,
+            bandit_feedback=bandit_feedback, ope_estimators=ope_estimators,
         )
-        relative_estimation_errors = ope.evaluate_performance_of_estimators(
+        action_dist = np.tile(
+            action_dist_single_round, (bandit_feedback["n_rounds"], 1, 1)
+        )
+        relative_ee_b = ope.evaluate_performance_of_estimators(
             ground_truth_policy_value=ground_truth_policy_value,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-        for (
-            estimator_name,
-            relative_estimation_error,
-        ) in relative_estimation_errors.items():
-            relative_ee[estimator_name][b] = relative_estimation_error
 
-        print(f"{b+1}th iteration: {np.round((time.time() - start) / 60, 2)}min")
+        return relative_ee_b
 
-    # estimate mean and standard deviations of the relative estimation errors
-    evaluation_of_ope_results = {est.estimator_name: dict() for est in ope_estimators}
-    for estimator_name in evaluation_of_ope_results.keys():
-        evaluation_of_ope_results[estimator_name]["mean"] = relative_ee[
-            estimator_name
-        ].mean()
-        evaluation_of_ope_results[estimator_name]["std"] = np.std(
-            relative_ee[estimator_name], ddof=1
-        )
-    evaluation_of_ope_results_df = pd.DataFrame(evaluation_of_ope_results).T
+    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
+        [delayed(process)(i) for i in np.arange(n_runs)]
+    )
+    relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
+    for b, relative_ee_b in enumerate(processed):
+        for (estimator_name, relative_ee_,) in relative_ee_b.items():
+            relative_ee_dict[estimator_name][b] = relative_ee_
+    relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
+
     print("=" * 30)
     print(f"random_state={random_state}")
     print("-" * 30)
-    print(evaluation_of_ope_results_df)
+    print(relative_ee_df[["mean", "std"]])
     print("=" * 30)
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
     log_path = Path("./logs") / behavior_policy / campaign
     log_path.mkdir(exist_ok=True, parents=True)
-    evaluation_of_ope_results_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")
+    relative_ee_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")
