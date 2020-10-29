@@ -21,7 +21,6 @@ In the following, we evaluate the estimation performances of
 For Switch-IPW, Switch-DR, and DRos, we tried some different values of hyperparameters.
 
 [`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using synthetic bandit feedback datasets.
-
 [`./conf/hyperparams.yaml`](./conf/hyperparams.yaml) defines hyperparameters of some machine learning methods used to define regression model and IPWLearner.
 
 ```bash
