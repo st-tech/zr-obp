@@ -10,8 +10,8 @@ We consider a general contextual bandit setting.
 Let :math:`r \in [0, R_{\mathrm{max}}]` denote a reward or outcome variable (e.g., whether a fashion item as an action results in a click).
 We let :math:`x \in \mathcal{X}` be a context vector (e.g., the user's demographic profile) that the decision maker observes when picking an action.
 Rewards and contexts are sampled from the unknown probability distributions :math:`p (r \mid x, a)` and :math:`p(x)`, respectively.
-Let :math:`\calA:=\{0,\ldots,m\}` be a finite set of :math:`m+1` actions.
-We call a function :math:`\pi: \mathcal{X} \rightarrow \Delta(\calA)` a *policy*.
+Let :math:`\mathcal{A}:=\{0,\ldots,m\}` be a finite set of :math:`m+1` actions.
+We call a function :math:`\pi: \mathcal{X} \rightarrow \Delta(\mathcal{A})` a *policy*.
 It maps each context :math:`x \in \mathcal{X}` into a distribution over actions, where :math:`\pi (a \mid x)` is the probability of taking action :math:`a` given :math:`x`.
 
 Let :math:`\mathcal{D} := \{(x_t,a_t,r_t)\}_{t=1}^{T} ` be historical logged bandit feedback with :math:`T` rounds of observations.
