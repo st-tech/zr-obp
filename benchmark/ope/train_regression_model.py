@@ -121,6 +121,12 @@ if __name__ == "__main__":
         default=1000000,
         help="number of monte carlo simulation to compute the action distribution of bts.",
     )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=1,
+        help="the maximum number of concurrently running jobs.",
+    )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
@@ -134,7 +140,9 @@ if __name__ == "__main__":
     is_timeseries_split = args.is_timeseries_split
     is_mrdr = args.is_mrdr
     n_sim_to_compute_action_dist = args.n_sim_to_compute_action_dist
+    n_jobs = args.n_jobs
     random_state = args.random_state
+    np.random.seed(random_state)
     data_path = Path("../open_bandit_dataset")
 
     # prepare path
@@ -245,7 +253,7 @@ if __name__ == "__main__":
 
             return performance_reg_model_b
 
-    processed = Parallel(backend="multiprocessing", n_jobs=-1, verbose=50,)(
+    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
         [delayed(process)(i) for i in np.arange(n_runs)]
     )
     # save performance of the regression model in './logs' directory.

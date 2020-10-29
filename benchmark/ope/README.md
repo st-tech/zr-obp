@@ -1,19 +1,16 @@
 # Benchmarking Off-Policy Evaluation
 
 ## Description
-We use the (full size) open bandit dataset to evaluate OPE estimators in a *realistic* and *reproducible* manner. Specifically, we evaluate the estimation performances of a wide variety of existing off-policy estimators by comparing the estimated policy values with the ground-truth policy value of an evaluation policy contained in the data.
+We use the (full size) open bandit dataset to evaluate and compare OPE estimators in a *realistic* and *reproducible* manner. Specifically, we evaluate the estimation performances of a wide variety of existing estimators by comparing the estimated policy values with the ground-truth of an evaluation policy contained in the data.
 
 ### Dataset
 Please download the full [open bandit dataset](https://research.zozo.com/data.html) and put it as the `../open_bandit_dataset/` directory.
 
-### Configurations
-
-- [`conf/hyperparams.yaml`](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/conf/hyperparams.yaml)
-  The hyperparameters of the some ML model that are used as the regression model in model dependent OPE estimators such as DM and DR.
-
 ## Training Regression Model
 
-Here we train a regression model using some machine learning method. This will be used in the model-dependent estimators such as DM or DR.
+Here we train a regression model using some machine learning methods.
+We define hyperparameters for the machine learning methods in [`conf/hyperparams.yaml`](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/conf/hyperparams.yaml).
+This will be used in the model-dependent estimators such.
 [train_regression_model.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/train_regression_model.py) implements the training process of the regression model.
 
 ```
@@ -25,6 +22,7 @@ python train_regression_model.py\
     --is_timeseries_split $is_timeseries_split\ # in-sample or out-sample
     --n_sim_to_compute_action_dist $n_sim_to_compute_action_dist\
     --is_mrdr $is_mrdr\ # use "more robust doubly robust" option or not
+    --n_jobs $n_jobs\
     --random_state $random_state
 ```
 
@@ -36,6 +34,7 @@ where
 - `$test_size` specifies the proportion of the dataset to include in the test split (when `$is_timeseries_split` is applied.)
 - `$is_timeseries_split` is whether the data is split based on timestamp or not. If true, the out-sample performance of OPE is tested. See the relevant paper for details.
 - `$is_mrdr` is whether the regression model is trained by the more robust doubly robust way or not. See the relevant paper for details.
+- `$n_jobs` is the maximum number of concurrently running jobs.
 
 For example, the following command trains the regression model based on logistic regression on the logged bandit feedback data collected by the Random policy (as behavior policy) in "All" campaign by the more robust doubly robust way.
 
@@ -94,7 +93,7 @@ For Switch-IPW, Switch-DR, and DRos, we use some different values of hyperparame
 
 [benchmark_off_policy_estimators.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/benchmark_off_policy_estimators.py) implements the evaluation and comparison of OPE estimators using the open bandit dataset.
 Note that you have to finish training a regression model (see the above section) before conducting the evaluation of OPE in the corresponding setting.
-The detailed experimental procedures and results can be found in Section 5 of https://arxiv.org/abs/2008.07146.
+The detailed experimental procedures and results can be found in Section 5 of https://arxiv.org/abs/2008.07146
 
 ```
 # run evaluation of OPE estimators with the full open bandit data
@@ -106,6 +105,7 @@ python benchmark_off_policy_estimators.py\
     --n_sim_to_compute_action_dist $n_sim_to_compute_action_dist\
     --test_size $test_size\
     --is_timeseries_split\ # in-sample or out-sample
+    --n_jobs $n_jobs\
     --random_state $random_state
 ```
 where
@@ -115,12 +115,13 @@ where
 - `$n_sim_to_compute_action_dist` is the number of monte carlo simulation to compute the action distribution of a given evaluation policy.
 - `$test_size` specifies the proportion of the dataset to include in the test split (when `$is_timeseries_split` is applied.)
 - `$is_timeseries_split` is whether the data is split based on timestamp or not. If true, the out-sample performance of OPE is tested. See the relevant paper for details.
+- `$n_jobs` is the maximum number of concurrently running jobs.
 
-For example, the following command compares the estimation performances of the listed OPE estimators by using Bernoulli TS as evaluation policy and Random as behavior policy in "All" campaign in the out-sample situation.
+For example, the following command compares the estimation performances of the listed OPE estimators using Bernoulli TS as evaluation policy and Random as behavior policy in "All" campaign in the out-sample situation.
 
 ```bash
 python benchmark_off_policy_estimators.py\
-    --n_runs 3\
+    --n_runs 10\
     --base_model logistic_regression\
     --behavior_policy random\
     --campaign all\
@@ -136,7 +137,7 @@ do
     do
         for camp in all
         do
-            for is_timeseries in False
+            for is_timeseries in True
             do
                 python benchmark_off_policy_estimators.py\
                     --n_runs 30\
@@ -153,4 +154,6 @@ done
 
 ## Results
 
-Here, we report the results of the benchmarking experiments on OPE estimators.
+We report the results of the benchmark experiments on the three campaigns (all, men, women) in the following tables.
+We describe **Random -> Bernoulli TS** to represent the OPE situation where we use Bernoulli TS as a hypothetical evaluation policy and Random as a hypothetical behavior policy.
+In contrast, we use **Bernoulli TS -> Random** to represent the situation where we use Random as a hypothetical evaluation policy and Bernoulli TS as a hypothetical behavior policy.
