@@ -70,7 +70,9 @@ OPE Estimators
    * Self-Normalized Inverse Probability Weighting :cite:`Swaminathan2015b`
    * Doubly Robust :cite:`Dudik2014`
    * Switch Estimator :cite:`Wang2016`
+   * Doubly Robust with Shrinkage :cite:`Su2019`
    * More Robust Doubly Robust :cite:`Farajtabar2018`
+   * Double Machine Learning :cite:`Narita2020`
 
 Licence
 ~~~~~~~~~~~~
@@ -79,11 +81,6 @@ Open Bandit Pipeline is released under Apache 2.0 license. Find out more about i
 Citation
 ~~~~~~~~~~~~
 If you use our dataset and pipeline in your work, please cite our paper below.
-
-Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms. `https://arxiv.org/abs/2008.07146 <https://arxiv.org/abs/2008.07146>`_
-
-Bibtex:
 
 @article{saito2020large,
   title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
@@ -98,7 +95,10 @@ Bibtex:
    :caption: Introduction:
 
    about
+   related
    ope
+   estimators
+   evaluation_ope
 
 .. toctree::
    :maxdepth: 3
