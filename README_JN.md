@@ -165,7 +165,7 @@ python setup.py install
 # Inverse Probability Weightingとランダム方策によって生成されたログデータを用いて, BernoulliTSの性能をオフラインで評価する
 from obp.dataset import OpenBanditDataset
 from obp.policy import BernoulliTS
-from obp.ope import OffPolicyEvaluation, Inverse Probability Weighting as IPW
+from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
 
 # (1) データの読み込みと前処理
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
