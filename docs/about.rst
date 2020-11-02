@@ -24,7 +24,7 @@ These policies select three of the possible fashion items to each user.
 Let :math:`\mathcal{I}:=\{0,\ldots,n\}` be a set of :math:`n+1` items and :math:`\mathcal{K}:=\{0,\ldots,k\}` be a set of :math:`k+1` positions.
 The above figure shows that :math:`k+1=3` for our data.
 We assume that the reward (click indicator) depends only on the item and its position, which is a general assumption on the click generative model in the web industry:cite:`Li2018`.
-Under the assumption, the action space is simply the product of the item set and the position set, i.e., :math:`\mathcal{A} = \mathcal{I} \times \mathcal{K}`.
+Under the assumption, the action space is simply the product of the item set and the position set, i.e., :math:`\calA = \mathcal{I} \times \mathcal{K}`.
 Then, we can apply the standard OPE setup and estimators to our setting.
 We describe some statistics of the dataset in the following.
 

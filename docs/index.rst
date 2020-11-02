@@ -13,10 +13,10 @@ Open Bandit Pipeline; a python library for bandit algorithms and off-policy eval
 Overview
 ~~~~~~~~~~~~
 
-*Open Bandit Pipeline (OBP)* is an open source end-to-end python library for bandit algorithms and off-policy evaluation (OPE).
+*Open Bandit Pipeline (OBP)* is an open source python library for bandit algorithms and off-policy evaluation (OPE).
 The toolkit comes with the *Open Bandit Dataset* , a large-scale logged bandit feedback data collected on a fashion e-commerce platform, `ZOZOTOWN <https://corp.zozo.com/en/service/>`_.
 The purpose of the open data and library is to enable easy, realistic, and reproducible evaluation of bandit algorithms and OPE.
-OBP has a series of implementations of dataset preprocessing, bandit policy interfaces, offline bandit simulator, and standard OPE estimators.
+OBP has a series of implementations of dataset preprocessing, bandit policy interfaces, and a variety of OPE estimators.
 
 Our open data and pipeline facilitate evaluation and comparison related to the following research topics.
 
@@ -96,6 +96,11 @@ If you use our dataset and pipeline in your work, please cite our paper below.
 
    about
    related
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Off-Policy Evaluation (OPE):
+
    ope
    estimators
    evaluation_ope
