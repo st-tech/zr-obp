@@ -1,5 +1,5 @@
 ================================================
-Off-Policy Evaluation: Estimators
+Estimators
 ================================================
 
 
@@ -9,7 +9,7 @@ A widely-used method, DM, first learns a supervised machine learning model, such
 DM then uses it to estimate the policy value as
 
 .. math::
-    \hat{V}_{\mathrm{DM}} (\pi_e; \mathcal{D}, \hat{q}) := \mathbb{E}_{\mathcal{D}} [ \hat{q} (x_t, \pi_e) ],
+    \hat{V}_{\mathrm{DM}} (\pi_e; \calD, \hat{q}) := \E_{\calD} [ \hat{q} (x_t, \pi_e) ],
 
 where :math:`\hat{q}(a \mid x)` is the estimated reward function.
 If :math:`\hat{q}(a \mid x)` is a good approximation to the mean reward function, this estimator accurately estimates the policy value of the evaluation policy :math:`V^{\pi}`.
@@ -23,7 +23,7 @@ To alleviate the issue with DM, researchers often use another estimator called I
 IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy as
 
 .. math::
-    \hat{V}_{\mathrm{IPW}} (\pi_e; \mathcal{D}) := \mathbb{E}_{\mathcal{D}} [w(x_t,a_t) r_t ],
+    \hat{V}_{\mathrm{IPW}} (\pi_e; \calD) := \E_{\calD} [w(x_t,a_t) r_t ],
 
 where :math:`w(x,a) := \pi_e(a \mid x) / \pi_b(a \mid x)` is the importance weight given :math:`x` and :math:`a`.
 When the behavior policy is known, the IPW estimator is unbiased and consistent for the policy value.
@@ -35,7 +35,7 @@ Doubly Robust (DR)
 The final approach is DR :cite:`Dudik2014`, which combines the above two estimators as
 
 .. math::
-    \dr := \mathbb{E}_{\mathcal{D}} [ \hat{q} (x_t, \pi_e) + w(x_t,a_t)  (r_t-\hat{q}(x_t, a_t) ) ].
+    \hat{V}_{\mathrm{DR}} := \E_{\calD} [ \hat{q} (x_t, \pi_e) + w(x_t,a_t)  (r_t-\hat{q}(x_t, a_t) ) ].
 
 DR mimics IPW to use a weighted version of rewards, but DR also uses the estimated mean reward function as a control variate to decrease the variance.
 It preserves the consistency of IPW if either the importance weight or the mean reward estimator is accurate (a property called *double robustness*).
@@ -50,14 +50,14 @@ Self-Normalized Inverse Probability Weighting (SNIPW) is an approach to address 
 It estimates the policy value by dividing the sum of weighted rewards by the sum of importance weights as:
 
 .. math::
-    \hat{V}_{\mathrm{SNIPW}} (\pi_e; \mathcal{D}) :=\frac{\mathbb{E}_{\mathcal{D}} [ w(x_t,a_t) r_t ]}{\mathbb{E}_{\mathcal{D}} [ w(x_t,a_t) ]}.
+    \hat{V}_{\mathrm{SNIPW}} (\pi_e; \calD) :=\frac{\E_{\calD} [ w(x_t,a_t) r_t ]}{\E_{\calD} [ w(x_t,a_t) ]}.
 
 SNIPW is more stable than IPW, because estimated policy value by SNIPW is bounded in the support of rewards and its conditional variance given action and context is bounded by the conditional variance of the rewards:cite:`kallus2019`.
 IPW does not have these properties.
 We can define Self-Normalized Doubly Robust (SNDR) in a similar manner as follows.
 
 .. math::
-    \hat{V}_{\mathrm{SNDR}} (\pi_e; \mathcal{D}) :=\frac{\mathbb{E}_{\mathcal{D}} [\hat{q}(x_t, \pi_e) + w(x_t,a_t)  (r_t-\hat{q}(x_t, a_t) ) ]}{\mathbb{E}_{\mathcal{D}} [ w(x_t,a_t) ]}.
+    \hat{V}_{\mathrm{SNDR}} (\pi_e; \calD) :=\frac{\E_{\calD} [\hat{q}(x_t, \pi_e) + w(x_t,a_t)  (r_t-\hat{q}(x_t, a_t) ) ]}{\E_{\calD} [ w(x_t,a_t) ]}.
 
 
 Switch Estimators
@@ -66,12 +66,12 @@ The DR estimator can still be subject to the variance issue, particularly when t
 Switch-DR aims to reduce the effect of the variance issue by using DM where importance weights are large as:
 
 .. math::
-    \hat{V}_{\mathrm{SwitchDR}} (\pi_e; \mathcal{D}, \hat{q}, \tau) := \mathbb{E}_{\mathcal{D}} \left[ \hat{q}(x_t, \pi_e) + w(x_t,a_t) (r_t-\hat{q}(x_t, a_t) ) \mathbb{I}\{ w(x_t,a_t) \le \tau \} \right],
+    \hat{V}_{\mathrm{SwitchDR}} (\pi_e; \calD, \hat{q}, \tau) := \E_{\calD} \left[ \hat{q}(x_t, \pi_e) + w(x_t,a_t) (r_t-\hat{q}(x_t, a_t) ) \mathbb{I}\{ w(x_t,a_t) \le \tau \} \right],
 
 where :math:`\mathbb{I} \{\cdot\}` is the indicator function and :math:`\tau \ge 0` is a hyperparameter.
 Switch-DR interpolates between DM and DR.
 When :math:`\tau=0`, it coincides with DM, while :math:`\tau \to \infty` yields DR.
-This estimator is minimax optimal when :math:`\tau` is appropriately chosen:cite:`Wang2016`.
+This estimator is minimax optimal when :math:`\tau` is appropriately chosen :cite:`Wang2016`.
 
 
 More Robust Doubly Robust (MRDR)
@@ -80,7 +80,7 @@ MRDR uses a specialized reward estimator (:math:`\hat{q}_{\mathrm{MRDR}}`) that 
 This estimator estimates the policy value as:
 
 .. math::
-    \hat{V}_{\mathrm{MRDR}} (\pi_e; \mathcal{D}, \hat{q}_{\mathrm{MRDR}}) := \hat{V}_{\mathrm{DR}} (\pi_e; \mathcal{D}, \hat{q}_{\mathrm{MRDR}}),
+    \hat{V}_{\mathrm{MRDR}} (\pi_e; \calD, \hat{q}_{\mathrm{MRDR}}) := \hat{V}_{\mathrm{DR}} (\pi_e; \calD, \hat{q}_{\mathrm{MRDR}}),
 
 where :math:`\mathcal{Q}` is a function class for the reward estimator.
 When :math:`\mathcal{Q}` is well-specified, then :math:`\hat{q}_{\mathrm{MRDR}} = q`.
@@ -89,15 +89,16 @@ Here, even if :math:`\mathcal{Q}` is misspecified, the derived reward estimator 
 
 Doubly Robust with Optimistic Shrinkage (DRos)
 ----------------------------------------------------------------------------
-:cite:`Su2019` proposes DRs based on a new weight function :math:`\hat{w}: \mathcal{X} \times \mathcal{A} \rightarrow \mathbb{R}_{+}` that directly minimizes sharp bounds on the MSE of the resulting estimator.
+:cite:`Su2019` proposes DRs based on a new weight function :math:`w_o: \calX \times \calA \rightarrow \mathbb{R}_{+}` that directly minimizes sharp bounds on the MSE of the resulting estimator.
 DRs is defined as
+
 .. math::
-    \hat{V}_{\mathrm{DRs}} (\pi_e; \mathcal{D}, \hat{q}, \lambda) := \mathbb{E}_{\mathcal{D}} [ \hat{q} (x_t, \pi_e) + \hat{w} (x_t, a_t; \lambda)  (r_t-\hat{q}(x_t, a_t) ) ],
+    \hat{V}_{\mathrm{DRs}} (\pi_e; \calD, \hat{q}, \lambda) := \E_{\calD} [ \hat{q} (x_t, \pi_e) + w_o (x_t, a_t; \lambda)  (r_t-\hat{q}(x_t, a_t) ) ],
 
 where :math:`\lambda \ge 0` is a hyperparameter and the new weight is
 
 .. math::
-    \hat{w} (x, a; \lambda) := \frac{\lambda}{w^{2}(x, a)+\lambda} w(x, a).
+    w_o (x, a; \lambda) := \frac{\lambda}{w^{2}(x, a)+\lambda} w(x, a).
 
-When :math:`\lambda = 0`, :math:`\hat{w} (x, a; \lambda) = 0` leading to the standard DM.
-On the other hand, as :math:`\lambda \rightarrow \infty`, :math:`\hat{w} (x, a; \lambda) = w(x,a)` leading to the original DR.
+When :math:`\lambda = 0`, :math:`w_o (x, a; \lambda) = 0` leading to the standard DM.
+On the other hand, as :math:`\lambda \rightarrow \infty`, :math:`w_o (x, a; \lambda) = w(x,a)` leading to the original DR.
