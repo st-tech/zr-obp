@@ -9,6 +9,7 @@ By applying the following protocol to several different OPE estimators, we can c
 
 
 1. Define the evaluation and test sets as:
+
     * in-sample case: :math:`\calD_{\mathrm{ev}} := \calD^{(hb)}_{1:T}`, :math:`\calD_{\mathrm{te}} := \calD^{(he)}_{1:T}`
     * out-sample case: :math:`\calD_{\mathrm{ev}} := \calD^{(hb)}_{1:\tilde{t}}`, :math:`\calD_{\mathrm{te}} := \calD^{(he)}_{\tilde{t}+1:T}`
 
@@ -21,7 +22,7 @@ By applying the following protocol to several different OPE estimators, we can c
     .. math::
         V_{\mathrm{on}} (\pi^{(he)}; \calD_{\mathrm{te}}) := \E_{\calD_{\mathrm{te}}} [r^{(he)}_t].
 
-4. Compare the off-policy estimate $\hat{V}(\pi^{(he)}; \calD_{\mathrm{ev}})$ with its ground-truth $\mathrm{on}} (\pi^{(he)}; \calD_{\mathrm{te}})$. We can evaluate the estimation accuracy of $\hat{V}$ by the following *relative estimation error* (relative-EE):
+4. Compare the off-policy estimate :math:`\hat{V}(\pi^{(he)}; \calD_{\mathrm{ev}})` with its ground-truth :math:`V_{\mathrm{on}} (\pi^{(he)}; \calD_{\mathrm{te}})`. We can evaluate the estimation accuracy of :math:`\hat{V}` by the following *relative estimation error* (relative-EE):
 
     .. math::
         \textit{relative-EE} (\hat{V}; \calD_{\mathrm{ev}}) := \left| \frac{\hat{V} (\pi^{(he)}; \calD_{\mathrm{ev}}) - V_{\mathrm{on}} (\pi^{(he)}; \calD_{\mathrm{te}}) }{V_{\mathrm{on}} (\pi^{(he)}; \calD_{\mathrm{te}})} \right|.
@@ -34,5 +35,10 @@ In contrast, we call that **with** the sample splitting as out-sample case where
 The following algorithm describes the detailed experimental protocol to evaluate OPE estimators.
 
 .. image:: ./_static/images/evaluation_of_ope_algo.png
-   :scale: 40%
+   :scale: 45%
    :align: center
+
+
+Using the above protocol, our real-world data, and pipeline, we have performed extensive benchmark experiments on a variety of existing off-policy estimators.
+The experimental results and the relevant discussion can be found in `our paper <https://arxiv.org/abs/2008.07146>`_.
+The code for running the benchmark experiments can be found at `zr-obp/benchmark/ope <https://github.com/st-tech/zr-obp/tree/master/benchmark>`_.

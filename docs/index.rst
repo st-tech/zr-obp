@@ -74,9 +74,6 @@ OPE Estimators
    * More Robust Doubly Robust :cite:`Farajtabar2018`
    * Double Machine Learning :cite:`Narita2020`
 
-Licence
-~~~~~~~~~~~~
-Open Bandit Pipeline is released under Apache 2.0 license. Find out more about it at `LICENSE <https://github.com/st-tech/zr-obp/blob/master/LICENSE>`_.
 
 Citation
 ~~~~~~~~~~~~
@@ -88,6 +85,14 @@ If you use our dataset and pipeline in your work, please cite our paper below.
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
+
+Google Group
+~~~~~~~~~~~~~~~~
+If you are interested in the Open Bandit Project, we can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
+
+Contact
+~~~~~~~~~~~~
+For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
 
 
 .. toctree::
@@ -122,6 +127,7 @@ If you use our dataset and pipeline in your work, please cite our paper below.
     :caption: Others:
 
     Github <https://github.com/st-tech/zr-obp>
+    LICENSE <https://github.com/st-tech/zr-obp/blob/master/LICENSE>
     references
 
 
