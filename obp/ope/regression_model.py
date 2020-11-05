@@ -213,6 +213,7 @@ class RegressionModel(BaseEstimator):
         position: Optional[np.ndarray] = None,
         action_dist: Optional[np.ndarray] = None,
         n_folds: int = 1,
+        random_state: int = 12345,
     ) -> None:
         """Fit the regression model on given logged bandit feedback data and then predict the mean reward function of the same data.
 
@@ -286,7 +287,7 @@ class RegressionModel(BaseEstimator):
             estimated_rewards_by_reg_model = np.zeros(
                 (context.shape[0], self.n_actions, self.len_list)
             )
-        skf = KFold(n_splits=n_folds, shuffle=True)
+        skf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         skf.get_n_splits(context)
         for train_idx, test_idx in skf.split(context, reward):
             action_dist_tr = (
