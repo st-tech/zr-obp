@@ -37,7 +37,6 @@ It also includes the true action choice probabilities by behavior policies compu
 The number of actions is also sizable, so this setting is challenging for bandit algorithms and their OPE.
 We share the full version of our data at https://research.zozo.com/data.html
 
-
 Open Bandit Pipeline (OBP)
 ---------------------------------
 
