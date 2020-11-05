@@ -19,8 +19,10 @@
   - [(2) Offline Bandit Simulation](#2-offline-bandit-simulation)
   - [(3) Off-Policy Evaluation](#3-off-policy-evaluation)
 - [Citation](#citation)
-- [License](#license)
 - [Project Team](#project-team)
+- [Google Group](#google-group)
+- [Contact](#contact)
+- [License](#license)
 - [References](#references)
   - [Papers](#papers)
   - [Projects](#projects)
@@ -285,10 +287,6 @@ Bibtex:
 ```
 
 
-# License
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
-
-
 # Project Team
 
 - [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Tokyo Institute of Technology)
@@ -296,6 +294,14 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 - Megumi Matsutani (ZOZO Technologies, Inc.)
 - [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
 
+# Google Group
+If you are interested in the Open Bandit Project, we can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
+
+# Contact
+For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
+
+# License
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
 # References
 
