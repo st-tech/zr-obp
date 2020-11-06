@@ -9,7 +9,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+from pandas import DataFrame
 import seaborn as sns
 
 from .estimators import BaseOffPolicyEstimator
@@ -206,7 +206,7 @@ class OffPolicyEvaluation:
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[DataFrame, DataFrame]:
         """Summarize estimated_policy_values and their confidence intervals in off-policy evaluation by given estimators.
 
         Parameters
@@ -229,21 +229,21 @@ class OffPolicyEvaluation:
 
         Returns
         ----------
-        (policy_value_df, policy_value_interval_df): Tuple[pd.DataFrame, pd.DataFrame]
+        (policy_value_df, policy_value_interval_df): Tuple[DataFrame, DataFrame]
             Estimated policy values and their confidence intervals by off-policy estimators.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
         assert action_dist.ndim == 3, "action_dist must be 3-dimensional"
 
-        policy_value_df = pd.DataFrame(
+        policy_value_df = DataFrame(
             self.estimate_policy_values(
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             ),
             index=["estimated_policy_value"],
         )
-        policy_value_interval_df = pd.DataFrame(
+        policy_value_interval_df = DataFrame(
             self.estimate_intervals(
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -260,10 +260,10 @@ class OffPolicyEvaluation:
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         alpha: float = 0.05,
-        relative: bool = False,
+        is_relative: bool = False,
         n_bootstrap_samples: int = 100,
         fig_dir: Optional[Path] = None,
-        fig_name: Optional[str] = None,
+        fig_name: str = "estimated_policy_value.png",
     ) -> None:
         """Visualize estimated policy values by given off-policy estimators.
 
@@ -282,7 +282,7 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int, default: 100
             Number of resampling performed in the bootstrap procedure.
 
-        relative: bool, default: False,
+        is_relative: bool, default: False,
             If True, the method visualizes the estimated policy values of evaluation policy
             relative to the ground-truth policy value of behavior policy.
 
@@ -290,9 +290,8 @@ class OffPolicyEvaluation:
             Path to store the bar figure.
             If 'None' is given, the figure will not be saved.
 
-        fig_name: str, default: None
+        fig_name: str, default: "estimated_policy_value.png"
             Name of the bar figure.
-            If 'None' is given, 'estimated_policy_value.png' will be used.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
@@ -315,12 +314,12 @@ class OffPolicyEvaluation:
             estimated_round_rewards_dict[
                 estimator_name
             ] = estimator._estimate_round_rewards(**estimator_inputs)
-        estimated_round_rewards_df = pd.DataFrame(estimated_round_rewards_dict)
+        estimated_round_rewards_df = DataFrame(estimated_round_rewards_dict)
         estimated_round_rewards_df.rename(
             columns={key: key.upper() for key in estimated_round_rewards_dict.keys()},
             inplace=True,
         )
-        if relative:
+        if is_relative:
             estimated_round_rewards_df /= self.bandit_feedback["reward"].mean()
 
         plt.style.use("ggplot")
@@ -339,9 +338,6 @@ class OffPolicyEvaluation:
         plt.xticks(fontsize=25 - 2 * len(self.ope_estimators))
 
         if fig_dir:
-            fig_name = (
-                fig_name if fig_name is not None else "estimated_policy_value.png"
-            )
             fig.savefig(str(fig_dir / fig_name))
 
     def evaluate_performance_of_estimators(
@@ -349,6 +345,7 @@ class OffPolicyEvaluation:
         ground_truth_policy_value: float,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+        metric: str = "relative-ee",
     ) -> Dict[str, float]:
         """Evaluate estimation accuracies of off-policy estimators.
 
@@ -378,10 +375,14 @@ class OffPolicyEvaluation:
             Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
+        metric: str, default="relative-ee"
+            Evaluation metric to evaluate and compare the estimation performance of off-policy estimators.
+            Must be "relative-ee" or "se".
+
         Returns
         ----------
-        relative_estimation_error_dict: Dict[str, float]
-            Dictionary containing relative estimation error of off-policy estimators.
+        eval_metric_ope_dict: Dict[str, float]
+            Dictionary containing evaluation metric for evaluating the estimation performance of off-policy estimators.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
@@ -389,30 +390,38 @@ class OffPolicyEvaluation:
         assert isinstance(
             ground_truth_policy_value, float
         ), "ground_truth_policy_value must be a float"
+        assert metric in [
+            "relative-ee",
+            "se",
+        ], "metric must be either 'relative-ee' or 'se'"
         if estimated_rewards_by_reg_model is None:
             logger.warning(
                 "`estimated_rewards_by_reg_model` is not given; model dependent estimators such as DM or DR cannot be used."
             )
 
-        relative_estimation_error_dict = dict()
+        eval_metric_ope_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_policy_value = estimator.estimate_policy_value(**estimator_inputs)
-            relative_estimation_error_dict[estimator_name] = np.abs(
-                (estimated_policy_value - ground_truth_policy_value)
-                / ground_truth_policy_value
-            )
-        return relative_estimation_error_dict
+            if metric == "relative-ee":
+                relative_ee_ = estimated_policy_value - ground_truth_policy_value
+                relative_ee_ /= ground_truth_policy_value
+                eval_metric_ope_dict[estimator_name] = np.abs(relative_ee_)
+            elif metric == "se":
+                se_ = (estimated_policy_value - ground_truth_policy_value) ** 2
+                eval_metric_ope_dict[estimator_name] = se_
+        return eval_metric_ope_dict
 
     def summarize_estimators_comparison(
         self,
         ground_truth_policy_value: float,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
-    ) -> pd.DataFrame:
+        metric: str = "relative-ee",
+    ) -> DataFrame:
         """Summarize performance comparison of off-policy estimators.
 
         Parameters
@@ -428,21 +437,30 @@ class OffPolicyEvaluation:
             Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
+        metric: str, default="relative-ee"
+            Evaluation metric to evaluate and compare the estimation performance of off-policy estimators.
+            Must be "relative-ee" or "se".
+
         Returns
         ----------
-        relative_estimation_error_df: pd.DataFrame
-            Estimated policy values and their confidence intervals by off-policy estimators.
+        eval_metric_ope_df: DataFrame
+            Evaluation metric for evaluating the estimation performance of off-policy estimators.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
         assert action_dist.ndim == 3, "action_dist must be 3-dimensional"
+        assert metric in [
+            "relative-ee",
+            "se",
+        ], "metric must be either 'relative-ee' or 'se'"
 
-        relative_estimation_error_df = pd.DataFrame(
+        eval_metric_ope_df = DataFrame(
             self.evaluate_performance_of_estimators(
                 ground_truth_policy_value=ground_truth_policy_value,
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                metric=metric,
             ),
             index=["relative_estimation_error"],
         )
-        return relative_estimation_error_df.T
+        return eval_metric_ope_df.T
