@@ -63,7 +63,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -178,7 +178,7 @@ class BernoulliTS(BaseContextFreePolicy):
         at the start of the data collection period in ZOZOTOWN.
 
     campaign: str, default: None
-        One of the three possible campaigns, "all", "men", and "women".
+        One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
 
     policy_name: str, default: 'bts'
         Name of bandit policy.
@@ -209,7 +209,7 @@ class BernoulliTS(BaseContextFreePolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """

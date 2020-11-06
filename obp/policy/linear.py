@@ -76,7 +76,7 @@ class LinEpsilonGreedy(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -192,7 +192,7 @@ class LinUCB(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -297,7 +297,7 @@ class LinTS(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """

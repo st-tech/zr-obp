@@ -75,7 +75,7 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -186,7 +186,7 @@ class LogisticUCB(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -294,7 +294,7 @@ class LogisticTS(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """

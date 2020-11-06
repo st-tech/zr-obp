@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Regression Model Class for Model-dependent OPE estimators."""
+"""Regression Model Class for Estimating Mean Reward Functions."""
 from dataclasses import dataclass
 from typing import Optional
 
@@ -14,7 +14,7 @@ from ..utils import check_bandit_feedback_inputs
 
 @dataclass
 class RegressionModel(BaseEstimator):
-    """Machine Learning model to estimate the mean reward function (:math:`\\mu(x, a) = \\mathbb{E} [Y(a) | X=x]`).
+    """Machine learning model to estimate the mean reward function (:math:`q(x,a):= \\mathbb{E}_{r \sim p(r|x,a)} [r|x,a]`).
 
     Note
     -------
@@ -33,11 +33,11 @@ class RegressionModel(BaseEstimator):
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
-        Context vector characterizing each action.
-        If not given, then one-hot encoding of the action variable is automatically used as `action_context`.
+        Context vector characterizing each action, vector representation of each action.
+        If not given, then one-hot encoding of the action variable is automatically used.
 
     fitting_method: str, default='normal'
-        Method to fit the regression method.
+        Method to fit the regression model.
         Must be one of ['normal', 'iw', 'mrdr'] where 'iw' stands for importance weighting and
         'mrdr' stands for more robust doubly robust.
 
@@ -93,25 +93,25 @@ class RegressionModel(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in the given training logged bandit feedback.
+            Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Selected actions by behavior policy in the given training logged bandit feedback.
+            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards in the given training logged bandit feedback.
+            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: Optional[np.ndarray], default: None
-            Propensity scores, the probability of selecting each action by behavior policy,
-            in the given training logged bandit feedback.
+            Propensity scores, the action choice probabilities by behavior policy,
+            in the training logged bandit feedback.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given training logged bandit feedback.
-            If None is given, a learner assumes that there is only one position.
-            When `len_list` > 1, position has to be set.
+            Positions of each round in the given logged bandit feedback.
+            If None is set, a regression model assumes that there is only one position.
+            When `len_list` > 1, this position argument has to be set.
 
-        action_dist: array-like shape (n_rounds, n_actions, len_list), default=None
-            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+        action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
             When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         """
@@ -177,7 +177,7 @@ class RegressionModel(BaseEstimator):
         Returns
         -----------
         estimated_rewards_by_reg_model: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Estimated expected rewards for new data given each item and position by the regression model.
+            Estimated expected rewards for new data by the regression model.
 
         """
         n_rounds_of_new_data = context.shape[0]
@@ -213,47 +213,51 @@ class RegressionModel(BaseEstimator):
         position: Optional[np.ndarray] = None,
         action_dist: Optional[np.ndarray] = None,
         n_folds: int = 1,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
     ) -> None:
         """Fit the regression model on given logged bandit feedback data and then predict the mean reward function of the same data.
 
         Note
         ------
         When `n_folds` is larger than 1, then the cross-fitting procedure is applied.
-        See the reference for the details of the cross-fitting.
+        See the reference for the details about the cross-fitting technique.
 
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in the given training logged bandit feedback.
+            Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Selected actions by behavior policy in the given training logged bandit feedback.
+            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards in the given training logged bandit feedback.
+            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: Optional[np.ndarray], default: None
-            Propensity scores, the probability of selecting each action by behavior policy,
-            in the given training logged bandit feedback.
+        pscore: array-like, shape (n_rounds,), default=None
+            Propensity scores, the action choice probabilities by behavior policy,
+            in the training logged bandit feedback.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given training logged bandit feedback.
-            If None is given, a learner assumes that there is only one position.
-            When `len_list` > 1, position has to be set.
+            Positions of each round in the given logged bandit feedback.
+            If None is set, a regression model assumes that there is only one position.
+            When `len_list` > 1, this position argument has to be set.
 
-        action_dist: array-like shape (n_rounds, n_actions, len_list), default=None
-            Distribution over actions, i.e., probability of items being selected at each position by the evaluation policy (can be deterministic).
+        action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
             When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
             When 1 is given, then the regression model is trained on the whole logged bandit feedback data.
 
+        random_state: int, default=None
+            `random_state` affects the ordering of the indices, which controls the randomness of each fold.
+            See https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html for the details.
+
         Returns
         -----------
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated expected rewards for the given logged bandit feedback at each item and position by the regression model.
+            Estimated expected rewards for new data by the regression model.
 
         """
         assert n_folds > 0 and isinstance(
@@ -289,7 +293,7 @@ class RegressionModel(BaseEstimator):
             )
         skf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         skf.get_n_splits(context)
-        for train_idx, test_idx in skf.split(context, reward):
+        for train_idx, test_idx in skf.split(context):
             action_dist_tr = (
                 action_dist[train_idx] if action_dist is not None else action_dist
             )
@@ -319,13 +323,13 @@ class RegressionModel(BaseEstimator):
         Parameters
         -----------
         context: array-like, shape (n_rounds,)
-            Context vectors in the given training logged bandit feedback.
+            Context vectors in the training logged bandit feedback.
 
         action: array-like, shape (n_rounds,)
-            Selected actions by behavior policy in the given training logged bandit feedback.
+            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
-            Context vector characterizing each action.
+            Context vector characterizing each action, vector representation of each action.
 
         """
         return np.c_[context, action_context[action]]

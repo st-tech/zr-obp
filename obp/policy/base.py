@@ -226,17 +226,16 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         Parameters
         -----------
         context: array-like, shape (n_actions,)
-            Context vectors in the given training logged bandit feedback.
+            Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_actions,)
-            Selected actions by behavior policy in the given training logged bandit feedback.
+            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_actions,)
-            Observed rewards in the given training logged bandit feedback.
+            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: Optional[np.ndarray], default: None
-            Propensity scores, the probability of selecting each action by behavior policy,
-            in the given training logged bandit feedback.
+        pscore: array-like, shape (n_actions,), default: None
+            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
 
         Returns
         --------
@@ -259,20 +258,19 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in the given training logged bandit feedback.
+            Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Selected actions by behavior policy in the given training logged bandit feedback.
+            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards in the given training logged bandit feedback.
+            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: array-like, shape (n_rounds,), default: None
-            Propensity scores, the probability of selecting each action by behavior policy,
-            in the given training logged bandit feedback.
+            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given training logged bandit feedback.
+            Positions of each round in the given logged bandit feedback.
             If None is given, a learner assumes that there is only one position.
             When `len_list` > 1, position has to be set.
 
@@ -310,8 +308,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         Returns
         -----------
         action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Predicted best action for new data.
-            The resulting distribution is deterministic.
+            Predicted best (deterministic) actions for new data.
 
         """
         assert (
