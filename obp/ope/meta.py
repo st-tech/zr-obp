@@ -48,7 +48,7 @@ class OffPolicyEvaluation:
         >>> bandit_feedback.keys()
         dict_keys(['n_rounds', 'n_actions', 'action', 'position', 'reward', 'pscore', 'context', 'action_context'])
 
-        # (2) Offline Bandit Simulation
+        # (2) Off-Policy Learning
         >>> evaluation_policy = BernoulliTS(
             n_actions=dataset.n_actions,
             len_list=dataset.len_list,
@@ -262,6 +262,7 @@ class OffPolicyEvaluation:
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
@@ -281,6 +282,9 @@ class OffPolicyEvaluation:
 
         n_bootstrap_samples: int, default: 100
             Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default: None
+            Controls the random seed in bootstrap sampling.
 
         is_relative: bool, default: False,
             If True, the method visualizes the estimated policy values of evaluation policy
@@ -329,6 +333,7 @@ class OffPolicyEvaluation:
             ax=ax,
             ci=100 * (1 - alpha),
             n_boot=n_bootstrap_samples,
+            seed=random_state,
         )
         plt.xlabel("OPE Estimators", fontsize=25)
         plt.ylabel(
@@ -461,6 +466,6 @@ class OffPolicyEvaluation:
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 metric=metric,
             ),
-            index=["relative_estimation_error"],
+            index=[metric],
         )
         return eval_metric_ope_df.T
