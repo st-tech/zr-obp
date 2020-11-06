@@ -34,7 +34,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         Number of dimensions of context vectors.
 
     dim_action_context: int, default: 1
-        Number of dimensions of context vectors for each action.
+        Number of dimensions of vector representation for each action.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default: None
         Function generating expected reward with context and action context vectors,
@@ -229,7 +229,7 @@ def logistic_reward_function(
         Context vectors characterizing each round (such as user information).
 
     action_context: array-like, shape (n_actions, dim_action_context)
-        Context vectors characterizing each action.
+        Vector representation for each action.
 
     random_state: int, default: None
         Controls the random seed in sampling dataset.
@@ -237,8 +237,7 @@ def logistic_reward_function(
     Returns
     ---------
     expected_reward: array-like, shape (n_rounds, n_actions)
-        Expected reward given context and action context vectors,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+        Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q:=\\mathbb{E}[r|x,a]`.
 
     """
     assert (
@@ -270,7 +269,7 @@ def linear_behavior_policy(
         Context vectors characterizing each round (such as user information).
 
     action_context: array-like, shape (n_actions, dim_action_context)
-        Context vectors characterizing each action.
+        Vector representation for each action.
 
     random_state: int, default: None
         Controls the random seed in sampling dataset.
@@ -278,8 +277,7 @@ def linear_behavior_policy(
     Returns
     ---------
     behavior_policy: array-like, shape (n_rounds, n_actions)
-        Probability of choosing each action given context and action context vectors
-        i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        Action choice probabilities given context (:math:`x`), i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
     """
     assert (

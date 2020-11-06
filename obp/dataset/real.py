@@ -26,11 +26,11 @@ class OpenBanditDataset(BaseRealBanditDataset):
     Parameters
     -----------
     behavior_policy: str
-        Name of the behavior policy that generated the log data.
+        Name of the behavior policy that generated the logged bandit feedback data.
         Must be 'random' or 'bts'.
 
     campaign: str
-        One of the three possible campaigns, "all", "men", and "women".
+        One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
 
     data_path: Path, default: Path('./obd')
         Path that stores Open Bandit Dataset.
@@ -41,7 +41,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     References
     ------------
     Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-    "A Large-scale Open Dataset for Bandit Algorithms.", 2020.
+    "Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms.", 2020.
 
     """
 
@@ -71,7 +71,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     @property
     def n_rounds(self) -> int:
-        """Total number of rounds in the dataset."""
+        """Total number of rounds in the logged bandit dataset."""
         return self.data.shape[0]
 
     @property
@@ -107,7 +107,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             Must be 'random' or 'bts'.
 
         campaign: str
-            One of the three possible campaigns (i.e., "all", "men", and "women").
+            One of the three possible campaigns considered in ZOZOTOWN (i.e., "all", "men", and "women").
 
         data_path: Path, default: Path('./obd')
             Path that stores Open Bandit Dataset.
@@ -121,7 +121,8 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         ---------
         on_policy_policy_value_estimate: float
-            Estimated on-policy policy value of behavior policy, i.e., :math:`T^{-1} \\sum_{t=1}^T Y_t`.
+            Estimated on-policy policy value of behavior policy, i.e., :math:`\\mathbb{E}_{\\mathcal{D}} [r_t]`.
+            where :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
             This parameter is used as a ground-truth policy value in the evaluation of OPE estimators.
 
         """
@@ -183,7 +184,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         --------
         bandit_feedback: BanditFeedback
-            Logged bandit feedback collected by the behavior policy.
+            Batch logged bandit feedback collected by the behavior policy.
 
         """
         if is_timeseries_split:

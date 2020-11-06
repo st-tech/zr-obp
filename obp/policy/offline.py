@@ -43,17 +43,17 @@ class IPWLearner(BaseOffPolicyLearner):
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in the given training logged bandit feedback.
+            Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Selected actions by behavior policy in the given training logged bandit feedback.
+            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards in the given training logged bandit feedback.
+            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: array-like, shape (n_rounds,), default: None
             Propensity scores, the probability of selecting each action by behavior policy,
-            in the given training logged bandit feedback.
+            in the given logged bandit feedback.
 
         Returns
         --------
