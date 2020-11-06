@@ -38,7 +38,7 @@ python evaluate_off_policy_estimators.py\
 ```
 - `$n_runs` specifies the number of simulation runs in the experiment to estimate standard deviations of the performance of OPE estimators.
 - `$n_rounds` and `$n_actions` specify the number of rounds (or samples) and the number of actions of the synthetic bandit data.
-- `$dim_context` and `$dim_action_context` specify the dimension of context vectors characterizing each round and action, respectively.
+- `$dim_context` and `$dim_action_context` specify the number of dimensions of context vectors characterizing each round and action, respectively.
 - `$base_model_for_evaluation_policy` specifies the base ML model for defining evaluation policy and should be one of "logistic_regression", "random_forest", or "lightgbm".
 - `$base_model_for_reg_model` specifies the base ML model for defining regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
 - `$n_jobs` is the maximum number of concurrently running jobs.
@@ -64,17 +64,17 @@ python evaluate_off_policy_estimators.py\
 # random_state=12345
 # ---------------------------------------------
 #                           mean       std
-# dm                    0.014272  0.004497
-# ipw                   0.007104  0.000780
-# snipw                 0.006079  0.000647
-# dr                    0.007489  0.002519
-# sndr                  0.008519  0.003944
-# switch-ipw (tau=1)    0.392400  0.000979
-# switch-ipw (tau=100)  0.000595  0.000356
-# switch-dr (tau=1)     0.016907  0.004650
-# switch-dr (tau=100)   0.008530  0.000875
-# dr-os (lambda=1)      0.015099  0.004698
-# dr-os (lambda=100)    0.004309  0.000347
+# dm                    0.016460  0.005503
+# ipw                   0.006724  0.000955
+# snipw                 0.006394  0.000793
+# dr                    0.006275  0.003067
+# sndr                  0.005942  0.001321
+# switch-ipw (tau=1)    0.392871  0.001192
+# switch-ipw (tau=100)  0.000768  0.000436
+# switch-dr (tau=1)     0.019167  0.005687
+# switch-dr (tau=100)   0.008104  0.001072
+# dr-os (lambda=1)      0.017385  0.005749
+# dr-os (lambda=100)    0.004148  0.000415
 # =============================================
 ```
 
