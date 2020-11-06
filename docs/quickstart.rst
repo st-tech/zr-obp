@@ -17,7 +17,7 @@ We see that only ten lines of code are sufficient to complete OPE from scratch.
     >>> dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
     >>> bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
-    # (2) Offline Bandit Simulation
+    # (2) Off-Policy Learning
     >>> evaluation_policy = BernoulliTS(
         n_actions=dataset.n_actions,
         len_list=dataset.len_list,
@@ -62,7 +62,7 @@ We show an example of implementing some new feature engineering processes in `cu
 
 Moreover, by following the interface of :class:`obp.dataset.BaseBanditDataset` class, one can handle their own or future open datasets for bandit algorithms other than our OBD.
 
-Offline Bandit Simulation
+Off-Policy Learning
 ------------------------------
 
 After preparing a dataset, we now compute the action choice probability of BernoulliTS in the ZOZOTOWN production.

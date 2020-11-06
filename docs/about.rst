@@ -40,7 +40,7 @@ We share the full version of our data at https://research.zozo.com/data.html
 Open Bandit Pipeline (OBP)
 ---------------------------------
 
-*Open Bandit Pipeline* is a series of implementations of dataset preprocessing, offline bandit simulation, and evaluation of OPE estimators.
+*Open Bandit Pipeline* is a series of implementations of dataset preprocessing, policy learning, and evaluation of OPE estimators.
 This pipeline allows researchers to focus on building their bandit algorithm or OPE estimator and easily compare them with others’ methods in realistic and reproducible ways.
 Thus, it facilitates reproducible research on bandit algorithms and off-policy evaluation.
 
