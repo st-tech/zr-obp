@@ -16,9 +16,11 @@
   - [依存パッケージ](#依存パッケージ)
 - [使用方法](#使用方法)
   - [(1) データの読み込みと前処理](#1-データの読み込みと前処理)
-  - [(2) オフライン方策シミュレーション](#2-オフライン方策シミュレーション)
-  - [(3) オフライン方策評価 （Off-Policy Evaluation）](#3-オフライン方策評価-off-policy-evaluation)
+  - [(2) オフ方策学習](#2-オフ方策学習)
+  - [(3) オフ方策評価 （Off-Policy Evaluation）](#3-オフ方策評価-off-policy-evaluation)
 - [引用](#引用)
+- [Google Group](#google-group)
+- [Contact](#contact)
 - [ライセンス](#ライセンス)
 - [プロジェクトチーム](#プロジェクトチーム)
 - [参考](#参考)
@@ -62,7 +64,7 @@
 
 ## Open Bandit Pipeline
 
-*Open Bandit Pipeline*は, データセットの前処理・オフライン方策シミュレーション・オフ方策推定量の評価を簡単に行うためのパイプライン実装です. このパイプラインにより, 研究者はオフ方策推定量 (Off-Policy Estimator) の部分の実装に集中して現実的で再現性のある方法で他の手法との性能比較を行うことができるようになります.
+*Open Bandit Pipeline*は, データセットの前処理・オフ方策学習・オフ方策推定量の評価を簡単に行うためのパイプライン実装です. このパイプラインにより, 研究者はオフ方策推定量 (Off-Policy Estimator) の部分の実装に集中して現実的で再現性のある方法で他の手法との性能比較を行うことができるようになります.
 
 <p align="center">
   <img width="90%" src="./images/overview.png" />
@@ -124,7 +126,7 @@ Open Bandit Dataset・Pipelineでは, 以下の研究テーマに関する実験
 - **バンディットアルゴリズムの評価 (Evaluation of Bandit Algorithms)**：我々の公開データには, ランダム方策によって収集された大規模なログデータが含まれています. このため, 大規模な実世界環境で新しいオンラインバンディットアルゴリズムの性能を評価することが可能です.
 
 
-- **オフライン方策評価の評価 (Evaluation of Off-Policy Evaluation)**：我々の公開データは, 複数の方策を実システム上で走らせることによって生成されたログデータで構成されています. またそれらの方策の真の性能が含まれています. そのため, オフ方策推定量の推定精度の評価を行うことができます.
+- **オフ方策評価の評価 (Evaluation of Off-Policy Evaluation)**：我々の公開データは, 複数の方策を実システム上で走らせることによって生成されたログデータで構成されています. またそれらの方策の真の性能が含まれています. そのため, オフ方策推定量の推定精度の評価を行うことができます.
 
 
 # インストール
@@ -159,7 +161,7 @@ python setup.py install
 
 ここでは, Open Bandit Pipelineの使用法を説明します.
 具体例として, Inverse Probability Weightingとランダム方策によって生成されたログデータを用いて, トンプソン抽出方策の性能をオフラインで評価する例を使います.
-以下に示すように, 約10行のコードでオフライン方策評価を行うことができます.
+以下に示すように, 約10行のコードでオフ方策評価を行うことができます.
 
 ```python
 # Inverse Probability Weightingとランダム方策によって生成されたログデータを用いて, BernoulliTSの性能をオフラインで評価する
@@ -171,7 +173,7 @@ from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
-# (2) オフライン方策シミュレーション
+# (2) オフ方策学習
 evaluation_policy = BernoulliTS(
     n_actions=dataset.n_actions,
     len_list=dataset.len_list,
@@ -183,7 +185,7 @@ action_dist = evaluation_policy.compute_batch_action_dist(
     n_sim=100000, n_rounds=bandit_feedback["n_rounds"]
 )
 
-# (3) オフライン方策評価
+# (3) オフ方策評価
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW()])
 estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
 
@@ -205,7 +207,7 @@ Open Bandit Dataset用のデータ読み込みインターフェースを用意�
 # 「全アイテムキャンペーン」においてランダム方策が集めたログデータを読み込む.
 # OpenBanditDatasetクラスにはデータを収集した方策とキャンペーンを指定する.
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
-# オフライン方策シミュレーション用データを得る.
+# オフ方策学習/評価用のデータを得る.
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
 print(bandit_feedback.keys())
@@ -216,12 +218,12 @@ print(bandit_feedback.keys())
 [`./examples/examples_with_obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/custom_dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
 また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
 
-## (2) オフライン方策シミュレーション
+## (2) オフ方策学習
 
-前処理の後は, 次のようにして**オフライン方策シミュレーション**を実行します.
+前処理の後は, 次のようにして**オフ方策学習**を実行します.
 
 ```python
-# オフライン方策シミュレーション.
+# オフ方策学習.
 # 評価対象の反実仮想アルゴリズム. ここでは, トンプソン抽出方策の性能をオフライン評価する.
 # 研究者が独自に実装したバンディット方策を用いることもできる.
 evaluation_policy = BernoulliTS(
@@ -240,13 +242,13 @@ action_dist = evaluation_policy.compute_batch_action_dist(
 `BernoulliTS`の`compute_batch_action_dist`メソッドは、与えられたベータ分布のパラメータに基づいた行動選択確率をシミュレーションによって 算出します。そしてシミュレーション中にバンディット方策が選択したアクション上の分布 (ここでは, `action_dist`) を返します. またユーザーは[`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py)に実装されているインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
 
 
-## (3) オフライン方策評価 （Off-Policy Evaluation）
+## (3) オフ方策評価 （Off-Policy Evaluation）
 
-最後のステップは, オフラインでのバンディットシミュレーションによって生成されたログデータを用いてバンディットアルゴリズムの性能を推定する**オフライン方策評価**です.
-我々のパイプラインでは, 以下のような手順でオフライン方策評価を行うことができます.
+最後のステップは, オフラインでのバンディットシミュレーションによって生成されたログデータを用いてバンディットアルゴリズムの性能を推定する**オフ方策評価**です.
+我々のパイプラインでは, 以下のような手順でオフ方策評価を行うことができます.
 
 ```python
-# オフライン方策シミュレーションの結果に基づき, IPW推定量を用いてトンプソン抽出方策の性能をオフライン評価する.
+# オフ方策学習の結果に基づき, IPW推定量を用いてトンプソン抽出方策の性能をオフライン評価する.
 # OffPolicyEvaluationクラスには, シミュレーションに用いたデータセットと用いる推定量を渡す（複数設定可）.
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW()])
 estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
@@ -255,7 +257,7 @@ print(estimated_policy_value)
 
 # トンプソン抽出方策の性能の推定値とランダム方策の真の性能を比較する.
 relative_policy_value_of_bernoulli_ts = estimated_policy_value['ipw'] / bandit_feedback['reward'].mean()
-# オフライン方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を19.81%上回ると推定された.
+# オフ方策評価によって, トンプソン抽出方策の性能はランダム方策の性能を19.81%上回ると推定された.
 print(relative_policy_value_of_bernoulli_ts)
 1.198126...
 ```
@@ -278,6 +280,12 @@ Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
   year={2020}
 }
 ```
+
+# Google Group
+本プロジェクトの最新アップデート情報は、次のGoogle Groupにて随時お知らせしています: https://groups.google.com/g/open-bandit-project
+
+# Contact
+論文・公開データセット・ソフトウェアに関するご質問は、次のメールアドレスにお願いいたします: saito@hanjuku-kaso.com
 
 
 # ライセンス
