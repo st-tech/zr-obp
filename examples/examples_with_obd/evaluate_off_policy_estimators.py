@@ -135,6 +135,7 @@ if __name__ == "__main__":
             position=bandit_feedback["position"],
             pscore=bandit_feedback["pscore"],
             n_folds=3,  # 3-fold cross-fitting
+            random_state=random_state,
         )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
