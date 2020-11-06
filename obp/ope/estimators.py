@@ -91,10 +91,10 @@ class ReplayMethod(BaseOffPolicyEstimator):
         action_match = np.array(
             action_dist[np.arange(action.shape[0]), action, position] == 1
         )
-        round_rewards = np.zeros_like(action_match)
+        estimated_rewards = np.zeros_like(action_match)
         if action_match.sum() > 0.0:
-            round_rewards = action_match * reward / action_match.mean()
-        return round_rewards
+            estimated_rewards = action_match * reward / action_match.mean()
+        return estimated_rewards
 
     def estimate_policy_value(
         self,
@@ -210,14 +210,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     """
 
-    min_iw: float = 0.0
     estimator_name: str = "ipw"
-
-    def __post_init__(self) -> None:
-        """Initialize Class."""
-        assert (
-            self.min_iw >= 0.0
-        ), f"minimum propensity score must be larger than or equal to zero, but {self.min_iw} is given"
 
     def _estimate_round_rewards(
         self,
@@ -250,10 +243,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Rewards estimated by IPW for each round.
 
         """
-        importance_weight = (
-            action_dist[np.arange(action.shape[0]), action, position] / pscore
-        )
-        return reward * np.maximum(importance_weight, self.min_iw)
+        iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
+        return reward * iw
 
     def estimate_policy_value(
         self,
@@ -430,10 +421,8 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
             Rewards estimated by the SNIPW estimator for each round.
 
         """
-        importance_weight = (
-            action_dist[np.arange(action.shape[0]), action, position] / pscore
-        )
-        return reward * importance_weight / importance_weight.mean()
+        iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
+        return reward * iw / iw.mean()
 
 
 @dataclass
@@ -504,15 +493,11 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         """
         n_rounds = position.shape[0]
-        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+        q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
-        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
-        return np.average(
-            estimated_rewards_by_reg_model_at_position,
-            weights=action_dist_at_position,
-            axis=1,
-        )
+        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        return np.average(q_hat_at_position, weights=pi_e_at_position, axis=1,)
 
     def estimate_policy_value(
         self,
@@ -639,12 +624,7 @@ class DoublyRobust(InverseProbabilityWeighting):
 
     """
 
-    min_iw: float = 0.0
     estimator_name: str = "dr"
-
-    def __post_init__(self) -> None:
-        """Initialize Class."""
-        super().__post_init__()
 
     def _estimate_round_rewards(
         self,
@@ -684,26 +664,20 @@ class DoublyRobust(InverseProbabilityWeighting):
             Rewards estimated by the DR estimator for each round.
 
         """
-        n_rounds = position.shape[0]
-        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+        n_rounds = action.shape[0]
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
-        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
-        round_rewards = np.average(
-            estimated_rewards_by_reg_model_at_position,
-            weights=action_dist_at_position,
-            axis=1,
-        )
-        importance_weight = (
-            action_dist[np.arange(action.shape[0]), action, position] / pscore
-        )
-        estimated_observed_rewards = estimated_rewards_by_reg_model[
-            np.arange(action.shape[0]), action, position
+        q_hat_factual = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), action, position
         ]
-        round_rewards += np.maximum(importance_weight, self.min_iw) * (
-            reward - estimated_observed_rewards
+        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        estimated_rewards = np.average(
+            q_hat_at_position, weights=pi_e_at_position, axis=1,
         )
-        return round_rewards
+        estimated_rewards += iw * (reward - q_hat_factual)
+        return estimated_rewards
 
     def estimate_policy_value(
         self,
@@ -894,24 +868,20 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Rewards estimated by the SNDR estimator for each round.
 
         """
-        n_rounds = position.shape[0]
-        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+        n_rounds = action.shape[0]
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
-        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
-        round_rewards = np.average(
-            estimated_rewards_by_reg_model_at_position,
-            weights=action_dist_at_position,
-            axis=1,
+        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        estimated_rewards = np.average(
+            q_hat_at_position, weights=pi_e_at_position, axis=1,
         )
-        importance_weight = (
-            action_dist[np.arange(action.shape[0]), action, position] / pscore
-        )
-        estimated_observed_rewards = estimated_rewards_by_reg_model[
-            np.arange(action.shape[0]), action, position
+        q_hat_factual = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), action, position
         ]
-        round_rewards += importance_weight * (reward - estimated_observed_rewards)
-        return round_rewards * importance_weight.mean()
+        estimated_rewards += iw * (reward - q_hat_factual)
+        return estimated_rewards / iw.mean()
 
 
 @dataclass
@@ -1000,23 +970,18 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
             Rewards estimated by the Switch-IPW estimator for each round.
 
         """
-        n_rounds = position.shape[0]
-        importance_weight = (
-            action_dist[np.arange(action.shape[0]), action, position] / pscore
-        )
-        switch_indicator = np.array(importance_weight <= self.tau, dtype=int)
-        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+        n_rounds = action.shape[0]
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        switch_indicator = np.array(iw <= self.tau, dtype=int)
+        q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
-        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
-        round_rewards = np.average(
-            estimated_rewards_by_reg_model_at_position,
-            weights=action_dist_at_position,
-            axis=1,
+        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        estimated_rewards = (1 - switch_indicator) * np.average(
+            q_hat_at_position, weights=pi_e_at_position, axis=1,
         )
-        round_rewards *= 1 - switch_indicator
-        round_rewards += switch_indicator * importance_weight * reward
-        return round_rewards
+        estimated_rewards += switch_indicator * iw * reward
+        return estimated_rewards
 
 
 @dataclass
@@ -1106,27 +1071,21 @@ class SwitchDoublyRobust(DoublyRobust):
             Rewards estimated by the Switch-DR estimator for each round.
 
         """
-        n_rounds = position.shape[0]
-        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+        n_rounds = action.shape[0]
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        switch_indicator = np.array(iw <= self.tau, dtype=int)
+        q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
-        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
-        round_rewards = np.average(
-            estimated_rewards_by_reg_model_at_position,
-            weights=action_dist_at_position,
-            axis=1,
-        )
-        importance_weight = (
-            action_dist[np.arange(action.shape[0]), action, position] / pscore
-        )
-        estimated_observed_rewards = estimated_rewards_by_reg_model[
-            np.arange(action.shape[0]), action, position
+        q_hat_factual = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), action, position
         ]
-        switch_indicator = np.array(importance_weight <= self.tau, dtype=int)
-        round_rewards += (
-            switch_indicator * importance_weight * (reward - estimated_observed_rewards)
+        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        estimated_rewards = np.average(
+            q_hat_at_position, weights=pi_e_at_position, axis=1,
         )
-        return round_rewards
+        estimated_rewards += switch_indicator * iw * (reward - q_hat_factual)
+        return estimated_rewards
 
 
 @dataclass
@@ -1228,24 +1187,18 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             Rewards estimated by the DRos estimator for each round.
 
         """
-        n_rounds = position.shape[0]
-        estimated_rewards_by_reg_model_at_position = estimated_rewards_by_reg_model[
+        n_rounds = action.shape[0]
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        shrinkage_weight = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
-        action_dist_at_position = action_dist[np.arange(n_rounds), :, position]
-        round_rewards = np.average(
-            estimated_rewards_by_reg_model_at_position,
-            weights=action_dist_at_position,
-            axis=1,
-        )
-        importance_weight = (
-            action_dist[np.arange(action.shape[0]), action, position] / pscore
-        )
-        shrinkage_weight = (self.lambda_ * importance_weight) / (
-            importance_weight ** 2 + self.lambda_
-        )
-        estimated_observed_rewards = estimated_rewards_by_reg_model[
-            np.arange(action.shape[0]), action, position
+        q_hat_factual = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), action, position
         ]
-        round_rewards += shrinkage_weight * (reward - estimated_observed_rewards)
-        return round_rewards
+        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        estimated_rewards = np.average(
+            q_hat_at_position, weights=pi_e_at_position, axis=1,
+        )
+        estimated_rewards += shrinkage_weight * (reward - q_hat_factual)
+        return estimated_rewards
