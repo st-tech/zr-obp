@@ -28,7 +28,7 @@ class RegressionModel(BaseEstimator):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
+    len_list: int, default=1
         Length of a list of recommended actions in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
@@ -101,7 +101,7 @@ class RegressionModel(BaseEstimator):
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: Optional[np.ndarray], default: None
+        pscore: Optional[np.ndarray], default=None
             Propensity scores, the action choice probabilities by behavior policy,
             in the training logged bandit feedback.
 

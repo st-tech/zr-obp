@@ -51,7 +51,7 @@ class IPWLearner(BaseOffPolicyLearner):
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: array-like, shape (n_rounds,), default: None
+        pscore: array-like, shape (n_rounds,), default=None
             Propensity scores, the probability of selecting each action by behavior policy,
             in the given logged bandit feedback.
 

@@ -49,7 +49,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
 
     Parameters
     ----------
-    estimator_name: str, default: 'rm'.
+    estimator_name: str, default='rm'.
         Name of off-policy estimator.
 
     References
@@ -151,13 +151,13 @@ class ReplayMethod(BaseOffPolicyEstimator):
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
-        alpha: float, default: 0.05
+        alpha: float, default=0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 10000
+        n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in bootstrap sampling.
 
         Returns
@@ -197,7 +197,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     Parameters
     ------------
-    estimator_name: str, default: 'ipw'.
+    estimator_name: str, default='ipw'.
         Name of off-policy estimator.
 
     References
@@ -320,13 +320,13 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Distribution over actions or the action choice probabilities
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
 
-        alpha: float, default: 0.05
+        alpha: float, default=0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 10000
+        n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in bootstrap sampling.
 
         Returns
@@ -372,7 +372,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
 
     Parameters
     ----------
-    estimator_name: str, default: 'snipw'.
+    estimator_name: str, default='snipw'.
         Name of off-policy estimator.
 
     References
@@ -451,7 +451,7 @@ class DirectMethod(BaseOffPolicyEstimator):
 
     Parameters
     ----------
-    estimator_name: str, default: 'dm'.
+    estimator_name: str, default='dm'.
         Name of off-policy estimator.
 
     References
@@ -554,13 +554,13 @@ class DirectMethod(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        alpha: float, default: 0.05
+        alpha: float, default=0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 10000
+        n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in bootstrap sampling.
 
         Returns
@@ -611,7 +611,7 @@ class DoublyRobust(InverseProbabilityWeighting):
 
     Parameters
     ----------
-    estimator_name: str, default: 'dr'.
+    estimator_name: str, default='dr'.
         Name of off-policy estimator.
 
     References
@@ -760,13 +760,13 @@ class DoublyRobust(InverseProbabilityWeighting):
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        alpha: float, default: 0.05
+        alpha: float, default=0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 10000
+        n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in bootstrap sampling.
 
         Returns
@@ -815,7 +815,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
 
     Parameters
     ----------
-    estimator_name: str, default: 'sndr'.
+    estimator_name: str, default='sndr'.
         Name of off-policy estimator.
 
     References
@@ -906,11 +906,11 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
 
     Parameters
     ----------
-    tau: float, default: 1
+    tau: float, default=1
         Switching hyperparameter. When importance weight is larger than this parameter, the DM estimator is applied, otherwise the IPW estimator is applied.
         This hyperparameter should be larger than 1., otherwise it is meaningless.
 
-    estimator_name: str, default: 'switch-ipw'.
+    estimator_name: str, default='switch-ipw'.
         Name of off-policy estimator.
 
     References
@@ -1007,11 +1007,11 @@ class SwitchDoublyRobust(DoublyRobust):
 
     Parameters
     ----------
-    tau: float, default: 1
+    tau: float, default=1
         Switching hyperparameter. When importance weight is larger than this parameter, the DM estimator is applied, otherwise the DR estimator is applied.
         This hyperparameter should be larger than 0., otherwise it is meaningless.
 
-    estimator_name: str, default: 'switch-dr'.
+    estimator_name: str, default='switch-dr'.
         Name of off-policy estimator.
 
     References
@@ -1127,7 +1127,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
     lambda_: float
         Shrinkage hyperparameter. This hyperparameter should be larger than 0., otherwise it is meaningless.
 
-    estimator_name: str, default: 'dr-os'.
+    estimator_name: str, default='dr-os'.
         Name of off-policy estimator.
 
     References

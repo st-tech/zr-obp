@@ -31,6 +31,7 @@ dataset module
     obp.dataset.base
     obp.dataset.real
     obp.dataset.synthetic
+    obp.dataset.multiclass
 
 
 simulator module

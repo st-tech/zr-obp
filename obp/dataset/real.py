@@ -32,10 +32,10 @@ class OpenBanditDataset(BaseRealBanditDataset):
     campaign: str
         One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
 
-    data_path: Path, default: Path('./obd')
+    data_path: Path, default=Path('./obd')
         Path that stores Open Bandit Dataset.
 
-    dataset_name: str, default: 'obd'
+    dataset_name: str, default='obd'
         Name of the dataset.
 
     References
@@ -109,13 +109,13 @@ class OpenBanditDataset(BaseRealBanditDataset):
         campaign: str
             One of the three possible campaigns considered in ZOZOTOWN (i.e., "all", "men", and "women").
 
-        data_path: Path, default: Path('./obd')
+        data_path: Path, default=Path('./obd')
             Path that stores Open Bandit Dataset.
 
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
 
-        is_timeseries_split: bool, default: False
+        is_timeseries_split: bool, default=False
             If true, split the original logged badnit feedback data by time series.
 
         Returns
@@ -178,7 +178,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
 
-        is_timeseries_split: bool, default: False
+        is_timeseries_split: bool, default=False
             If true, split the original logged badnit feedback data by time series.
 
         Returns
@@ -233,10 +233,10 @@ class OpenBanditDataset(BaseRealBanditDataset):
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
 
-        is_timeseries_split: bool, default: False
+        is_timeseries_split: bool, default=False
             If true, split the original logged badnit feedback data by time series.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in sampling logged bandit dataset.
 
         Returns
