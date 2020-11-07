@@ -2,15 +2,18 @@
   <img width="60%" src="./images/logo.png" />
 </p>
 
+# Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
+
 **[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](https://github.com/st-tech/zr-obp/tree/master/slides/slides_EN.pdf)** | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd)** | **[日本語](https://github.com/st-tech/zr-obp/blob/master/README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
 
+- [Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation](#open-bandit-pipeline-a-research-framework-for-bandit-algorithms-and-off-policy-evaluation)
 - [Overview](#overview)
   - [Open Bandit Dataset (OBD)](#open-bandit-dataset-obd)
   - [Open Bandit Pipeline (OBP)](#open-bandit-pipeline-obp)
-    - [Supported Algorithms and OPE Estimators](#supported-algorithms-and-ope-estimators)
+    - [Algorithms and OPE Estimators Supported](#algorithms-and-ope-estimators-supported)
   - [Topics and Tasks](#topics-and-tasks)
 - [Installation](#installation)
   - [Requirements](#requirements)
@@ -79,11 +82,11 @@ Thus, it facilitates reproducible research on bandit algorithms and off-policy e
 Open Bandit Pipeline consists of the following main modules.
 
 - **dataset module**: This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit datasets.
-- **policy module**: This module provides interfaces for online and offline bandit algorithms. It also implements several standard algorithms.
+- **policy module**: This module provides interfaces for online and offline bandit algorithms. It also implements several standard policy learning methods.
 - **simulator module**: This module provides functions for conducting offline bandit simulation.
-- **ope module**: This module provides interfaces for OPE estimators. It also implements several standard OPE estimators.
+- **ope module**: This module provides interfaces for OPE estimators. It also implements several standard and advanced OPE estimators.
 
-### Supported Algorithms and OPE Estimators
+### Algorithms and OPE Estimators Supported
 
 - Bandit Algorithms (implemented in **policy module**)
   - Online
@@ -91,28 +94,28 @@ Open Bandit Pipeline consists of the following main modules.
       - Random
       - Epsilon Greedy
       - Bernoulli Thompson Sampling
-    - Contextual
-      - Linear
-        - Linear Epsilon Greedy
-        - Linear Thompson Sampling [[Agrawal and Goyal. 2013]](http://proceedings.mlr.press/v28/agrawal13)
-        - Linear Upper Confidence Bound [[Li et al. 2010]](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
-      - Logistic
-        - Logistic Epsilon Greedy
-        - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
-        - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
-  - Offline (Off-Policy Learning) [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
-    - Inverse Probability Weighting
+    - Contextual (Linear)
+      - Linear Epsilon Greedy
+      - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
+      - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
+    - Contextual (Logistic)
+      - Logistic Epsilon Greedy
+      - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+      - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
+  - Offline (Off-Policy Learning)
+    - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+
 
 - OPE Estimators (implemented in **ope module**)
-  - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
-  - Direct Method [[Beygelzimer and Langford 2009]](https://arxiv.org/abs/0812.4044)
-  - Inverse Probability Weighting [[Precup et al. 2000]](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs) [[Strehl et al. 2010]](https://arxiv.org/abs/1003.0120)
-  - Self-Normalized Inverse Probability Weighting [[Swaminathan and Joachims. 2015]](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
-  - Doubly Robust [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
-  - Switch Estimator [[Wang et al. 2016]](https://arxiv.org/abs/1612.01205)
-  - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
-  - Doubly Robust with Shrinkage [[Su et al. 2019]](https://arxiv.org/abs/1907.09623)
-  - Double Machine Learning [[Narita et al. 2020]](https://arxiv.org/abs/2002.08536)
+  - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
+  - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
+  - [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
+  - [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+  - [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
+  - [Switch Estimators](https://arxiv.org/abs/1612.01205)
+  - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
+  - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
+  - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
 
 In addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
@@ -126,7 +129,7 @@ Currently, Open Bandit Dataset & Pipeline facilitate evaluation and comparison r
 - **Bandit Algorithms**: Our data include large-scale logged bandit feedback collected by the uniform random policy. Therefore, it enables the evaluation of new online bandit algorithms, including contextual and combinatorial algorithms, in a large real-world setting.
 
 
-- **Off-Policy Evaluation**: We present implementations of behavior policies used when collecting datasets as a part of our pipeline. Our open data also contains logged bandit feedback data generated by multiple behavior policies. Therefore, it enables the evaluation of off-policy evaluation with ground-truth for the performance of evaluation policies.
+- **Off-Policy Evaluation**: We present implementations of behavior policies used when collecting datasets as a part of our pipeline. Our open data also contains logged bandit feedback data generated by *multiple* different bandit policies. Therefore, it enables the evaluation of off-policy evaluation with ground-truth for the performance of evaluation policies.
 
 
 # Installation

@@ -2,11 +2,14 @@
   <img width="60%" src="./images/logo.png" />
 </p>
 
-**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[スライド](https://github.com/st-tech/zr-obp/tree/master/slides/slides_JN.pdf)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)**
+# Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
+
+**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[スライド](https://github.com/st-tech/zr-obp/tree/master/slides/slides_JN.pdf)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)** | **[解説ブログ記事](https://techblog.zozo.com/entry/openbanditproject)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
 
+- [Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation](#open-bandit-pipeline-a-research-framework-for-bandit-algorithms-and-off-policy-evaluation)
 - [概要](#概要)
   - [Open Bandit Dataset](#open-bandit-dataset)
   - [Open Bandit Pipeline](#open-bandit-pipeline)
@@ -47,7 +50,7 @@
   </figcaption>
 </p>
 
-2019年11月下旬の7日間にわたる実験を行い, 全アイテム・男性用アイテム・女性用アイテムに対応する3つの「キャンペーン」でデータを収集しました.
+2019年11月下旬の7日間にわたる実験を行い, 全アイテム(all)・男性用アイテム(men)・女性用アイテム(women)に対応する3つの「キャンペーン」でデータを収集しました.
 それぞれのキャンペーンでは, 各ユーザーのインプレッションに対してランダム方策(Random)またはトンプソン抽出方策(Bernoulli Thompson Sampling)のいずれかを確率的にランダムに選択して適用しています.
 図1はOpen Bandit Datasetの記述統計を示しています.
 
@@ -60,11 +63,14 @@
   </figcaption>
 </p>
 
-[実装例](https://github.com/st-tech/zr-obp/tree/master/examples)を実行するための少量データは, [./obd/](https://github.com/st-tech/zr-obp/tree/master/obd)にあります.Open Bandit Datasetのフルサイズ版は[https://research.zozo.com/data.html](https://research.zozo.com/data.html)にあります.研究用途にはフルサイズ版をダウンロードしてください.
+[実装例](https://github.com/st-tech/zr-obp/tree/master/examples)を実行するための少量データは, [./obd/](https://github.com/st-tech/zr-obp/tree/master/obd)にあります.
+Open Bandit Datasetのフルサイズ版は[https://research.zozo.com/data.html](https://research.zozo.com/data.html)にあります.
+研究用途にはフルサイズ版をダウンロードしてください.
 
 ## Open Bandit Pipeline
 
-*Open Bandit Pipeline*は, データセットの前処理・オフ方策学習・オフ方策推定量の評価を簡単に行うためのパイプライン実装です. このパイプラインにより, 研究者はオフ方策推定量 (Off-Policy Estimator) の部分の実装に集中して現実的で再現性のある方法で他の手法との性能比較を行うことができるようになります.
+*Open Bandit Pipeline*は, データセットの前処理・オフ方策学習・オフ方策推定量の評価を簡単に行うためのパイプライン実装です.
+このパイプラインにより, 研究者はオフ方策推定量 (off-policy estimator) の部分の実装に集中して現実的で再現性のある方法で他の手法との性能比較を行うことができるようになります.
 
 <p align="center">
   <img width="90%" src="./images/overview.png" />
@@ -85,34 +91,33 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
 
 ### 実装されているバンディットアルゴリズムとオフ方策推定量
 
-- バンディットアルゴリズム (**policy module**)
+- バンディットアルゴリズム (**policy module**に実装)
   - Online
     - Context-free
       - Random
       - Epsilon Greedy
       - Bernoulli Thompson Sampling
-    - Contextual
-      - Linear
-        - Linear Epsilon Greedy
-        - Linear Thompson Sampling [[Agrawal and Goyal. 2013]](http://proceedings.mlr.press/v28/agrawal13)
-        - Linear Upper Confidence Bound [[Li et al. 2010]](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
-      - Logistic
-        - Logistic Epsilon Greedy
-        - Logistic Thompson Sampling [[Chapelle and Li. 2011]](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
-        - Logistic Upper Confidence Bound [[Mahajan et al. 2012]](https://dl.acm.org/doi/10.1145/2396761.2396767)
-  - Offline (Off-Policy Learning) [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
-    - Inverse Probability Weighting
+    - Linear (contextual)
+      - Linear Epsilon Greedy
+      - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
+      - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
+    - Logistic (contextual)
+      - Logistic Epsilon Greedy
+      - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+      - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
+  - Offline (Off-Policy Learning)
+    - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
 
-- オフ方策推定量 (**ope module**)
-  - Replay Method [[Li et al. 2011]](https://arxiv.org/abs/1003.5956)
-  - Direct Method [[Beygelzimer and Langford 2009]](https://arxiv.org/abs/0812.4044)
-  - Inverse Probability Weighting [[Precup et al. 2000]](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs) [[Strehl et al. 2010]](https://arxiv.org/abs/1003.0120)
-  - Self-Normalized Inverse Probability Weighting [[Swaminathan and Joachims. 2015]](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
-  - Doubly Robust [[Dudík et al. 2014]](https://arxiv.org/abs/1503.02834)
-  - Switch Estimator [[Wang et al. 2016]](https://arxiv.org/abs/1612.01205)
-  - More Robust Doubly Robust [[Farajtabar et al. 2018]](https://arxiv.org/abs/1802.03493)
-  - Doubly Robust with Shrinkage [[Su et al. 2019]](https://arxiv.org/abs/1907.09623)
-  - Double Machine Learning [[Narita et al. 2020]](https://arxiv.org/abs/2002.08536)
+- オフ方策推定量 (**ope module**に実装)
+  - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
+  - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
+  - [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
+  - [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+  - [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
+  - [Switch Estimators](https://arxiv.org/abs/1612.01205)
+  - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
+  - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
+  - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
 
 私たちのパイプラインは, 上記のアルゴリズムや推定量に加えて柔軟なインターフェースも提供しています.
 したがって研究者は, 独自のバンディットアルゴリズムやオフ方策推定量を容易に実装し, 我々のデータとパイプラインを用いてそれらの性能を評価することができます.
@@ -124,7 +129,6 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
 Open Bandit Dataset・Pipelineでは, 以下の研究テーマに関する実験評価を行うことができます.
 
 - **バンディットアルゴリズムの評価 (Evaluation of Bandit Algorithms)**：我々の公開データには, ランダム方策によって収集された大規模なログデータが含まれています. このため, 大規模な実世界環境で新しいオンラインバンディットアルゴリズムの性能を評価することが可能です.
-
 
 - **オフ方策評価の評価 (Evaluation of Off-Policy Evaluation)**：我々の公開データは, 複数の方策を実システム上で走らせることによって生成されたログデータで構成されています. またそれらの方策の真の性能が含まれています. そのため, オフ方策推定量の推定精度の評価を行うことができます.
 
@@ -207,7 +211,7 @@ Open Bandit Dataset用のデータ読み込みインターフェースを用意�
 # 「全アイテムキャンペーン」においてランダム方策が集めたログデータを読み込む.
 # OpenBanditDatasetクラスにはデータを収集した方策とキャンペーンを指定する.
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
-# オフ方策学習/評価用のデータを得る.
+# オフ方策学習/評価に用いるログデータを得る.
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
 print(bandit_feedback.keys())
@@ -215,8 +219,8 @@ print(bandit_feedback.keys())
 ```
 
 `obp.dataset.OpenBanditDataset` クラスの `pre_process` メソッドに, 独自の特徴量エンジニアリングを実装することもできます.
-[`./examples/examples_with_obd/custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/custom_dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
-また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットを扱うこともできます.
+[`custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/benchmark/cf_policy_search/custom_dataset.py)には, 新しい特徴量エンジニアリングを実装する例を示しています.
+また, `obp.dataset.BaseBanditDataset`クラスのインターフェースに従って新たなクラスを実装することで, 将来公開されるであろうOpen Bandit Dataset以外のバンディットデータセットや自社に特有のバンディットデータを扱うこともできます.
 
 ## (2) オフ方策学習
 
@@ -239,7 +243,8 @@ action_dist = evaluation_policy.compute_batch_action_dist(
 )
 ```
 
-`BernoulliTS`の`compute_batch_action_dist`メソッドは、与えられたベータ分布のパラメータに基づいた行動選択確率をシミュレーションによって 算出します。そしてシミュレーション中にバンディット方策が選択したアクション上の分布 (ここでは, `action_dist`) を返します. またユーザーは[`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py)に実装されているインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
+`BernoulliTS`の`compute_batch_action_dist`メソッドは、与えられたベータ分布のパラメータに基づいた行動選択確率(`action_dist`)をシミュレーションによって算出します。
+またユーザーは[`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py)に実装されているインターフェースに従うことで独自のバンディットアルゴリズムを実装し, その性能を評価することができます.
 
 
 ## (3) オフ方策評価 （Off-Policy Evaluation）
@@ -267,7 +272,7 @@ print(relative_policy_value_of_bernoulli_ts)
 
 
 # 引用
-本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようよろしくお願いいたします.
+本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようお願いいたします.
 
 Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 **Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
@@ -289,7 +294,8 @@ Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
 
 
 # ライセンス
-このプロジェクトはApache 2.0ライセンスを採用しています.  詳細は, [LICENSE](https://github.com/st-tech/zr-obp/blob/master/LICENSE) を参照してください.
+このプロジェクトはApache 2.0ライセンスを採用しています.
+詳細は, [LICENSE](https://github.com/st-tech/zr-obp/blob/master/LICENSE)を参照してください.
 
 
 # プロジェクトチーム

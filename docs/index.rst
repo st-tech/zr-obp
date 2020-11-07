@@ -32,7 +32,7 @@ This website contains pages with example analyses to help demonstrate the usage 
 Additionally, it presents examples of evaluating counterfactual bandit algorithms and OPE itself.
 The reference page contains the full reference documentation for the current functions of this toolkit.
 
-Supported Algorithms and OPE Estimators
+Algorithms and OPE Estimators Supported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bandit Algorithms
@@ -64,15 +64,15 @@ Bandit Algorithms
 
 OPE Estimators
 ----------------------
-   * Replay Method :cite:`Li2012`
-   * Direct Method :cite:`Beygelzimer2009`
-   * Inverse Probability Weighting :cite:`Precup2000` :cite:`Strehl2010`
-   * Self-Normalized Inverse Probability Weighting :cite:`Swaminathan2015b`
-   * Doubly Robust :cite:`Dudik2014`
-   * Switch Estimator :cite:`Wang2016`
-   * Doubly Robust with Shrinkage :cite:`Su2019`
-   * More Robust Doubly Robust :cite:`Farajtabar2018`
-   * Double Machine Learning :cite:`Narita2020`
+   * Replay Method (RM) :cite:`Li2012`
+   * Direct Method (DM) :cite:`Beygelzimer2009`
+   * Inverse Probability Weighting (IPW) :cite:`Precup2000` :cite:`Strehl2010`
+   * Self-Normalized Inverse Probability Weighting (SNIPW) :cite:`Swaminathan2015b`
+   * Doubly Robust (DR) :cite:`Dudik2014`
+   * Switch Estimators :cite:`Wang2016`
+   * Doubly Robust with Optimistic Shrinkage (DRos) :cite:`Su2019`
+   * More Robust Doubly Robust (MRDR) :cite:`Farajtabar2018`
+   * Double Machine Learning (DML) :cite:`Narita2020`
 
 
 Citation
@@ -94,6 +94,9 @@ Contact
 ~~~~~~~~~~~~
 For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
 
+
+Table of Contents
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 3
@@ -127,6 +130,8 @@ For any question about the paper, data, and pipeline, feel free to contact: sait
     :caption: Others:
 
     Github <https://github.com/st-tech/zr-obp>
+    Dataset <https://research.zozo.com/data.html>
+    Google Group <https://groups.google.com/g/open-bandit-project>
     LICENSE <https://github.com/st-tech/zr-obp/blob/master/LICENSE>
     references
 
