@@ -30,7 +30,6 @@ python evaluate_off_policy_estimators.py\
     --n_rounds $n_rounds\
     --n_actions $n_actions\
     --dim_context $dim_context\
-    --dim_action_context $dim_action_context\
     --base_model_for_evaluation_policy $base_model_for_evaluation_policy\
     --base_model_for_reg_model $base_model_for_reg_model\
     --n_jobs $n_jobs\
@@ -38,7 +37,7 @@ python evaluate_off_policy_estimators.py\
 ```
 - `$n_runs` specifies the number of simulation runs in the experiment to estimate standard deviations of the performance of OPE estimators.
 - `$n_rounds` and `$n_actions` specify the number of rounds (or samples) and the number of actions of the synthetic bandit data.
-- `$dim_context` and `$dim_action_context` specify the number of dimensions of context vectors characterizing each round and action, respectively.
+- `$dim_context` specifies the number of dimensions of context vectors.
 - `$base_model_for_evaluation_policy` specifies the base ML model for defining evaluation policy and should be one of "logistic_regression", "random_forest", or "lightgbm".
 - `$base_model_for_reg_model` specifies the base ML model for defining regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
 - `$n_jobs` is the maximum number of concurrently running jobs.
@@ -51,30 +50,29 @@ python evaluate_off_policy_estimators.py\
     --n_rounds 100000\
     --n_actions 30\
     --dim_context 5\
-    --dim_action_context 5\
     --base_model_for_evaluation_policy logistic_regression\
     --base_model_for_reg_model logistic_regression\
     --n_jobs -1\
     --random_state 12345
 
 # relative estimation errors of OPE estimators and their standard deviations (lower is better).
-# our evaluation of OPE procedure suggests that Switch-IPW (tau=100) performs better than the other estimators.
+# our evaluation of OPE procedure suggests that DR and Switch-DR (tau=100) perform better than the other estimators.
 # Moreover, it appears that the performances of some OPE estimators depend on the choice of hyperparameters.
 # =============================================
 # random_state=12345
 # ---------------------------------------------
 #                           mean       std
-# dm                    0.016460  0.005503
-# ipw                   0.006724  0.000955
-# snipw                 0.006394  0.000793
-# dr                    0.006275  0.003067
-# sndr                  0.005942  0.001321
-# switch-ipw (tau=1)    0.392871  0.001192
-# switch-ipw (tau=100)  0.000768  0.000436
-# switch-dr (tau=1)     0.019167  0.005687
-# switch-dr (tau=100)   0.008104  0.001072
-# dr-os (lambda=1)      0.017385  0.005749
-# dr-os (lambda=100)    0.004148  0.000415
+# dm                    0.029343  0.000410
+# ipw                   0.002255  0.000587
+# snipw                 0.001914  0.001268
+# dr                    0.001645  0.000919
+# sndr                  0.002550  0.000035
+# switch-ipw (tau=1)    0.195059  0.000136
+# switch-ipw (tau=100)  0.002255  0.000587
+# switch-dr (tau=1)     0.046846  0.001251
+# switch-dr (tau=100)   0.001645  0.000919
+# dr-os (lambda=1)      0.028386  0.000369
+# dr-os (lambda=100)    0.002516  0.001351
 # =============================================
 ```
 
