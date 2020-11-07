@@ -24,16 +24,16 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
     A machine learning classifier such as logistic regression is used to construct behavior and evaluation policies as follows.
 
         1. Split the original data into training (:math:`\\mathcal{D}_{\\mathrm{tr}}`) and evaluation (:math:`\\mathcal{D}_{\\mathrm{ev}}`) sets.
-        2. Train classifiers on :math:`\\mathcal{D}_{\\mathrm{tr}}` and regard them as base deterministic policies :math:`\\pi_{\\mathrm{det},b}` and :math:`\\pi_{\\mathrm{det},e}`.
-        3. Construct behavior (:math:`\\pi_{b}`) and evaluation (:math:`\\pi_{e}`) policies based on :math:`\\pi_{\\mathrm{det}}` as
+        2. Train classifiers on :math:`\\mathcal{D}_{\\mathrm{tr}}` and obtain base deterministic policies :math:`\\pi_{\\mathrm{det},b}` and :math:`\\pi_{\\mathrm{det},e}`.
+        3. Construct behavior (:math:`\\pi_{b}`) and evaluation (:math:`\\pi_{e}`) policies based on :math:`\\pi_{\\mathrm{det},b}` and :math:`\\pi_{\\mathrm{det},e}` as
 
             .. math::
 
-                \\pi_b (a | x) := \\alpha_b \\pi_{\\mathrm{det},b} (a|x) + (1.0 - \\alpha_b) \\pi_{u} (a|x)
+                \\pi_b (a | x) := \\alpha_b \\cdot \\pi_{\\mathrm{det},b} (a|x) + (1.0 - \\alpha_b) \\cdot \\pi_{u} (a|x)
 
             .. math::
 
-                \\pi_e (a | x) := \\alpha_e \\pi_{\\mathrm{det},e} (a|x) + (1.0 - \\alpha_e) \\pi_{u} (a|x)
+                \\pi_e (a | x) := \\alpha_e \\cdot \\pi_{\\mathrm{det},e} (a|x) + (1.0 - \\alpha_e) \\cdot \\pi_{u} (a|x)
 
             where :math:`\\pi_{u}` is a uniform random policy and :math:`\\alpha_b` and :math:`\\alpha_e` are set by the user.
 
@@ -60,11 +60,11 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
     base_classifier_b: ClassifierMixin
         Machine learning classifier used to construct a behavior policy.
 
-    alpha_b: float, default: 0.9
+    alpha_b: float, default=0.9
         Ration of a uniform random policy when constructing a **behavior** policy.
         Must be in the [0, 1) interval to make the behavior policy a stochastic one.
 
-    dataset_name: str, default: None
+    dataset_name: str, default=None
         Name of the dataset.
 
     Examples
@@ -187,7 +187,7 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the evaluation split.
             If int, represents the absolute number of test samples.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in train-evaluation split.
 
         """
@@ -213,12 +213,12 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
         Please call `self.split_train_eval()` before calling this method.
 
         Parameters
-        ----------
+        -----------
         eval_size: float or int, default=0.25
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
             If int, represents the absolute number of test samples.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in sampling actions.
 
         Returns
@@ -261,10 +261,12 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
     ) -> np.ndarray:
         """Obtain action choice probabilities by an evaluation policy.
 
-        base_classifier_e: ClassifierMixin, default: None
+        Parameters
+        -----------
+        base_classifier_e: ClassifierMixin, default=None
             Machine learning classifier used to construct a behavior policy.
 
-        alpha_e: float, default: 1.0
+        alpha_e: float, default=1.0
             Ration of a uniform random policy when constructing an **evaluation** policy.
             Must be in the [0, 1] interval (evaluation policy can be deterministic).
 

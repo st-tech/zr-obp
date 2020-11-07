@@ -31,29 +31,29 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
     n_actions: int
         Number of actions.
 
-    dim_context: int, default: 1
+    dim_context: int, default=1
         Number of dimensions of context vectors.
 
-    reward_type: str, default: 'binary'
+    reward_type: str, default='binary'
         Type of reward variable, must be either 'binary' or 'continuous'.
         When 'binary' is given, rewards are sampled from the Bernoulli distribution.
         When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
 
-    reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default: None
+    reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward with context and action context vectors,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None is set, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
-    behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default: None
+    behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating probability distribution over action space,
         i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
         If None is set, context **independent** uniform distribution will be used (uniform random behavior policy).
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling synthetic bandit dataset.
 
-    dataset_name: str, default: 'synthetic_bandit_dataset'
+    dataset_name: str, default='synthetic_bandit_dataset'
         Name of the dataset.
 
     Examples
@@ -252,7 +252,7 @@ def logistic_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation for each action.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling dataset.
 
     Returns
@@ -292,7 +292,7 @@ def linear_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation for each action.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling dataset.
 
     Returns
@@ -332,7 +332,7 @@ def linear_behavior_policy(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation for each action.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling dataset.
 
     Returns

@@ -161,13 +161,13 @@ class OffPolicyEvaluation:
             Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
-        alpha: float, default: 0.05
+        alpha: float, default=0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 100
+        n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in bootstrap sampling.
 
         Returns
@@ -218,13 +218,13 @@ class OffPolicyEvaluation:
             Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
-        alpha: float, default: 0.05
+        alpha: float, default=0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 100
+        n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in bootstrap sampling.
 
         Returns
@@ -277,24 +277,24 @@ class OffPolicyEvaluation:
             Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
-        alpha: float, default: 0.05
+        alpha: float, default=0.05
             P-value.
 
-        n_bootstrap_samples: int, default: 100
+        n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
 
-        random_state: int, default: None
+        random_state: int, default=None
             Controls the random seed in bootstrap sampling.
 
-        is_relative: bool, default: False,
+        is_relative: bool, default=False,
             If True, the method visualizes the estimated policy values of evaluation policy
             relative to the ground-truth policy value of behavior policy.
 
-        fig_dir: Path, default: None
+        fig_dir: Path, default=None
             Path to store the bar figure.
             If 'None' is given, the figure will not be saved.
 
-        fig_name: str, default: "estimated_policy_value.png"
+        fig_name: str, default="estimated_policy_value.png"
             Name of the bar figure.
 
         """

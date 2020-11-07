@@ -24,13 +24,13 @@ def estimate_confidence_interval_by_bootstrap(
     samples: array-like
         Empirical observed samples to be used to estimate cumulative distribution function.
 
-    alpha: float, default: 0.05
+    alpha: float, default=0.05
         P-value.
 
-    n_bootstrap_samples: int, default: 10000
+    n_bootstrap_samples: int, default=10000
         Number of resampling performed in the bootstrap procedure.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in bootstrap sampling.
 
     Returns
@@ -179,10 +179,10 @@ def check_bandit_feedback_inputs(
     reward: array-like, shape (n_rounds,)
         Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-    position: array-like, shape (n_rounds,), default: None
+    position: array-like, shape (n_rounds,), default=None
         Positions of each round in the given logged bandit feedback.
 
-    pscore: array-like, shape (n_rounds,), default: None
+    pscore: array-like, shape (n_rounds,), default=None
         Propensity scores, the probability of selecting each action by behavior policy,
         in the given logged bandit feedback.
 

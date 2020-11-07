@@ -22,14 +22,14 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
+    len_list: int, default=1
         Length of a list of recommended actions in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
     """
@@ -95,20 +95,20 @@ class BaseContextualPolicy(metaclass=ABCMeta):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
+    len_list: int, default=1
         Length of a list of recommended actions in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    alpha_: float, default: 1.
+    alpha_: float, default=1.
         Prior parameter for the online logistic regression.
 
-    lambda_: float, default: 1.
+    lambda_: float, default=1.
         Regularization hyperparameter for the online logistic regression.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
     """
@@ -180,7 +180,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
+    len_list: int, default=1
         Length of a list of recommended actions in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
@@ -234,7 +234,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         reward: array-like, shape (n_actions,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: array-like, shape (n_actions,), default: None
+        pscore: array-like, shape (n_actions,), default=None
             Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
 
         Returns
@@ -266,7 +266,7 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: array-like, shape (n_rounds,), default: None
+        pscore: array-like, shape (n_rounds,), default=None
             Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
