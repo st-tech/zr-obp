@@ -80,12 +80,6 @@ if __name__ == "__main__":
         help="dimensions of context vectors characterizing each round.",
     )
     parser.add_argument(
-        "--dim_action_context",
-        type=int,
-        default=5,
-        help="dimensions of context vectors characterizing each action.",
-    )
-    parser.add_argument(
         "--base_model_for_evaluation_policy",
         type=str,
         choices=["logistic_regression", "lightgbm", "random_forest"],
@@ -114,7 +108,6 @@ if __name__ == "__main__":
     n_rounds = args.n_rounds
     n_actions = args.n_actions
     dim_context = args.dim_context
-    dim_action_context = args.dim_action_context
     base_model_for_evaluation_policy = args.base_model_for_evaluation_policy
     base_model_for_reg_model = args.base_model_for_reg_model
     n_jobs = args.n_jobs
@@ -125,7 +118,6 @@ if __name__ == "__main__":
     dataset = SyntheticBanditDataset(
         n_actions=n_actions,
         dim_context=dim_context,
-        dim_action_context=dim_action_context,
         reward_function=logistic_reward_function,
         behavior_policy_function=linear_behavior_policy,
         random_state=random_state,
