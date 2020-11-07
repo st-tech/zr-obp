@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional, Callable
 
 import numpy as np
+from scipy.stats import truncnorm
 from sklearn.utils import check_random_state
 
 from .base import BaseSyntheticBanditDataset
@@ -33,8 +34,10 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
     dim_context: int, default: 1
         Number of dimensions of context vectors.
 
-    dim_action_context: int, default: 1
-        Number of dimensions of vector representation for each action.
+    reward_type: str, default: 'binary'
+        Type of reward variable, must be either 'binary' or 'continuous'.
+        When 'binary' is given, rewards are sampled from the Bernoulli distribution.
+        When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default: None
         Function generating expected reward with context and action context vectors,
@@ -45,8 +48,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default: None
         Function generating probability distribution over action space,
         i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
-        If None is set, context **independent** probability of choosing each action will be
-        sampled from the dirichlet distribution automatically (context-free behavior policy).
+        If None is set, context **independent** uniform distribution will be used (uniform random behavior policy).
 
     random_state: int, default: None
         Controls the random seed in sampling synthetic bandit dataset.
@@ -109,7 +111,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
 
     n_actions: int
     dim_context: int = 1
-    dim_action_context: int = 1
+    reward_type: str = "binary"
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
@@ -125,34 +127,27 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         assert self.dim_context > 0 and isinstance(
             self.dim_context, int
         ), f"dim_context must be a positive integer, but {self.dim_context} is given"
-        assert self.dim_action_context > 0 and isinstance(
-            self.dim_action_context, int
-        ), f"dim_action_context must be a positive integer, but {self.dim_action_context} is given"
+        assert self.reward_type in [
+            "binary",
+            "continuous",
+        ], f"reward_type must be either 'binary' or 'continuous, but {self.reward_type} is given.'"
 
         self.random_ = check_random_state(self.random_state)
         if self.reward_function is None:
             self.expected_reward = self.sample_contextfree_expected_reward()
         if self.behavior_policy_function is None:
-            self.behavior_policy = self.sample_contextfree_behavior_policy()
-        self.action_context = self.sample_action_context()
+            self.behavior_policy = np.ones(self.n_actions) / self.n_actions
+        # one-hot encoding representations characterizing each action
+        self.action_context = np.eye(self.n_actions, dtype=int)
 
     @property
     def len_list(self) -> int:
         """Length of recommendation lists."""
         return 1
 
-    def sample_action_context(self) -> np.ndarray:
-        """Sample action context vectors from the standard normal distribution."""
-        return self.random_.normal(size=(self.n_actions, self.dim_action_context))
-
     def sample_contextfree_expected_reward(self) -> np.ndarray:
         """Sample expected reward for each action from the uniform distribution."""
         return self.random_.uniform(size=self.n_actions)
-
-    def sample_contextfree_behavior_policy(self) -> np.ndarray:
-        """Sample probability of choosing each action from the dirichlet distribution."""
-        alpha = self.random_.uniform(size=self.n_actions)
-        return self.random_.dirichlet(alpha=alpha)
 
     def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
@@ -168,14 +163,17 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             Generated synthetic bandit feedback dataset.
 
         """
-        context = self.random_.normal(size=(n_rounds, self.dim_context))
+        assert n_rounds > 0 and isinstance(
+            n_rounds, int
+        ), f"n_rounds must be a positive integer, but {n_rounds} is given"
 
+        context = self.random_.normal(size=(n_rounds, self.dim_context))
         # sample actions for each round based on the behavior policy
         if self.behavior_policy_function is None:
+            behavior_policy_ = np.tile(self.behavior_policy, (n_rounds, 1))
             action = self.random_.choice(
                 np.arange(self.n_actions), p=self.behavior_policy, size=n_rounds
             )
-            pscore = self.behavior_policy[action]
         else:
             behavior_policy_ = self.behavior_policy_function(
                 context=context,
@@ -190,20 +188,32 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
                     for i in np.arange(n_rounds)
                 ]
             )
-            pscore = behavior_policy_[np.arange(n_rounds), action]
+        pscore = behavior_policy_[np.arange(n_rounds), action]
 
         # sample reward for each round based on the reward function
         if self.reward_function is None:
-            expected_reward_ = self.expected_reward
-            reward = self.random_.binomial(n=1, p=expected_reward_[action])
+            expected_reward_ = np.tile(self.expected_reward, (n_rounds, 1))
         else:
             expected_reward_ = self.reward_function(
                 context=context,
                 action_context=self.action_context,
                 random_state=self.random_state,
             )
-            reward = self.random_.binomial(
-                n=1, p=expected_reward_[np.arange(n_rounds), action]
+        expected_reward_factual = expected_reward_[np.arange(n_rounds), action]
+        if self.reward_type == "binary":
+            reward = self.random_.binomial(n=1, p=expected_reward_factual)
+        elif self.reward_type == "continuous":
+            min_, max_ = 0, 1e10
+            mean, std = expected_reward_factual, 1.0
+            a, b = (min_ - mean) / std, (max_ - mean) / std
+            reward = truncnorm.rvs(
+                a=a, b=b, loc=mean, scale=std, random_state=self.random_state
+            )
+            # correct expected_reward_, as we use truncated normal distribution here
+            mean = expected_reward_
+            a, b = (min_ - mean) / std, (max_ - mean) / std
+            expected_reward_ = truncnorm.stats(
+                a=a, b=b, loc=mean, scale=std, moments="m"
             )
         return dict(
             n_rounds=n_rounds,
@@ -237,7 +247,7 @@ def logistic_reward_function(
     Returns
     ---------
     expected_reward: array-like, shape (n_rounds, n_actions)
-        Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q:=\\mathbb{E}[r|x,a]`.
+        Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
 
     """
     assert (
@@ -256,6 +266,46 @@ def logistic_reward_function(
         logits[:, d] = context @ coef_[d] + action_context[d] @ action_coef_
 
     return sigmoid(logits)
+
+
+def linear_reward_function(
+    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Linear mean reward function for synthetic bandit datasets.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each round (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation for each action.
+
+    random_state: int, default: None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    expected_reward: array-like, shape (n_rounds, n_actions)
+        Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+
+    """
+    assert (
+        isinstance(context, np.ndarray) and context.ndim == 2
+    ), "context must be 2-dimensional ndarray"
+    assert (
+        isinstance(action_context, np.ndarray) and action_context.ndim == 2
+    ), "action_context must be 2-dimensional ndarray"
+
+    random_ = check_random_state(random_state)
+    expected_reward = np.zeros((context.shape[0], action_context.shape[0]))
+    # each arm has different coefficient vectors
+    coef_ = random_.uniform(size=(action_context.shape[0], context.shape[1]))
+    action_coef_ = random_.uniform(size=action_context.shape[1])
+    for d in np.arange(action_context.shape[0]):
+        expected_reward[:, d] = context @ coef_[d] + action_context[d] @ action_coef_
+
+    return expected_reward
 
 
 def linear_behavior_policy(
