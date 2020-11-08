@@ -2,14 +2,16 @@
 # Licensed under the Apache 2.0 License.
 
 """Class for Multi-Class Classification to Bandit Reduction."""
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 import numpy as np
 from scipy.stats import rankdata
 from sklearn.base import ClassifierMixin, is_classifier, clone
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state, check_X_y
+from sklearn.utils.validation import _num_samples
 
 from .base import BaseSyntheticBanditDataset
 from ..types import BanditFeedback
@@ -60,9 +62,12 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
     base_classifier_b: ClassifierMixin
         Machine learning classifier used to construct a behavior policy.
 
-    alpha_b: float, default=0.8
-        Ratio of a uniform random policy when constructing a **behavior** policy.
-        Must be in the [0, 1) interval to make the behavior policy a stochastic one.
+    alpha_b: list or float, default=0.8
+        List of ratios of a uniform random policy when constructing **behavior** policies.
+        Must be in the [0, 1) interval to make the behavior policies stochastic ones.
+
+    rho_b:
+
 
     dataset_name: str, default=None
         Name of the dataset.
@@ -141,12 +146,16 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
     Alberto Bietti, Alekh Agarwal, and John Langford
     "A Contextual Bandit Bake-off.", 2018.
 
+    Nathan Kallus, Yuta Saito, and Masatoshi Uehara.
+    "Optimal Off-Policy Evaluation from Multiple Logging Policies.", 2020.
+
     """
 
     X: np.ndarray
     y: np.ndarray
     base_classifier_b: ClassifierMixin
-    alpha_b: float = 0.8
+    alpha_b: Union[List[float], float] = 0.8
+    rho_b: Optional[List[float]] = None
     dataset_name: Optional[str] = None
 
     def __post_init__(self) -> None:
@@ -154,9 +163,35 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
         assert is_classifier(
             self.base_classifier_b
         ), f"base_classifier_b must be a classifier"
-        assert (0.0 <= self.alpha_b < 1.0) and isinstance(
-            self.alpha_b, float
-        ), f"alpha_b must be a float in the [0,1) interval, but {self.alpha_b} is given"
+        assert isinstance(self.alpha_b, float) or isinstance(
+            self.alpha_b, list
+        ), "alpha_b must be either of a float or a list"
+        if isinstance(self.alpha_b, float):
+            assert (
+                0.0 <= self.alpha_b < 1.0
+            ), f"alpha_b must be a float in the [0,1) interval, but {self.alpha_b} is given"
+        elif isinstance(self.alpha_b, list):
+            for alpha_b_ in self.alpha_b:
+                assert (0.0 <= alpha_b_ < 1.0) and isinstance(
+                    alpha_b_, float
+                ), f"each element of alpha_b must be a float in the [0,1) interval, but {alpha_b_} is given"
+            if self.rho_b is None:
+                self.rho_b_ = (
+                    np.ones(self.n_behavior_policies) / self.n_behavior_policies
+                )
+            else:
+                assert isinstance(
+                    self.rho_b, list
+                ), "when alpha_b is a list, rho_b must be a list"
+                assert len(self.alpha_b) == len(
+                    self.rho_b
+                ), "alpha_b and rho_b must have the same lengths"
+                for rho_b_ in self.rho_b:
+                    assert (rho_b_ >= 0.0) and isinstance(
+                        rho_b_, float
+                    ), f"each element of rho_b must be a positive float, but {rho_b_} is given"
+                self.rho_b_ = np.array(self.rho_b) / np.sum(self.rho_b)
+        self.alpha_b_ = deepcopy(self.alpha_b)
         self.X, y = check_X_y(X=self.X, y=self.y, ensure_2d=True, multi_output=False)
         self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index action
         # fully observed labels
@@ -177,6 +212,14 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
     def n_samples(self) -> int:
         """Number of samples in the original multi-class classification data."""
         return self.y.shape[0]
+
+    @property
+    def n_behavior_policies(self) -> int:
+        """Number of behavior policies."""
+        if isinstance(self.alpha_b, float):
+            return 1
+        else:
+            return len(self.alpha_b)
 
     def split_train_eval(
         self, eval_size: Union[int, float] = 0.25, random_state: Optional[int] = None,
@@ -204,11 +247,19 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
             self.X, self.y, self.y_full, test_size=eval_size, random_state=random_state
         )
         self.n_samples_ev = self.X_ev.shape[0]
+        if self.n_behavior_policies > 1:
+            n_strata = (self.rho_b_ * self.n_samples_ev).astype(int)
+            n_strata[-1] += self.n_samples_ev - n_strata.sum()
+            strata_idx_list = list()
+            for stratum_id, n_stratum in enumerate(n_strata):
+                strata_idx_list += [stratum_id] * n_stratum
+            self.strata_idx = np.array(strata_idx_list)
+            self.rho_b_ = n_strata / n_strata.sum()
 
     def obtain_batch_bandit_feedback(
         self, random_state: Optional[int] = None,
     ) -> BanditFeedback:
-        """Obtain batch logged bandit feedback, an evaluation policy, and its ground-truth policy value.
+        """Obtain batch logged bandit feedback generated by a behavior policy.
 
         Note
         -------
@@ -234,12 +285,28 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
         base_clf_b = clone(self.base_classifier_b)
         base_clf_b.fit(X=self.X_tr, y=self.y_tr)
         preds = base_clf_b.predict(self.X_ev).astype(int)
-        # construct a behavior policy
-        pi_b = np.zeros((self.n_samples_ev, self.n_actions))
-        pi_b[:, :] = (1.0 - self.alpha_b) / self.n_actions
-        pi_b[np.arange(self.n_samples_ev), preds] = (
-            self.alpha_b + (1.0 - self.alpha_b) / self.n_actions
-        )
+        # construct behavior policies
+        # single behavior policy case
+        if self.n_behavior_policies == 1:
+            pi_b = np.zeros((self.n_samples_ev, self.n_actions))
+            pi_b[:, :] = (1.0 - self.alpha_b) / self.n_actions
+            pi_b[np.arange(self.n_samples_ev), preds] = (
+                self.alpha_b + (1.0 - self.alpha_b) / self.n_actions
+            )
+        # multiple behavior (logging) policies case
+        else:
+            pi_b_dict = dict()
+            pi_b = np.zeros((self.n_samples_ev, self.n_actions))
+            pi_b_star = np.zeros((self.n_samples_ev, self.n_actions))
+            for pi_b_id, alpha_b_ in enumerate(self.alpha_b_):
+                pi_b_ = np.zeros((self.n_samples_ev, self.n_actions))
+                pi_b_[:, :] = (1.0 - alpha_b_) / self.n_actions
+                pi_b_[np.arange(self.n_samples_ev), preds] = (
+                    alpha_b_ + (1.0 - alpha_b_) / self.n_actions
+                )
+                pi_b_dict[pi_b_id] = pi_b_
+                pi_b_star += self.rho_b_[pi_b_id] * pi_b_
+                pi_b[self.strata_idx == pi_b_id] = pi_b_[self.strata_idx == pi_b_id]
         # sample action and factual reward based on the behavior policy
         action = np.zeros(self.n_samples_ev, dtype=int)
         for i, p in enumerate(pi_b):
@@ -248,15 +315,29 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
             )
         reward = self.y_full_ev[np.arange(self.n_samples_ev), action]
 
-        return dict(
-            n_actions=self.n_actions,
-            n_samples=self.n_samples_ev,
-            context=self.X_ev,
-            action=action,
-            reward=reward,
-            position=np.zeros(self.n_samples_ev, dtype=int),
-            pscore=pi_b[np.arange(self.n_samples_ev), action],
-        )
+        if self.n_behavior_policies == 1:
+            return dict(
+                n_actions=self.n_actions,
+                n_samples=self.n_samples_ev,
+                context=self.X_ev,
+                action=action,
+                reward=reward,
+                position=np.zeros(self.n_samples_ev, dtype=int),
+                pscore=pi_b[np.arange(self.n_samples_ev), action],
+            )
+        else:
+            return dict(
+                n_actions=self.n_actions,
+                n_behavior_policies=self.n_behavior_policies,
+                n_samples=self.n_samples_ev,
+                rho_b=self.rho_b_,
+                context=self.X_ev,
+                action=action,
+                reward=reward,
+                position=np.zeros(self.n_samples_ev, dtype=int),
+                pscore=pi_b[np.arange(self.n_samples_ev), action],
+                marginal_pscore=pi_b_star[np.arange(self.n_samples_ev), action],
+            )
 
     def obtain_action_dist_by_eval_policy(
         self, base_classifier_e: Optional[ClassifierMixin] = None, alpha_e: float = 1.0
@@ -326,4 +407,3 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
             action_dist.shape[0] == self.n_samples_ev
         ), "the size of axis 0 of action_dist must be the same as the number of samples in the evaluation set"
         return action_dist[np.arange(self.n_samples_ev), self.y_ev].mean()
-
