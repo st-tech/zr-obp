@@ -24,7 +24,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
     we have different bandit samples with the same setting.
     This can be used to estimate confidence intervals of the performances of OPE estimators.
 
-    If None is set as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
+    If None is set as `behavior_policy_function`, the synthetic data will be context-free (or context independent).
 
     Parameters
     -----------
@@ -63,15 +63,16 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
 
         >>> import numpy as np
         >>> from obp.dataset import (
-            SyntheticBanditDataset,
-            linear_reward_function,
-            linear_behavior_policy
-        )
+                SyntheticBanditDataset,
+                logistic_reward_function,
+                linear_behavior_policy
+            )
 
         # generate synthetic contextual bandit feedback with 10 actions.
         >>> dataset = SyntheticBanditDataset(
                 n_actions=10,
                 dim_context=5,
+                reward_type="binary",
                 reward_function=logistic_reward_function,
                 behavior_policy=linear_behavior_policy,
                 random_state=12345
