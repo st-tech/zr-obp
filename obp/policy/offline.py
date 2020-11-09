@@ -3,11 +3,13 @@
 
 """Offline Bandit Algorithms."""
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union
 
 import numpy as np
+from scipy.special import softmax
 from sklearn.base import clone, ClassifierMixin, is_classifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.utils import check_random_state, check_scalar
 
 from .base import BaseOffPolicyLearner
 from ..utils import check_bandit_feedback_inputs
@@ -33,6 +35,9 @@ class IPWLearner(BaseOffPolicyLearner):
     ------------
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
+
+    Damien Lefortier, Adith Swaminathan, Xiaotao Gu, Thorsten Joachims, and Maarten de Rijke.
+    "Large-scale Validation of Counterfactual Learning Methods: A Test-Bed.", 2016.
 
     """
 
@@ -94,6 +99,22 @@ class IPWLearner(BaseOffPolicyLearner):
     ) -> None:
         """Fits the offline bandit policy according to the given logged bandit feedback data.
 
+        Note
+        --------
+        This `fit` method trains a deterministic policy :math:`\\pi: \\mathcal{X} \\rightarrow \\mathcal{A}`
+        via a cost-sensitive classification reduction as follows:
+
+        .. math::
+
+            \\hat{\\pi}
+            & \\in \\arg \\max_{\\pi \\in \\Pi} \\hat{V}_{\\mathrm{IPW}} (\\pi ; \\mathcal{D}) \\\\
+            & = \\arg \\max_{\\pi \\in \\Pi} \\mathbb{E}_{\\mathcal{D}} \\left[\\frac{\\mathbb{I} \\{\\pi (x_{i})=a_{i} \\}}{\\pi_{b}(a_{i} \mid x_{i})} r_{i} \\right] \\\\
+            & = \\arg \\min_{\\pi \\in \\Pi} \\mathbb{E}_{\\mathcal{D}} \\left[\\frac{r_i}{\\pi_{b}(a_{i} | x_{i})} \\mathbb{I} \\{\\pi (x_{i}) \\neq a_{i} \\} \\right],
+
+        where :math:`\\mathbb{E}_{\\mathcal{D}} [\cdot]` is the empirical average over observations in :math:`\\mathcal{D}`.
+        See the reference for the details.
+
+
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
@@ -142,35 +163,32 @@ class IPWLearner(BaseOffPolicyLearner):
                 X=X, y=y, sample_weight=sample_weight
             )
 
-    def predict(self, context: np.ndarray, epsilon: float = 0.0) -> np.ndarray:
-        """Predict best action for new data.
+    def predict(self, context: np.ndarray) -> np.ndarray:
+        """Predict best actions for new data.
+
+        Note
+        --------
+        Action set predicted by this `predict` method can contain duplicate items.
+        If you want a non-repetitive action set, then please use the `sample_action` method.
 
         Parameters
         -----------
         context: array-like, shape (n_rounds_of_new_data, dim_context)
             Context vectors for new data.
 
-        epsilon: float, default=0.0
-            Exploration hyperparameter that must take value in the interval [0.0, 1.0].
-            A positive value of epsilon makes the policy stochastic, making sure that the
-            overlap condition is satisfied in the resulting logged bandit feedback.
-
         Returns
         -----------
         action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Action choice probabilities by a trained classifier.
+            Action choices by a classifier, which can contain duplicate items.
+            If you want a non-repetitive action set, please use the `sample_action` method.
 
         """
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
         ), "context must be 2-dimensional ndarray"
-        assert (0.0 <= epsilon <= 1.0) and isinstance(
-            epsilon, float
-        ), f"epsilon must be a float in the interval [0.0, 1.0], but {epsilon} is given"
 
         n_rounds = context.shape[0]
-        action_dist = np.ones((n_rounds, self.n_actions, self.len_list))
-        action_dist *= epsilon * (1.0 / self.n_actions)
+        action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
         for position_ in np.arange(self.len_list):
             predicted_actions_at_position = self.base_classifier_list[
                 position_
@@ -179,5 +197,95 @@ class IPWLearner(BaseOffPolicyLearner):
                 np.arange(n_rounds),
                 predicted_actions_at_position,
                 np.ones(n_rounds, dtype=int) * position_,
-            ] += (1 - epsilon)
+            ] += 1
         return action_dist
+
+    def predict_score(self, context: np.ndarray) -> np.ndarray:
+        """Predict non-negative scores for all possible products of action and position.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        Returns
+        -----------
+        score_predicted: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Scores for all possible pairs of action and position predicted by a classifier.
+
+        """
+        assert (
+            isinstance(context, np.ndarray) and context.ndim == 2
+        ), "context must be 2-dimensional ndarray"
+
+        n_rounds = context.shape[0]
+        score_predicted = np.zeros((n_rounds, self.n_actions, self.len_list))
+        for position_ in np.arange(self.len_list):
+            score_predicteds_at_position = self.base_classifier_list[
+                position_
+            ].predict_proba(context)
+            score_predicted[:, :, position_] = score_predicteds_at_position
+        return score_predicted
+
+    def sample_action(
+        self,
+        context: np.ndarray,
+        tau: Union[int, float] = 1.0,
+        random_state: Optional[int] = None,
+    ) -> np.ndarray:
+        """Sample (non-repetitive) actions based on scores predicted by a classifier.
+
+        Note
+        --------
+        `sample_action` samples a **non-repetitive** set of actions for new data :math:`x \\in \\mathcal{X}`
+        by first computing non-negative scores for all possible candidate products of action and position
+        :math:`(a, k) \\in \\mathcal{A} \\times \\mathcal{K}` (where :math:`\\mathcal{A}` is an action set and
+        :math:`\\mathcal{K}` is a position set), and using a Plackett-Luce ranking model as follows:
+
+        .. math::
+
+            & P (A_1 = a_1) = \\frac{e^{f(x,a_1,1) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A}} e^{f(x,a^{\\prime},1) / \\tau}} , \\\\
+            & P (A_2 = a_2 | A_1 = a_1) = \\frac{e^{f(x,a_2,2) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A} \\backslash \\{a_1\\}} e^{f(x,a^{\\prime},2) / \\tau}} ,
+            \\ldots
+
+        where :math:`A_k` is a random variable representing the action at a position :math:`k`.
+        :math:`\\tau` is a temperature hyperparameter.
+        :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
+        is a scoring function which is now implemented in the `predict_score` method.
+
+        Parameters
+        ----------------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        tau: int or float, default=1.0
+            A temperature parameter, controlling the randomness of the action choice.
+            As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
+
+        random_state: int, default=None
+            Controls the random seed in sampling actions.
+
+        Returns
+        -----------
+        action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Action sampled by a trained classifier.
+
+        """
+        assert (
+            isinstance(context, np.ndarray) and context.ndim == 2
+        ), "context must be 2-dimensional ndarray"
+        check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
+
+        n_rounds = context.shape[0]
+        random_ = check_random_state(random_state)
+        action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        score_predicted = self.predict_score(context=context)
+        for i in np.arange(n_rounds):
+            action_set = np.arange(self.n_actions)
+            for position_ in np.arange(self.len_list):
+                score_ = softmax(score_predicted[i, action_set, position_] / tau)
+                action_sampled = random_.choice(action_set, p=score_, replace=False)
+                action[i, action_sampled, position_] = 1
+                action_set = np.delete(action_set, action_set == action_sampled)
+        return action
+
