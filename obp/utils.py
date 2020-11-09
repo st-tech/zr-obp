@@ -224,11 +224,3 @@ def check_bandit_feedback_inputs(
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate sigmoid function."""
     return 1.0 / (1.0 + np.exp(-x))
-
-
-def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-    """Calculate softmax function."""
-    b = np.expand_dims(np.max(x, axis=1), 1)
-    numerator = np.exp(x - b)
-    denominator = np.expand_dims(np.sum(numerator, axis=1), 1)
-    return numerator / denominator

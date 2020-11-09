@@ -5,9 +5,8 @@
 from typing import Optional
 
 import numpy as np
+from scipy.special import expit, softmax
 from sklearn.utils import check_random_state
-
-from ..utils import sigmoid, softmax
 
 
 def logistic_reward_function(
@@ -44,10 +43,10 @@ def logistic_reward_function(
     # each arm has different coefficient vectors
     coef_ = random_.normal(size=(action_context.shape[0], context.shape[1]))
     action_coef_ = random_.normal(size=action_context.shape[1])
-    for d in np.arange(action_context.shape[0]):
-        logits[:, d] = context @ coef_[d] + action_context[d] @ action_coef_
+    for a in np.arange(action_context.shape[0]):
+        logits[:, a] = context @ coef_[a] + action_context[a] @ action_coef_
 
-    return sigmoid(logits)
+    return expit(logits)
 
 
 def linear_reward_function(
@@ -126,4 +125,4 @@ def linear_behavior_policy(
     for a in np.arange(action_context.shape[0]):
         logits[:, a] = context @ coef_ + action_context[a] @ action_coef_
 
-    return softmax(logits)
+    return softmax(logits, axis=1)
