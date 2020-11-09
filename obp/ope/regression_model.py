@@ -14,16 +14,16 @@ from ..utils import check_bandit_feedback_inputs
 
 @dataclass
 class RegressionModel(BaseEstimator):
-    """Machine learning model to estimate the mean reward function (:math:`q(x,a):= \\mathbb{E}_{r \sim p(r|x,a)} [r|x,a]`).
+    """Machine learning model to estimate the mean reward function (:math:`q(x,a):= \\mathbb{E}[r|x,a]`).
 
     Note
     -------
-    Reward (or outcome) :math:`Y` must be either binary or continuous.
+    Reward (or outcome) :math:`r` must be either binary or continuous.
 
     Parameters
     ------------
     base_model: BaseEstimator
-        Model class to be used to estimate the mean reward function.
+        A machine learning model used to estimate the mean reward function.
 
     n_actions: int
         Number of actions.
@@ -66,7 +66,7 @@ class RegressionModel(BaseEstimator):
             "normal",
             "iw",
             "mrdr",
-        ], f"fitting method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
+        ], f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
         assert self.n_actions > 1 and isinstance(
             self.n_actions, int
         ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
@@ -101,9 +101,10 @@ class RegressionModel(BaseEstimator):
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: Optional[np.ndarray], default=None
-            Propensity scores, the action choice probabilities by behavior policy,
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities (propensity score) of a behavior policy
             in the training logged bandit feedback.
+            When None is given, the the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
@@ -123,20 +124,26 @@ class RegressionModel(BaseEstimator):
             position=position,
             action_context=self.action_context,
         )
+        n_rounds = context.shape[0]
+
         if self.len_list == 1:
             position = np.zeros_like(action)
         else:
             assert (
-                position is not None
-            ), "position has to be set when len_list is larger than 1"
+                isinstance(position, np.ndarray) and position.ndim == 1
+            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
         if self.fitting_method in ["iw", "mrdr"]:
             assert (
-                action_dist is not None
-            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then action_dist must be given"
-            assert (
-                pscore is not None
-            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then pscore must be given"
-        n_data = context.shape[0]
+                isinstance(action_dist, np.ndarray) and action_dist.ndim == 3
+            ), f"when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
+            assert action_dist.shape == (
+                n_rounds,
+                self.n_actions,
+                self.len_list,
+            ), f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
+            if pscore is None:
+                pscore = np.ones_like(action) / self.n_actions
+
         for position_ in np.arange(self.len_list):
             idx = position == position_
             X = self._pre_process_for_reg_model(
@@ -149,7 +156,9 @@ class RegressionModel(BaseEstimator):
                 self.base_model_list[position_].fit(X, reward[idx])
             else:
                 action_dist_at_position = action_dist[
-                    np.arange(n_data), action, position_ * np.ones(n_data, dtype=int)
+                    np.arange(n_rounds),
+                    action,
+                    position_ * np.ones(n_rounds, dtype=int),
                 ][idx]
                 if self.fitting_method == "iw":
                     sample_weight = action_dist_at_position / pscore[idx]
@@ -157,11 +166,9 @@ class RegressionModel(BaseEstimator):
                         X, reward[idx], sample_weight=sample_weight
                     )
                 elif self.fitting_method == "mrdr":
-                    sample_weight = (
-                        action_dist_at_position
-                        * (1.0 - pscore[idx])
-                        / (pscore[idx] ** 2)
-                    )
+                    sample_weight = action_dist_at_position
+                    sample_weight *= 1.0 - pscore[idx]
+                    sample_weight /= pscore[idx] ** 2
                     self.base_model_list[position_].fit(
                         X, reward[idx], sample_weight=sample_weight
                     )
@@ -215,7 +222,7 @@ class RegressionModel(BaseEstimator):
         n_folds: int = 1,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit the regression model on given logged bandit feedback data and then predict the mean reward function of the same data.
+        """Fit the regression model on given logged bandit feedback data and predict the reward function of the same data.
 
         Note
         ------
@@ -234,8 +241,9 @@ class RegressionModel(BaseEstimator):
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Propensity scores, the action choice probabilities by behavior policy,
+            Action choice probabilities (propensity score) of a behavior policy
             in the training logged bandit feedback.
+            When None is given, the the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
@@ -248,7 +256,7 @@ class RegressionModel(BaseEstimator):
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
-            When 1 is given, then the regression model is trained on the whole logged bandit feedback data.
+            When 1 is given, the regression model is trained on the whole logged bandit feedback data.
 
         random_state: int, default=None
             `random_state` affects the ordering of the indices, which controls the randomness of each fold.
@@ -260,6 +268,16 @@ class RegressionModel(BaseEstimator):
             Estimated expected rewards for new data by the regression model.
 
         """
+        check_bandit_feedback_inputs(
+            context=context,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            action_context=self.action_context,
+        )
+        n_rounds = context.shape[0]
+
         assert n_folds > 0 and isinstance(
             n_folds, int
         ), f"n_folds must be a positive integer, but {n_folds} is given"
@@ -267,15 +285,19 @@ class RegressionModel(BaseEstimator):
             position = np.zeros_like(action)
         else:
             assert (
-                position is not None
-            ), "position has to be set when len_list is larger than 1"
+                isinstance(position, np.ndarray) and position.ndim == 1
+            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
         if self.fitting_method in ["iw", "mrdr"]:
             assert (
-                action_dist is not None
-            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then action_dist must be given"
-            assert (
-                pscore is not None
-            ), "When either 'iw' or 'mrdr' is used as the 'fitting_method' argument, then pscore must be given"
+                isinstance(action_dist, np.ndarray) and action_dist.ndim == 3
+            ), f"when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
+            assert action_dist.shape == (
+                n_rounds,
+                self.n_actions,
+                self.len_list,
+            ), f"shape of action_dist must be (n_rounds, n_actions, len_list)={n_rounds, self.n_actions, self.len_list}, but is {action_dist.shape}"
+        if pscore is None:
+            pscore = np.ones_like(action) / self.n_actions
 
         if n_folds == 1:
             self.fit(
@@ -289,11 +311,11 @@ class RegressionModel(BaseEstimator):
             return self.predict(context=context)
         else:
             estimated_rewards_by_reg_model = np.zeros(
-                (context.shape[0], self.n_actions, self.len_list)
+                (n_rounds, self.n_actions, self.len_list)
             )
-        skf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
-        skf.get_n_splits(context)
-        for train_idx, test_idx in skf.split(context):
+        kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
+        kf.get_n_splits(context)
+        for train_idx, test_idx in kf.split(context):
             action_dist_tr = (
                 action_dist[train_idx] if action_dist is not None else action_dist
             )
