@@ -4,13 +4,10 @@
 """Base Interfaces for Bandit Algorithms."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
-from sklearn.base import clone, ClassifierMixin, is_classifier
 from sklearn.utils import check_random_state
-
-from ..utils import check_bandit_feedback_inputs
 
 
 @dataclass
@@ -170,13 +167,10 @@ class BaseContextualPolicy(metaclass=ABCMeta):
 
 @dataclass
 class BaseOffPolicyLearner(metaclass=ABCMeta):
-    """Base Class for off-policy learner with OPE estimators.
+    """Base Class for off-policy learners.
 
     Parameters
     -----------
-    base_model: ClassifierMixin
-        Machine learning classifier to be used to train an offline decision making policy.
-
     n_actions: int
         Number of actions.
 
@@ -184,29 +178,19 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         Length of a list of recommended actions in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    Reference
-    -----------
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
-
     """
 
-    base_model: ClassifierMixin
     n_actions: int
     len_list: int = 1
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert is_classifier(self.base_model), "base_model must be a classifier."
         assert self.n_actions > 1 and isinstance(
             self.n_actions, int
         ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
         assert self.len_list > 0 and isinstance(
             self.len_list, int
         ), f"len_list must be a positive integer, but {self.len_list} is given"
-        self.base_model_list = [
-            clone(self.base_model) for _ in np.arange(self.len_list)
-        ]
 
     @property
     def policy_type(self) -> str:
@@ -214,142 +198,23 @@ class BaseOffPolicyLearner(metaclass=ABCMeta):
         return "offline"
 
     @abstractmethod
-    def _create_train_data_for_opl(
-        self,
-        context: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        pscore: Optional[np.ndarray] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Create training data for off-policy learning.
-
-        Parameters
-        -----------
-        context: array-like, shape (n_actions,)
-            Context vectors in each round, i.e., :math:`x_t`.
-
-        action: array-like, shape (n_actions,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
-
-        reward: array-like, shape (n_actions,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
-
-        pscore: array-like, shape (n_actions,), default=None
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
-
-        Returns
-        --------
-        (X, sample_weight, y): Tuple[np.ndarray, np.ndarray, np.ndarray]
-            Feature vectors, sample weights, and outcome for training the base machine learning model.
-
-        """
+    def fit(self,) -> None:
+        """Fits the offline bandit policy according to the given logged bandit feedback data."""
         raise NotImplementedError
 
-    def fit(
-        self,
-        context: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        pscore: Optional[np.ndarray] = None,
-        position: Optional[np.ndarray] = None,
-    ) -> None:
-        """Fits the offline bandit policy according to the given logged bandit feedback data.
-
-        Parameters
-        -----------
-        context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
-
-        action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
-
-        reward: array-like, shape (n_rounds,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
-
-        pscore: array-like, shape (n_rounds,), default=None
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
-
-        position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
-            If None is given, a learner assumes that there is only one position.
-            When `len_list` > 1, position has to be set.
-
-        """
-        check_bandit_feedback_inputs(
-            context=context,
-            action=action,
-            reward=reward,
-            pscore=pscore,
-            position=position,
-        )
-        if pscore is None:
-            n_actions = np.int(action.max() + 1)
-            pscore = np.ones_like(action) / n_actions
-        if position is None:
-            assert self.len_list == 1, "position has to be set when len_list is 1"
-            position = np.zeros_like(action)
-        for position_ in np.arange(self.len_list):
-            X, sample_weight, y = self._create_train_data_for_opl(
-                context=context[position == position_],
-                action=action[position == position_],
-                reward=reward[position == position_],
-                pscore=pscore[position == position_],
-            )
-            self.base_model_list[position_].fit(X=X, y=y, sample_weight=sample_weight)
-
-    def predict(self, context: np.ndarray) -> None:
+    @abstractmethod
+    def predict(self, context: np.ndarray) -> np.ndarray:
         """Predict best action for new data.
 
         Parameters
         -----------
         context: array-like, shape (n_rounds_of_new_data, dim_context)
-            Observed context vector for new data.
+            Context vectors for new data.
 
         Returns
         -----------
         action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Predicted best (deterministic) actions for new data.
+            Predicted best actions for new data.
 
         """
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
-        n_rounds_of_new_data = context.shape[0]
-        action_dist = np.zeros((n_rounds_of_new_data, self.n_actions, self.len_list))
-        for position_ in np.arange(self.len_list):
-            predicted_actions_for_the_position = (
-                self.base_model_list[position_].predict(context).astype(int)
-            )
-            action_dist[
-                np.arange(n_rounds_of_new_data),
-                predicted_actions_for_the_position,
-                np.ones(n_rounds_of_new_data, dtype=int) * position_,
-            ] = 1
-        return action_dist
-
-    def predict_proba(self, context: np.ndarray) -> None:
-        """Predict probabilities of each action being the best one for new data.
-
-        Parameters
-        -----------
-        context: array-like, shape (n_rounds_of_new_data, dim_context)
-            Observed context vector for new data.
-
-        Returns
-        -----------
-        action_dist: array-like, shape (n_rounds_of_new_data, n_actions)
-            Probability estimates of each arm being the best one for new data.
-            The returned estimates for all classes are ordered by the label of classes.
-
-        """
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
-        n_rounds_of_new_data = context.shape[0]
-        action_dist = np.zeros((n_rounds_of_new_data, self.n_actions, self.len_list))
-        for position_ in np.arange(self.len_list):
-            predicted_probas_for_the_position = self.base_model_list[
-                position_
-            ].predict_proba(context)
-            action_dist[:, :, position_] = predicted_probas_for_the_position
-        return action_dist
+        raise NotImplementedError
