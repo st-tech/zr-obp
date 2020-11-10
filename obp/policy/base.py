@@ -166,7 +166,7 @@ class BaseContextualPolicy(metaclass=ABCMeta):
 
 
 @dataclass
-class BaseOffPolicyLearner(metaclass=ABCMeta):
+class BaseOfflinePolicyLearner(metaclass=ABCMeta):
     """Base Class for off-policy learners.
 
     Parameters
