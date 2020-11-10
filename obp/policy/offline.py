@@ -26,7 +26,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     base_classifier: ClassifierMixin
@@ -73,7 +73,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -122,13 +122,13 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.

@@ -26,7 +26,7 @@ def run_bandit_simulation(
     Returns
     --------
     action_dist: array-like, shape (n_rounds, n_actions, len_list)
-        Distribution over actions or the action choice probabilities (can be deterministic).
+        Action choice probabilities (can be deterministic).
 
     """
     for key_ in ["action", "position", "reward", "pscore", "context"]:

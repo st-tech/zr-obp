@@ -13,7 +13,7 @@ from ..utils import estimate_confidence_interval_by_bootstrap
 
 @dataclass
 class BaseOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for off-policy estimators."""
+    """Base class for OPE estimators."""
 
     @abstractmethod
     def _estimate_round_rewards(self) -> np.ndarray:
@@ -35,6 +35,8 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 class ReplayMethod(BaseOffPolicyEstimator):
     """Estimate the policy value by Relpay Method (RM).
 
+    Note
+    -------
     Replay Method (RM) estimates the policy value of a given evaluation policy :math:`\\pi_e` by
 
     .. math::
@@ -42,9 +44,9 @@ class ReplayMethod(BaseOffPolicyEstimator):
         \\hat{V}_{\\mathrm{RM}} (\\pi_e; \\mathcal{D}) :=
         \\frac{\\mathbb{E}_{\\mathcal{D}}[\\mathbb{I} \\{ \\pi_e (x_t) = a_t \\} r_t ]}{\\mathbb{E}_{\\mathcal{D}}[\\mathbb{I} \\{ \\pi_e (x_t) = a_t \\}]},
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
-    :math:`\\pi_e: \\mathcal{X} \\rightarrow \\mathcal{A}` is the function
-    representing the deterministic action choices by the evaluation policy during the offline bandit simulation.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`\\pi_e: \\mathcal{X} \\rightarrow \\mathcal{A}` is the function
+    representing action choices by the evaluation policy realized during offline bandit simulation.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
 
     Parameters
@@ -74,10 +76,10 @@ class ReplayMethod(BaseOffPolicyEstimator):
         Parameters
         ------------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
@@ -109,10 +111,10 @@ class ReplayMethod(BaseOffPolicyEstimator):
         Parameters
         ------------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
@@ -143,10 +145,10 @@ class ReplayMethod(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
@@ -181,18 +183,20 @@ class ReplayMethod(BaseOffPolicyEstimator):
 class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     """Estimate the policy value by Inverse Probability Weighting (IPW).
 
+    Note
+    -------
     Inverse Probability Weighting (IPW) estimates the policy value of a given evaluation policy :math:`\\pi_e` by
 
     .. math::
 
         \\hat{V}_{\\mathrm{IPW}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{\\mathcal{D}} [ w(x_t,a_t) r_t],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
-    :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
 
     IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy (importance weight).
-    When the behavior policy is known, the IPW estimator is unbiased and consistent for the policy value.
+    When the behavior policy is known, IPW is unbiased and consistent for the true policy value.
     However, it can have a large variance, especially when the evaluation policy significantly deviates from the behavior policy.
 
     Parameters
@@ -226,16 +230,16 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         Returns
         ----------
@@ -260,19 +264,19 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         Returns
         ----------
@@ -305,20 +309,20 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities
-            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities
+            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         alpha: float, default=0.05
             P-value.
@@ -354,6 +358,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     """Estimate the policy value by Self-Normalized Inverse Probability Weighting (SNIPW).
 
+    Note
+    -------
     Self-Normalized Inverse Probability Weighting (SNIPW) estimates the policy value of a given evaluation policy :math:`\\pi_e` by
 
     .. math::
@@ -361,13 +367,13 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         \\hat{V}_{\\mathrm{SNIPW}} (\\pi_e; \\mathcal{D}) :=
         \\frac{\\mathbb{E}_{\\mathcal{D}} [w(x_t,a_t) r_t]}{ \\mathbb{E}_{\\mathcal{D}} [w(x_t,a_t)]},
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
-    :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
 
     SNIPW re-weights the observed rewards by the self-normalized importance weihgt.
     This estimator is not unbiased even when the behavior policy is known.
-    However, it is still consistent for the policy value and increases the stability in some senses.
+    However, it is still consistent for the true policy value and increases the stability in some senses.
     See the references for the detailed discussions.
 
     Parameters
@@ -401,19 +407,19 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         Returns
         ----------
@@ -429,6 +435,8 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
 class DirectMethod(BaseOffPolicyEstimator):
     """Estimate the policy value by Direct Method (DM).
 
+    Note
+    -------
     DM first learns a supervised machine learning model, such as ridge regression and gradient boosting,
     to estimate the mean reward function (:math:`q(x,a) = \\mathbb{E}[r|x,a]`).
     It then uses it to estimate the policy value as follows.
@@ -436,15 +444,16 @@ class DirectMethod(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{V}_{\\mathrm{DM}} (\\pi_e; \\mathcal{D}, \\hat{q})
-        :=  \\mathbb{E}_{\\mathcal{D}}[\\hat{q} (x_t,\\pi_e)],
+        &:= \\mathbb{E}_{\\mathcal{D}} \\left[ \\sum_{a \\in \\mathcal{A}} \\hat{q} (x_t,a) \\pi_e(a|x_t) \\right],    \\\\
+        & =  \\mathbb{E}_{\\mathcal{D}}[\\hat{q} (x_t,\\pi_e)],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
-    :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`, which supports several fitting methods specific to OPE.
 
-    If the regression model is a good approximation to the mean reward function,
+    If the regression model (:math:`\\hat{q}`) is a good approximation to the true mean reward function,
     this estimator accurately estimates the policy value of the evaluation policy.
     If the regression function fails to approximate the mean reward function well,
     however, the final estimator is no longer consistent.
@@ -481,10 +490,10 @@ class DirectMethod(BaseOffPolicyEstimator):
             Positions of each round in the given logged bandit feedback.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -514,10 +523,10 @@ class DirectMethod(BaseOffPolicyEstimator):
             Positions of each round in the given logged bandit feedback.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -549,10 +558,10 @@ class DirectMethod(BaseOffPolicyEstimator):
             Positions of each round in the given logged bandit feedback.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         alpha: float, default=0.05
             P-value.
@@ -586,6 +595,8 @@ class DirectMethod(BaseOffPolicyEstimator):
 class DoublyRobust(InverseProbabilityWeighting):
     """Estimate the policy value by Doubly Robust (DR).
 
+    Note
+    -------
     Similar to DM, DR first learns a supervised machine learning model, such as ridge regression and gradient boosting,
     to estimate the mean reward function (:math:`q(x,a) = \\mathbb{E}[r|x,a]`).
     It then uses it to estimate the policy value as follows.
@@ -595,11 +606,13 @@ class DoublyRobust(InverseProbabilityWeighting):
         \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D}, \\hat{q})
         := \\mathbb{E}_{\\mathcal{D}}[\\hat{q}(x_t,\\pi_e) +  w(x_t,a_t) (r_t - \\hat{q}(x_t,a_t))],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`.
     :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
+
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
 
@@ -641,22 +654,22 @@ class DoublyRobust(InverseProbabilityWeighting):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -693,22 +706,22 @@ class DoublyRobust(InverseProbabilityWeighting):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -743,22 +756,22 @@ class DoublyRobust(InverseProbabilityWeighting):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         alpha: float, default=0.05
             P-value.
@@ -795,6 +808,8 @@ class DoublyRobust(InverseProbabilityWeighting):
 class SelfNormalizedDoublyRobust(DoublyRobust):
     """Estimate the policy value by Self-Normalized Doubly Robust (SNDR).
 
+    Note
+    -------
     Self-Normalized Doubly Robust estimates the policy value of a given evaluation policy :math:`\\pi_e` by
 
     .. math::
@@ -802,13 +817,12 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         \\hat{V}_{\\mathrm{SNDR}} (\\pi_e; \\mathcal{D}, \\hat{q}) :=
         \\frac{\\mathbb{E}_{\\mathcal{D}}[\\hat{q}(x_t,\\pi_e) +  w(x_t,a_t) (r_t - \\hat{q}(x_t,a_t))]}{\\mathbb{E}_{\\mathcal{D}}[ w(x_t,a_t) ]},
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
-    :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
-    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
-    which supports several fitting methods specific to OPE such as *more robust doubly robust*.
+    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`.
 
     Similar to Self-Normalized Inverse Probability Weighting, SNDR estimator applies the self-normalized importance weighting technique to
     increase the stability of the original Doubly Robust estimator.
@@ -845,22 +859,22 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -888,21 +902,22 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
 class SwitchInverseProbabilityWeighting(DoublyRobust):
     """Estimate the policy value by Switch Inverse Probability Weighting (Switch-IPW).
 
-    Switch-IPW aims to reduce the variance of the Inverse Probability Weighting estimator by using direct method instead
+    Note
+    -------
+    Switch-IPW aims to reduce the variance of the IPW estimator by using direct method
     when the importance weight is large. This estimator estimates the policy value of a given evaluation policy :math:`\\pi_e` by
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SwitchIPW}} (\\pi_e; \\mathcal{D}, \\tau)
-        := \\mathbb{E}_{\\mathcal{D}} \\left[ \\sum_{a \\in \\mathcal{A}} \\hat{q} (x_t, a) \\pi_e (a|x_t) \\mathbb{I} \\{ w(x_t, a) > \\tau \\}
+        & \\hat{V}_{\\mathrm{SwitchIPW}} (\\pi_e; \\mathcal{D}, \\tau) \\\\
+        & := \\mathbb{E}_{\\mathcal{D}} \\left[ \\sum_{a \\in \\mathcal{A}} \\hat{q} (x_t, a) \\pi_e (a|x_t) \\mathbb{I} \\{ w(x_t, a) > \\tau \\}
          + w(x_t,a_t) r_t \\mathbb{I} \\{ w(x_t,a_t) \\le \\tau \\} \\right],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
-    :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\tau (\\ge 0)` is a switching hyperparameter, which decides the threshold for the importance weight.
-    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
-    which supports several fitting methods specific to OPE such as *more robust doubly robust*.
+    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`.
 
     Parameters
     ----------
@@ -930,7 +945,7 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
         """Initialize Class."""
         assert (
             self.tau >= 0.0
-        ), f"switching hyperparameter should be larger than 1. but {self.tau} is given"
+        ), f"switching hyperparameter should be larger than 1, but {self.tau} is given"
 
     def _estimate_round_rewards(
         self,
@@ -947,22 +962,22 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -988,7 +1003,9 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
 class SwitchDoublyRobust(DoublyRobust):
     """Estimate the policy value by Switch Doubly Robust (Switch-DR).
 
-    Switch-DR aims to reduce the variance of the Doubly Robust estimator by using direct method instead of doubly robust
+    Note
+    -------
+    Switch-DR aims to reduce the variance of the DR estimator by using direct method
     when the importance weight is large. This estimator estimates the policy value of a given evaluation policy :math:`\\pi_e` by
 
     .. math::
@@ -996,20 +1013,19 @@ class SwitchDoublyRobust(DoublyRobust):
         \\hat{V}_{\\mathrm{SwitchDR}} (\\pi_e; \\mathcal{D}, \\hat{q}, \\tau)
         := \\mathbb{E}_{\\mathcal{D}} [\\hat{q}(x_t,\\pi_e) +  w(x_t,a_t) (r_t - \\hat{q}(x_t,a_t)) \\mathbb{I} \\{ w(x_t,a_t) \\le \\tau \\}],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
-    :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\tau (\\ge 0)` is a switching hyperparameter, which decides the threshold for the importance weight.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
-    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
-    which supports several fitting methods specific to OPE such as *more robust doubly robust*.
+    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`.
 
     Parameters
     ----------
     tau: float, default=1
         Switching hyperparameter. When importance weight is larger than this parameter, the DM estimator is applied, otherwise the DR estimator is applied.
-        This hyperparameter should be larger than 0., otherwise it is meaningless.
+        This hyperparameter should be larger than or equal to 0., otherwise it is meaningless.
 
     estimator_name: str, default='switch-dr'.
         Name of off-policy estimator.
@@ -1048,22 +1064,22 @@ class SwitchDoublyRobust(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -1092,7 +1108,9 @@ class SwitchDoublyRobust(DoublyRobust):
 class DoublyRobustWithShrinkage(DoublyRobust):
     """Estimate the policy value by Doubly Robust with optimistic shrinkage (DRos).
 
-    DR with shrinkage replaces the importance weight in the original DR estimator with a new weight mapping
+    Note
+    ------
+    DR with (optimistic) shrinkage replaces the importance weight in the original DR estimator with a new weight mapping
     found by directly optimizing sharp bounds on the resulting MSE.
 
     .. math::
@@ -1100,13 +1118,13 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         \\hat{V}_{\\mathrm{DRos}} (\\pi_e; \\mathcal{D}, \\hat{q}, \\lambda)
         := \\mathbb{E}_{\\mathcal{D}} [\\hat{q}(x_t,\\pi_e) +  w_o(x_t,a_t;\\lambda) (r_t - \\hat{q}(x_t,a_t))],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by :math:`\\pi_b`.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`.
     :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
-    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
-    which supports several fitting methods specific to OPE such as *more robust doubly robust*.
+    To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`.
 
     :math:`w_{o} (x_t,a_t;\\lambda)` is a new weight by the shrinkage technique which is defined as
 
@@ -1117,15 +1135,13 @@ class DoublyRobustWithShrinkage(DoublyRobust):
     When :math:`\\lambda=0`, we have :math:`w_{o} (x,a;\\lambda)=0` corresponding to the DM estimator.
     In contrast, as :math:`\\lambda \\rightarrow \\infty`, :math:`w_{o} (x,a;\\lambda)` increases and in the limit becomes equal to
     the original importance weight, corresponding to the standard DR estimator.
-    Note that there is the other kind of the shrinkage technique called *pessimistic shrinkage*.
-    DR with pessimistic shrinkage can be achieved by controlling the clipping hyperparameter of the original DR estimator
-    (i.e., obp.ope.DoublyRobust), and thus is not implemented in this class.
 
 
     Parameters
     ----------
     lambda_: float
-        Shrinkage hyperparameter. This hyperparameter should be larger than 0., otherwise it is meaningless.
+        Shrinkage hyperparameter.
+        This hyperparameter should be larger than or equal to 0., otherwise it is meaningless.
 
     estimator_name: str, default='dr-os'.
         Name of off-policy estimator.
@@ -1164,22 +1180,22 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Observed reward (or outcome) of each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
             Positions of each round in the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Propensity scores or the action choice probabilities by behavior policy, i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a|x)`.
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated rewards for each round, action, and position by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------

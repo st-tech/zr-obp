@@ -66,10 +66,10 @@ class OffPolicyEvaluation:
         >>> estimated_policy_value
         {'ipw': 0.004553...}
 
-        # estimated performance of BernoulliTS relative to the ground-truth performance of Random
-        >>> relative_policy_value_of_bernoulli_ts = estimated_policy_value['ipw'] / bandit_feedback['reward'].mean()
+        # policy value improvement of BernoulliTS over the Random policy estimated by IPW
+        >>> estimated_policy_value_improvement = estimated_policy_value['ipw'] / bandit_feedback['reward'].mean()
         # our OPE procedure suggests that BernoulliTS improves Random by 19.81%
-        >>> print(relative_policy_value_of_bernoulli_ts)
+        >>> print(estimated_policy_value_improvement)
         1.198126...
 
     """
@@ -111,16 +111,16 @@ class OffPolicyEvaluation:
         Parameters
         ------------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            When None is given, model-dependent estimators such as DM and DR cannot be used.
 
         Returns
         ----------
         policy_value_dict: Dict[str, float]
-            Dictionary containing estimated policy values by off-policy estimators.
+            Dictionary containing estimated policy values by OPE estimators.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
@@ -155,10 +155,10 @@ class OffPolicyEvaluation:
         Parameters
         ------------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
@@ -207,15 +207,15 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[DataFrame, DataFrame]:
-        """Summarize estimated_policy_values and their confidence intervals in off-policy evaluation by given estimators.
+        """Summarize policy values estimated by OPE estimators and their confidence intervals.
 
         Parameters
         ------------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
@@ -230,7 +230,7 @@ class OffPolicyEvaluation:
         Returns
         ----------
         (policy_value_df, policy_value_interval_df): Tuple[DataFrame, DataFrame]
-            Estimated policy values and their confidence intervals by off-policy estimators.
+            Estimated policy values and their confidence intervals by OPE estimators.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
@@ -266,15 +266,15 @@ class OffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize estimated policy values by given off-policy estimators.
+        """Visualize policy values estimated by OPE estimators.
 
         Parameters
         ----------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
@@ -352,20 +352,22 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
-        """Evaluate estimation accuracies of off-policy estimators.
+        """Evaluate estimation performances of OPE estimators.
 
-        Evaluate the performance of off-policy estimators by relative estimation error (relative-EE) or squared error (SE):
-
-        .. math ::
-
-            \\text{Relative-EE} (\\hat{V}) = \\left|  \\frac{\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi)}{V(\\pi)} \\right|,
+        Note
+        ------
+        Evaluate the estimation performances of OPE estimators by relative estimation error (relative-EE) or squared error (SE):
 
         .. math ::
 
-            \\text{SE} (\\hat{V}) = \\left(\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi) \\right)^2,
+            \\text{Relative-EE} (\\hat{V}; \\mathcal{D}) = \\left|  \\frac{\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi)}{V(\\pi)} \\right|,
 
-        where :math:`V({\\pi})` is the ground-truth policy value of the evalation policy :math:`\\pi` (often estimated using on-policy estimation).
-        :math:`\\hat{V}(\\pi; \\mathcal{D})` is an estimated policy value by an off-policy estimator :math:`\\hat{V}` and logged bandit feedback :math:`\\mathcal{D}`.
+        .. math ::
+
+            \\text{SE} (\\hat{V}; \\mathcal{D}) = \\left(\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi) \\right)^2,
+
+        where :math:`V({\\pi})` is the ground-truth policy value of the evalation policy :math:`\\pi_e` (often estimated using on-policy estimation).
+        :math:`\\hat{V}(\\pi; \\mathcal{D})` is an estimated policy value by an OPE estimator :math:`\\hat{V}` and logged bandit feedback :math:`\\mathcal{D}`.
 
         Parameters
         ----------
@@ -374,20 +376,20 @@ class OffPolicyEvaluation:
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as its ground-truth.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         metric: str, default="relative-ee"
-            Evaluation metric to evaluate and compare the estimation performance of off-policy estimators.
+            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
             Must be "relative-ee" or "se".
 
         Returns
         ----------
         eval_metric_ope_dict: Dict[str, float]
-            Dictionary containing evaluation metric for evaluating the estimation performance of off-policy estimators.
+            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
@@ -427,7 +429,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> DataFrame:
-        """Summarize performance comparison of off-policy estimators.
+        """Summarize performance comparisons of OPE estimators.
 
         Parameters
         ----------
@@ -436,20 +438,20 @@ class OffPolicyEvaluation:
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Estimated expected rewards for the given logged bandit feedback at each item and position by regression model.
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         metric: str, default="relative-ee"
-            Evaluation metric to evaluate and compare the estimation performance of off-policy estimators.
-            Must be "relative-ee" or "se".
+            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
+            Must be either "relative-ee" or "se".
 
         Returns
         ----------
         eval_metric_ope_df: DataFrame
-            Evaluation metric for evaluating the estimation performance of off-policy estimators.
+            Evaluation metric for evaluating the estimation performance of OPE estimators.
 
         """
         assert isinstance(action_dist, np.ndarray), "action_dist must be ndarray"
