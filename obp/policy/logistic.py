@@ -26,7 +26,7 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -132,7 +132,7 @@ class LogisticUCB(BaseContextualPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -245,7 +245,7 @@ class LogisticTS(BaseContextualPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1

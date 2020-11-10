@@ -29,7 +29,7 @@ class RegressionModel(BaseEstimator):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
@@ -96,7 +96,7 @@ class RegressionModel(BaseEstimator):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -112,7 +112,7 @@ class RegressionModel(BaseEstimator):
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
             When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         """
@@ -235,7 +235,7 @@ class RegressionModel(BaseEstimator):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -251,7 +251,7 @@ class RegressionModel(BaseEstimator):
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Distribution over actions or the action choice probabilities by the evaluation policy (can be deterministic).
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
             When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         n_folds: int, default=1
@@ -348,7 +348,7 @@ class RegressionModel(BaseEstimator):
             Context vectors in the training logged bandit feedback.
 
         action: array-like, shape (n_rounds,)
-            Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing each action, vector representation of each action.

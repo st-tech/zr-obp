@@ -74,7 +74,7 @@ def convert_to_action_dist(n_actions: int, selected_actions: np.ndarray,) -> np.
     Returns
     ----------
     action_dist: array-like, shape (n_rounds, n_actions, len_list)
-        Distribution over actions or the action choice probabilities (can be deterministic).
+        Action choice probabilities (can be deterministic).
 
     """
     n_rounds, len_list = selected_actions.shape
@@ -174,7 +174,7 @@ def check_bandit_feedback_inputs(
         Context vectors in each round, i.e., :math:`x_t`.
 
     action: array-like, shape (n_rounds,)
-        Sampled (realized) actions by behavior policy in each round, i.e., :math:`a_t`.
+        Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
     reward: array-like, shape (n_rounds,)
         Observed rewards (or outcome) in each round, i.e., :math:`r_t`.

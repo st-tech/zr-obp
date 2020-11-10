@@ -20,7 +20,7 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -93,7 +93,7 @@ class BaseContextualPolicy(metaclass=ABCMeta):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -175,7 +175,7 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of recommended actions in each impression.
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
     """
@@ -199,7 +199,7 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
 
     @abstractmethod
     def fit(self,) -> None:
-        """Fits the offline bandit policy according to the given logged bandit feedback data."""
+        """Fits an offline bandit policy using the given logged bandit feedback data."""
         raise NotImplementedError
 
     @abstractmethod
@@ -213,8 +213,8 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
 
         Returns
         -----------
-        action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Predicted best actions for new data.
+        action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Action choices by a policy trained by calling the `fit` method.
 
         """
         raise NotImplementedError
