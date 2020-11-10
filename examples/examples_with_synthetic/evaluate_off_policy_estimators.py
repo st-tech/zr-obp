@@ -126,7 +126,7 @@ if __name__ == "__main__":
     evaluation_policy = IPWLearner(
         n_actions=dataset.n_actions,
         len_list=dataset.len_list,
-        base_model=base_model_dict[base_model_for_evaluation_policy](
+        base_classifier=base_model_dict[base_model_for_evaluation_policy](
             **hyperparams[base_model_for_evaluation_policy]
         ),
     )
@@ -144,7 +144,8 @@ if __name__ == "__main__":
         )
         # predict the action decisions for the test set of the synthetic logged bandit feedback
         action_dist = evaluation_policy.predict_proba(
-            context=bandit_feedback_test["context"]
+            context=bandit_feedback_test["context"],
+            tau=0.1,  # temperature hyperparameter
         )
         # estimate the ground-truth policy values of the evaluation policy
         # using the full expected reward contained in the test set of synthetic bandit feedback
@@ -166,8 +167,6 @@ if __name__ == "__main__":
             context=bandit_feedback_test["context"],
             action=bandit_feedback_test["action"],
             reward=bandit_feedback_test["reward"],
-            position=bandit_feedback_test["position"],
-            pscore=bandit_feedback_test["pscore"],
             n_folds=3,  # 3-fold cross-fitting
             random_state=random_state,
         )
