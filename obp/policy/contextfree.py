@@ -30,20 +30,20 @@ class EpsilonGreedy(BaseContextFreePolicy):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
-        Length of a list of recommended actions in each impression.
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
-    epsilon: float, default: 1.
+    epsilon: float, default=1.
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
-    policy_name: str, default: f'egreedy_{epsilon}'.
+    policy_name: str, default=f'egreedy_{epsilon}'.
         Name of bandit policy.
 
     """
@@ -63,7 +63,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -105,20 +105,20 @@ class Random(EpsilonGreedy):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
-        Length of a list of recommended actions in each impression.
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
-    epsilon: float, default: 1.
+    epsilon: float, default=1.
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
-    policy_name: str, default: 'random'.
+    policy_name: str, default='random'.
         Name of bandit policy.
 
     """
@@ -132,7 +132,7 @@ class Random(EpsilonGreedy):
 
         Parameters
         ----------
-        n_rounds: int, default: 1
+        n_rounds: int, default=1
             Number of rounds in the distribution over actions.
             (the size of the first axis of `action_dist`)
 
@@ -157,30 +157,30 @@ class BernoulliTS(BaseContextFreePolicy):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
-        Length of a list of recommended actions in each impression.
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
-    alpha: array-like, shape (n_actions, ), default: None
+    alpha: array-like, shape (n_actions, ), default=None
         Prior parameter vector for Beta distributions.
 
-    beta: array-like, shape (n_actions, ), default: None
+    beta: array-like, shape (n_actions, ), default=None
         Prior parameter vector for Beta distributions.
 
-    is_zozotown_prior: bool, default: False
+    is_zozotown_prior: bool, default=False
         Whether to use hyperparameters for the beta distribution used
         at the start of the data collection period in ZOZOTOWN.
 
-    campaign: str, default: None
-        One of the three possible campaigns, "all", "men", and "women".
+    campaign: str, default=None
+        One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
 
-    policy_name: str, default: 'bts'
+    policy_name: str, default='bts'
         Name of bandit policy.
 
     """
@@ -209,7 +209,7 @@ class BernoulliTS(BaseContextFreePolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -245,11 +245,11 @@ class BernoulliTS(BaseContextFreePolicy):
 
         Parameters
         ----------
-        n_rounds: int, default: 1
+        n_rounds: int, default=1
             Number of rounds in the distribution over actions.
             (the size of the first axis of `action_dist`)
 
-        n_sim: int, default: 100000
+        n_sim: int, default=100000
             Number of simulations in the Monte Carlo simulation to compute the distribution over actions.
 
         Returns

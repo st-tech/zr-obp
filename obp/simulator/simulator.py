@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Offline Bandit Simulator."""
+"""Bandit Simulator."""
 from tqdm import tqdm
 
 import numpy as np
@@ -13,20 +13,20 @@ from ..types import BanditFeedback, BanditPolicy
 def run_bandit_simulation(
     bandit_feedback: BanditFeedback, policy: BanditPolicy
 ) -> np.ndarray:
-    """Run bandit algorithm on logged bandit feedback data.
+    """Run an online bandit algorithm on the given logged bandit feedback data.
 
     Parameters
     ----------
     bandit_feedback: BanditFeedback
-        Logged bandit feedback data to be used in offline bandit simulation.
+        Logged bandit feedback data used in offline bandit simulation.
 
     policy: BanditPolicy
-        Bandit policy to be evaluated in offline bandit simulation (i.e., evaluation policy).
+        Online bandit policy evaluated in offline bandit simulation (i.e., evaluation policy).
 
     Returns
     --------
-    action_dist: array-like shape (n_rounds, n_actions, len_list)
-        Distribution over actions, i.e., probability of items being selected at each position (can be deterministic).
+    action_dist: array-like, shape (n_rounds, n_actions, len_list)
+        Action choice probabilities (can be deterministic).
 
     """
     for key_ in ["action", "position", "reward", "pscore", "context"]:

@@ -25,23 +25,23 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
-        Length of a list of recommended actions in each impression.
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    alpha_: float, default: 1.
+    alpha_: float, default=1.
         Prior parameter for the online logistic regression.
 
-    lambda_: float, default: 1.
+    lambda_: float, default=1.
         Regularization hyperparameter for the online logistic regression.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
-    epsilon: float, default: 0.
+    epsilon: float, default=0.
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
     """
@@ -75,7 +75,7 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -131,23 +131,23 @@ class LogisticUCB(BaseContextualPolicy):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
-        Length of a list of recommended actions in each impression.
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    alpha_: float, default: 1.
+    alpha_: float, default=1.
         Prior parameter for the online logistic regression.
 
-    lambda_: float, default: 1.
+    lambda_: float, default=1.
         Regularization hyperparameter for the online logistic regression.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
-    epsilon: float, default: 0.
+    epsilon: float, default=0.
         Exploration hyperparameter that must take value in the range of [0., 1.].
 
     References
@@ -186,7 +186,7 @@ class LogisticUCB(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """
@@ -244,20 +244,20 @@ class LogisticTS(BaseContextualPolicy):
     n_actions: int
         Number of actions.
 
-    len_list: int, default: 1
-        Length of a list of recommended actions in each impression.
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    batch_size: int, default: 1
+    batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    alpha_: float, default: 1.
+    alpha_: float, default=1.
         Prior parameter for the online logistic regression.
 
-    lambda_: float, default: 1.
+    lambda_: float, default=1.
         Regularization hyperparameter for the online logistic regression.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in sampling actions.
 
     References
@@ -294,7 +294,7 @@ class LogisticTS(BaseContextualPolicy):
 
         Returns
         ----------
-        selected_actions: array-like shape (len_list, )
+        selected_actions: array-like, shape (len_list, )
             List of selected actions.
 
         """

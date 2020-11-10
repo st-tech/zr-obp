@@ -24,13 +24,13 @@ def estimate_confidence_interval_by_bootstrap(
     samples: array-like
         Empirical observed samples to be used to estimate cumulative distribution function.
 
-    alpha: float, default: 0.05
+    alpha: float, default=0.05
         P-value.
 
-    n_bootstrap_samples: int, default: 10000
+    n_bootstrap_samples: int, default=10000
         Number of resampling performed in the bootstrap procedure.
 
-    random_state: int, default: None
+    random_state: int, default=None
         Controls the random seed in bootstrap sampling.
 
     Returns
@@ -73,8 +73,8 @@ def convert_to_action_dist(n_actions: int, selected_actions: np.ndarray,) -> np.
 
     Returns
     ----------
-    action_dist: array-like shape (n_rounds, n_actions, len_list)
-        Distribution over actions, i.e., probability of items being selected at each position (can be deterministic).
+    action_dist: array-like, shape (n_rounds, n_actions, len_list)
+        Action choice probabilities (can be deterministic).
 
     """
     n_rounds, len_list = selected_actions.shape
@@ -171,18 +171,18 @@ def check_bandit_feedback_inputs(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors in the given logged bandit feedback.
+        Context vectors in each round, i.e., :math:`x_t`.
 
     action: array-like, shape (n_rounds,)
-        Selected actions by behavior policy in the given logged bandit feedback.
+        Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
     reward: array-like, shape (n_rounds,)
-        Observed rewards in the given logged bandit feedback.
+        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-    position: array-like, shape (n_rounds,), default: None
+    position: array-like, shape (n_rounds,), default=None
         Positions of each round in the given logged bandit feedback.
 
-    pscore: array-like, shape (n_rounds,), default: None
+    pscore: array-like, shape (n_rounds,), default=None
         Propensity scores, the probability of selecting each action by behavior policy,
         in the given logged bandit feedback.
 

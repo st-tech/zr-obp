@@ -13,10 +13,10 @@ Open Bandit Pipeline; a python library for bandit algorithms and off-policy eval
 Overview
 ~~~~~~~~~~~~
 
-*Open Bandit Pipeline (OBP)* is an open source end-to-end python library for bandit algorithms and off-policy evaluation (OPE).
+*Open Bandit Pipeline (OBP)* is an open source python library for bandit algorithms and off-policy evaluation (OPE).
 The toolkit comes with the *Open Bandit Dataset* , a large-scale logged bandit feedback data collected on a fashion e-commerce platform, `ZOZOTOWN <https://corp.zozo.com/en/service/>`_.
 The purpose of the open data and library is to enable easy, realistic, and reproducible evaluation of bandit algorithms and OPE.
-OBP has a series of implementations of dataset preprocessing, bandit policy interfaces, offline bandit simulator, and standard OPE estimators.
+OBP has a series of implementations of dataset preprocessing, bandit policy interfaces, and a variety of OPE estimators.
 
 Our open data and pipeline facilitate evaluation and comparison related to the following research topics.
 
@@ -32,7 +32,7 @@ This website contains pages with example analyses to help demonstrate the usage 
 Additionally, it presents examples of evaluating counterfactual bandit algorithms and OPE itself.
 The reference page contains the full reference documentation for the current functions of this toolkit.
 
-Supported Algorithms and OPE Estimators
+Algorithms and OPE Estimators Supported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bandit Algorithms
@@ -64,26 +64,20 @@ Bandit Algorithms
 
 OPE Estimators
 ----------------------
-   * Replay Method :cite:`Li2012`
-   * Direct Method :cite:`Beygelzimer2009`
-   * Inverse Probability Weighting :cite:`Precup2000` :cite:`Strehl2010`
-   * Self-Normalized Inverse Probability Weighting :cite:`Swaminathan2015b`
-   * Doubly Robust :cite:`Dudik2014`
-   * Switch Estimator :cite:`Wang2016`
-   * More Robust Doubly Robust :cite:`Farajtabar2018`
+   * Replay Method (RM) :cite:`Li2012`
+   * Direct Method (DM) :cite:`Beygelzimer2009`
+   * Inverse Probability Weighting (IPW) :cite:`Precup2000` :cite:`Strehl2010`
+   * Self-Normalized Inverse Probability Weighting (SNIPW) :cite:`Swaminathan2015b`
+   * Doubly Robust (DR) :cite:`Dudik2014`
+   * Switch Estimators :cite:`Wang2016`
+   * Doubly Robust with Optimistic Shrinkage (DRos) :cite:`Su2019`
+   * More Robust Doubly Robust (MRDR) :cite:`Farajtabar2018`
+   * Double Machine Learning (DML) :cite:`Narita2020`
 
-Licence
-~~~~~~~~~~~~
-Open Bandit Pipeline is released under Apache 2.0 license. Find out more about it at `LICENSE <https://github.com/st-tech/zr-obp/blob/master/LICENSE>`_.
 
 Citation
 ~~~~~~~~~~~~
 If you use our dataset and pipeline in your work, please cite our paper below.
-
-Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms. `https://arxiv.org/abs/2008.07146 <https://arxiv.org/abs/2008.07146>`_
-
-Bibtex:
 
 @article{saito2020large,
   title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
@@ -92,13 +86,32 @@ Bibtex:
   year={2020}
 }
 
+Google Group
+~~~~~~~~~~~~~~~~
+If you are interested in the Open Bandit Project, we can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
+
+Contact
+~~~~~~~~~~~~
+For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
+
+
+Table of Contents
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 3
    :caption: Introduction:
 
    about
+   related
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Off-Policy Evaluation (OPE):
+
    ope
+   estimators
+   evaluation_ope
 
 .. toctree::
    :maxdepth: 3
@@ -117,6 +130,9 @@ Bibtex:
     :caption: Others:
 
     Github <https://github.com/st-tech/zr-obp>
+    Dataset <https://research.zozo.com/data.html>
+    Google Group <https://groups.google.com/g/open-bandit-project>
+    LICENSE <https://github.com/st-tech/zr-obp/blob/master/LICENSE>
     references
 
 
