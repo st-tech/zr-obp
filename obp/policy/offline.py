@@ -10,13 +10,14 @@ from scipy.special import softmax
 from sklearn.base import clone, ClassifierMixin, is_classifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils import check_random_state, check_scalar
+from tqdm import tqdm
 
-from .base import BaseOffPolicyLearner
+from .base import BaseOfflinePolicyLearner
 from ..utils import check_bandit_feedback_inputs
 
 
 @dataclass
-class IPWLearner(BaseOffPolicyLearner):
+class IPWLearner(BaseOfflinePolicyLearner):
     """Off-policy learner with Inverse Probability Weighting.
 
     Parameters
@@ -97,7 +98,7 @@ class IPWLearner(BaseOffPolicyLearner):
         pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
     ) -> None:
-        """Fits the offline bandit policy according to the given logged bandit feedback data.
+        """Fits an offline bandit policy using the given logged bandit feedback data.
 
         Note
         --------
@@ -108,7 +109,7 @@ class IPWLearner(BaseOffPolicyLearner):
 
             \\hat{\\pi}
             & \\in \\arg \\max_{\\pi \\in \\Pi} \\hat{V}_{\\mathrm{IPW}} (\\pi ; \\mathcal{D}) \\\\
-            & = \\arg \\max_{\\pi \\in \\Pi} \\mathbb{E}_{\\mathcal{D}} \\left[\\frac{\\mathbb{I} \\{\\pi (x_{i})=a_{i} \\}}{\\pi_{b}(a_{i} \mid x_{i})} r_{i} \\right] \\\\
+            & = \\arg \\max_{\\pi \\in \\Pi} \\mathbb{E}_{\\mathcal{D}} \\left[\\frac{\\mathbb{I} \\{\\pi (x_{i})=a_{i} \\}}{\\pi_{b}(a_{i} | x_{i})} r_{i} \\right] \\\\
             & = \\arg \\min_{\\pi \\in \\Pi} \\mathbb{E}_{\\mathcal{D}} \\left[\\frac{r_i}{\\pi_{b}(a_{i} | x_{i})} \\mathbb{I} \\{\\pi (x_{i}) \\neq a_{i} \\} \\right],
 
         where :math:`\\mathbb{E}_{\\mathcal{D}} [\cdot]` is the empirical average over observations in :math:`\\mathcal{D}`.
@@ -149,8 +150,8 @@ class IPWLearner(BaseOffPolicyLearner):
             position = np.zeros_like(action, dtype=int)
         else:
             assert (
-                position is not None
-            ), "position has to be set when len_list is larger than 1"
+                isinstance(position, np.ndarray) and position.ndim == 1
+            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
 
         for position_ in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
@@ -237,18 +238,18 @@ class IPWLearner(BaseOffPolicyLearner):
 
         Note
         --------
-        `sample_action` samples a **non-repetitive** set of actions for new data :math:`x \\in \\mathcal{X}`
+        This `sample_action` method samples a **non-repetitive** set of actions for new data :math:`x \\in \\mathcal{X}`
         by first computing non-negative scores for all possible candidate products of action and position
         :math:`(a, k) \\in \\mathcal{A} \\times \\mathcal{K}` (where :math:`\\mathcal{A}` is an action set and
-        :math:`\\mathcal{K}` is a position set), and using a Plackett-Luce ranking model as follows:
+        :math:`\\mathcal{K}` is a position set), and using softmax function as follows:
 
         .. math::
 
-            & P (A_1 = a_1) = \\frac{e^{f(x,a_1,1) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A}} e^{f(x,a^{\\prime},1) / \\tau}} , \\\\
-            & P (A_2 = a_2 | A_1 = a_1) = \\frac{e^{f(x,a_2,2) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A} \\backslash \\{a_1\\}} e^{f(x,a^{\\prime},2) / \\tau}} ,
+            & P (A_1 = a_1 | x) = \\frac{e^{f(x,a_1,1) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A}} e^{f(x,a^{\\prime},1) / \\tau}} , \\\\
+            & P (A_2 = a_2 | A_1 = a_1, x) = \\frac{e^{f(x,a_2,2) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A} \\backslash \\{a_1\\}} e^{f(x,a^{\\prime},2) / \\tau}} ,
             \\ldots
 
-        where :math:`A_k` is a random variable representing the action at a position :math:`k`.
+        where :math:`A_k` is a random variable representing an action at a position :math:`k`.
         :math:`\\tau` is a temperature hyperparameter.
         :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a scoring function which is now implemented in the `predict_score` method.
@@ -280,7 +281,7 @@ class IPWLearner(BaseOffPolicyLearner):
         random_ = check_random_state(random_state)
         action = np.zeros((n_rounds, self.n_actions, self.len_list))
         score_predicted = self.predict_score(context=context)
-        for i in np.arange(n_rounds):
+        for i in tqdm(np.arange(n_rounds), desc="[sample_action]", total=n_rounds):
             action_set = np.arange(self.n_actions)
             for position_ in np.arange(self.len_list):
                 score_ = softmax(score_predicted[i, action_set, position_] / tau)
@@ -288,4 +289,53 @@ class IPWLearner(BaseOffPolicyLearner):
                 action[i, action_sampled, position_] = 1
                 action_set = np.delete(action_set, action_set == action_sampled)
         return action
+
+    def predict_proba(
+        self, context: np.ndarray, tau: Union[int, float] = 1.0,
+    ) -> np.ndarray:
+        """Obtains action choice probabilities for new data based on scores predicted by a classifier.
+
+        Note
+        --------
+        This `predict_proba` method obtains action choice probabilities for new data :math:`x \\in \\mathcal{X}`
+        by first computing non-negative scores for all possible candidate actions
+        :math:`a \\in \\mathcal{A}` (where :math:`\\mathcal{A}` is an action set),
+        and using a Plackett-Luce ranking model as follows:
+
+        .. math::
+
+            P (A = a | x) = \\frac{e^{f(x,a) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A}} e^{f(x,a^{\\prime}) / \\tau}},
+
+        where :math:`A` is a random variable representing an action, and :math:`\\tau` is a temperature hyperparameter.
+        :math:`f: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}_{+}`
+        is a scoring function which is now implemented in the `predict_score` method.
+
+        **Note that this method can be used only when `len_list=1`, please use the `sample_action` method otherwise.**
+
+        Parameters
+        ----------------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        tau: int or float, default=1.0
+            A temperature parameter, controlling the randomness of the action choice.
+            As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
+
+        Returns
+        -----------
+        choice_prob: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Action choice probabilities obtained by a trained classifier.
+
+        """
+        assert (
+            self.len_list == 1
+        ), f"predict_proba method can be used only when len_list = 1"
+        assert (
+            isinstance(context, np.ndarray) and context.ndim == 2
+        ), "context must be 2-dimensional ndarray"
+        check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
+
+        score_predicted = self.predict_score(context=context)
+        choice_prob = softmax(score_predicted / tau, axis=1)
+        return choice_prob
 
