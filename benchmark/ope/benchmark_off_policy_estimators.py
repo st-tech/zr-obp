@@ -17,23 +17,16 @@ from obp.ope import (
     DoublyRobust,
     SelfNormalizedDoublyRobust,
     SwitchDoublyRobust,
-    SwitchInverseProbabilityWeighting,
     DoublyRobustWithShrinkage,
 )
 
-# compared OPE estimators
+# OPE estimators compared
 ope_estimators = [
     DirectMethod(),
     InverseProbabilityWeighting(),
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchInverseProbabilityWeighting(tau=5, estimator_name="switch-ipw (tau=5)"),
-    SwitchInverseProbabilityWeighting(tau=10, estimator_name="switch-ipw (tau=10)"),
-    SwitchInverseProbabilityWeighting(tau=50, estimator_name="switch-ipw (tau=50)"),
-    SwitchInverseProbabilityWeighting(tau=100, estimator_name="switch-ipw (tau=100)"),
-    SwitchInverseProbabilityWeighting(tau=500, estimator_name="switch-ipw (tau=500)"),
-    SwitchInverseProbabilityWeighting(tau=1000, estimator_name="switch-ipw (tau=1000)"),
     SwitchDoublyRobust(tau=5, estimator_name="switch-dr (tau=5)"),
     SwitchDoublyRobust(tau=10, estimator_name="switch-dr (tau=10)"),
     SwitchDoublyRobust(tau=50, estimator_name="switch-dr (tau=50)"),
@@ -51,10 +44,7 @@ ope_estimators = [
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
     parser.add_argument(
-        "--n_runs",
-        type=int,
-        default=1,
-        help="number of bootstrap sampling in the experiment.",
+        "--n_runs", type=int, default=1, help="number of experimental runs.",
     )
     parser.add_argument(
         "--base_model",

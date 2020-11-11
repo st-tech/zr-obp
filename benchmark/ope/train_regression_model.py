@@ -71,10 +71,7 @@ def evaluate_reg_model(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
     parser.add_argument(
-        "--n_runs",
-        type=int,
-        default=1,
-        help="number of bootstrap sampling in the experiment.",
+        "--n_runs", type=int, default=1, help="number of experimental runs.",
     )
     parser.add_argument(
         "--base_model",
@@ -179,7 +176,7 @@ if __name__ == "__main__":
         )
 
     def process(b: int):
-        # sample bootstrap samples from batch logged bandit feedback
+        # sample bootstrap from batch logged bandit feedback
         bandit_feedback = obd.sample_bootstrap_bandit_feedback(
             test_size=test_size,
             is_timeseries_split=is_timeseries_split,
