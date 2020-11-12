@@ -57,7 +57,7 @@ IPW does not have these properties.
 We can define Self-Normalized Doubly Robust (SNDR) in a similar manner as follows.
 
 .. math::
-    \hat{V}_{\mathrm{SNDR}} (\pi_e; \calD) :=\frac{\E_{\calD} [\hat{q}(x_t, \pi_e) + w(x_t,a_t)  (r_t-\hat{q}(x_t, a_t) ) ]}{\E_{\calD} [ w(x_t,a_t) ]}.
+    \hat{V}_{\mathrm{SNDR}} (\pi_e; \calD) := \E_{\calD} \left[\hat{q}(x_t, \pi_e) + \frac{w(x_t,a_t)  (r_t-\hat{q}(x_t, a_t) )}{\E_{\calD} [ w(x_t,a_t) ]} \right].
 
 
 Switch Estimators
