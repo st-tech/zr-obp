@@ -3,8 +3,8 @@
 
 ## Description
 
-Here, we use synthetic bandit datasets and pipeline to evaluate OPE estimators.
-Specifically, we evaluate the estimation performances of well-known off-policy estimators using the ground-truth policy value of an evaluation policy, which is calculable with synthetic data.
+Here, we use synthetic bandit datasets to evaluate OPE estimators.
+Specifically, we evaluate the estimation performances of well-known off-policy estimators using the ground-truth policy value of an evaluation policy calculable with synthetic data.
 
 ## Evaluating Off-Policy Estimators
 
@@ -18,7 +18,7 @@ In the following, we evaluate the estimation performances of
 - Switch Doubly Robust (Switch-DR)
 - Doubly Robust with Optimistic Shrinkage (DRos)
 
-For Switch-IPW, Switch-DR, and DRos, we tried some different values of hyperparameters.
+For Switch-IPW, Switch-DR, and DRos, we try some different values of hyperparameters.
 See [our documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details about these estimators.
 
 [`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using synthetic bandit feedback data.
@@ -43,7 +43,7 @@ python evaluate_off_policy_estimators.py\
 - `$base_model_for_reg_model` specifies the base ML model for defining regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
 - `$n_jobs` is the maximum number of concurrently running jobs.
 
-For example, the following command compares the estimation performances (relative estimation error; relative-ee) of the OPE estimators using the synthetic bandit feedback data with 100,000 rounds, 30 actions, context vectors with five dimensions.
+For example, the following command compares the estimation performances (relative estimation error; relative-ee) of the OPE estimators using the synthetic bandit feedback data with 100,000 rounds, 30 actions, five dimensional context vectors.
 
 ```bash
 python evaluate_off_policy_estimators.py\
@@ -57,22 +57,22 @@ python evaluate_off_policy_estimators.py\
     --random_state 12345
 
 # relative-ee of OPE estimators and their standard deviations (lower is better).
-# It appears that the performances of some OPE estimators depend on the choice of hyperparameters.
+# It appears that the performances of some OPE estimators depend on the choice of their hyperparameters.
 # =============================================
 # random_state=12345
 # ---------------------------------------------
 #                           mean       std
-# dm                    0.010835  0.000693
-# ipw                   0.001764  0.000474
-# snipw                 0.001630  0.001022
-# dr                    0.001265  0.000773
-# sndr                  0.002091  0.000115
-# switch-ipw (tau=1)    0.138272  0.000630
-# switch-ipw (tau=100)  0.001764  0.000474
-# switch-dr (tau=1)     0.021673  0.000507
-# switch-dr (tau=100)   0.001265  0.000773
-# dr-os (lambda=1)      0.010676  0.000694
-# dr-os (lambda=100)    0.001404  0.001083
+# dm                    0.011110  0.000565
+# ipw                   0.001953  0.000387
+# snipw                 0.002036  0.000835
+# dr                    0.001573  0.000631
+# sndr                  0.001578  0.000625
+# switch-ipw (tau=1)    0.138523  0.000514
+# switch-ipw (tau=100)  0.001953  0.000387
+# switch-dr (tau=1)     0.021875  0.000414
+# switch-dr (tau=100)   0.001573  0.000631
+# dr-os (lambda=1)      0.010952  0.000567
+# dr-os (lambda=100)    0.001835  0.000884
 # =============================================
 ```
 

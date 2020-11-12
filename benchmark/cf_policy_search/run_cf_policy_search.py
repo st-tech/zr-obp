@@ -1,10 +1,10 @@
 import argparse
 from pathlib import Path
 import yaml
-import time
 
-import pandas as pd
 import numpy as np
+from pandas import DataFrame
+from joblib import Parallel, delayed
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.experimental import enable_hist_gradient_boosting
@@ -13,7 +13,6 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from custom_dataset import OBDWithInteractionFeatures
 from obp.policy import IPWLearner
 from obp.ope import InverseProbabilityWeighting
-from obp.utils import estimate_confidence_interval_by_bootstrap
 
 # hyperparameter for the regression model used in model dependent OPE estimators
 with open("./conf/hyperparams.yaml", "rb") as f:
@@ -28,10 +27,10 @@ base_model_dict = dict(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run evaluation policy selection.")
     parser.add_argument(
-        "--n_boot_samples",
+        "--n_runs",
         type=int,
         default=5,
-        help="number of bootstrap samples in the experiment.",
+        help="number of bootstrap sampling in the experiment.",
     )
     parser.add_argument(
         "--context_set",
@@ -67,17 +66,24 @@ if __name__ == "__main__":
         default=0.5,
         help="the proportion of the dataset to include in the test split.",
     )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=1,
+        help="the maximum number of concurrently running jobs.",
+    )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
 
     # configurations
-    n_boot_samples = args.n_boot_samples
+    n_runs = args.n_runs
     context_set = args.context_set
     base_model = args.base_model
     behavior_policy = args.behavior_policy
     campaign = args.campaign
     test_size = args.test_size
+    n_jobs = args.n_jobs
     random_state = args.random_state
     np.random.seed(random_state)
     data_path = Path("../open_bandit_dataset")
@@ -89,8 +95,8 @@ if __name__ == "__main__":
         data_path=data_path,
         context_set=context_set,
     )
-    # define a evaluation policy
-    evaluation_policy = IPWLearner(
+    # define a counterfactual policy based on IPWLearner
+    counterfactual_policy = IPWLearner(
         base_model=base_model_dict[base_model](**hyperparams[base_model]),
         n_actions=obd.n_actions,
         len_list=obd.len_list,
@@ -107,15 +113,13 @@ if __name__ == "__main__":
         is_timeseries_split=True,
     )
 
-    start = time.time()
-    ope_results = np.zeros(n_boot_samples)
-    for b in np.arange(n_boot_samples):
+    def process(b: int):
         # sample bootstrap from batch logged bandit feedback
         boot_bandit_feedback = obd.sample_bootstrap_bandit_feedback(
             test_size=test_size, is_timeseries_split=True, random_state=b
         )
         # train an evaluation on the training set of the logged bandit feedback data
-        action_dist = evaluation_policy.fit(
+        action_dist = counterfactual_policy.fit(
             context=boot_bandit_feedback["context"],
             action=boot_bandit_feedback["action"],
             reward=boot_bandit_feedback["reward"],
@@ -123,38 +127,30 @@ if __name__ == "__main__":
             position=boot_bandit_feedback["position"],
         )
         # make action selections (predictions)
-        action_dist = evaluation_policy.predict(
+        action_dist = counterfactual_policy.predict(
             context=boot_bandit_feedback["context_test"]
         )
         # estimate the policy value of a given counterfactual algorithm by the three OPE estimators.
         ipw = InverseProbabilityWeighting()
-        ope_results[b] = (
-            ipw.estimate_policy_value(
-                reward=boot_bandit_feedback["reward_test"],
-                action=boot_bandit_feedback["action_test"],
-                position=boot_bandit_feedback["position_test"],
-                pscore=boot_bandit_feedback["pscore_test"],
-                action_dist=action_dist,
-            )
-            / ground_truth
+        return ipw.estimate_policy_value(
+            reward=boot_bandit_feedback["reward_test"],
+            action=boot_bandit_feedback["action_test"],
+            position=boot_bandit_feedback["position_test"],
+            pscore=boot_bandit_feedback["pscore_test"],
+            action_dist=action_dist,
         )
 
-        print(f"{b+1}th iteration: {np.round((time.time() - start) / 60, 2)}min")
-    ope_results_dict = estimate_confidence_interval_by_bootstrap(
-        samples=ope_results, random_state=random_state
+    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
+        [delayed(process)(i) for i in np.arange(n_runs)]
     )
-    ope_results_dict["mean(no-boot)"] = ope_results.mean()
-    ope_results_dict["std"] = np.std(ope_results, ddof=1)
-    ope_results_df = pd.DataFrame(ope_results_dict, index=["ipw"])
 
-    # calculate estimated policy value relative to that of the behavior policy
-    print("=" * 70)
-    print(f"random_state={random_state}: evaluation policy={policy_name}")
-    print("-" * 70)
-    print(ope_results_df)
-    print("=" * 70)
-
-    # save evaluation policy evaluation results in `./logs` directory
+    # save counterfactual policy evaluation results in `./logs` directory
+    ope_results = np.zeros((n_runs, 2))
+    for b, estimated_policy_value_b in enumerate(processed):
+        ope_results[b, 0] = estimated_policy_value_b
+        ope_results[b, 1] = estimated_policy_value_b / ground_truth
     save_path = Path("./logs") / behavior_policy / campaign
     save_path.mkdir(exist_ok=True, parents=True)
-    ope_results_df.to_csv(save_path / f"{policy_name}.csv")
+    DataFrame(
+        ope_results, columns=["policy_value", "relative_policy_value"]
+    ).describe().round(6).to_csv(save_path / f"{policy_name}.csv")

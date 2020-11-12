@@ -815,7 +815,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     .. math::
 
         \\hat{V}_{\\mathrm{SNDR}} (\\pi_e; \\mathcal{D}, \\hat{q}) :=
-        \\frac{\\mathbb{E}_{\\mathcal{D}}[\\hat{q}(x_t,\\pi_e) +  w(x_t,a_t) (r_t - \\hat{q}(x_t,a_t))]}{\\mathbb{E}_{\\mathcal{D}}[ w(x_t,a_t) ]},
+        \\mathbb{E}_{\\mathcal{D}} \\left[\\hat{q}(x_t,\\pi_e) +  \\frac{w(x_t,a_t) (r_t - \\hat{q}(x_t,a_t))}{\\mathbb{E}_{\\mathcal{D}}[ w(x_t,a_t) ]} \\right],
 
     where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
     a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
@@ -894,8 +894,8 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         q_hat_factual = estimated_rewards_by_reg_model[
             np.arange(n_rounds), action, position
         ]
-        estimated_rewards += iw * (reward - q_hat_factual)
-        return estimated_rewards / iw.mean()
+        estimated_rewards += iw * (reward - q_hat_factual) / iw.mean()
+        return estimated_rewards
 
 
 @dataclass
