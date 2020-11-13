@@ -11,8 +11,7 @@ Please download the full [open bandit dataset](https://research.zozo.com/data.ht
 Model-dependent estimators such as DM and DR need a pre-trained regression model.
 Here, we train a regression model with some machine learning methods.
 
-We define hyperparameters for the machine learning methods in [`conf/hyperparams.yaml`](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/conf/hyperparams.yaml).
-[train_regression_model.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/train_regression_model.py) implements the training process of the regression model.
+[train_regression_model.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/train_regression_model.py) implements the training process of the regression model. ([`conf/hyperparams.yaml`](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/conf/hyperparams.yaml) defines hyperparameters for the machine learning methods.)
 
 ```
 python train_regression_model.py\
@@ -34,8 +33,8 @@ where
 - `$campaign` specifies the campaign considered in ZOZOTOWN and should be one of "all", "men", or "women".
 - `$n_sim_to_compute_action_dist` is the number of monte carlo simulation to compute the action choice probabilities by a given evaluation policy.
 - `$is_timeseries_split` is whether the data is split based on timestamp or not. If true, the out-sample performance of OPE is tested. See the relevant paper for details.
-- - `$test_size` specifies the proportion of the dataset to include in the test split when `$is_timeseries_split=True`.
-- `$is_mrdr` is whether the regression model is trained by the more robust doubly robust way or not. See the relevant paper for details.
+- `$test_size` specifies the proportion of the dataset to include in the test split when `$is_timeseries_split=True`.
+- `$is_mrdr` is whether the regression model is trained by the more robust doubly robust way. See the relevant paper for details.
 - `$n_jobs` is the maximum number of concurrently running jobs.
 
 For example, the following command trains the regression model based on logistic regression on the logged bandit feedback data collected by the Random policy (as a behavior policy) in "All" campaign.
@@ -158,9 +157,3 @@ do
 done
 ```
 -->
-
-<!-- ## Results
-
-We report the results of the benchmark experiments on the three campaigns (all, men, women) in the following tables.
-We describe **Random -> Bernoulli TS** to represent the OPE situation where we use Bernoulli TS as a hypothetical evaluation policy and Random as a hypothetical behavior policy.
-In contrast, we use **Bernoulli TS -> Random** to represent the situation where we use Random as a hypothetical evaluation policy and Bernoulli TS as a hypothetical behavior policy. -->
