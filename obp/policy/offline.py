@@ -245,8 +245,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         .. math::
 
-            & P (A_1 = a_1 | x) = \\frac{e^{f(x,a_1,1) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A}} e^{f(x,a^{\\prime},1) / \\tau}} , \\\\
-            & P (A_2 = a_2 | A_1 = a_1, x) = \\frac{e^{f(x,a_2,2) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A} \\backslash \\{a_1\\}} e^{f(x,a^{\\prime},2) / \\tau}} ,
+            & P (A_1 = a_1 | x) = \\frac{\\mathrm{exp}(f(x,a_1,1) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( f(x,a^{\\prime},1) / \\tau)} , \\\\
+            & P (A_2 = a_2 | A_1 = a_1, x) = \\frac{\\mathrm{exp}(f(x,a_2,2) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A} \\backslash \\{a_1\\}} \\mathrm{exp}(f(x,a^{\\prime},2) / \\tau )} ,
             \\ldots
 
         where :math:`A_k` is a random variable representing an action at a position :math:`k`.
@@ -304,7 +304,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         .. math::
 
-            P (A = a | x) = \\frac{e^{f(x,a) / \\tau}}{\\sum_{a^{\\prime} \\in \\mathcal{A}} e^{f(x,a^{\\prime}) / \\tau}},
+            P (A = a | x) = \\frac{\\mathrm{exp}(f(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}(f(x,a^{\\prime}) / \\tau)},
 
         where :math:`A` is a random variable representing an action, and :math:`\\tau` is a temperature hyperparameter.
         :math:`f: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}_{+}`
