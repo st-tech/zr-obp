@@ -117,7 +117,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged badnit feedback data by time series.
+            If true, split the original logged bandit feedback data by time series.
 
         Returns
         ---------
@@ -154,7 +154,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
         Note
         -----
-        This is the default feature engineering and please overide this method to
+        This is the default feature engineering and please override this method to
         implement your own preprocessing.
         see https://github.com/st-tech/zr-obp/blob/master/examples/examples_with_obd/custom_dataset.py for example.
 
@@ -181,7 +181,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             the dataset to include in the evaluation split.
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged badnit feedback data by time series.
+            If true, split the original logged bandit feedback data by time series.
 
         Returns
         --------
@@ -237,7 +237,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             the dataset to include in the evaluation split.
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged badnit feedback data by time series.
+            If true, split the original logged bandit feedback data by time series.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
