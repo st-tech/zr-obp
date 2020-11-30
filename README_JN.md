@@ -52,7 +52,7 @@
 
 2019年11月下旬の7日間にわたる実験を行い, 全アイテム(all)・男性用アイテム(men)・女性用アイテム(women)に対応する3つの「キャンペーン」でデータを収集しました.
 それぞれのキャンペーンでは, 各ユーザーのインプレッションに対してランダム方策(Random)またはトンプソン抽出方策(Bernoulli Thompson Sampling)のいずれかを確率的にランダムに選択して適用しています.
-図1はOpen Bandit Datasetの記述統計を示しています.
+図2はOpen Bandit Datasetの記述統計を示しています.
 
 <p align="center">
   <img width="70%" src="./images/statistics_of_obd.png" />
