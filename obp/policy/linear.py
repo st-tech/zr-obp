@@ -353,4 +353,3 @@ class LinTS(BaseContextualPolicy):
                 np.copy(self.A_inv_temp),
                 np.copy(self.b_temp),
             )
-

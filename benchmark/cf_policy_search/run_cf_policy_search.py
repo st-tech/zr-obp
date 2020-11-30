@@ -140,9 +140,11 @@ if __name__ == "__main__":
             action_dist=action_dist,
         )
 
-    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
-        [delayed(process)(i) for i in np.arange(n_runs)]
-    )
+    processed = Parallel(
+        backend="multiprocessing",
+        n_jobs=n_jobs,
+        verbose=50,
+    )([delayed(process)(i) for i in np.arange(n_runs)])
 
     # save counterfactual policy evaluation results in `./logs` directory
     ope_results = np.zeros((n_runs, 2))

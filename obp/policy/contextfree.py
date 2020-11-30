@@ -126,7 +126,9 @@ class Random(EpsilonGreedy):
     policy_name: str = "random"
 
     def compute_batch_action_dist(
-        self, n_rounds: int = 1, n_sim: int = 100000,
+        self,
+        n_rounds: int = 1,
+        n_sim: int = 100000,
     ) -> np.ndarray:
         """Compute the distribution over actions by Monte Carlo simulation.
 
@@ -239,7 +241,9 @@ class BernoulliTS(BaseContextFreePolicy):
             self.reward_counts = np.copy(self.reward_counts_temp)
 
     def compute_batch_action_dist(
-        self, n_rounds: int = 1, n_sim: int = 100000,
+        self,
+        n_rounds: int = 1,
+        n_sim: int = 100000,
     ) -> np.ndarray:
         """Compute the distribution over actions by Monte Carlo simulation.
 
@@ -263,5 +267,8 @@ class BernoulliTS(BaseContextFreePolicy):
             selected_actions = self.select_action()
             for pos in np.arange(self.len_list):
                 action_count[selected_actions[pos], pos] += 1
-        action_dist = np.tile(action_count / n_sim, (n_rounds, 1, 1),)
+        action_dist = np.tile(
+            action_count / n_sim,
+            (n_rounds, 1, 1),
+        )
         return action_dist

@@ -44,7 +44,10 @@ ope_estimators = [
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
     parser.add_argument(
-        "--n_runs", type=int, default=1, help="number of experimental runs.",
+        "--n_runs",
+        type=int,
+        default=1,
+        help="number of experimental runs.",
     )
     parser.add_argument(
         "--base_model",
@@ -141,7 +144,9 @@ if __name__ == "__main__":
         )
     else:
         policy = Random(
-            n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state,
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            random_state=random_state,
         )
     action_dist_single_round = policy.compute_batch_action_dist(
         n_sim=n_sim_to_compute_action_dist
@@ -172,7 +177,8 @@ if __name__ == "__main__":
         )
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
-            bandit_feedback=bandit_feedback, ope_estimators=ope_estimators,
+            bandit_feedback=bandit_feedback,
+            ope_estimators=ope_estimators,
         )
         action_dist = np.tile(
             action_dist_single_round, (bandit_feedback["n_rounds"], 1, 1)
@@ -190,17 +196,21 @@ if __name__ == "__main__":
 
         return relative_ee_b
 
-    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
-        [delayed(process)(i) for i in np.arange(n_runs)]
-    )
+    processed = Parallel(
+        backend="multiprocessing",
+        n_jobs=n_jobs,
+        verbose=50,
+    )([delayed(process)(i) for i in np.arange(n_runs)])
 
     # save results of the evaluation of ope in './logs' directory.
     estimator_names = [est.estimator_name for est in ope_estimators] + ["mrdr"]
     relative_ee = {est: np.zeros(n_runs) for est in estimator_names}
     for b, relative_ee_b in enumerate(processed):
-        for (estimator_name, relative_ee_,) in relative_ee_b.items():
+        for (
+            estimator_name,
+            relative_ee_,
+        ) in relative_ee_b.items():
             relative_ee[estimator_name][b] = relative_ee_
     DataFrame(relative_ee).describe().T.round(6).to_csv(
         log_path / f"eval_ope_results.csv"
     )
-

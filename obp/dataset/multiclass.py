@@ -177,7 +177,9 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
         return self.y.shape[0]
 
     def split_train_eval(
-        self, eval_size: Union[int, float] = 0.25, random_state: Optional[int] = None,
+        self,
+        eval_size: Union[int, float] = 0.25,
+        random_state: Optional[int] = None,
     ) -> None:
         """Split the original data into the training (used for policy learning) and evaluation (used for OPE) sets.
 
@@ -204,7 +206,8 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
         self.n_samples_ev = self.X_ev.shape[0]
 
     def obtain_batch_bandit_feedback(
-        self, random_state: Optional[int] = None,
+        self,
+        random_state: Optional[int] = None,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback, an evaluation policy, and its ground-truth policy value.
 
@@ -324,4 +327,3 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
             action_dist.shape[0] == self.n_samples_ev
         ), "the size of axis 0 of action_dist must be the same as the number of samples in the evaluation set"
         return action_dist[np.arange(self.n_samples_ev), self.y_ev].mean()
-

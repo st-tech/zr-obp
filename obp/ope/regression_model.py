@@ -333,7 +333,10 @@ class RegressionModel(BaseEstimator):
         return estimated_rewards_by_reg_model
 
     def _pre_process_for_reg_model(
-        self, context: np.ndarray, action: np.ndarray, action_context: np.ndarray,
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        action_context: np.ndarray,
     ) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
 

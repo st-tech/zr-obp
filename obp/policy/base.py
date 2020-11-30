@@ -198,7 +198,9 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
         return "offline"
 
     @abstractmethod
-    def fit(self,) -> None:
+    def fit(
+        self,
+    ) -> None:
         """Fits an offline bandit policy using the given logged bandit feedback data."""
         raise NotImplementedError
 
