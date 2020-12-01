@@ -8,8 +8,8 @@ Let's make the best Off-Policy Evaluation software together!
 We prepare some conventions as follows:
 
 - [Coding Guidelines](#coding-guidelines)
-- Tests (to be appear)
-- Continuous Integration (to be appear)
+- Tests (to appear)
+- Continuous Integration (to appear)
 
 ## Coding Guidelines
 
