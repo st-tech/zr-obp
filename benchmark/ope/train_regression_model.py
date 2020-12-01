@@ -71,7 +71,10 @@ def evaluate_reg_model(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="evaluate off-policy estimators.")
     parser.add_argument(
-        "--n_runs", type=int, default=1, help="number of experimental runs.",
+        "--n_runs",
+        type=int,
+        default=1,
+        help="number of experimental runs.",
     )
     parser.add_argument(
         "--base_model",
@@ -188,7 +191,8 @@ if __name__ == "__main__":
         ).astype(bool)
         with open(reg_model_path / f"is_for_reg_model_{b}.pkl", "wb") as f:
             pickle.dump(
-                is_for_reg_model, f,
+                is_for_reg_model,
+                f,
             )
         if is_mrdr:
             reg_model = RegressionModel(
@@ -211,7 +215,8 @@ if __name__ == "__main__":
             )
             with open(reg_model_path / f"reg_model_mrdr_{b}.pkl", "wb") as f:
                 pickle.dump(
-                    reg_model, f,
+                    reg_model,
+                    f,
                 )
         else:
             reg_model = RegressionModel(
@@ -230,7 +235,8 @@ if __name__ == "__main__":
             )
             with open(reg_model_path / f"reg_model_{b}.pkl", "wb") as f:
                 pickle.dump(
-                    reg_model, f,
+                    reg_model,
+                    f,
                 )
             # evaluate the estimation performance of the regression model by AUC and RCE
             if is_timeseries_split:
@@ -250,9 +256,11 @@ if __name__ == "__main__":
 
             return performance_reg_model_b
 
-    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
-        [delayed(process)(i) for i in np.arange(n_runs)]
-    )
+    processed = Parallel(
+        backend="multiprocessing",
+        n_jobs=n_jobs,
+        verbose=50,
+    )([delayed(process)(i) for i in np.arange(n_runs)])
     # save performance of the regression model in './logs' directory.
     if not is_mrdr:
         performance_reg_model = {metric: dict() for metric in ["auc", "rce"]}
@@ -262,4 +270,3 @@ if __name__ == "__main__":
         DataFrame(performance_reg_model).describe().T.round(6).to_csv(
             log_path / f"performance_reg_model.csv"
         )
-

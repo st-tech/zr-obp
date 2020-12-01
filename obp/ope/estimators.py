@@ -126,7 +126,10 @@ class ReplayMethod(BaseOffPolicyEstimator):
 
         """
         return self._estimate_round_rewards(
-            reward=reward, action=action, position=position, action_dist=action_dist,
+            reward=reward,
+            action=action,
+            position=position,
+            action_dist=action_dist,
         ).mean()
 
     def estimate_interval(
@@ -169,7 +172,10 @@ class ReplayMethod(BaseOffPolicyEstimator):
 
         """
         estimated_round_rewards = self._estimate_round_rewards(
-            reward=reward, action=action, position=position, action_dist=action_dist,
+            reward=reward,
+            action=action,
+            position=position,
+            action_dist=action_dist,
         )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_round_rewards,
@@ -506,7 +512,11 @@ class DirectMethod(BaseOffPolicyEstimator):
             np.arange(n_rounds), :, position
         ]
         pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
-        return np.average(q_hat_at_position, weights=pi_e_at_position, axis=1,)
+        return np.average(
+            q_hat_at_position,
+            weights=pi_e_at_position,
+            axis=1,
+        )
 
     def estimate_policy_value(
         self,
@@ -687,7 +697,9 @@ class DoublyRobust(InverseProbabilityWeighting):
         ]
         pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
         estimated_rewards = np.average(
-            q_hat_at_position, weights=pi_e_at_position, axis=1,
+            q_hat_at_position,
+            weights=pi_e_at_position,
+            axis=1,
         )
         estimated_rewards += iw * (reward - q_hat_factual)
         return estimated_rewards
@@ -889,7 +901,9 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         ]
         pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
         estimated_rewards = np.average(
-            q_hat_at_position, weights=pi_e_at_position, axis=1,
+            q_hat_at_position,
+            weights=pi_e_at_position,
+            axis=1,
         )
         q_hat_factual = estimated_rewards_by_reg_model[
             np.arange(n_rounds), action, position
@@ -993,7 +1007,9 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
         ]
         pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
         estimated_rewards = (1 - switch_indicator) * np.average(
-            q_hat_at_position, weights=pi_e_at_position, axis=1,
+            q_hat_at_position,
+            weights=pi_e_at_position,
+            axis=1,
         )
         estimated_rewards += switch_indicator * iw * reward
         return estimated_rewards
@@ -1098,7 +1114,9 @@ class SwitchDoublyRobust(DoublyRobust):
         ]
         pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
         estimated_rewards = np.average(
-            q_hat_at_position, weights=pi_e_at_position, axis=1,
+            q_hat_at_position,
+            weights=pi_e_at_position,
+            axis=1,
         )
         estimated_rewards += switch_indicator * iw * (reward - q_hat_factual)
         return estimated_rewards
@@ -1214,7 +1232,9 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         ]
         pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
         estimated_rewards = np.average(
-            q_hat_at_position, weights=pi_e_at_position, axis=1,
+            q_hat_at_position,
+            weights=pi_e_at_position,
+            axis=1,
         )
         estimated_rewards += shrinkage_weight * (reward - q_hat_factual)
         return estimated_rewards

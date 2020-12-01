@@ -291,7 +291,9 @@ class IPWLearner(BaseOfflinePolicyLearner):
         return action
 
     def predict_proba(
-        self, context: np.ndarray, tau: Union[int, float] = 1.0,
+        self,
+        context: np.ndarray,
+        tau: Union[int, float] = 1.0,
     ) -> np.ndarray:
         """Obtains action choice probabilities for new data based on scores predicted by a classifier.
 
@@ -338,4 +340,3 @@ class IPWLearner(BaseOfflinePolicyLearner):
         score_predicted = self.predict_score(context=context)
         choice_prob = softmax(score_predicted / tau, axis=1)
         return choice_prob
-

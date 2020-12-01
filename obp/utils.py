@@ -59,7 +59,10 @@ def estimate_confidence_interval_by_bootstrap(
     }
 
 
-def convert_to_action_dist(n_actions: int, selected_actions: np.ndarray,) -> np.ndarray:
+def convert_to_action_dist(
+    n_actions: int,
+    selected_actions: np.ndarray,
+) -> np.ndarray:
     """Convert selected actions (output of `run_bandit_simulation`) to distribution over actions.
 
     Parameters
@@ -82,7 +85,9 @@ def convert_to_action_dist(n_actions: int, selected_actions: np.ndarray,) -> np.
     for pos in np.arange(len_list):
         selected_actions_ = selected_actions[:, pos]
         action_dist[
-            np.arange(n_rounds), selected_actions_, pos * np.ones(n_rounds, int),
+            np.arange(n_rounds),
+            selected_actions_,
+            pos * np.ones(n_rounds, int),
         ] = 1
     return action_dist
 
