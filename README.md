@@ -307,6 +307,10 @@ If you are interested in the Open Bandit Project, we can follow the updates at i
 # Contact
 For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
 
+# Contribution
+Thank you for considering contribution to Open Bandit Project!
+Please find [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute to the project.
+
 # License
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
