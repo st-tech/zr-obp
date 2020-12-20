@@ -53,9 +53,10 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert (
-            0 <= self.epsilon <= 1
-        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+        if not 0 <= self.epsilon <= 1:
+            raise ValueError(
+                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+            )
         super().__post_init__()
 
     def select_action(self) -> np.ndarray:
