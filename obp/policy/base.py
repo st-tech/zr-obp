@@ -38,15 +38,20 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert self.n_actions > 1 and isinstance(
-            self.n_actions, int
-        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-        assert self.len_list > 0 and isinstance(
-            self.len_list, int
-        ), f"len_list must be a positive integer, but {self.len_list} is given"
-        assert self.batch_size > 0 and isinstance(
-            self.batch_size, int
-        ), f"batch_size must be a positive integer, but {self.batch_size} is given"
+        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
+            raise ValueError(
+                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+            )
+
+        if not isinstance(self.len_list, int) or self.len_list <= 0:
+            raise ValueError(
+                f"len_list must be a positive integer, but {self.len_list} is given"
+            )
+
+        if not isinstance(self.batch_size, int) or self.batch_size <= 0:
+            raise ValueError(
+                f"batch_size must be a positive integer, but {self.batch_size} is given"
+            )
 
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
