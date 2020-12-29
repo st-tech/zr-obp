@@ -3,6 +3,7 @@ import numpy as np
 
 from obp.policy.contextfree import EpsilonGreedy
 from obp.policy.contextfree import Random
+from obp.policy.contextfree import BernoulliTS
 
 
 def test_contextfree_base_exception():
@@ -87,3 +88,8 @@ def test_random_compute_batch_action_dist():
     assert action_dist.shape[2] == len_list
     assert len(np.unique(action_dist)) == 1
     assert np.unique(action_dist)[0] == 1 / n_actions
+
+
+def test_bernoulli_ts_zozotown_prior():
+    with pytest.raises(Exception):
+        BernoulliTS(n_actions=2, is_zozotown_prior=True)

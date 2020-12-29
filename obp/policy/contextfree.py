@@ -198,9 +198,10 @@ class BernoulliTS(BaseContextFreePolicy):
         """Initialize class."""
         super().__post_init__()
         if self.is_zozotown_prior:
-            assert (
-                self.campaign is not None
-            ), "`campaign` must be specified when `is_zozotown_prior` is True."
+            if self.campaign is None:
+                raise Exception(
+                    "`campaign` must be specified when `is_zozotown_prior` is True."
+                )
             self.alpha = production_prior_for_bts[self.campaign]["alpha"]
             self.beta = production_prior_for_bts[self.campaign]["beta"]
         else:
