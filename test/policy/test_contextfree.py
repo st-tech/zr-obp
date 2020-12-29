@@ -73,6 +73,7 @@ def test_egreedy_update_params():
     reward = 1.0
     policy.update_params(action, reward)
     assert np.array_equal(policy.action_counts, np.array([5, 3]))
+    # in epsilon greedy, reward is defined as mean reward
     next_reward = (2.0 * (5 - 1) / 5) + (reward / 5)
     assert np.allclose(policy.reward_counts, np.array([next_reward, 0.0]))
 
@@ -91,5 +92,55 @@ def test_random_compute_batch_action_dist():
 
 
 def test_bernoulli_ts_zozotown_prior():
+
     with pytest.raises(Exception):
         BernoulliTS(n_actions=2, is_zozotown_prior=True)
+
+    policy_all = BernoulliTS(n_actions=2, is_zozotown_prior=True, campaign="all")
+    # check whether it is not an non-informative prior parameter (i.e., default parameter)
+    assert len(np.unique(policy_all.alpha)) != 1
+    assert len(np.unique(policy_all.beta)) != 1
+
+    policy_men = BernoulliTS(n_actions=2, is_zozotown_prior=True, campaign="men")
+    assert len(np.unique(policy_men.alpha)) != 1
+    assert len(np.unique(policy_men.beta)) != 1
+
+    policy_women = BernoulliTS(n_actions=2, is_zozotown_prior=True, campaign="women")
+    assert len(np.unique(policy_women.alpha)) != 1
+    assert len(np.unique(policy_women.beta)) != 1
+
+
+def test_bernoulli_ts_select_action():
+    # TODO: case where n_actions < len_list
+
+    policy1 = BernoulliTS(n_actions=3, len_list=3)
+    assert np.allclose(np.sort(policy1.select_action()), np.array([0, 1, 2]))
+
+    policy = BernoulliTS(n_actions=5, len_list=3)
+    assert len(policy.select_action()) == 3
+
+
+def test_bernoulli_ts_update_params():
+    policy = BernoulliTS(n_actions=2)
+    policy.action_counts_temp = np.array([4, 3])
+    policy.action_counts = np.copy(policy.action_counts_temp)
+    policy.reward_counts_temp = np.array([2.0, 0.0])
+    policy.reward_counts = np.copy(policy.reward_counts_temp)
+    action = 0
+    reward = 1.0
+    policy.update_params(action, reward)
+    assert np.array_equal(policy.action_counts, np.array([5, 3]))
+    # in bernoulli ts, reward is defined as sum reward
+    next_reward = 2.0 + reward
+    assert np.allclose(policy.reward_counts, np.array([next_reward, 0.0]))
+
+
+def test_bernoulli_ts_compute_batch_action_dist():
+    n_rounds = 10
+    n_actions = 5
+    len_list = 2
+    policy = BernoulliTS(n_actions=n_actions, len_list=len_list)
+    action_dist = policy.compute_batch_action_dist(n_rounds=n_rounds, n_sim=30)
+    assert action_dist.shape[0] == n_rounds
+    assert action_dist.shape[1] == n_actions
+    assert action_dist.shape[2] == len_list
