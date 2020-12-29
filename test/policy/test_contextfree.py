@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 
 from obp.policy.contextfree import EpsilonGreedy
+from obp.policy.contextfree import Random
 
 
 def test_contextfree_base_exception():
@@ -73,3 +74,16 @@ def test_egreedy_update_params():
     assert np.array_equal(policy.action_counts, np.array([5, 3]))
     next_reward = (2.0 * (5 - 1) / 5) + (reward / 5)
     assert np.allclose(policy.reward_counts, np.array([next_reward, 0.0]))
+
+
+def test_random_compute_batch_action_dist():
+    n_actions = 10
+    len_list = 5
+    n_rounds = 100
+    policy = Random(n_actions=n_actions, len_list=len_list)
+    action_dist = policy.compute_batch_action_dist(n_rounds=n_rounds)
+    assert action_dist.shape[0] == n_rounds
+    assert action_dist.shape[1] == n_actions
+    assert action_dist.shape[2] == len_list
+    assert len(np.unique(action_dist)) == 1
+    assert np.unique(action_dist)[0] == 1 / n_actions
