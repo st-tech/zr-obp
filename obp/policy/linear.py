@@ -49,9 +49,10 @@ class LinEpsilonGreedy(BaseContextualPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert (
-            0 <= self.epsilon <= 1
-        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+        if not 0 <= self.epsilon <= 1:
+            raise ValueError(
+                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+            )
         self.policy_name = f"linear_epsilon_greedy_{self.epsilon}"
 
         super().__post_init__()
@@ -80,6 +81,11 @@ class LinEpsilonGreedy(BaseContextualPolicy):
             List of selected actions.
 
         """
+        if context.ndim != 2 or context.shape[0] != 1:
+            raise ValueError(
+                f"context shape must be (1, dim_context),but {context.shape} is given"
+            )
+
         if self.random_.rand() > self.epsilon:
             self.theta_hat = np.concatenate(
                 [
