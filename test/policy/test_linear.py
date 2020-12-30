@@ -146,3 +146,39 @@ def test_lin_ucb_update_params():
     next_b = b_temp + reward * context
     assert np.allclose(policy.A_inv[action], next_A_inv)
     assert np.allclose(policy.b[:, action], next_b)
+
+
+def test_lin_ts_initialize():
+    n_actions = 3
+    dim = 2
+    policy = LinTS(n_actions=n_actions, dim=dim)
+    assert policy.A_inv.shape == (n_actions, dim, dim)
+    assert policy.b.shape == (dim, n_actions)
+    assert policy.A_inv_temp.shape == (n_actions, dim, dim)
+    assert policy.b_temp.shape == (dim, n_actions)
+
+
+def test_lin_ts_select_action():
+    dim = 3
+    len_list = 2
+    policy = LinTS(n_actions=4, dim=dim, len_list=2)
+    context = np.ones(dim).reshape(1, -1)
+    action = policy.select_action(context=context)
+    assert len(action) == len_list
+
+
+def test_lin_ts_update_params():
+    # check the consistency with Sherman–Morrison formula
+    policy = LinTS(n_actions=2, dim=2)
+    action = 0
+    reward = 1.0
+    context = np.array([1, 0]).reshape(1, -1)
+    A_inv_temp = np.array([[1 / 2, 0], [0, 1]])
+    b_temp = np.array([1, 1])
+    policy.A_inv_temp[action] = np.copy(A_inv_temp)
+    policy.b_temp[:, action] = np.copy(b_temp)
+    policy.update_params(action=action, reward=reward, context=context)
+    next_A_inv = A_inv_temp - np.array([[1 / 4, 0], [0, 0]]) / (1 + 1 / 2)
+    next_b = b_temp + reward * context
+    assert np.allclose(policy.A_inv[action], next_A_inv)
+    assert np.allclose(policy.b[:, action], next_b)
