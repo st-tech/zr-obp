@@ -275,9 +275,6 @@ class LinTS(BaseContextualPolicy):
     batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    alpha_: float, default=1.
-        Prior parameter for the online logistic regression.
-
     random_state: int, default=None
         Controls the random seed in sampling actions.
 
