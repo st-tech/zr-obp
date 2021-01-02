@@ -104,7 +104,7 @@ class RegressionModel(BaseEstimator):
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities (propensity score) of a behavior policy
             in the training logged bandit feedback.
-            When None is given, the the behavior policy is assumed to be a uniform one.
+            When None is given, the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
