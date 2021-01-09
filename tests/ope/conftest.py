@@ -1,6 +1,6 @@
 from typing import Set, Tuple, List
 from dataclasses import dataclass
-
+import copy
 
 import numpy as np
 import pytest
@@ -18,7 +18,7 @@ from obp.dataset import (
 @dataclass
 class LogisticEpsilonGreedyBatch(LogisticEpsilonGreedy):
     """
-    Add random action flag and compute_batch_action_dist method to LogisticEpsilonGreedy
+    WIP: Add random action flag and compute_batch_action_dist method to LogisticEpsilonGreedy
 
     """
 
@@ -83,6 +83,23 @@ def synthetic_bandit_feedback() -> BanditFeedback:
         random_state=random_state,
     )
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    return bandit_feedback
+
+
+# adjust expected reward of synthetic bandit feedback
+@pytest.fixture(scope="session")
+def fixed_synthetic_bandit_feedback(synthetic_bandit_feedback) -> BanditFeedback:
+    # set random
+    random_state = 12345
+    random_ = check_random_state(random_state)
+    # copy synthetic bandit feedback
+    bandit_feedback = copy.deepcopy(synthetic_bandit_feedback)
+    # expected reward would be about 0.6%, which is close to that of ZOZO dataset
+    bandit_feedback["expected_reward"] = bandit_feedback["expected_reward"] * 0.01
+    expected_reward_factual = bandit_feedback["expected_reward"][
+        np.arange(bandit_feedback["n_rounds"]), bandit_feedback["action"]
+    ]
+    bandit_feedback["reward"] = random_.binomial(n=1, p=expected_reward_factual)
     return bandit_feedback
 
 
