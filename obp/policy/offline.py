@@ -50,9 +50,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
         if self.base_classifier is None:
             self.base_classifier = LogisticRegression(random_state=12345)
         else:
-            assert is_classifier(
-                self.base_classifier
-            ), "base_classifier must be a classifier"
+            if not is_classifier(self.base_classifier):
+                raise ValueError("base_classifier must be a classifier")
         self.base_classifier_list = [
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]
@@ -149,17 +148,22 @@ class IPWLearner(BaseOfflinePolicyLearner):
         if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
         else:
-            assert (
-                isinstance(position, np.ndarray) and position.ndim == 1
-            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
+            if not isinstance(position, np.ndarray) or position.ndim != 1:
+                raise ValueError(
+                    f"when len_list > 1, position must be a 1-dimensional ndarray"
+                )
 
         for position_ in np.arange(self.len_list):
+            print(f"position_:{position_}")
+            print(f"position == position_:{position == position_}")
+            print(f"context[position == position_]:{context[position == position_]}")
             X, sample_weight, y = self._create_train_data_for_opl(
                 context=context[position == position_],
                 action=action[position == position_],
                 reward=reward[position == position_],
                 pscore=pscore[position == position_],
             )
+            print(f"X={X}, y={y}, sample_weight={sample_weight}")
             self.base_classifier_list[position_].fit(
                 X=X, y=y, sample_weight=sample_weight
             )
@@ -184,9 +188,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
             If you want a non-repetitive action set, please use the `sample_action` method.
 
         """
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
+        if not isinstance(context, np.ndarray) or context.ndim != 2:
+            raise ValueError("context must be 2-dimensional ndarray")
 
         n_rounds = context.shape[0]
         action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
