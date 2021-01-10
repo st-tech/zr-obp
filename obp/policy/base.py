@@ -138,6 +138,11 @@ class BaseContextualPolicy(metaclass=ABCMeta):
                 f"batch_size must be a positive integer, but {self.batch_size} is given"
             )
 
+        if self.n_actions < self.len_list:
+            raise ValueError(
+                f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
+            )
+
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
         self.alpha_list = self.alpha_ * np.ones(self.n_actions)
