@@ -154,16 +154,12 @@ class IPWLearner(BaseOfflinePolicyLearner):
                 )
 
         for position_ in np.arange(self.len_list):
-            print(f"position_:{position_}")
-            print(f"position == position_:{position == position_}")
-            print(f"context[position == position_]:{context[position == position_]}")
             X, sample_weight, y = self._create_train_data_for_opl(
                 context=context[position == position_],
                 action=action[position == position_],
                 reward=reward[position == position_],
                 pscore=pscore[position == position_],
             )
-            print(f"X={X}, y={y}, sample_weight={sample_weight}")
             self.base_classifier_list[position_].fit(
                 X=X, y=y, sample_weight=sample_weight
             )
