@@ -50,9 +50,10 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert (
-            0 <= self.epsilon <= 1
-        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+        if not 0 <= self.epsilon <= 1:
+            raise ValueError(
+                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+            )
         self.policy_name = f"logistic_egreedy_{self.epsilon}"
 
         super().__post_init__()
