@@ -54,3 +54,39 @@ def test_logistic_epsilon_select_action_exploration():
     policy.update_params(action=1, reward=0.0, context=context)
     selected_action = [policy.select_action(context=context) for _ in range(trial_num)]
     assert 0 < sum(selected_action)[0] < trial_num
+
+
+def test_lin_ucb_initialize():
+    # note that the meaning of epsilon is different from that of LogisticEpsilonGreedy
+    with pytest.raises(ValueError):
+        LogisticUCB(n_actions=2, dim=2, epsilon=-0.2)
+
+    n_actions = 3
+    policy = LogisticUCB(n_actions=n_actions, dim=2, epsilon=0.5)
+    for i in range(n_actions):
+        assert isinstance(policy.model_list[i], MiniBatchLogisticRegression)
+
+
+def test_logistic_ucb_select_action():
+    dim = 3
+    len_list = 2
+    policy = LogisticUCB(n_actions=4, dim=dim, len_list=2, epsilon=0.0)
+    context = np.ones(dim).reshape(1, -1)
+    action = policy.select_action(context=context)
+    assert len(action) == len_list
+
+
+def test_logistic_ts_initialize():
+    n_actions = 3
+    policy = LogisticUCB(n_actions=n_actions, dim=2, epsilon=0.5)
+    for i in range(n_actions):
+        assert isinstance(policy.model_list[i], MiniBatchLogisticRegression)
+
+
+def test_logistic_ts_select_action():
+    dim = 3
+    len_list = 2
+    policy = LogisticTS(n_actions=4, dim=dim, len_list=2)
+    context = np.ones(dim).reshape(1, -1)
+    action = policy.select_action(context=context)
+    assert len(action) == len_list
