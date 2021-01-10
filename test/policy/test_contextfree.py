@@ -7,24 +7,33 @@ from obp.policy.contextfree import BernoulliTS
 
 
 def test_contextfree_base_exception():
-
+    # invalid n_actions
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=0)
 
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions="3")
 
+    # invalid len_list
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=2, len_list=-1)
 
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=2, len_list="5")
 
+    # invalid batch_size
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=2, batch_size=-3)
 
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=2, batch_size="3")
+
+    # invalid relationship between n_actions and len_list
+    with pytest.raises(ValueError):
+        EpsilonGreedy(n_actions=5, len_list=10)
+
+    with pytest.raises(ValueError):
+        EpsilonGreedy(n_actions=2, len_list=3)
 
 
 def test_egreedy_normal_epsilon():
