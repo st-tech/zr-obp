@@ -132,16 +132,21 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert self.n_actions > 1 and isinstance(
-            self.n_actions, int
-        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-        assert self.dim_context > 0 and isinstance(
-            self.dim_context, int
-        ), f"dim_context must be a positive integer, but {self.dim_context} is given"
-        assert self.reward_type in [
+        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
+            raise ValueError(
+                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+            )
+        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
+            raise ValueError(
+                f"dim_context must be a positive integer, but {self.dim_context} is given"
+            )
+        if self.reward_type not in [
             "binary",
             "continuous",
-        ], f"reward_type must be either 'binary' or 'continuous, but {self.reward_type} is given.'"
+        ]:
+            raise ValueError(
+                f"reward_type must be either 'binary' or 'continuous, but {self.reward_type} is given.'"
+            )
 
         self.random_ = check_random_state(self.random_state)
         if self.reward_function is None:
@@ -174,9 +179,10 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             Generated synthetic bandit feedback dataset.
 
         """
-        assert n_rounds > 0 and isinstance(
-            n_rounds, int
-        ), f"n_rounds must be a positive integer, but {n_rounds} is given"
+        if not isinstance(n_rounds, int) or n_rounds <= 0:
+            raise ValueError(
+                f"n_rounds must be a positive integer, but {n_rounds} is given"
+            )
 
         context = self.random_.normal(size=(n_rounds, self.dim_context))
         # sample actions for each round based on the behavior policy
@@ -227,6 +233,9 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             expected_reward_ = truncnorm.stats(
                 a=a, b=b, loc=mean, scale=std, moments="m"
             )
+        else:
+            raise NotImplementedError
+
         return dict(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
@@ -264,12 +273,11 @@ def logistic_reward_function(
         Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
 
     """
-    assert (
-        isinstance(context, np.ndarray) and context.ndim == 2
-    ), "context must be 2-dimensional ndarray"
-    assert (
-        isinstance(action_context, np.ndarray) and action_context.ndim == 2
-    ), "action_context must be 2-dimensional ndarray"
+    if not isinstance(context, np.ndarray) or context.ndim != 2:
+        raise ValueError("context must be 2-dimensional ndarray")
+
+    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
+        raise ValueError("action_context must be 2-dimensional ndarray")
 
     random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))
@@ -306,12 +314,11 @@ def linear_reward_function(
         Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
 
     """
-    assert (
-        isinstance(context, np.ndarray) and context.ndim == 2
-    ), "context must be 2-dimensional ndarray"
-    assert (
-        isinstance(action_context, np.ndarray) and action_context.ndim == 2
-    ), "action_context must be 2-dimensional ndarray"
+    if not isinstance(context, np.ndarray) or context.ndim != 2:
+        raise ValueError("context must be 2-dimensional ndarray")
+
+    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
+        raise ValueError("action_context must be 2-dimensional ndarray")
 
     random_ = check_random_state(random_state)
     expected_reward = np.zeros((context.shape[0], action_context.shape[0]))
@@ -348,12 +355,11 @@ def linear_behavior_policy(
         Action choice probabilities given context (:math:`x`), i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
     """
-    assert (
-        isinstance(context, np.ndarray) and context.ndim == 2
-    ), "context must be 2-dimensional ndarray"
-    assert (
-        isinstance(action_context, np.ndarray) and action_context.ndim == 2
-    ), "action_context must be 2-dimensional ndarray"
+    if not isinstance(context, np.ndarray) or context.ndim != 2:
+        raise ValueError("context must be 2-dimensional ndarray")
+
+    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
+        raise ValueError("action_context must be 2-dimensional ndarray")
 
     random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))

@@ -34,7 +34,7 @@ Here is a detailed description of the fields (they are comma-separated in the CS
 - item_id: index of items as arms (index ranges from 0-80 in "All" campaign, 0-33 for "Men" campaign, and 0-46 "Women" campaign).
 - position: the position of an item being recommended (1, 2, or 3 correspond to left, center, and right position of the ZOZOTOWN recommendation interface, respectively).
 - click: target variable that indicates if an item was clicked (1) or not (0).
-- propensity_score: the probability of an item being recommended at each position.
+- propensity_score: the probability of an item being recommended at the given position.
 - user feature 0-4: user-related feature values.
 - user-item affinity 0-: user-item affinity scores induced by the number of past clicks observed between each user-item pair.
 
