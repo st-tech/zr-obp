@@ -219,10 +219,10 @@ def test_meta_estimation_format(
     )
     assert ope_.estimate_policy_values(random_action_dist) == {
         "dm": mock_policy_value
-    }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod]) returns wrong value"
+    }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod]) returns a wrong value"
     assert ope_.estimate_intervals(random_action_dist) == {
         "dm": mock_confidence_interval
-    }, "OffPolicyEvaluation.estimate_intervals ([DirectMethod]) returns wrong value"
+    }, "OffPolicyEvaluation.estimate_intervals ([DirectMethod]) returns a wrong value"
     with pytest.raises(AssertionError, match=r"action_dist must be 3-dimensional.*"):
         ope_.estimate_policy_values(
             random_action_dist[:, :, 0]
@@ -234,11 +234,11 @@ def test_meta_estimation_format(
     assert ope_.estimate_policy_values(random_action_dist) == {
         "dm": mock_policy_value,
         "ipw": mock_policy_value + ipw.eps,
-    }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod, IPW]) returns wrong value"
+    }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod, IPW]) returns a wrong value"
     assert ope_.estimate_intervals(random_action_dist) == {
         "dm": mock_confidence_interval,
         "ipw": {k: v + ipw.eps for k, v in mock_confidence_interval.items()},
-    }, "OffPolicyEvaluation.estimate_intervals ([DirectMethod]) returns wrong value"
+    }, "OffPolicyEvaluation.estimate_intervals ([DirectMethod]) returns a wrong value"
 
 
 def test_meta_post_init_format(
@@ -251,7 +251,7 @@ def test_meta_post_init_format(
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[ipw, ipw2]
     )
-    assert ope_.ope_estimators_ == {"ipw": ipw2}, "__post_init__ returns wrong value"
+    assert ope_.ope_estimators_ == {"ipw": ipw2}, "__post_init__ returns a wrong value"
     # __post_init__ can handle the same estimator if the estimator names are different
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[ipw, ipw3]
@@ -259,7 +259,7 @@ def test_meta_post_init_format(
     assert ope_.ope_estimators_ == {
         "ipw": ipw,
         "ipw3": ipw3,
-    }, "__post_init__ returns wrong value"
+    }, "__post_init__ returns a wrong value"
 
 
 def test_meta_create_estimator_inputs_format(

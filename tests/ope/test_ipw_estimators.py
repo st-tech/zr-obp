@@ -19,7 +19,7 @@ def test_ipw_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the format of ipw-like estimators using synthetic bandit data and random evaluation policy
+    Test the format of ipw variants using synthetic bandit data and random evaluation policy
     """
     action_dist = random_action_dist
     # prepare input dict
@@ -35,7 +35,7 @@ def test_ipw_using_random_evaluation_policy(
         assert isinstance(
             estimated_policy_value, float
         ), f"invalid type response: {estimator}"
-    # remove used keys
+    # remove necessary keys
     del input_dict["reward"]
     del input_dict["pscore"]
     del input_dict["action"]
@@ -53,10 +53,10 @@ def test_boundedness_of_snipw_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the range of snipw estimators using synthetic bandit data and random evaluation policy
+    Test the boundedness of snipw estimators using synthetic bandit data and random evaluation policy
     """
     action_dist = random_action_dist
-    # prepare dm
+    # prepare snipw
     snipw = SelfNormalizedInverseProbabilityWeighting()
     # prepare input dict
     input_dict = {
@@ -65,9 +65,9 @@ def test_boundedness_of_snipw_using_random_evaluation_policy(
         if k in ["reward", "action", "pscore", "position"]
     }
     input_dict["action_dist"] = action_dist
-    # make pscore too small (to check the normalization effect)
+    # make pscore too small (to check the boundedness of snipw)
     input_dict["pscore"] = input_dict["pscore"] ** 3
     estimated_policy_value = snipw.estimate_policy_value(**input_dict)
     assert (
         estimated_policy_value <= 1
-    ), f"estimated policy value of snipw should not be greater than 1 even if pscore is too small, but {estimated_policy_value}"
+    ), f"estimated policy value of snipw should be smaller than or equal to 1 (because of its 1-boundedness), but the value is: {estimated_policy_value}"

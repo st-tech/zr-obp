@@ -44,7 +44,7 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
     # compute statistics of ground truth policy value
     gt_mean = q_pi_e.mean()
     gt_std = q_pi_e.std(ddof=1)
-    # extract most of all estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
+    # test most of the estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
     all_estimators = ope.__all_estimators__
     estimators = [
         getattr(ope.estimators, estimator_name)()
@@ -81,7 +81,7 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
         synthetic_bandit_feedback["expected_reward"], axis=-1
     )
     action_dist = random_action_dist
-    # extract most of all estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
+    # test most of the estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
     all_estimators = ope.__all_estimators__
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
@@ -98,11 +98,11 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
     )
     # check the format of OPE
     for key in estimated_policy_value:
-        # check key of confidence intervals
+        # check the keys of the output dictionary of the estimate_intervals method
         assert set(estimated_intervals[key].keys()) == set(
             ["mean", "95.0% CI (lower)", "95.0% CI (upper)"]
         ), f"Confidence interval of {key} has invalid keys"
-        # check the relationship between mean and confidence interval
+        # check the relationship between the means and the confidence bounds estimated by OPE estimators
         assert (
             estimated_intervals[key]["95.0% CI (lower)"] <= estimated_policy_value[key]
         ) and (

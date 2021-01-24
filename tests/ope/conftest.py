@@ -87,7 +87,7 @@ def synthetic_bandit_feedback() -> BanditFeedback:
     return bandit_feedback
 
 
-# adjust expected reward of synthetic bandit feedback
+# make the expected reward of synthetic bandit feedback close to that of the Open Bandit Dataset
 @pytest.fixture(scope="session")
 def fixed_synthetic_bandit_feedback(synthetic_bandit_feedback) -> BanditFeedback:
     # set random
@@ -142,7 +142,7 @@ def expected_reward_0() -> np.ndarray:
     )
 
 
-# evaluation policy of logistic model
+# logistic evaluation policy
 @pytest.fixture(scope="session")
 def logistic_evaluation_policy(synthetic_bandit_feedback) -> LogisticEpsilonGreedy:
     random_state = 12345
@@ -163,13 +163,13 @@ def logistic_evaluation_policy(synthetic_bandit_feedback) -> LogisticEpsilonGree
     return evaluation_policy
 
 
-# evaluation policy of logistic model
+# logistic evaluation policy
 @pytest.fixture(scope="session")
 def logistic_batch_action_dist(logistic_evaluation_policy) -> np.ndarray:
     return np.array([1])
 
 
-# evaluation policy of random model
+# random evaluation policy
 @pytest.fixture(scope="session")
 def random_action_dist(synthetic_bandit_feedback) -> np.ndarray:
     n_actions = synthetic_bandit_feedback["n_actions"]

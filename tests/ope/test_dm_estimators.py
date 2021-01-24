@@ -11,7 +11,7 @@ def test_dm_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the performance of dm-like estimators using synthetic bandit data and random evaluation policy
+    Test the performance of the direct method using synthetic bandit data and random evaluation policy
     """
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
@@ -44,12 +44,12 @@ def test_dm_using_random_evaluation_policy(
     estimated_policy_value = dm.estimate_policy_value(**input_dict)
     assert (
         gt_mean == estimated_policy_value
-    ), "DM should return gt mean when action_dist and reward function are both true"
-    # remove unused keys
+    ), "DM should be perfect when the regression model is perfect"
+    # remove unnecessary keys
     del input_dict["reward"]
     del input_dict["pscore"]
     del input_dict["action"]
     estimated_policy_value = dm.estimate_policy_value(**input_dict)
     assert (
         gt_mean == estimated_policy_value
-    ), "DM should return gt mean when action_dist and reward function are both true"
+    ), "DM should be perfect when the regression model is perfect"

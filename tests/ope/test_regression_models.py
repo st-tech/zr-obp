@@ -42,7 +42,7 @@ def test_performance_of_binary_outcome_models(
     auc_scores: Dict[str, float] = {}
     # check ground truth
     print(f"gt_mean: {gt_mean}")
-    # check the performance of regression models using doubly robust criteria (|\hat{q} - q| <= |q| is satisfied with high probability)
+    # check the performance of regression models using doubly robust criteria (|\hat{q} - q| <= |q| is satisfied with a high probability)
     dr_criteria_pass_rate = 0.8
     fit_methods = ["normal", "iw", "mrdr"]
     for fit_method in fit_methods:
@@ -92,10 +92,10 @@ def test_performance_of_binary_outcome_models(
             )
             assert (
                 np.mean(dr_criteria <= 0) >= dr_criteria_pass_rate
-            ), f"Dr criteria should not be larger then 0 with probability {dr_criteria_pass_rate}"
+            ), f" should be satisfied with a probability at least {dr_criteria_pass_rate}"
 
     for model_name in auc_scores:
         print(f"AUC of {model_name} is {auc_scores[model_name]}")
         assert (
             auc_scores[model_name] > 0.5
-        ), f"AUC of {model_name} should be greator than 0.5"
+        ), f"AUC of {model_name} should be greater than 0.5"

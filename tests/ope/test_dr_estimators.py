@@ -34,7 +34,7 @@ def test_dr_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the format of dr-like estimators using synthetic bandit data and random evaluation policy
+    Test the format of dr variants using synthetic bandit data and random evaluation policy
     """
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
@@ -48,13 +48,13 @@ def test_dr_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
-    # dr estimtors requires all arguments
+    # dr estimtors require all arguments
     for estimator in dr_estimators:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
         assert isinstance(
             estimated_policy_value, float
         ), f"invalid type response: {estimator}"
-    # remove used keys
+    # remove necessary keys
     del input_dict["reward"]
     del input_dict["pscore"]
     del input_dict["action"]
@@ -73,7 +73,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the range of sndr estimators using synthetic bandit data and random evaluation policy
+    Test the boundedness of sndr estimators using synthetic bandit data and random evaluation policy
     """
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
@@ -87,12 +87,12 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
-    # make pscore too small (to check the normalization effect)
+    # make pscore too small (to check the boundedness of sndr)
     input_dict["pscore"] = input_dict["pscore"] ** 3
     estimated_policy_value = sndr.estimate_policy_value(**input_dict)
     assert (
         estimated_policy_value <= 2
-    ), f"estimated policy value of sndr should not be greater than 2 even if pscore is too small, but {estimated_policy_value}"
+    ), f"estimated policy value of sndr should be smaller than or equal to 2 (because of its 2-boundedness), but the value is: {estimated_policy_value}"
 
 
 def test_dr_shrinkage_using_random_evaluation_policy(
@@ -129,7 +129,7 @@ def test_switch_ipw_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the switch_ipw shrinkage estimators using synthetic bandit data and random evaluation policy
+    Test the switch_ipw estimators using synthetic bandit data and random evaluation policy
     """
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
@@ -159,7 +159,7 @@ def test_switch_dr_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the dr switch_dr using synthetic bandit data and random evaluation policy
+    Test the switch_dr using synthetic bandit data and random evaluation policy
     """
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
