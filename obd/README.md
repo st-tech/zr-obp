@@ -31,12 +31,12 @@ Here is a detailed description of the fields (they are comma-separated in the CS
 
 **{behavior_policy}/{campaign}.csv** (behavior_policy in (bts, random), campaign in (all, men, women))
 - timestamp: timestamps of impressions.
-- item_id: index of items as arms (index ranges from 0-80 in "All" campaign, 0-33 for "Men" campaign, and 0-46 "Women" campaign).
+- item_id: index of items as arms (index ranges from 0-79 in "All" campaign, 0-33 for "Men" campaign, and 0-45 "Women" campaign).
 - position: the position of an item being recommended (1, 2, or 3 correspond to left, center, and right position of the ZOZOTOWN recommendation interface, respectively).
 - click: target variable that indicates if an item was clicked (1) or not (0).
-- propensity_score: the probability of an item being recommended at the given position.
-- user feature 0-4: user-related feature values.
-- user-item affinity 0-: user-item affinity scores induced by the number of past clicks observed between each user-item pair.
+- action_prob: the probability of an item being recommended at the given position.
+- user_features: user-related feature values.
+- user_item_affinity: user-item affinity scores induced by the number of past clicks observed between each user-item pair.
 
 <p align="center">
   <img width="85%" src="../images/dataset.png" />
@@ -58,4 +58,4 @@ Note that user and item features are now anonymized using a hash function.
 For any question, feel free to contact:
 
 - The authors of the paper: saito@hanjuku-kaso.com
-- ZOZO Research: zozo-reseaech@zozo.com
+- ZOZO Research: zozo-research@zozo.com
