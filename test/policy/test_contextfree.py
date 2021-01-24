@@ -120,7 +120,12 @@ def test_bernoulli_ts_zozotown_prior():
 
 
 def test_bernoulli_ts_select_action():
-    # TODO: case where n_actions < len_list
+    # invalid relationship between n_actions and len_list
+    with pytest.raises(ValueError):
+        BernoulliTS(n_actions=5, len_list=10)
+
+    with pytest.raises(ValueError):
+        BernoulliTS(n_actions=2, len_list=3)
 
     policy1 = BernoulliTS(n_actions=3, len_list=3)
     assert np.allclose(np.sort(policy1.select_action()), np.array([0, 1, 2]))
