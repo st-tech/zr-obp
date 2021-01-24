@@ -314,19 +314,24 @@ def test_meta_summarize_off_policy_estimates(
 def test_meta_evaluate_performance_of_estimators(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
+    gt = 0.5
+    # calculate relative-ee
+    eval_metric_ope_dict = {
+        "ipw": np.abs((mock_policy_value + ipw.eps - gt) / gt),
+        "ipw3": np.abs((mock_policy_value + ipw3.eps - gt) / gt),
+    }
+    # check performance estimators
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[ipw, ipw3]
     )
-    # check performance format
-    gt = 0.5
     performance = ope_.evaluate_performance_of_estimators(
         ground_truth_policy_value=gt,
         action_dist=random_action_dist,
         metric="relative-ee",
     )
-    assert set(performance.keys()) == set(
-        [ipw.estimator_name, ipw3.estimator_name]
-    ), "Invalid key of performance response"
+    for k, v in performance.items():
+        assert k in eval_metric_ope_dict, "Invalid key of performance response"
+        assert v == eval_metric_ope_dict[k], "Invalid value of performance response"
     # zero division error when using relative-ee
     with pytest.raises(ZeroDivisionError, match=r"float division by zero"):
         _ = ope_.evaluate_performance_of_estimators(
@@ -341,5 +346,5 @@ def test_meta_evaluate_performance_of_estimators(
         metric="relative-ee",
     )
     assert_frame_equal(
-        performance_df, pd.DataFrame(performance, index=["relative-ee"]).T
+        performance_df, pd.DataFrame(eval_metric_ope_dict, index=["relative-ee"]).T
     ), "Invalid summarization (performance)"
