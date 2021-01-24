@@ -259,7 +259,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             A dictionary containing logged bandit feedback data sampled independently from the original data with replacement.
             The keys of the dictionary are as follows.
             - n_rounds: number of rounds (size) of the logged bandit data
-            - n_actions: number of actions (:math:`|\mathcal{A}|`)
+            - n_actions: number of actions
             - action: action variables sampled by a behavior policy
             - position: positions where actions are recommended by a behavior policy
             - reward: reward variables
