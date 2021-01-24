@@ -52,11 +52,11 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert (
-            0 <= self.epsilon <= 1
-        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+        if not 0 <= self.epsilon <= 1:
+            raise ValueError(
+                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+            )
         self.policy_name = f"egreedy_{self.epsilon}"
-
         super().__post_init__()
 
     def select_action(self) -> np.ndarray:
@@ -198,9 +198,10 @@ class BernoulliTS(BaseContextFreePolicy):
         """Initialize class."""
         super().__post_init__()
         if self.is_zozotown_prior:
-            assert (
-                self.campaign is not None
-            ), "`campaign` must be specified when `is_zozotown_prior` is True."
+            if self.campaign is None:
+                raise Exception(
+                    "`campaign` must be specified when `is_zozotown_prior` is True."
+                )
             self.alpha = production_prior_for_bts[self.campaign]["alpha"]
             self.beta = production_prior_for_bts[self.campaign]["beta"]
         else:
