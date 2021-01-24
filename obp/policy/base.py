@@ -120,18 +120,38 @@ class BaseContextualPolicy(metaclass=ABCMeta):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert self.dim > 0 and isinstance(
-            self.dim, int
-        ), f"dim must be a positive integer, but {self.dim} is given"
-        assert self.n_actions > 1 and isinstance(
-            self.n_actions, int
-        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-        assert self.len_list > 0 and isinstance(
-            self.len_list, int
-        ), f"len_list must be a positive integer, but {self.len_list} is given"
-        assert self.batch_size > 0 and isinstance(
-            self.batch_size, int
-        ), f"batch_size must be a positive integer, but {self.batch_size} is given"
+        if not isinstance(self.dim, int) or self.dim <= 0:
+            raise ValueError(f"dim must be a positive integer, but {self.dim} is given")
+
+        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
+            raise ValueError(
+                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+            )
+
+        if not isinstance(self.len_list, int) or self.len_list <= 0:
+            raise ValueError(
+                f"len_list must be a positive integer, but {self.len_list} is given"
+            )
+
+        if not isinstance(self.batch_size, int) or self.batch_size <= 0:
+            raise ValueError(
+                f"batch_size must be a positive integer, but {self.batch_size} is given"
+            )
+
+        if self.n_actions < self.len_list:
+            raise ValueError(
+                f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
+            )
+
+        if not isinstance(self.alpha_, float) or self.alpha_ <= 0.0:
+            raise ValueError(
+                f"alpha_ should be a positive float, but {self.alpha_} is given"
+            )
+
+        if not isinstance(self.lambda_, float) or self.lambda_ <= 0.0:
+            raise ValueError(
+                f"lambda_ should be a positive float, but {self.lambda_} is given"
+            )
 
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
