@@ -271,9 +271,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Action sampled by a trained classifier.
 
         """
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
+        if not isinstance(context, np.ndarray) or context.ndim != 2:
+            raise ValueError("context must be 2-dimensional ndarray")
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
         n_rounds = context.shape[0]

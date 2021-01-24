@@ -110,8 +110,35 @@ def test_opl_predict():
     learner = IPWLearner(n_actions=2, len_list=1)
     learner.fit(context=context, action=action, reward=reward, position=position)
 
-    context_predict = np.array([i for i in range(10)]).reshape(5, 2)
-    action_dist = learner.predict(context=context_predict)
+    context_test = np.array([i for i in range(10)]).reshape(5, 2)
+    action_dist = learner.predict(context=context_test)
     assert action_dist.shape[0] == 5
     assert action_dist.shape[1] == n_actions
     assert action_dist.shape[2] == len_list
+
+
+def test_sample_action():
+    n_actions = 2
+    len_list = 1
+    context = np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, -1)
+    action = np.array([0, 1])
+    reward = np.array([1.0, 0.0])
+    position = np.array([0, 0])
+    learner = IPWLearner(n_actions=n_actions, len_list=len_list)
+    learner.fit(context=context, action=action, reward=reward, position=position)
+
+    with pytest.raises(ValueError):
+        invalid_type_context = [1.0, 2.0]
+        learner.sample_action(context=invalid_type_context)
+
+    with pytest.raises(ValueError):
+        invalid_ndim_context = np.array([1.0, 2.0, 3.0, 4.0])
+        learner.sample_action(context=invalid_ndim_context)
+
+    context = np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, -1)
+    n_rounds = context.shape[0]
+    sampled_action = learner.sample_action(context=context)
+
+    assert sampled_action.shape[0] == n_rounds
+    assert sampled_action.shape[1] == n_actions
+    assert sampled_action.shape[2] == len_list
