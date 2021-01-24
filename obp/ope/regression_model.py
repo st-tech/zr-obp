@@ -257,6 +257,7 @@ class RegressionModel(BaseEstimator):
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
             When 1 is given, the regression model is trained on the whole logged bandit feedback data.
+            Please refer to https://arxiv.org/abs/2002.08536 about the details of the cross-fitting procedure.
 
         random_state: int, default=None
             `random_state` affects the ordering of the indices, which controls the randomness of each fold.
@@ -333,10 +334,7 @@ class RegressionModel(BaseEstimator):
         return estimated_rewards_by_reg_model
 
     def _pre_process_for_reg_model(
-        self,
-        context: np.ndarray,
-        action: np.ndarray,
-        action_context: np.ndarray,
+        self, context: np.ndarray, action: np.ndarray, action_context: np.ndarray,
     ) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
 

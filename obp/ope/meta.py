@@ -162,7 +162,7 @@ class OffPolicyEvaluation:
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -207,7 +207,7 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[DataFrame, DataFrame]:
-        """Summarize policy values estimated by OPE estimators and their confidence intervals.
+        """Summarize policy values estimated by OPE estimators and their confidence intervals estimated by a nonparametric bootstrap procedure.
 
         Parameters
         ------------
@@ -219,7 +219,7 @@ class OffPolicyEvaluation:
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -278,7 +278,7 @@ class OffPolicyEvaluation:
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
