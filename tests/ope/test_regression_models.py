@@ -50,7 +50,7 @@ def test_performance_of_binary_outcome_models(
         f"gt_mean: {gt_mean}, {ci_times} * gt_std / sqrt({ground_truth_policy_value.shape[0]}): {ci_bound}"
     )
     # check the performance of regression models using doubly robust criteria (|\hat{q} - q| <= |q| is satisfied with high probability)
-    dr_criteria_pass_rate = 0.9
+    dr_criteria_pass_rate = 0.8
     fit_methods = ["normal", "iw", "mrdr"]
     for fit_method in fit_methods:
         for model_name, model in binary_model_dict.items():

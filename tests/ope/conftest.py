@@ -13,6 +13,7 @@ from obp.dataset import (
     logistic_reward_function,
     linear_behavior_policy,
 )
+from obp.utils import sigmoid
 
 
 @dataclass
@@ -94,8 +95,11 @@ def fixed_synthetic_bandit_feedback(synthetic_bandit_feedback) -> BanditFeedback
     random_ = check_random_state(random_state)
     # copy synthetic bandit feedback
     bandit_feedback = copy.deepcopy(synthetic_bandit_feedback)
-    # expected reward would be about 0.6%, which is close to that of ZOZO dataset
-    bandit_feedback["expected_reward"] = bandit_feedback["expected_reward"] * 0.01
+    # expected reward would be about 0.65%, which is close to that of ZOZO dataset
+    logit = np.log(
+        bandit_feedback["expected_reward"] / (1 - bandit_feedback["expected_reward"])
+    )
+    bandit_feedback["expected_reward"] = sigmoid(logit - 4.0)
     expected_reward_factual = bandit_feedback["expected_reward"][
         np.arange(bandit_feedback["n_rounds"]), bandit_feedback["action"]
     ]
