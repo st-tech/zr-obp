@@ -18,11 +18,9 @@ def test_dm_using_random_evaluation_policy(
     )
     action_dist = random_action_dist
     # compute ground truth policy value using expected reward
-    ground_truth_policy_value = np.average(
-        expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1
-    )
+    q_pi_e = np.average(expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1)
     # compute statistics of ground truth policy value
-    gt_mean = ground_truth_policy_value.mean()
+    gt_mean = q_pi_e.mean()
     # prepare dm
     dm = DirectMethod()
     # prepare input dict

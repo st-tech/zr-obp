@@ -35,11 +35,9 @@ def test_performance_of_binary_outcome_models(
     expected_reward = np.expand_dims(bandit_feedback["expected_reward"], axis=-1)
     action_dist = random_action_dist
     # compute ground truth policy value using expected reward
-    ground_truth_policy_value = np.average(
-        expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1
-    )
+    q_pi_e = np.average(expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1)
     # compute statistics of ground truth policy value
-    gt_mean = ground_truth_policy_value.mean()
+    gt_mean = q_pi_e.mean()
     random_state = 12345
     auc_scores: Dict[str, float] = {}
     # check ground truth

@@ -29,7 +29,7 @@ def test_fixture(
     ), "model list length of logistic evaluation policy should be the same as n_actions"
 
 
-def test_expected_value_of_random_evaluation_policy(
+def test_performance_of_ope_estimators_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
@@ -40,12 +40,10 @@ def test_expected_value_of_random_evaluation_policy(
     )
     action_dist = random_action_dist
     # compute ground truth policy value using expected reward
-    ground_truth_policy_value = np.average(
-        expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1
-    )
+    q_pi_e = np.average(expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1)
     # compute statistics of ground truth policy value
-    gt_mean = ground_truth_policy_value.mean()
-    gt_std = ground_truth_policy_value.std(ddof=1)
+    gt_mean = q_pi_e.mean()
+    gt_std = q_pi_e.std(ddof=1)
     # extract most of all estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
     all_estimators = ope.__all_estimators__
     estimators = [
@@ -61,7 +59,7 @@ def test_expected_value_of_random_evaluation_policy(
         action_dist=action_dist, estimated_rewards_by_reg_model=expected_reward
     )
     # check the performance of OPE
-    ci_bound = gt_std * 3 / np.sqrt(ground_truth_policy_value.shape[0])
+    ci_bound = gt_std * 3 / np.sqrt(q_pi_e.shape[0])
     print(f"gt_mean: {gt_mean}, 3 * gt_std / sqrt(n): {ci_bound}")
     for key in estimated_policy_value:
         print(
@@ -73,7 +71,7 @@ def test_expected_value_of_random_evaluation_policy(
         ), f"OPE of {key} did not work well (absolute error is greator than 3*sigma)"
 
 
-def test_response_format_using_random_evaluation_policy(
+def test_response_format_of_ope_estimators_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """

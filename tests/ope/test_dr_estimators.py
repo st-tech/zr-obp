@@ -22,12 +22,12 @@ dr = DoublyRobust()
 dr_shrink_0 = DoublyRobustWithShrinkage(lambda_=0)
 dr_shrink_max = DoublyRobustWithShrinkage(lambda_=1e10)
 sndr = SelfNormalizedDoublyRobust()
-swipw_0 = SwitchInverseProbabilityWeighting(tau=0)
-swipw_max = SwitchInverseProbabilityWeighting(tau=1e10)
-swdr_0 = SwitchDoublyRobust(tau=0)
-swdr_max = SwitchDoublyRobust(tau=1e10)
+switch_ipw_0 = SwitchInverseProbabilityWeighting(tau=0)
+switch_ipw_max = SwitchInverseProbabilityWeighting(tau=1e10)
+switch_dr_0 = SwitchDoublyRobust(tau=0)
+switch_dr_max = SwitchDoublyRobust(tau=1e10)
 
-dr_estimators = [dr, dr_shrink_0, sndr, swipw_0, swdr_0]
+dr_estimators = [dr, dr_shrink_0, sndr, switch_ipw_0, switch_dr_0]
 
 
 def test_dr_using_random_evaluation_policy(
@@ -69,7 +69,7 @@ def test_dr_using_random_evaluation_policy(
             _ = estimator.estimate_policy_value(**input_dict)
 
 
-def test_sndr_range_using_random_evaluation_policy(
+def test_boundedness_of_sndr_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
@@ -125,11 +125,11 @@ def test_dr_shrinkage_using_random_evaluation_policy(
     ), "DoublyRobustWithShrinkage (lambda=inf) should be almost the same as DoublyRobust"
 
 
-def test_swipw_using_random_evaluation_policy(
+def test_switch_ipw_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the swipw shrinkage estimators using synthetic bandit data and random evaluation policy
+    Test the switch_ipw shrinkage estimators using synthetic bandit data and random evaluation policy
     """
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
@@ -145,21 +145,21 @@ def test_swipw_using_random_evaluation_policy(
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
     dm_value = dm.estimate_policy_value(**input_dict)
     ipw_value = ipw.estimate_policy_value(**input_dict)
-    swipw_0_value = swipw_0.estimate_policy_value(**input_dict)
-    swipw_max_value = swipw_max.estimate_policy_value(**input_dict)
+    switch_ipw_0_value = switch_ipw_0.estimate_policy_value(**input_dict)
+    switch_ipw_max_value = switch_ipw_max.estimate_policy_value(**input_dict)
     assert (
-        dm_value == swipw_0_value
+        dm_value == switch_ipw_0_value
     ), "SwitchIPW (tau=0) should be the same as DirectMethod"
     assert (
-        ipw_value == swipw_max_value
+        ipw_value == switch_ipw_max_value
     ), "SwitchIPW (tau=1e10) should be the same as IPW"
 
 
-def test_swdr_using_random_evaluation_policy(
+def test_switch_dr_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
-    Test the dr swdr using synthetic bandit data and random evaluation policy
+    Test the dr switch_dr using synthetic bandit data and random evaluation policy
     """
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
@@ -175,11 +175,11 @@ def test_swdr_using_random_evaluation_policy(
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
     dm_value = dm.estimate_policy_value(**input_dict)
     dr_value = dr.estimate_policy_value(**input_dict)
-    swdr_0_value = swdr_0.estimate_policy_value(**input_dict)
-    swdr_max_value = swdr_max.estimate_policy_value(**input_dict)
+    switch_dr_0_value = switch_dr_0.estimate_policy_value(**input_dict)
+    switch_dr_max_value = switch_dr_max.estimate_policy_value(**input_dict)
     assert (
-        dm_value == swdr_0_value
+        dm_value == switch_dr_0_value
     ), "SwitchDR (tau=0) should be the same as DirectMethod"
     assert (
-        dr_value == swdr_max_value
+        dr_value == switch_dr_max_value
     ), "SwitchDR (tau=1e10) should be the same as DoublyRobust"

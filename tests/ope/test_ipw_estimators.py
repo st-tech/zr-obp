@@ -49,7 +49,7 @@ def test_ipw_using_random_evaluation_policy(
             _ = estimator.estimate_policy_value(**input_dict)
 
 
-def test_snipw_range_using_random_evaluation_policy(
+def test_boundedness_of_snipw_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
