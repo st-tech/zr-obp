@@ -4,7 +4,6 @@ import numpy as np
 
 from obp import ope
 from obp.ope import OffPolicyEvaluation
-from obp.policy import BaseContextualPolicy
 from obp.types import BanditFeedback
 
 
@@ -12,7 +11,6 @@ def test_fixture(
     synthetic_bandit_feedback: BanditFeedback,
     expected_reward_0: np.ndarray,
     feedback_key_set: Set[str],
-    logistic_evaluation_policy: BaseContextualPolicy,
     random_action_dist: np.ndarray,
 ) -> None:
     """
@@ -24,9 +22,6 @@ def test_fixture(
     assert feedback_key_set == set(
         synthetic_bandit_feedback.keys()
     ), f"Key set of bandit feedback should be {feedback_key_set}, but {synthetic_bandit_feedback.keys()}"
-    assert synthetic_bandit_feedback["n_actions"] == len(
-        logistic_evaluation_policy.model_list
-    ), "model list length of logistic evaluation policy should be the same as n_actions"
 
 
 def test_performance_of_ope_estimators_using_random_evaluation_policy(
