@@ -94,7 +94,9 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
         action_dist=action_dist, estimated_rewards_by_reg_model=expected_reward
     )
     estimated_intervals = ope_instance.estimate_intervals(
-        action_dist=action_dist, estimated_rewards_by_reg_model=expected_reward
+        action_dist=action_dist,
+        estimated_rewards_by_reg_model=expected_reward,
+        random_state=12345,
     )
     # check the format of OPE
     for key in estimated_policy_value:
