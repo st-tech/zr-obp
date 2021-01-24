@@ -56,7 +56,7 @@ def test_logistic_epsilon_select_action_exploration():
     assert 0 < sum(selected_action)[0] < trial_num
 
 
-def test_lin_ucb_initialize():
+def test_logistic_ucb_initialize():
     # note that the meaning of epsilon is different from that of LogisticEpsilonGreedy
     with pytest.raises(ValueError):
         LogisticUCB(n_actions=2, dim=2, epsilon=-0.2)
@@ -78,7 +78,7 @@ def test_logistic_ucb_select_action():
 
 def test_logistic_ts_initialize():
     n_actions = 3
-    policy = LogisticUCB(n_actions=n_actions, dim=2, epsilon=0.5)
+    policy = LogisticTS(n_actions=n_actions, dim=2)
     for i in range(n_actions):
         assert isinstance(policy.model_list[i], MiniBatchLogisticRegression)
 
