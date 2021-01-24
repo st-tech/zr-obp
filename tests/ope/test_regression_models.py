@@ -40,15 +40,10 @@ def test_performance_of_binary_outcome_models(
     )
     # compute statistics of ground truth policy value
     gt_mean = ground_truth_policy_value.mean()
-    gt_std = ground_truth_policy_value.std(ddof=1)
     random_state = 12345
     auc_scores: Dict[str, float] = {}
     # check ground truth
-    ci_times = 5
-    ci_bound = gt_std * ci_times / np.sqrt(ground_truth_policy_value.shape[0])
-    print(
-        f"gt_mean: {gt_mean}, {ci_times} * gt_std / sqrt({ground_truth_policy_value.shape[0]}): {ci_bound}"
-    )
+    print(f"gt_mean: {gt_mean}")
     # check the performance of regression models using doubly robust criteria (|\hat{q} - q| <= |q| is satisfied with high probability)
     dr_criteria_pass_rate = 0.8
     fit_methods = ["normal", "iw", "mrdr"]

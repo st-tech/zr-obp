@@ -57,7 +57,6 @@ def test_snipw_range_using_random_evaluation_policy(
     """
     action_dist = random_action_dist
     # prepare dm
-    ipw = InverseProbabilityWeighting()
     snipw = SelfNormalizedInverseProbabilityWeighting()
     # prepare input dict
     input_dict = {
