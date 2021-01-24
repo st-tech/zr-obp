@@ -54,6 +54,16 @@ def test_linear_base_exception():
     with pytest.raises(ValueError):
         LinEpsilonGreedy(n_actions=2, len_list=3, dim=2)
 
+    # invalid alpha and lambda
+    with pytest.raises(ValueError):
+        LinEpsilonGreedy(n_actions=2, dim=2, alpha_=0.0, lambda_=-3.0)
+
+    with pytest.raises(ValueError):
+        LinEpsilonGreedy(n_actions=2, dim=2, alpha_=-0.0)
+
+    with pytest.raises(ValueError):
+        LinEpsilonGreedy(n_actions=2, dim=2, lambda_=-1.0)
+
 
 def test_lin_epsilon_normal_epsilon():
 

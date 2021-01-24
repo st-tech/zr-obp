@@ -143,6 +143,16 @@ class BaseContextualPolicy(metaclass=ABCMeta):
                 f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
             )
 
+        if not isinstance(self.alpha_, float) or self.alpha_ <= 0.0:
+            raise ValueError(
+                f"alpha_ should be a positive float, but {self.alpha_} is given"
+            )
+
+        if not isinstance(self.lambda_, float) or self.lambda_ <= 0.0:
+            raise ValueError(
+                f"lambda_ should be a positive float, but {self.lambda_} is given"
+            )
+
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
         self.alpha_list = self.alpha_ * np.ones(self.n_actions)
