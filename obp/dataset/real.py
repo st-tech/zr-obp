@@ -53,16 +53,34 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Open Bandit Dataset Class."""
-        assert self.behavior_policy in [
+        # assert self.behavior_policy in [
+        #     "bts",
+        #     "random",
+        # ], f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
+        # assert self.campaign in [
+        #     "all",
+        #     "men",
+        #     "women",
+        # ], f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
+        if self.behavior_policy not in [
             "bts",
             "random",
-        ], f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
-        assert self.campaign in [
+        ]:
+            raise ValueError(
+                f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
+            )
+
+        if self.campaign not in [
             "all",
             "men",
             "women",
-        ], f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
-        assert isinstance(self.data_path, Path), f"data_path must be a Path type"
+        ]:
+            raise ValueError(
+                f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
+            )
+
+        if not isinstance(self.data_path, Path):
+            raise ValueError("data_path must be a Path type")
 
         self.data_path = self.data_path / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
