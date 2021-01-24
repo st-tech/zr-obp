@@ -35,12 +35,13 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
         Number of dimensions of context vectors.
 
     reward_type: str, default='binary'
-        Type of reward variable, must be either 'binary' or 'continuous'.
+        Type of reward variable, which must be either 'binary' or 'continuous'.
         When 'binary' is given, rewards are sampled from the Bernoulli distribution.
         When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
+        The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
-        Function generating expected reward with context and action context vectors,
+        Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None is set, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
@@ -200,8 +201,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             action = np.array(
                 [
                     self.random_.choice(
-                        np.arange(self.n_actions),
-                        p=behavior_policy_[i],
+                        np.arange(self.n_actions), p=behavior_policy_[i],
                     )
                     for i in np.arange(n_rounds)
                 ]
@@ -250,9 +250,7 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
 
 
 def logistic_reward_function(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: Optional[int] = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for synthetic bandit datasets.
 
@@ -291,9 +289,7 @@ def logistic_reward_function(
 
 
 def linear_reward_function(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: Optional[int] = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear mean reward function for synthetic bandit datasets.
 
@@ -332,9 +328,7 @@ def linear_reward_function(
 
 
 def linear_behavior_policy(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: Optional[int] = None,
+    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear contextual behavior policy for synthetic bandit datasets.
 

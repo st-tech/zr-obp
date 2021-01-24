@@ -83,7 +83,7 @@ class DirectMethodMock(BaseOffPolicyEstimator):
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -183,7 +183,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -295,10 +295,7 @@ def test_meta_summarize_off_policy_estimates(
     )
     value, interval = ope_.summarize_off_policy_estimates(random_action_dist)
     expected_value = pd.DataFrame(
-        {
-            "ipw": mock_policy_value + ipw.eps,
-            "ipw3": mock_policy_value + ipw3.eps,
-        },
+        {"ipw": mock_policy_value + ipw.eps, "ipw3": mock_policy_value + ipw3.eps,},
         index=["estimated_policy_value"],
     ).T
     expected_interval = pd.DataFrame(

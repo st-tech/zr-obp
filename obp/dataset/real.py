@@ -179,6 +179,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of
             the dataset to include in the evaluation split.
+            This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
             If true, split the original logged bandit feedback data by time series.
@@ -186,7 +187,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         --------
         bandit_feedback: BanditFeedback
-            Batch logged bandit feedback collected by a behavior policy.
+            A dictionary containing batch logged bandit feedback data collected by a behavior policy.
+            The keys of the dictionary are as follows.
+            - n_rounds: number of rounds (size) of the logged bandit data
+            - n_actions: number of actions (:math:`|\mathcal{A}|`)
+            - action: action variables sampled by a behavior policy
+            - position: positions where actions are recommended
+            - reward: reward variables
+            - pscore: action choice probabilities by a behavior policy
+            - context: context vectors such as user-related features and user-item affinity scores
+            - action_context: item-related context vectors
 
         """
         if is_timeseries_split:
@@ -235,6 +245,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of
             the dataset to include in the evaluation split.
+            This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
             If true, split the original logged bandit feedback data by time series.
@@ -245,7 +256,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         --------
         bandit_feedback: BanditFeedback
-            Logged bandit feedback sampled independently from the original data with replacement.
+            A dictionary containing logged bandit feedback data sampled independently from the original data with replacement.
+            The keys of the dictionary are as follows.
+            - n_rounds: number of rounds (size) of the logged bandit data
+            - n_actions: number of actions (:math:`|\mathcal{A}|`)
+            - action: action variables sampled by a behavior policy
+            - position: positions where actions are recommended by a behavior policy
+            - reward: reward variables
+            - pscore: action choice probabilities by a behavior policy
+            - context: context vectors such as user-related features and user-item affinity scores
+            - action_context: item-related context vectors
 
         """
         bandit_feedback = self.obtain_batch_bandit_feedback(
