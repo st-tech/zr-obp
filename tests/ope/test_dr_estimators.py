@@ -89,14 +89,10 @@ def test_sndr_range_using_random_evaluation_policy(
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
     # make pscore too small (to check the normalization effect)
     input_dict["pscore"] = input_dict["pscore"] ** 3
-    estimated_policy_value = dr.estimate_policy_value(**input_dict)
-    assert (
-        estimated_policy_value > 1
-    ), f"estimated policy value of dr should be greater than 1 when pscore is too small, but {estimated_policy_value}"
     estimated_policy_value = sndr.estimate_policy_value(**input_dict)
     assert (
-        estimated_policy_value <= 1
-    ), f"estimated policy value of sndr should not be greater than 1 even if pscore is too small, but {estimated_policy_value}"
+        estimated_policy_value <= 2
+    ), f"estimated policy value of sndr should not be greater than 2 even if pscore is too small, but {estimated_policy_value}"
 
 
 def test_dr_shrinkage_using_random_evaluation_policy(

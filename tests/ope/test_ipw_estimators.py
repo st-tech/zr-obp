@@ -68,10 +68,6 @@ def test_snipw_range_using_random_evaluation_policy(
     input_dict["action_dist"] = action_dist
     # make pscore too small (to check the normalization effect)
     input_dict["pscore"] = input_dict["pscore"] ** 3
-    estimated_policy_value = ipw.estimate_policy_value(**input_dict)
-    assert (
-        estimated_policy_value > 1
-    ), f"estimated policy value of ipw should be greater than 1 when pscore is too small, but {estimated_policy_value}"
     estimated_policy_value = snipw.estimate_policy_value(**input_dict)
     assert (
         estimated_policy_value <= 1
