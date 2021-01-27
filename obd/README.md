@@ -6,15 +6,15 @@ The full size version of our data is available at [https://research.zozo.com/dat
 
 This dataset is released along with the paper:
 
-Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita. <br>
-**Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms** <br>
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.<br>
+**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**<br>
 [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 When using this dataset, please cite the paper with following bibtex:
 ```
-@article{saito2020large,
-  title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
-  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+@article{saito2020open,
+  title={Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation},
+  author={Saito, Yuta and Shunsuke, Aihara and Megumi, Matsutani and Yusuke, Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
