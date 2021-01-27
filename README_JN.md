@@ -274,8 +274,8 @@ print(relative_policy_value_of_bernoulli_ts)
 # 引用
 本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようお願いいたします.
 
-Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.<br>
+**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**<br>
 [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 Bibtex:
