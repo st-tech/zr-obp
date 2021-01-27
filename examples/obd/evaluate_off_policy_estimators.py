@@ -139,8 +139,7 @@ if __name__ == "__main__":
         )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
-            bandit_feedback=bandit_feedback,
-            ope_estimators=ope_estimators,
+            bandit_feedback=bandit_feedback, ope_estimators=ope_estimators,
         )
         action_dist = np.tile(
             action_dist_single_round, (bandit_feedback["n_rounds"], 1, 1)
@@ -153,17 +152,12 @@ if __name__ == "__main__":
 
         return relative_ee_b
 
-    processed = Parallel(
-        backend="multiprocessing",
-        n_jobs=n_jobs,
-        verbose=50,
-    )([delayed(process)(i) for i in np.arange(n_runs)])
+    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
+        [delayed(process)(i) for i in np.arange(n_runs)]
+    )
     relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
     for b, relative_ee_b in enumerate(processed):
-        for (
-            estimator_name,
-            relative_ee_,
-        ) in relative_ee_b.items():
+        for (estimator_name, relative_ee_,) in relative_ee_b.items():
             relative_ee_dict[estimator_name][b] = relative_ee_
     relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
 

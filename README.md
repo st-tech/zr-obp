@@ -198,7 +198,7 @@ print(relative_policy_value_of_bernoulli_ts)
 1.198126...
 ```
 
-A formal introduction with a similar example can be found at [quickstart](https://github.com/st-tech/zr-obp/tree/master/examples/quickstart).
+A formal introduction of the Open Bandit Pipeline can be found at [quickstart](https://github.com/st-tech/zr-obp/tree/master/examples/quickstart).
 Below, we explain some important features in the example.
 
 
