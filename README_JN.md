@@ -81,16 +81,17 @@ Open Bandit Datasetのフルサイズ版は[https://research.zozo.com/data.html]
 
 Open Bandit Pipeline は, 以下の主要モジュールで構成されています.
 
-- **datasetモジュール**。このモジュールは, Open Bandit Dataset用のデータ読み込みクラスとデータの前処理するための柔軟なインターフェースを提供します. また人工データを生成するクラスも実装しています.
-- **policyモジュール**: このモジュールは, バンディットアルゴリズムのためのインターフェイスを提供します. 加えて, いくつかの標準なバンディットアルゴリズムを実装しています.
-- **simulatorモジュール**: このモジュールは, オフラインのバンディットシミュレーションを行うための関数を提供します.
-- **opeモジュール**:　このモジュールは, いくつかの標準的なオフ方策推定量を実装しています. また新たにオフ方策推定量を実装するためのインターフェースを提供します.
+- [**datasetモジュール**](./obp/dataset): このモジュールは, Open Bandit Dataset用のデータ読み込みクラスとデータの前処理するための柔軟なインターフェースを提供します. また人工データを生成するクラスも実装しています.
+- [**policyモジュール**](./obp/policy): このモジュールは, バンディットアルゴリズムのためのインターフェイスを提供します. 加えて, いくつかの標準なバンディットアルゴリズムを実装しています.
+- [**simulatorモジュール**](./obp/simulator): このモジュールは, オフラインのバンディットシミュレーションを行うための関数を提供します.
+- [**opeモジュール**](./obp/ope):　このモジュールは, いくつかの標準的なオフ方策推定量を実装しています. また新たにオフ方策推定量を実装するためのインターフェースを提供します.
 
 
 ### 実装されているバンディットアルゴリズムとオフ方策推定量
 
 <details>
-<summary><strong>バンディットアルゴリズム (**policy module**に実装)</strong></summary>
+<summary><strong>バンディットアルゴリズム (policy moduleに実装)</strong></summary>
+
 - Online
   - Context-free
     - Random
@@ -106,10 +107,12 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
     - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
 - Offline (Off-Policy Learning)
   - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+
 </details>
 
 <details>
-<summary><strong>オフ方策推定量 (**ope module**に実装)</strong></summary>
+<summary><strong>オフ方策推定量 (ope moduleに実装)</strong></summary>
+
 - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
 - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
 - [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
@@ -119,6 +122,7 @@ Open Bandit Pipeline は, 以下の主要モジュールで構成されていま
 - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
 - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
 - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+
 </details>
 
 私たちのパイプラインは, 上記のアルゴリズムや推定量に加えて柔軟なインターフェースも提供しています.
