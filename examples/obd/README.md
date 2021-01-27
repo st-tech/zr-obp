@@ -9,8 +9,11 @@ Specifically, we evaluate the estimation performances of well-known off-policy e
 
 We evaluate the estimation performances of off-policy estimators, including Direct Method (DM), Inverse Probability Weighting (IPW), and Doubly Robust (DR).
 
-[`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators.
-[`.conf/hyperparams.yaml`](./conf/hyperparams.yaml) defines hyperparameters of some machine learning models used as the regression model in model dependent estimators (such as DM and DR).
+### Files
+- [`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators.
+- [`.conf/hyperparams.yaml`](./conf/hyperparams.yaml) defines hyperparameters of some machine learning models used as the regression model in model dependent estimators (such as DM and DR).
+
+### Scripts
 
 ```bash
 # run evaluation of OPE estimators with (small size) Open Bandit Dataset
@@ -57,5 +60,5 @@ python evaluate_off_policy_estimators.py\
 ```
 
 Please refer to [this page](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the evaluation of OPE protocol using our real-world data.
-Please visit [synthetic](https://github.com/st-tech/zr-obp/tree/master/examples/synthetic) to try the evaluation of OPE estimators with synthetic bandit datasets.
+Please visit [synthetic](../synthetic/) to try the evaluation of OPE estimators with synthetic bandit datasets.
 Moreover, in [benchmark/ope](https://github.com/st-tech/zr-obp/tree/master/benchmark/ope), we performed the benchmark experiments on several OPE estimators using the full size Open Bandit Dataset.
