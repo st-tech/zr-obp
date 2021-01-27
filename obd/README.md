@@ -1,6 +1,6 @@
 # Open Bandit Dataset
 
-This directory contains the small size (10,000 records for each pair of campaign and behavior policy) version of our data that can be used for running our [examples](https://github.com/st-tech/zr-obp/tree/master/examples/examples_with_obd).
+This directory contains the small size (10,000 records for each pair of campaign and behavior policy) version of our data that can be used for running our [quickstart guide](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/obd.ipynb) and [examples](https://github.com/st-tech/zr-obp/tree/master/examples/obd).
 The full size version of our data is available at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
 
 
