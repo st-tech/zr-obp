@@ -1,4 +1,4 @@
-# Examples with Open Bandit Dataset (OBD)
+# Example with the Open Bandit Dataset (OBD)
 
 ## Description
 
@@ -57,5 +57,5 @@ python evaluate_off_policy_estimators.py\
 ```
 
 Please refer to [this page](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the evaluation of OPE protocol using our real-world data.
-Please visit [examples_with_synthetic](https://github.com/st-tech/zr-obp/tree/master/examples/examples_with_synthetic) to try the evaluation of OPE estimators with synthetic bandit datasets.
+Please visit [synthetic](https://github.com/st-tech/zr-obp/tree/master/examples/synthetic) to try the evaluation of OPE estimators with synthetic bandit datasets.
 Moreover, in [benchmark/ope](https://github.com/st-tech/zr-obp/tree/master/benchmark/ope), we performed the benchmark experiments on several OPE estimators using the full size Open Bandit Dataset.

@@ -1,4 +1,4 @@
-# Examples with Synthetic Data
+# Example with Synthetic Bandit Data
 
 
 ## Description
