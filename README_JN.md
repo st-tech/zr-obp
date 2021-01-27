@@ -275,12 +275,14 @@ print(relative_policy_value_of_bernoulli_ts)
 本リポジトリを活用して論文を執筆された場合, 以下の論文を引用していただくようお願いいたします.
 
 Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-**Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
+**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**
+[https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
+Bibtex:
 ```
-@article{saito2020large,
-  title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
-  author={Saito, Yuta and Shunsuke Aihara and Megumi Matsutani and Yusuke Narita},
+@article{saito2020open,
+  title={Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation},
+  author={Saito, Yuta and Shunsuke, Aihara and Megumi, Matsutani and Yusuke, Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }

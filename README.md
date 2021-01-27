@@ -280,14 +280,15 @@ A detailed usage of this class can be found at [quickstart](https://github.com/s
 # Citation
 If you use our dataset and pipeline in your work, please cite our paper:
 
-Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-**Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.<br>
+**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**<br>
+[https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 Bibtex:
 ```
-@article{saito2020large,
-  title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
-  author={Saito, Yuta and Shunsuke Aihara and Megumi Matsutani and Yusuke Narita},
+@article{saito2020open,
+  title={Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation},
+  author={Saito, Yuta and Shunsuke, Aihara and Megumi, Matsutani and Yusuke, Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
@@ -308,8 +309,8 @@ If you are interested in the Open Bandit Project, we can follow the updates at i
 For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
 
 # Contribution
-Thank you for considering contribution to Open Bandit Project!
-Please find [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute to the project.
+Any contributions to the Open Bandit Pipeline are more than welcome!
+Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute to the project.
 
 # License
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.

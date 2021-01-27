@@ -79,12 +79,14 @@ Citation
 ~~~~~~~~~~~~
 If you use our dataset and pipeline in your work, please cite our paper below.
 
-@article{saito2020large,
-  title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
-  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+```
+@article{saito2020open,
+  title={Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation},
+  author={Saito, Yuta and Shunsuke, Aihara and Megumi, Matsutani and Yusuke, Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
+```
 
 Google Group
 ~~~~~~~~~~~~~~~~
@@ -93,6 +95,11 @@ If you are interested in the Open Bandit Project, we can follow the updates at i
 Contact
 ~~~~~~~~~~~~
 For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
+
+Contribution
+~~~~~~~~~~~~~~
+Any contributions to the Open Bandit Pipeline are more than welcome!
+Please refer to `CONTRIBUTING.md <https://github.com/st-tech/zr-obp/blob/master/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 
 Table of Contents
