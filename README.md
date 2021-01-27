@@ -4,7 +4,7 @@
 
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
 
-**[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](https://github.com/st-tech/zr-obp/tree/master/slides/slides_EN.pdf)** | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd)** | **[日本語](https://github.com/st-tech/zr-obp/blob/master/README_JN.md)**
+**[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](./slides/slides_EN.pdf)** | **[Quickstart](./quickstart)** | **[Open Bandit Dataset](./obd)** | **[日本語](./README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -22,13 +22,12 @@
   - [(2) Off-Policy Learning](#2-off-policy-learning)
   - [(3) Off-Policy Evaluation](#3-off-policy-evaluation)
 - [Citation](#citation)
-- [Project Team](#project-team)
 - [Google Group](#google-group)
-- [Contact](#contact)
+- [Contribution](#contribution)
 - [License](#license)
+- [Project Team](#project-team)
+- [Contact](#contact)
 - [References](#references)
-  - [Papers](#papers)
-  - [Projects](#projects)
 
 </details>
 
@@ -42,7 +41,7 @@ The company uses multi-armed bandit algorithms to recommend fashion items to use
 The following figure presents examples of displayed fashion items as actions.
 
 <p align="center">
-  <img width="45%" src="./images/recommended_fashion_items.png" />
+  <img width="50%" src="./images/recommended_fashion_items.png" />
   <figcaption>
   <p align="center">
   Recommended fashion items as actions in ZOZOTOWN
@@ -54,7 +53,7 @@ We collected the data in a 7-days experiment in late November 2019 on three “c
 Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy, which was pre-trained for about a month before the data collection period.
 
 <p align="center">
-  <img width="70%" src="./images/statistics_of_obd.png" />
+  <img width="75%" src="./images/statistics_of_obd.png" />
 </p>
 
 The small size version of our data is available at [./obd](https://github.com/st-tech/zr-obp/tree/master/obd).
@@ -80,41 +79,48 @@ Thus, it facilitates reproducible research on bandit algorithms and off-policy e
 
 Open Bandit Pipeline consists of the following main modules.
 
-- **dataset module**: This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit datasets.
-- **policy module**: This module provides interfaces for training online and offline bandit policies. It also implements several standard policy learning methods.
-- **simulator module**: This module provides functions for conducting offline bandit simulation.
-- **ope module**: This module provides interfaces for OPE estimators. It also implements several standard and advanced OPE estimators.
+- [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit datasets.
+- [**policy module**](./obp/policy/): This module provides interfaces for training online and offline bandit policies. It also implements several standard policy learning methods.
+- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation.
+- [**ope module**](./obp/ope/): This module provides interfaces for OPE estimators. It also implements several standard and advanced OPE estimators.
 
 ### Algorithms and OPE Estimators Supported
 
-- Bandit Algorithms (implemented in **policy module**)
-  - Online
-    - Context-free
-      - Random
-      - Epsilon Greedy
-      - Bernoulli Thompson Sampling
-    - Contextual (Linear)
-      - Linear Epsilon Greedy
-      - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
-      - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
-    - Contextual (Logistic)
-      - Logistic Epsilon Greedy
-      - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
-      - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
-  - Offline (Off-Policy Learning)
-    - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+<details>
+<summary><strong>Bandit Algorithms (implemented in policy module)</strong></summary>
+- Online
+  - Context-free
+    - Random
+    - Epsilon Greedy
+    - Bernoulli Thompson Sampling
+  - Contextual (Linear)
+    - Linear Epsilon Greedy
+    - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
+    - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
+  - Contextual (Logistic)
+    - Logistic Epsilon Greedy
+    - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+    - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
+- Offline (Off-Policy Learning)
+  - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+</details>
 
+<br>
 
-- OPE Estimators (implemented in **ope module**)
-  - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
-  - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
-  - [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
-  - [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
-  - [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
-  - [Switch Estimators](https://arxiv.org/abs/1612.01205)
-  - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
-  - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
-  - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+<details>
+<summary><strong>OPE Estimators (implemented in ope module)</strong></summary>
+- [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
+- [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
+- [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
+- [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+- [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
+- [Switch Estimators](https://arxiv.org/abs/1612.01205)
+- [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
+- [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
+- [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+</details>
+
+<br>
 
 In addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
@@ -161,7 +167,10 @@ python setup.py install
 - tqdm>=4.41.1
 
 
-# Usage
+# Usage Examples
+
+<details>
+<summary><strong>Example with the Open Bandit Dataset</summary></strong>
 
 We show an example of conducting offline evaluation of the performance of BernoulliTS as an evaluation policy using Inverse Probability Weighting (IPW) and logged bandit feedback generated by the Random policy (behavior policy).
 We see that only ten lines of code are sufficient to complete OPE from scratch.
@@ -276,6 +285,8 @@ Users can implement their own OPE estimator by following the interface of `obp.o
 `obp.ope.OffPolicyEvaluation` class summarizes and compares the policy values estimated by several different estimators.
 A detailed usage of this class can be found at [quickstart](https://github.com/st-tech/zr-obp/tree/master/examples/quickstart). `bandit_feedback['reward'].mean()` is the empirical mean of factual rewards (on-policy estimate of the policy value) in the log and thus is the ground-truth performance of the behavior policy (the Random policy in this example.).
 
+</details>
+
 
 # Citation
 If you use our dataset and pipeline in your work, please cite our paper:
@@ -294,19 +305,8 @@ Bibtex:
 }
 ```
 
-
-# Project Team
-
-- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Tokyo Institute of Technology)
-- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Technologies, Inc.)
-- Megumi Matsutani (ZOZO Technologies, Inc.)
-- [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
-
 # Google Group
 If you are interested in the Open Bandit Project, we can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
-
-# Contact
-For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
 
 # Contribution
 Any contributions to the Open Bandit Pipeline are more than welcome!
@@ -315,9 +315,21 @@ Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how 
 # License
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
+# Project Team
+
+- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Tokyo Institute of Technology)
+- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Technologies, Inc.)
+- Megumi Matsutani (ZOZO Technologies, Inc.)
+- [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
+
+# Contact
+For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
+
 # References
 
-## Papers
+<details>
+<summary><strong>Papers</strong></summary>
+
 1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
 *Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
 
@@ -349,7 +361,12 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 15. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
 
+</details>
 
-## Projects
+<details>
+<summary><strong>Projects</strong></summary>
+
 This project is strongly inspired by **Open Graph Benchmark** --a collection of benchmark datasets, data loaders, and evaluators for graph machine learning:
 [[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)].
+
+</details>
