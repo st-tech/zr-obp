@@ -50,7 +50,9 @@ The following figure presents examples of displayed fashion items as actions.
 </p>
 
 We collected the data in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
-Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy, which was pre-trained for about a month before the data collection period.
+Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy, which was pre-trained for about a month before the data collection period. This dataset is unique in that it
+contains a set of *multiple* logged bandit feedback
+datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset).
 
 <p align="center">
   <img width="75%" src="./images/statistics_of_obd.png" />
@@ -64,9 +66,12 @@ Please see [./obd/README.md](./obd/README.md) for the description of the dataset
 
 ## Open Bandit Pipeline (OBP)
 
-*Open Bandit Pipeline* is a series of implementations of dataset preprocessing, policy learning methods, OPE estimators, and the evaluation of OPE protocols.
-This pipeline allows researchers to focus on building their own OPE estimator and easily compare it with others’ methods in realistic and reproducible ways.
-Thus, it facilitates reproducible research on bandit algorithms and off-policy evaluation.
+*Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators.
+Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance
+comparisons are fair, transparent, and reproducible. It also
+enables fast and accurate OPE implementation through a
+single unified interface, simplifying the practical use of
+OPE.
 
 <p align="center">
   <img width="90%" src="./images/overview.png" />
@@ -87,7 +92,8 @@ Open Bandit Pipeline consists of the following main modules.
 ### Algorithms and OPE Estimators Supported
 
 <details>
-<summary><strong>Bandit Algorithms (implemented in policy module)</strong></summary>
+<summary><strong>Bandit Algorithms (click to expand)</strong></summary>
+<br>
 
 - Online
   - Context-free
@@ -108,7 +114,8 @@ Open Bandit Pipeline consists of the following main modules.
 </details>
 
 <details>
-<summary><strong>OPE Estimators (implemented in ope module)</strong></summary>
+<summary><strong>OPE Estimators (click to expand)</strong></summary>
+<br>
 
 - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
 - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
@@ -184,9 +191,9 @@ from obp.policy import IPWLearner
 from obp.ope import (
     OffPolicyEvaluation,
     RegressionModel,
-    InverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust
+    InverseProbabilityWeighting as IPW,
+    DirectMethod as DM,
+    DoublyRobust as DR,
 )
 
 # (1) Generate Synthetic Bandit Data
@@ -194,22 +201,15 @@ dataset = SyntheticBanditDataset(n_actions=10, reward_type="binary")
 bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=1000)
 bandit_feedback_val = dataset.obtain_batch_bandit_feedback(n_rounds=1000)
 
-
 # (2) Off-Policy Learning
-eval_policy = IPWLearner(
-    n_actions=dataset.n_actions,
-    len_list=dataset.len_list,
-    base_classifier=LogisticRegression()
-)
+eval_policy = IPWLearner(n_actions=dataset.n_actions, base_classifier=LogisticRegression())
 eval_policy.fit(
     context=bandit_feedback_train["context"],
     action=bandit_feedback_train["action"],
     reward=bandit_feedback_train["reward"],
     pscore=bandit_feedback_train["pscore"]
 )
-action_dist = eval_policy.predict(
-    context=bandit_feedback_test["context"],
-)
+action_dist = eval_policy.predict(context=bandit_feedback_test["context"])
 
 # (3) Off-Policy Evaluation
 regression_model = RegressionModel(
@@ -217,17 +217,13 @@ regression_model = RegressionModel(
     base_model=LogisticRegression(),
 )
 estimated_rewards_by_reg_model = regression_model.fit_predict(
-    context=bandit_feedback_val["context"],
-    action=bandit_feedback_val["action"],
-    reward=bandit_feedback_val["reward"],
+    context=bandit_feedback_test["context"],
+    action=bandit_feedback_test["action"],
+    reward=bandit_feedback_test["reward"],
 )
 ope = OffPolicyEvaluation(
-    bandit_feedback=bandit_feedback_val,
-    ope_estimators=[
-      InverseProbabilityWeighting(),
-      DirectMethod(),
-      DoublyRobust()
-    ]
+    bandit_feedback=bandit_feedback_test,
+    ope_estimators=[IPW(), DM(), DR()]
 )
 ope.visualize_off_policy_estimates(
     action_dist=action_dist,
@@ -403,7 +399,7 @@ For any question about the paper, data, and pipeline, feel free to contact: sait
 # References
 
 <details>
-<summary><strong>Papers</strong></summary>
+<summary><strong>Papers (click to expand)</strong></summary>
 
 1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
 *Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
@@ -439,7 +435,7 @@ For any question about the paper, data, and pipeline, feel free to contact: sait
 </details>
 
 <details>
-<summary><strong>Projects</strong></summary>
+<summary><strong>Projects (click to expand)</strong></summary>
 
 This project is strongly inspired by **Open Graph Benchmark** --a collection of benchmark datasets, data loaders, and evaluators for graph machine learning:
 [[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)].
