@@ -16,7 +16,6 @@
     - [Algorithms and OPE Estimators Supported](#algorithms-and-ope-estimators-supported)
   - [Topics and Tasks](#topics-and-tasks)
 - [Installation](#installation)
-  - [Requirements](#requirements)
 - [Usage](#usage)
   - [(1) Data loading and preprocessing](#1-data-loading-and-preprocessing)
   - [(2) Off-Policy Learning](#2-off-policy-learning)
@@ -41,7 +40,7 @@ The company uses multi-armed bandit algorithms to recommend fashion items to use
 The following figure presents examples of displayed fashion items as actions.
 
 <p align="center">
-  <img width="50%" src="./images/recommended_fashion_items.png" />
+  <img width="45%" src="./images/recommended_fashion_items.png" />
   <figcaption>
   <p align="center">
   Recommended fashion items as actions in ZOZOTOWN
@@ -67,7 +66,7 @@ Please see [obd/README.md](./obd/README.md) for the description of the dataset.
 *Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair, transparent, and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
 
 <p align="center">
-  <img width="90%" src="./images/overview.png" />
+  <img width="85%" src="./images/overview.png" />
   <figcaption>
   <p align="center">
     Structure of Open Bandit Pipeline
@@ -136,13 +135,10 @@ Currently, Open Bandit Dataset and Pipeline facilitate the following research to
 
 Researchers can evaluate the performance of their bandit algorithms (in bandit papers) or the accuracy of their OPE estimators (in OPE papers) in an easy, standardized manner with the Open Bandit Pipeline. One can implement these types of experiments for their research papers using synthetic bandit data, multi-class classification data, or the real-world Open Bandit Dataset.
 
-- **Evaluation of Bandit Algorithms with Synthetic/Multi-Class Classification Data**
-- **Evaluation of Bandit Algorithms with Open Bandit Dataset**
+- **Evaluation of Bandit Algorithms with Synthetic/Classification/Open Bandit Data**
+- **Evaluation of OPE with Synthetic/Classification/Open Bandit Data**
 
-- **Evaluation of OPE with Synthetic/Multi-Class Classification Data**
-- **Evaluation of OPE with Open Bandit Dataset**
-
-In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples/](./examples/). One can learn how to implement the OPE experiments with the pipeline from the example contents.
+In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples](./examples/). One can learn how to implement the OPE experiments with the pipeline from the example contents.
 
 ### Practice
 
@@ -168,18 +164,7 @@ cd zr-obp
 python setup.py install
 ```
 
-
-## Requirements
-- **python>=3.7.0**
-- matplotlib>=3.2.2
-- numpy>=1.18.1
-- pandas>=0.25.1
-- pyyaml>=5.1
-- seaborn>=0.10.1
-- scikit-learn>=0.23.1
-- scipy>=1.4.1
-- tqdm>=4.41.1
-
+Open Bandit Pipeline supports Python 3.7 or newer.
 
 # Usage Examples
 
