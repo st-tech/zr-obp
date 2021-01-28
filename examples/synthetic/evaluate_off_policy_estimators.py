@@ -24,7 +24,6 @@ from obp.ope import (
     DoublyRobust,
     SelfNormalizedDoublyRobust,
     SwitchDoublyRobust,
-    SwitchInverseProbabilityWeighting,
     DoublyRobustWithShrinkage,
 )
 
@@ -46,8 +45,6 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchInverseProbabilityWeighting(tau=1, estimator_name="switch-ipw (tau=1)"),
-    SwitchInverseProbabilityWeighting(tau=100, estimator_name="switch-ipw (tau=100)"),
     SwitchDoublyRobust(tau=1, estimator_name="switch-dr (tau=1)"),
     SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
     DoublyRobustWithShrinkage(lambda_=1, estimator_name="dr-os (lambda=1)"),
@@ -56,7 +53,7 @@ ope_estimators = [
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="evaluate off-policy estimators with synthetic data."
+        description="evaluate off-policy estimators with synthetic bandit data."
     )
     parser.add_argument(
         "--n_runs", type=int, default=1, help="number of simulations in the experiment."
@@ -125,7 +122,6 @@ if __name__ == "__main__":
     # define evaluation policy using IPWLearner
     evaluation_policy = IPWLearner(
         n_actions=dataset.n_actions,
-        len_list=dataset.len_list,
         base_classifier=base_model_dict[base_model_for_evaluation_policy](
             **hyperparams[base_model_for_evaluation_policy]
         ),
@@ -143,9 +139,8 @@ if __name__ == "__main__":
             pscore=bandit_feedback_train["pscore"],
         )
         # predict the action decisions for the test set of the synthetic logged bandit feedback
-        action_dist = evaluation_policy.predict_proba(
+        action_dist = evaluation_policy.predict(
             context=bandit_feedback_test["context"],
-            tau=0.1,  # temperature hyperparameter
         )
         # estimate the ground-truth policy values of the evaluation policy
         # using the full expected reward contained in the test set of synthetic bandit feedback
@@ -157,7 +152,6 @@ if __name__ == "__main__":
         # estimate the mean reward function of the test set of synthetic bandit feedback with ML model
         regression_model = RegressionModel(
             n_actions=dataset.n_actions,
-            len_list=dataset.len_list,
             action_context=dataset.action_context,
             base_model=base_model_dict[base_model_for_reg_model](
                 **hyperparams[base_model_for_reg_model]
