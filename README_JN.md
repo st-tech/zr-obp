@@ -205,7 +205,7 @@ print(relative_policy_value_of_bernoulli_ts)
 1.198126...
 ```
 
-同じ例を使った詳細な実装例は[quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/)にあり, 実際に動かして試してみることが可能です.
+Open Bandit Pipelineの詳細な実装例は[quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/)にあり, 実際に動かして試してみることが可能です.
 以下, 重要な要素について詳細に説明します.
 
 ## (1) データの読み込みと前処理
