@@ -168,7 +168,7 @@ Open Bandit Pipeline supports Python 3.7 or newer.
 
 # Usage Examples
 
-## Example with Synthetic Bandit Dataset
+## Example with Synthetic Bandit Data
 
 Here is an example of conducting OPE of the performance of IPWLearner as an evaluation policy using Direct Method (DM), Inverse Probability Weighting (IPW), Doubly Robust (DR) as OPE estimators.
 
@@ -254,7 +254,6 @@ from obp.ope import (
     DoublyRobust as DR,
 )
 
-
 # (1) Data loading and multi-class to bandit reduction
 X, y = load_digits(return_X_y=True)
 dataset = MultiClassToBanditReduction(X=X, y=y, base_classifier_b=LogisticRegression(random_state=12345))
@@ -267,7 +266,7 @@ action_dist = dataset.obtain_action_dist_by_eval_policy(base_classifier_e=Random
 # calculate the ground-truth performance of the evaluation policy
 ground_truth = dataset.calc_ground_truth_policy_value(action_dist=action_dist)
 
-# (3) Off-Policy Evaluation
+# (3) Off-Policy Evaluation and Evaluation of OPE
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW(), DM(), DR()])
 # evaluate the estimation performance (accuracy) of OPE estimators by the relative estimation error
 relative_estimation_errors = ope.evaluate_performance_of_estimators(
