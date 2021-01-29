@@ -215,12 +215,20 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert self.n_actions > 1 and isinstance(
-            self.n_actions, int
-        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-        assert self.len_list > 0 and isinstance(
-            self.len_list, int
-        ), f"len_list must be a positive integer, but {self.len_list} is given"
+        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
+            raise ValueError(
+                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+            )
+
+        if not isinstance(self.len_list, int) or self.len_list <= 0:
+            raise ValueError(
+                f"len_list must be a positive integer, but {self.len_list} is given"
+            )
+
+        if self.n_actions < self.len_list:
+            raise ValueError(
+                f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
+            )
 
     @property
     def policy_type(self) -> str:
