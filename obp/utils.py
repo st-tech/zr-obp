@@ -11,6 +11,44 @@ from sklearn.utils import check_random_state
 from sklearn.utils.validation import _deprecate_positional_args
 
 
+def check_confidence_interval_arguments(
+    alpha: float = 0.05,
+    n_bootstrap_samples: int = 10000,
+    random_state: Optional[int] = None,
+) -> None:
+    """Check confidence interval arguments.
+
+    Parameters
+    ----------
+    alpha: float, default=0.05
+        Significant level of confidence intervals.
+
+    n_bootstrap_samples: int, default=10000
+        Number of resampling performed in the bootstrap procedure.
+
+    random_state: int, default=None
+        Controls the random seed in bootstrap sampling.
+
+    Returns
+    ----------
+    estimated_confidence_interval: Dict[str, float]
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+    """
+    if not (isinstance(alpha, float) and (0.0 < alpha < 1.0)):
+        raise ValueError(
+            f"alpha must be a positive float (< 1.0), but {alpha} is given"
+        )
+    if not (isinstance(n_bootstrap_samples, int) and n_bootstrap_samples > 0):
+        raise ValueError(
+            f"n_bootstrap_samples must be a positive integer, but {n_bootstrap_samples} is given"
+        )
+    if random_state is not None and not isinstance(random_state, int):
+        raise ValueError(
+            f"random_state must be an integer, but {random_state} is given"
+        )
+
+
 def estimate_confidence_interval_by_bootstrap(
     samples: np.ndarray,
     alpha: float = 0.05,
@@ -25,7 +63,7 @@ def estimate_confidence_interval_by_bootstrap(
         Empirical observed samples to be used to estimate cumulative distribution function.
 
     alpha: float, default=0.05
-        P-value.
+        Significant level of confidence intervals.
 
     n_bootstrap_samples: int, default=10000
         Number of resampling performed in the bootstrap procedure.
@@ -39,12 +77,9 @@ def estimate_confidence_interval_by_bootstrap(
         Dictionary storing the estimated mean and upper-lower confidence bounds.
 
     """
-    assert (0.0 < alpha < 1.0) and isinstance(
-        alpha, float
-    ), f"alpha must be a positive float, but {alpha} is given"
-    assert (n_bootstrap_samples > 0) and isinstance(
-        n_bootstrap_samples, int
-    ), f"n_bootstrap_samples must be a positive integer, but {n_bootstrap_samples} is given"
+    check_confidence_interval_arguments(
+        alpha=alpha, n_bootstrap_samples=n_bootstrap_samples, random_state=random_state
+    )
 
     boot_samples = list()
     random_ = check_random_state(random_state)
