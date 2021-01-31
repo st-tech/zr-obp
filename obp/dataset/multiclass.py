@@ -217,10 +217,6 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
 
         Parameters
         -----------
-        eval_size: float or int, default=0.25
-            If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
-            If int, represents the absolute number of test samples.
-
         random_state: int, default=None
             Controls the random seed in sampling actions.
 
