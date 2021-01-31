@@ -42,7 +42,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     References
     ------------
     Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-    "Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms.", 2020.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2020.
 
     """
 
@@ -53,15 +53,6 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Open Bandit Dataset Class."""
-        # assert self.behavior_policy in [
-        #     "bts",
-        #     "random",
-        # ], f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
-        # assert self.campaign in [
-        #     "all",
-        #     "men",
-        #     "women",
-        # ], f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
         if self.behavior_policy not in [
             "bts",
             "random",
@@ -208,9 +199,10 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
         """
         if is_timeseries_split:
-            assert isinstance(test_size, float) & (
-                0 < test_size < 1
-            ), f"test_size must be a float in the (0,1) interval, but {test_size} is given"
+            if not isinstance(test_size, float) or (test_size <= 0 or test_size >= 1):
+                raise ValueError(
+                    f"test_size must be a float in the (0,1) interval, but {test_size} is given"
+                )
             n_rounds_train = np.int(self.n_rounds * (1.0 - test_size))
             return dict(
                 n_rounds=n_rounds_train,
