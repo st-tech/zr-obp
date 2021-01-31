@@ -75,7 +75,7 @@ if __name__ == "__main__":
         "--eval_size",
         type=float,
         default=0.7,
-        help="the propostion of the dataset to include in the evaluation split.",
+        help="the proportion of the dataset to include in the evaluation split.",
     )
     parser.add_argument(
         "--base_model_for_behavior_policy",
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         "--alpha_b",
         type=float,
         default=0.8,
-        help="the parameter to control the randomeness of the behavior policy.",
+        help="the ratio of a uniform random policy when constructing an behavior policy.",
     )
     parser.add_argument(
         "--base_model_for_evaluation_policy",
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         "--alpha_e",
         type=float,
         default=0.9,
-        help="the parameter to control the randomeness of the evaluation policy.",
+        help="the ratio of a uniform random policy when constructing an evaluation policy.",
     )
     parser.add_argument(
         "--base_model_for_reg_model",
@@ -162,7 +162,7 @@ if __name__ == "__main__":
         ground_truth_policy_value = dataset.calc_ground_truth_policy_value(
             action_dist=action_dist
         )
-        # estimate the mean reward function of the test set of synthetic bandit feedback with ML model
+        # estimate the mean reward function of the test set of multi-class classification data with ML model
         regression_model = RegressionModel(
             n_actions=dataset.n_actions,
             len_list=dataset.len_list,

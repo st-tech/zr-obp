@@ -23,7 +23,7 @@ See [our documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html)
 
 ### Files
 - [`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using multi-class classification data.
-- [`./conf/hyperparams.yaml`](./conf/hyperparams.yaml) defines hyperparameters of some machine learning methods used to define regression model and IPWLearner.
+- [`./conf/hyperparams.yaml`](./conf/hyperparams.yaml) defines hyperparameters of some machine learning methods used to define regression model.
 
 ### Scripts
 
@@ -43,11 +43,11 @@ python evaluate_off_policy_estimators.py\
 ```
 - `$n_runs` specifies the number of simulation runs in the experiment to estimate standard deviations of the performance of OPE estimators.
 - `$dataset_name` specifies the name of the multi-class classification dataset and should be one of "breast_cancer", "digits", "iris", or "wine".
-- `$eval_size` specifies the propostion of the dataset to include in the evaluation split.
+- `$eval_size` specifies the proportion of the dataset to include in the evaluation split.
 - `$base_model_for_behavior_policy` specifies the base ML model for defining behavior policy and should be one of "logistic_regression", "random_forest", or "lightgbm".
-- `$alpha_b`: Ration of a uniform random policy when constructing a behavior policy.
+- `$alpha_b`: specifies the ratio of a uniform random policy when constructing a behavior policy.
 - `$base_model_for_evaluation_policy` specifies the base ML model for defining evaluation policy and should be one of "logistic_regression", "random_forest", or "lightgbm".
-- `$alpha_e`: Ration of a uniform random policy when constructing an evaluation policy.
+- `$alpha_e`: specifies the ratio of a uniform random policy when constructing an evaluation policy.
 - `$base_model_for_reg_model` specifies the base ML model for defining regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
 - `$n_jobs` is the maximum number of concurrently running jobs.
 
