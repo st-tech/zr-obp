@@ -20,7 +20,6 @@ from obp.ope import (
     DoublyRobust,
     SelfNormalizedDoublyRobust,
     SwitchDoublyRobust,
-    SwitchInverseProbabilityWeighting,
     DoublyRobustWithShrinkage,
 )
 

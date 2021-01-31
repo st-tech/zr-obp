@@ -14,11 +14,10 @@ In the following, we evaluate the estimation performances of
 - Self-Normalized Inverse Probability Weighting (SNIPW)
 - Doubly Robust (DR)
 - Self-Normalized Doubly Robust (SNDR)
-- Switch Inverse Probability Weighting (Switch-IPW)
 - Switch Doubly Robust (Switch-DR)
 - Doubly Robust with Optimistic Shrinkage (DRos)
 
-For Switch-IPW, Switch-DR, and DRos, we try some different values of hyperparameters.
+For Switch-DR and DRos, we try some different values of hyperparameters.
 See [our documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details about these estimators.
 
 ### Files
@@ -77,8 +76,6 @@ python evaluate_off_policy_estimators.py\
 # snipw                 0.006797  0.004094
 # dr                    0.007780  0.004492
 # sndr                  0.007210  0.004089
-# switch-ipw (tau=1)    0.255925  0.024125
-# switch-ipw (tau=100)  0.013286  0.008496
 # switch-dr (tau=1)     0.173282  0.020025
 # switch-dr (tau=100)   0.007780  0.004492
 # dr-os (lambda=1)      0.079629  0.014008
