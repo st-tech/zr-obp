@@ -90,6 +90,62 @@ def test_synthetic_obtain_batch_bandit_feedback():
     )
 
 
+# expected_reward, action_dist, description
+invalid_input_of_calc_policy_value = [
+    (
+        np.ones((2, 3)),
+        np.ones((3, 3, 3)),
+        "the size of axis 0 of expected_reward must be the same as that of action_dist",
+    ),
+    (
+        np.ones((2, 3)),
+        np.ones((2, 2, 3)),
+        "the size of axis 1 of expected_reward must be the same as that of action_dist",
+    ),
+    ("3", np.ones((2, 2, 3)), "expected_reward must be ndarray"),
+    (None, np.ones((2, 2, 3)), "expected_reward must be ndarray"),
+    (np.ones((2, 3)), np.ones((2, 3)), "action_dist must be 3-dimensional, but is 2."),
+    (np.ones((2, 3)), "3", "action_dist must be ndarray"),
+    (np.ones((2, 3)), None, "action_dist must be ndarray"),
+]
+
+valid_input_of_calc_policy_value = [
+    (np.ones((2, 3)), np.ones((2, 3, 1)), "valid shape",),
+]
+
+
+@pytest.mark.parametrize(
+    "expected_reward, action_dist, description", invalid_input_of_calc_policy_value,
+)
+def test_synthetic_calc_policy_value_using_invalid_inputs(
+    expected_reward, action_dist, description,
+):
+    n_actions = 10
+    dataset = SyntheticBanditDataset(n_actions=n_actions)
+
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = dataset.calc_ground_truth_policy_value(
+            expected_reward=expected_reward, action_dist=action_dist
+        )
+
+
+@pytest.mark.parametrize(
+    "expected_reward, action_dist, description", valid_input_of_calc_policy_value,
+)
+def test_synthetic_calc_policy_value_using_valid_inputs(
+    expected_reward, action_dist, description,
+):
+    n_actions = 10
+    dataset = SyntheticBanditDataset(n_actions=n_actions)
+
+    policy_value = dataset.calc_ground_truth_policy_value(
+        expected_reward=expected_reward, action_dist=action_dist
+    )
+    assert isinstance(
+        policy_value, float
+    ), "Invalid response of calc_ground_truth_policy_value"
+
+
 def test_synthetic_logistic_reward_function():
     # context
     with pytest.raises(ValueError):
