@@ -295,7 +295,10 @@ def test_meta_summarize_off_policy_estimates(
     )
     value, interval = ope_.summarize_off_policy_estimates(random_action_dist)
     expected_value = pd.DataFrame(
-        {"ipw": mock_policy_value + ipw.eps, "ipw3": mock_policy_value + ipw3.eps,},
+        {
+            "ipw": mock_policy_value + ipw.eps,
+            "ipw3": mock_policy_value + ipw3.eps,
+        },
         index=["estimated_policy_value"],
     ).T
     expected_interval = pd.DataFrame(
