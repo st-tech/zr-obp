@@ -52,7 +52,7 @@ We collected the data in a 7-day experiment in late November 2019 on three “ca
 contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset).
 
 <p align="center">
-  <img width="75%" src="./images/obd_stats.png" />
+  <img width="85%" src="./images/obd_stats.png" />
 </p>
 
 The small size version of our data is available at [obd](./obd).
@@ -66,7 +66,7 @@ Please see [obd/README.md](./obd/README.md) for the dataset description.
 *Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair, transparent, and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
 
 <p align="center">
-  <img width="85%" src="./images/overview.png" />
+  <img width="80%" src="./images/overview.png" />
   <figcaption>
   <p align="center">
     Structure of Open Bandit Pipeline
