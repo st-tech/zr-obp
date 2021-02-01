@@ -43,23 +43,23 @@ The following figure presents examples of displayed fashion items as actions.
   <img width="45%" src="./images/recommended_fashion_items.png" />
   <figcaption>
   <p align="center">
-  Recommended fashion items as actions in ZOZOTOWN
+  Recommended fashion items as actions in the ZOZOTOWN recommendation interface
   </p>
   </figcaption>
 </p>
 
-We collected the data in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively. Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy, which was pre-trained for about a month before the data collection period. This dataset is unique in that it
+We collected the data in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively. Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection. This dataset is unique in that it
 contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset).
 
 <p align="center">
-  <img width="75%" src="./images/statistics_of_obd.png" />
+  <img width="75%" src="./images/obd_stats.png" />
 </p>
 
 The small size version of our data is available at [obd](./obd).
 One can use this example data to run some [examples](./examples).
 We release the full size version of our data at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
 Please download the full size version for research uses.
-Please see [obd/README.md](./obd/README.md) for the description of the dataset.
+Please see [obd/README.md](./obd/README.md) for the dataset description.
 
 ## Open Bandit Pipeline (OBP)
 
@@ -76,10 +76,10 @@ Please see [obd/README.md](./obd/README.md) for the description of the dataset.
 
 Open Bandit Pipeline consists of the following main modules.
 
-- [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit datasets.
-- [**policy module**](./obp/policy/): This module provides interfaces for training online and offline bandit policies. It also implements several standard policy learning methods.
+- [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit data and transform multi-class classification data to bandit data.
+- [**policy module**](./obp/policy/): This module provides interfaces for implementing new online and offline bandit policies. It also implements several standard policy learning methods.
 - [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when we want to implement the ReplayMethod to evaluate the performance of online or adaptive bandit policies with logged bandit data.
-- [**ope module**](./obp/ope/): This module provides interfaces for OPE estimators. It also implements several standard and advanced OPE estimators.
+- [**ope module**](./obp/ope/): This module provides interfaces for implementing OPE estimators. It also implements several standard and advanced OPE estimators.
 
 ### Algorithms and OPE Estimators Supported
 
@@ -124,7 +124,7 @@ Open Bandit Pipeline consists of the following main modules.
 Please refer to to our [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of the estimators implemented.
 Note that, in addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
-Moreover, the pipeline provides an interface for handling real-world logged bandit feedback datasets.
+Moreover, the pipeline provides an interface for handling real-world logged bandit feedback data.
 Thus, practitioners can combine their own data with the pipeline and easily evaluate bandit algorithms' performances in their settings with OPE.
 
 
@@ -142,7 +142,7 @@ In particular, we prepare some example experiments about the evaluation and comp
 
 ### Practice
 
-Practitioners can improve their automated decision making systems by implementing online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of online bandit algorithms by combining the simulator module and the ReplayMethod in the ope module. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) for the quickstart guide of implementing OPE of online bandit algorithms. Moreover, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
+Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of online bandit algorithms by combining the simulator module and the ReplayMethod in the ope module. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) for the quickstart guide of implementing OPE of online bandit algorithms. Moreover, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
 
 - **Implementing Online/Offline(Batch) Bandit Algorithms**
 - **Off-Policy Evaluation of Online Bandit Algorithms**
@@ -173,7 +173,7 @@ Open Bandit Pipeline supports Python 3.7 or newer.
 Here is an example of conducting OPE of the performance of IPWLearner as an evaluation policy using Direct Method (DM), Inverse Probability Weighting (IPW), Doubly Robust (DR) as OPE estimators.
 
 ```python
-# a case for implementing OPE of the IPWLearner using synthetic bandit log data
+# a case for implementing OPE of the IPWLearner using synthetic bandit data
 from sklearn.linear_model import LogisticRegression
 # import open bandit pipeline (obp)
 from obp.dataset import SyntheticBanditDataset
@@ -231,28 +231,21 @@ ope.visualize_off_policy_estimates(
 
 
 A formal quickstart example with synthetic bandit data is available at [examples/quickstart/synthetic.ipynb](./examples/quickstart/synthetic.ipynb).
-We also prepare an experimental script to conduct the evaluation of OPE estimators with synthetic bandit data in [examples/synthetic](./examples/synthetic/).
+We also prepare a script to conduct the evaluation of OPE experiment with synthetic bandit data in [examples/synthetic](./examples/synthetic/).
 
 ## Example with Multi-Class Classification Data
 
-Researchers often use multi-class classification datasets to evaluate the estimation accuracy of OPE estimators.
-Open Bandit Pipeline implements this kind of OPE experiments with multi-class classification datasets in an easy way as follows.
+Researchers often use multi-class classification data to evaluate the estimation accuracy of OPE estimators.
+Open Bandit Pipeline implements this kind of OPE experiments with multi-class classification data in an easy manner as follows.
 
 ```python
-# a case for implementing an experiment to evaluate the accuracy of OPE with a classification dataset
+# a case for implementing an experiment to evaluate the accuracy of OPE using classification data
 from sklearn.datasets import load_digits
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-
 # import open bandit pipeline (obp)
-import obp
 from obp.dataset import MultiClassToBanditReduction
-from obp.ope import (
-    OffPolicyEvaluation,
-    InverseProbabilityWeighting as IPW,
-    DirectMethod as DM,
-    DoublyRobust as DR,
-)
+from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
 
 # (1) Data loading and multi-class to bandit reduction
 X, y = load_digits(return_X_y=True)
@@ -265,20 +258,23 @@ bandit_feedback = dataset.obtain_batch_bandit_feedback(random_state=12345)
 action_dist = dataset.obtain_action_dist_by_eval_policy(base_classifier_e=RandomForestClassifier(random_state=12345))
 # calculate the ground-truth performance of the evaluation policy
 ground_truth = dataset.calc_ground_truth_policy_value(action_dist=action_dist)
+print(ground_truth)
+0.9634340222575517
 
 # (3) Off-Policy Evaluation and Evaluation of OPE
 ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW(), DM(), DR()])
-# evaluate the estimation performance (accuracy) of OPE estimators by the relative estimation error
+# evaluate the estimation performance (accuracy) of IPW by the relative estimation error (relative-ee)
 relative_estimation_errors = ope.evaluate_performance_of_estimators(
         ground_truth_policy_value=ground_truth,
         action_dist=action_dist,
+        metric="relative-ee",
 )
 print(relative_estimation_errors)
-... #TODO:  hogehoge is the most accurate
+{'ipw': 0.01827255896321327} # the accuracy of IPW in OPE
 ```
 
 A formal quickstart example with multi-class classification data is available at [examples/quickstart/multiclass.ipynb](./examples/quickstart/multiclass.ipynb).
-We also prepare an experimental script to conduct the evaluation of OPE estimators with multi-class classification data in [examples/multiclass](./examples/multiclass/).
+We also prepare a script to conduct the evaluation of OPE experiment with multi-class classification data in [examples/multiclass](./examples/multiclass/).
 
 ## Example with Open Bandit Dataset
 
@@ -316,7 +312,7 @@ print(relative_policy_value_of_bernoulli_ts)
 1.198126...
 ```
 
-A formal quickstart example with Open Bandit Dataset is available at [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb). We also prepare an experimental script to conduct the evaluation of OPE estimators with the Open Bandit Dataset in [examples/obd](./examples/obd). Please see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset.
+A formal quickstart example with Open Bandit Dataset is available at [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb). We also prepare a script to conduct the evaluation of OPE using the Open Bandit Dataset in [examples/obd](./examples/obd). Please see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset.
 
 
 # Citation
