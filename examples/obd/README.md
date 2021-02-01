@@ -5,6 +5,8 @@
 Here, we use the open bandit dataset and pipeline to implement and evaluate OPE.
 Specifically, we evaluate the estimation performances of well-known off-policy estimators using the ground-truth policy value of an evaluation policy, which is calculable with our data using on-policy estimation.
 
+Please clone [the obp repository](https://github.com/st-tech/zr-obp) and download [the small sized Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd) to run this example.
+
 ## Evaluating Off-Policy Estimators
 
 We evaluate the estimation performances of off-policy estimators, including Direct Method (DM), Inverse Probability Weighting (IPW), and Doubly Robust (DR).

@@ -48,8 +48,6 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchInverseProbabilityWeighting(tau=1, estimator_name="switch-ipw (tau=1)"),
-    SwitchInverseProbabilityWeighting(tau=100, estimator_name="switch-ipw (tau=100)"),
     SwitchDoublyRobust(tau=1, estimator_name="switch-dr (tau=1)"),
     SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
     DoublyRobustWithShrinkage(lambda_=1, estimator_name="dr-os (lambda=1)"),
