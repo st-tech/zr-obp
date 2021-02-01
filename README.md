@@ -52,7 +52,7 @@ We collected the data in a 7-day experiment in late November 2019 on three “ca
 contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset).
 
 <p align="center">
-  <img width="85%" src="./images/obd_stats.png" />
+  <img width="90%" src="./images/obd_stats.png" />
 </p>
 
 The small size version of our data is available at [obd](./obd).
@@ -69,7 +69,7 @@ Please see [obd/README.md](./obd/README.md) for the dataset description.
   <img width="80%" src="./images/overview.png" />
   <figcaption>
   <p align="center">
-    Structure of Open Bandit Pipeline
+    Overview of the Open Bandit Pipeline
   </p>
   </figcaption>
 </p>
@@ -142,7 +142,7 @@ In particular, we prepare some example experiments about the evaluation and comp
 
 ### Practice
 
-Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of online bandit algorithms by combining the simulator module and the ReplayMethod in the ope module. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) for the quickstart guide of implementing OPE of online bandit algorithms. Moreover, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
+Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of online bandit algorithms by combining the simulator module and the ReplayMethod in the ope module. Moreover, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
 
 - **Implementing Online/Offline(Batch) Bandit Algorithms**
 - **Off-Policy Evaluation of Online Bandit Algorithms**
