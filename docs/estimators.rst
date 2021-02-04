@@ -12,7 +12,7 @@ DM then uses it to estimate the policy value as
     \hat{V}_{\mathrm{DM}} (\pi_e; \calD, \hat{q}) := \E_{\calD} [ \hat{q} (x_t, \pi_e) ],
 
 where :math:`\hat{q}(a \mid x)` is the estimated reward function.
-If :math:`\hat{q}(a \mid x)` is a good approximation to the mean reward function, this estimator accurately estimates the policy value of the evaluation policy :math:`V^{\pi}`.
+If :math:`\hat{q}(a \mid x)` is a good approximation to the mean reward function, this estimator accurately estimates the policy value of the evaluation policy :math:`V(\pi)`.
 If :math:`\hat{q}(a \mid x)` fails to approximate the mean reward function well, however, the final estimator is no longer consistent.
 The model misspecification issue is problematic because the extent of misspecification cannot be easily quantified from data :cite:`Farajtabar2018`.
 
@@ -52,7 +52,7 @@ It estimates the policy value by dividing the sum of weighted rewards by the sum
 .. math::
     \hat{V}_{\mathrm{SNIPW}} (\pi_e; \calD) :=\frac{\E_{\calD} [ w(x_t,a_t) r_t ]}{\E_{\calD} [ w(x_t,a_t) ]}.
 
-SNIPW is more stable than IPW, because estimated policy value by SNIPW is bounded in the support of rewards and its conditional variance given action and context is bounded by the conditional variance of the rewards:cite:`kallus2019`.
+SNIPW is more stable than IPW, because policy value estimated by SNIPW is bounded in the support of rewards and its conditional variance given action and context is bounded by the conditional variance of the rewards :cite:`Kallus2019`.
 IPW does not have these properties.
 We can define Self-Normalized Doubly Robust (SNDR) in a similar manner as follows.
 
@@ -82,6 +82,11 @@ This estimator estimates the policy value as:
 .. math::
     \hat{V}_{\mathrm{MRDR}} (\pi_e; \calD, \hat{q}_{\mathrm{MRDR}}) := \hat{V}_{\mathrm{DR}} (\pi_e; \calD, \hat{q}_{\mathrm{MRDR}}),
 
+where :math:`\hat{q}_{\mathrm{MRDR}}` is derived by minimizing the (empirical) variance objective:
+
+.. math::
+    \hat{q}_{\mathrm{MRDR}} \in \arg \min_{\hat{q} \in \mathcal{Q}} \mathbb{V}_{\calD} (\hat{V}_{\mathrm{DR}} (\pi_e; \calD, \hat{q})),
+
 where :math:`\mathcal{Q}` is a function class for the reward estimator.
 When :math:`\mathcal{Q}` is well-specified, then :math:`\hat{q}_{\mathrm{MRDR}} = q`.
 Here, even if :math:`\mathcal{Q}` is misspecified, the derived reward estimator is expected to behave well since the target function is the resulting variance.
@@ -89,7 +94,7 @@ Here, even if :math:`\mathcal{Q}` is misspecified, the derived reward estimator 
 
 Doubly Robust with Optimistic Shrinkage (DRos)
 ----------------------------------------------------------------------------
-:cite:`Su2019` proposes DRs based on a new weight function :math:`w_o: \calX \times \calA \rightarrow \mathbb{R}_{+}` that directly minimizes sharp bounds on the MSE of the resulting estimator.
+Su et al. :cite:`Su2019` proposes DRs based on a new weight function :math:`w_o: \calX \times \calA \rightarrow \mathbb{R}_{+}` that directly minimizes sharp bounds on the MSE of the resulting estimator.
 DRs is defined as
 
 .. math::

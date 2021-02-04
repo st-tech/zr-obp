@@ -19,3 +19,6 @@ From source:
     git clone https://github.com/st-tech/zr-obp
     cd zr-obp
     python setup.py install
+
+
+Open Bandit Pipeline supports Python 3.7 or newer.
