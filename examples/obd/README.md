@@ -2,10 +2,7 @@
 
 ## Description
 
-Here, we use the open bandit dataset and pipeline to implement and evaluate OPE.
-Specifically, we evaluate the estimation performances of well-known off-policy estimators using the ground-truth policy value of an evaluation policy, which is calculable with our data using on-policy estimation.
-
-Please clone [the obp repository](https://github.com/st-tech/zr-obp) and download [the small sized Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd) to run this example.
+Here, we use the open bandit dataset and pipeline to implement and evaluate OPE. Specifically, we evaluate the estimation performances of well-known off-policy estimators using the ground-truth policy value of an evaluation policy, which is calculable with our data using on-policy estimation.
 
 ## Evaluating Off-Policy Estimators
 
@@ -55,9 +52,9 @@ python evaluate_off_policy_estimators.py\
 # random_state=12345
 # ------------------------------
 #          mean       std
-# dm   0.180305  0.114693
+# dm   0.180288  0.114694
 # ipw  0.333113  0.350425
-# dr   0.304421  0.347771
+# dr   0.304401  0.347842
 # ==============================
 ```
 

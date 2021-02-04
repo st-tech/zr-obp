@@ -96,11 +96,8 @@ if __name__ == "__main__":
     n_jobs = args.n_jobs
     random_state = args.random_state
     np.random.seed(random_state)
-    data_path = Path(".").resolve().parents[1] / "obd"
 
-    obd = OpenBanditDataset(
-        behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
-    )
+    obd = OpenBanditDataset(behavior_policy=behavior_policy, campaign=campaign,)
     # compute action distribution by evaluation policy
     kwargs = dict(
         n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state
@@ -115,7 +112,7 @@ if __name__ == "__main__":
     # ground-truth policy value of an evaluation policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
     ground_truth_policy_value = OpenBanditDataset.calc_on_policy_policy_value_estimate(
-        behavior_policy=evaluation_policy, campaign=campaign, data_path=data_path
+        behavior_policy=evaluation_policy, campaign=campaign,
     )
 
     def process(b: int):
