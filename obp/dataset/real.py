@@ -34,7 +34,8 @@ class OpenBanditDataset(BaseRealBanditDataset):
         One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
 
     data_path: Path, default=Path('./obd')
-        Path that stores Open Bandit Dataset.
+        Path where the Open Bandit Dataset exists.
+        When `data_path` is not given, this class downloads the example small sized version of the dataset.
 
     dataset_name: str, default='obd'
         Name of the dataset.
@@ -48,7 +49,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     behavior_policy: str
     campaign: str
-    data_path: Path = Path("./obd")
+    data_path: Path = Path(__file__).parent / "obd"
     dataset_name: str = "obd"
 
     def __post_init__(self) -> None:
@@ -62,9 +63,11 @@ class OpenBanditDataset(BaseRealBanditDataset):
             "men",
             "women",
         ], f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
-        assert isinstance(self.data_path, Path), f"data_path must be a Path type"
-
+        if not isinstance(self.data_path, Path):
+            raise ValueError("data_path must be a Path type")
         self.data_path = self.data_path / self.behavior_policy / self.campaign
+
+        self.data_path = Path(__file__).parent / "obd" / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
 
         self.load_raw_data()
