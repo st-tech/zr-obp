@@ -11,12 +11,12 @@ from sklearn.base import ClassifierMixin, is_classifier, clone
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state, check_X_y
 
-from .base import BaseSyntheticBanditDataset
+from .base import BaseBanditDataset
 from ..types import BanditFeedback
 
 
 @dataclass
-class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
+class MultiClassToBanditReduction(BaseBanditDataset):
     """Class for handling multi-class classification data as logged bandit feedback data.
 
     Note

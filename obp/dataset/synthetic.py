@@ -9,13 +9,13 @@ import numpy as np
 from scipy.stats import truncnorm
 from sklearn.utils import check_random_state
 
-from .base import BaseSyntheticBanditDataset
+from .base import BaseBanditDataset
 from ..types import BanditFeedback
 from ..utils import sigmoid, softmax
 
 
 @dataclass
-class SyntheticBanditDataset(BaseSyntheticBanditDataset):
+class SyntheticBanditDataset(BaseBanditDataset):
     """Class for generating synthetic bandit dataset.
 
     Note

@@ -5,7 +5,16 @@
 from abc import ABCMeta, abstractmethod
 
 
-class BaseRealBanditDataset(metaclass=ABCMeta):
+class BaseBanditDataset(metaclass=ABCMeta):
+    """Base Class for Synthetic Bandit Dataset."""
+
+    @abstractmethod
+    def obtain_batch_bandit_feedback(self) -> None:
+        """Obtain batch logged bandit feedback."""
+        raise NotImplementedError
+
+
+class BaseRealBanditDataset(BaseBanditDataset):
     """Base Class for Real-World Bandit Dataset."""
 
     @abstractmethod
@@ -16,18 +25,4 @@ class BaseRealBanditDataset(metaclass=ABCMeta):
     @abstractmethod
     def pre_process(self) -> None:
         """Preprocess raw dataset."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def obtain_batch_bandit_feedback(self) -> None:
-        """Obtain batch logged bandit feedback."""
-        raise NotImplementedError
-
-
-class BaseSyntheticBanditDataset(metaclass=ABCMeta):
-    """Base Class for Synthetic Bandit Dataset."""
-
-    @abstractmethod
-    def obtain_batch_bandit_feedback(self) -> None:
-        """Obtain batch logged bandit feedback."""
         raise NotImplementedError
