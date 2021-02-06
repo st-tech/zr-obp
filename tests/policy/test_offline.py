@@ -78,7 +78,7 @@ def test_opl_fit():
     learner.fit(context=context, action=action, reward=reward, position=position)
 
     # inconsistency with the shape
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         learner = IPWLearner(n_actions=2, len_list=2)
         variant_context = np.array([1.0, 1.0, 1.0, 1.0])
         learner.fit(

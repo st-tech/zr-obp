@@ -8,7 +8,7 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from ..utils import estimate_confidence_interval_by_bootstrap
+from ..utils import estimate_confidence_interval_by_bootstrap, check_ope_inputs
 
 
 @dataclass
@@ -131,8 +131,17 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action, np.ndarray):
+            raise ValueError("action must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist, position=position, action=action, reward=reward
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         return self._estimate_round_rewards(
             reward=reward,
             action=action,
@@ -182,8 +191,17 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action, np.ndarray):
+            raise ValueError("action must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist, position=position, action=action, reward=reward
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         estimated_round_rewards = self._estimate_round_rewards(
             reward=reward,
             action=action,
@@ -306,8 +324,23 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action, np.ndarray):
+            raise ValueError("action must be ndarray")
+        if not isinstance(pscore, np.ndarray):
+            raise ValueError("pscore must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         return self._estimate_round_rewards(
             reward=reward,
             action=action,
@@ -363,8 +396,23 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action, np.ndarray):
+            raise ValueError("action must be ndarray")
+        if not isinstance(pscore, np.ndarray):
+            raise ValueError("pscore must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         estimated_round_rewards = self._estimate_round_rewards(
             reward=reward,
             action=action,
@@ -564,8 +612,17 @@ class DirectMethod(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
+        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
+            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            position=position,
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         return self._estimate_round_rewards(
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -610,8 +667,17 @@ class DirectMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
+            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            position=position,
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         estimated_round_rewards = self._estimate_round_rewards(
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -765,8 +831,26 @@ class DoublyRobust(InverseProbabilityWeighting):
             Estimated policy value by the DR estimator.
 
         """
+        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
+            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action, np.ndarray):
+            raise ValueError("action must be ndarray")
+        if not isinstance(pscore, np.ndarray):
+            raise ValueError("pscore must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         return self._estimate_round_rewards(
             reward=reward,
             action=action,
@@ -826,8 +910,26 @@ class DoublyRobust(InverseProbabilityWeighting):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
+            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action, np.ndarray):
+            raise ValueError("action must be ndarray")
+        if not isinstance(pscore, np.ndarray):
+            raise ValueError("pscore must be ndarray")
+
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         estimated_round_rewards = self._estimate_round_rewards(
             reward=reward,
             action=action,
@@ -965,7 +1067,7 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
     ----------
     tau: float, default=1
         Switching hyperparameter. When importance weight is larger than this parameter, the DM estimator is applied, otherwise the IPW estimator is applied.
-        This hyperparameter should be larger than 1., otherwise it is meaningless.
+        This hyperparameter should be larger than or equal to 0, otherwise it is meaningless.
 
     estimator_name: str, default='switch-ipw'.
         Name of off-policy estimator.
@@ -980,14 +1082,19 @@ class SwitchInverseProbabilityWeighting(DoublyRobust):
 
     """
 
-    tau: float = 1
+    tau: float = 1.0
     estimator_name: str = "switch-ipw"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert (
-            self.tau >= 0.0
-        ), f"switching hyperparameter should be larger than 1, but {self.tau} is given"
+        if not isinstance(self.tau, float):
+            raise ValueError(
+                f"switching hyperparameter must be float, but {self.tau} is given"
+            )
+        if self.tau < 0.0:
+            raise ValueError(
+                f"switching hyperparameter must be larger than or equal to zero, but {self.tau} is given"
+            )
 
     def _estimate_round_rewards(
         self,
@@ -1084,14 +1191,19 @@ class SwitchDoublyRobust(DoublyRobust):
 
     """
 
-    tau: float = 1
+    tau: float = 1.0
     estimator_name: str = "switch-dr"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert (
-            self.tau >= 0.0
-        ), f"switching hyperparameter must be larger than or equal to zero, but {self.tau} is given"
+        if not isinstance(self.tau, float):
+            raise ValueError(
+                f"switching hyperparameter must be float, but {self.tau} is given"
+            )
+        if self.tau < 0.0:
+            raise ValueError(
+                f"switching hyperparameter must be larger than or equal to zero, but {self.tau} is given"
+            )
 
     def _estimate_round_rewards(
         self,
@@ -1207,9 +1319,14 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert (
-            self.lambda_ >= 0.0
-        ), f"shrinkage hyperparameter must be larger than or equal to zero, but {self.lambda_} is given"
+        if not isinstance(self.lambda_, float):
+            raise ValueError(
+                f"shrinkage hyperparameter must be float, but {self.lambda_} is given"
+            )
+        if self.lambda_ < 0.0:
+            raise ValueError(
+                f"shrinkage hyperparameter must be larger than or equal to zero, but {self.lambda_} is given"
+            )
 
     def _estimate_round_rewards(
         self,
