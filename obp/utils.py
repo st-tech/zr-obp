@@ -207,6 +207,8 @@ def check_bandit_feedback_inputs(
         raise ValueError("reward must be ndarray")
     if reward.ndim != 1:
         raise ValueError("reward must be 1-dimensional")
+    if not (action.dtype == int and action.min() >= 0):
+        raise ValueError("action elements must be non-negative integers")
 
     if pscore is not None:
         if not isinstance(pscore, np.ndarray):
@@ -219,6 +221,9 @@ def check_bandit_feedback_inputs(
             raise ValueError(
                 "context, action, reward, and pscore must be the same size."
             )
+        if np.any(pscore <= 0):
+            raise ValueError("pscore must be positive")
+
     if position is not None:
         if not isinstance(position, np.ndarray):
             raise ValueError("position must be ndarray")
@@ -230,6 +235,8 @@ def check_bandit_feedback_inputs(
             raise ValueError(
                 "context, action, reward, and position must be the same size."
             )
+        if not (position.dtype == int and position.min() >= 0):
+            raise ValueError("position elements must be non-negative integers")
     else:
         if not (context.shape[0] == action.shape[0] == reward.shape[0]):
             raise ValueError("context, action, and reward must be the same size.")

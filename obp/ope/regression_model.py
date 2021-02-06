@@ -131,18 +131,23 @@ class RegressionModel(BaseEstimator):
         if self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            assert (
-                isinstance(position, np.ndarray) and position.ndim == 1
-            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
+            if not (isinstance(position, np.ndarray) and position.ndim == 1):
+                raise ValueError(
+                    "when len_list > 1, position must be a 1-dimensional ndarray"
+                )
+            if position.max() >= self.len_list:
+                raise ValueError(
+                    f"position elements must be smaller than len_list, but {position.max()}"
+                )
         if self.fitting_method in ["iw", "mrdr"]:
-            assert (
-                isinstance(action_dist, np.ndarray) and action_dist.ndim == 3
-            ), f"when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
-            assert action_dist.shape == (
-                n_rounds,
-                self.n_actions,
-                self.len_list,
-            ), f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
+            if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
+                raise ValueError(
+                    "when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
+                )
+            if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
+                raise ValueError(
+                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
+                )
             if pscore is None:
                 pscore = np.ones_like(action) / self.n_actions
 
@@ -281,24 +286,31 @@ class RegressionModel(BaseEstimator):
         )
         n_rounds = context.shape[0]
 
-        assert n_folds > 0 and isinstance(
-            n_folds, int
-        ), f"n_folds must be a positive integer, but {n_folds} is given"
+        if not (isinstance(n_folds, int) and n_folds > 0):
+            raise ValueError(
+                f"n_folds must be a positive integer, but {n_folds} is given"
+            )
+
         if self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            assert (
-                isinstance(position, np.ndarray) and position.ndim == 1
-            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
+            if not (isinstance(position, np.ndarray) and position.ndim == 1):
+                raise ValueError(
+                    "when len_list > 1, position must be a 1-dimensional ndarray"
+                )
+            if position.max() >= self.len_list:
+                raise ValueError(
+                    f"position elements must be smaller than len_list, but {position.max()}"
+                )
         if self.fitting_method in ["iw", "mrdr"]:
-            assert (
-                isinstance(action_dist, np.ndarray) and action_dist.ndim == 3
-            ), f"when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
-            assert action_dist.shape == (
-                n_rounds,
-                self.n_actions,
-                self.len_list,
-            ), f"shape of action_dist must be (n_rounds, n_actions, len_list)={n_rounds, self.n_actions, self.len_list}, but is {action_dist.shape}"
+            if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
+                raise ValueError(
+                    "when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
+                )
+            if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
+                raise ValueError(
+                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
+                )
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions
 
