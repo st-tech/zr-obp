@@ -567,7 +567,7 @@ def test_meta_summarize_off_policy_estimates(
     assert_frame_equal(interval, expected_interval), "Invalid summarization (interval)"
 
 
-invalid_input_of_evaluation_performance = [
+invalid_input_of_evaluation_performance_of_estimators = [
     ("foo", 0.3, "metric must be either 'relative-ee' or 'se'"),
     ("se", 1, "ground_truth_policy_value must be a float"),
     ("se", "a", "ground_truth_policy_value must be a float"),
@@ -578,7 +578,7 @@ invalid_input_of_evaluation_performance = [
     ),
 ]
 
-valid_input_of_evaluation_performance = [
+valid_input_of_evaluation_performance_of_estimators = [
     ("se", 0.0, "metric is se and ground_truth_policy_value is 0.0"),
     ("relative-ee", 1.0, "metric is relative-ee and ground_truth_policy_value is 1.0"),
 ]
@@ -590,7 +590,7 @@ valid_input_of_evaluation_performance = [
 )
 @pytest.mark.parametrize(
     "metric, ground_truth_policy_value, description_2",
-    invalid_input_of_evaluation_performance,
+    invalid_input_of_evaluation_performance_of_estimators,
 )
 def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
     action_dist,
@@ -630,7 +630,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
 )
 @pytest.mark.parametrize(
     "metric, ground_truth_policy_value, description_2",
-    valid_input_of_evaluation_performance,
+    valid_input_of_evaluation_performance_of_estimators,
 )
 def test_meta_evaluate_performance_of_estimators_using_valid_input_data(
     action_dist,
