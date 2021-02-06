@@ -248,7 +248,9 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             pscore=pscore,
         )
 
-    def calc_ground_truth_policy_value(self, expected_reward: np.ndarray, action_dist: np.ndarray) -> float:
+    def calc_ground_truth_policy_value(
+        self, expected_reward: np.ndarray, action_dist: np.ndarray
+    ) -> float:
         """Calculate the policy value of given action distribution on the given expected_reward.
 
         Parameters
@@ -274,10 +276,14 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             raise ValueError(
                 f"action_dist must be 3-dimensional, but is {action_dist.ndim}."
             )
-        if (expected_reward.shape[0] != action_dist.shape[0]):
-            raise ValueError("the size of axis 0 of expected_reward must be the same as that of action_dist")
-        if (expected_reward.shape[1] != action_dist.shape[1]):
-            raise ValueError("the size of axis 1 of expected_reward must be the same as that of action_dist")
+        if expected_reward.shape[0] != action_dist.shape[0]:
+            raise ValueError(
+                "the size of axis 0 of expected_reward must be the same as that of action_dist"
+            )
+        if expected_reward.shape[1] != action_dist.shape[1]:
+            raise ValueError(
+                "the size of axis 1 of expected_reward must be the same as that of action_dist"
+            )
 
         return np.average(expected_reward, weights=action_dist[:, :, 0], axis=1).mean()
 
