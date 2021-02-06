@@ -62,17 +62,19 @@ class RegressionModel(BaseEstimator):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert self.fitting_method in [
-            "normal",
-            "iw",
-            "mrdr",
-        ], f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
-        assert self.n_actions > 1 and isinstance(
-            self.n_actions, int
-        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-        assert self.len_list > 0 and isinstance(
-            self.len_list, int
-        ), f"len_list must be a positive integer, but {self.len_list} is given"
+        if self.fitting_method not in ["normal", "iw", "mrdr"]:
+            raise ValueError(
+                f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
+            )
+        if not (isinstance(self.n_actions, int) and self.n_actions > 1):
+            raise ValueError(
+                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+            )
+        if not (isinstance(self.len_list, int) and self.list > 0):
+            raise ValueError(
+                f"len_list must be a positive integer, but {self.len_list} is given"
+            )
+
         self.base_model_list = [
             clone(self.base_model) for _ in np.arange(self.len_list)
         ]
@@ -334,7 +336,10 @@ class RegressionModel(BaseEstimator):
         return estimated_rewards_by_reg_model
 
     def _pre_process_for_reg_model(
-        self, context: np.ndarray, action: np.ndarray, action_context: np.ndarray,
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        action_context: np.ndarray,
     ) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
 

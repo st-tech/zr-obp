@@ -195,35 +195,53 @@ def check_bandit_feedback_inputs(
         Context vectors characterizing each action.
 
     """
-    assert isinstance(context, np.ndarray), "context must be ndarray"
-    assert context.ndim == 2, "context must be 2-dimensional"
-    assert isinstance(action, np.ndarray), "action must be ndarray"
-    assert action.ndim == 1, "action must be 1-dimensional"
-    assert isinstance(reward, np.ndarray), "reward must be ndarray"
-    assert reward.ndim == 1, "reward must be 1-dimensional"
+    if not isinstance(context, np.ndarray):
+        raise ValueError("context must be ndarray")
+    if context.ndim != 2:
+        raise ValueError("context must be 2-dimensional")
+    if not isinstance(action, np.ndarray):
+        raise ValueError("action must be ndarray")
+    if action.ndim != 1:
+        raise ValueError("action must be 1-dimensional")
+    if not isinstance(reward, np.ndarray):
+        raise ValueError("reward must be ndarray")
+    if reward.ndim != 1:
+        raise ValueError("reward must be 1-dimensional")
 
     if pscore is not None:
-        assert isinstance(pscore, np.ndarray), "pscore must be ndarray"
-        assert pscore.ndim == 1, "pscore must be 1-dimensional"
-        assert (
+        if not isinstance(pscore, np.ndarray):
+            raise ValueError("pscore must be ndarray")
+        if pscore.ndim != 1:
+            raise ValueError("pscore must be 1-dimensional")
+        if not (
             context.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0]
-        ), "context, action, reward, and pscore must be the same size."
+        ):
+            raise ValueError(
+                "context, action, reward, and pscore must be the same size."
+            )
     if position is not None:
-        assert isinstance(position, np.ndarray), "position must be ndarray"
-        assert position.ndim == 1, "position must be 1-dimensional"
-        assert (
+        if not isinstance(position, np.ndarray):
+            raise ValueError("position must be ndarray")
+        if position.ndim != 1:
+            raise ValueError("position must be 1-dimensional")
+        if not (
             context.shape[0] == action.shape[0] == reward.shape[0] == position.shape[0]
-        ), "context, action, reward, and position must be the same size."
+        ):
+            raise ValueError(
+                "context, action, reward, and position must be the same size."
+            )
     else:
-        assert (
-            context.shape[0] == action.shape[0] == reward.shape[0]
-        ), "context, action, and reward must be the same size."
+        if not (context.shape[0] == action.shape[0] == reward.shape[0]):
+            raise ValueError("context, action, and reward must be the same size.")
     if action_context is not None:
-        assert isinstance(action_context, np.ndarray), "action_context must be ndarray"
-        assert action_context.ndim == 2, "action_context must be 2-dimensional"
-        assert (action.max() + 1) == action_context.shape[
-            0
-        ], "the number of action and the size of the first dimension of action_context must be same."
+        if not isinstance(action_context, np.ndarray):
+            raise ValueError("action_context must be ndarray")
+        if action_context.ndim != 2:
+            raise ValueError("action_context must be 2-dimensional")
+        if (action.max() + 1) != action_context.shape[0]:
+            raise ValueError(
+                "the number of action and the size of the first dimension of action_context must be same."
+            )
 
 
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
