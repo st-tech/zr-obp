@@ -250,7 +250,7 @@ invalid_input_of_create_estimator_inputs = [
     (
         np.zeros((2, 3, 4)),
         np.zeros((2, 3, 3)),
-        "estimated_rewards_by_reg_model.shape needs to be equal to action_dist.shape",
+        "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
     ),
     (np.zeros((2, 3)), None, "action_dist.ndim must be 3-dimensional"),
     ("3", None, "action_dist must be ndarray"),
@@ -289,7 +289,7 @@ def test_meta_create_estimator_inputs_using_invalid_input_data(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-    # _create_estimator_inputs function is called in other functions
+    # _create_estimator_inputs function is called in the following functions
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.estimate_policy_values(
             action_dist=action_dist,
@@ -349,7 +349,7 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
             "estimated_rewards_by_reg_model",
         ]
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
-    # _create_estimator_inputs function is called in other functions
+    # _create_estimator_inputs function is called in the following functions
     _ = ope_.estimate_policy_values(
         action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,

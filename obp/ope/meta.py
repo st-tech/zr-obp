@@ -14,6 +14,7 @@ import seaborn as sns
 
 from .estimators import BaseOffPolicyEstimator
 from ..types import BanditFeedback
+from ..utils import check_confidence_interval_arguments
 
 logger = getLogger(__name__)
 
@@ -96,7 +97,7 @@ class OffPolicyEvaluation:
             raise ValueError("action_dist must be ndarray")
         if action_dist.ndim != 3:
             raise ValueError(
-                f"action_dist.ndim must be 3-dimensional, but {action_dist.ndim} is given"
+                f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
             )
         if estimated_rewards_by_reg_model is None:
             logger.warning(
@@ -104,7 +105,7 @@ class OffPolicyEvaluation:
             )
         elif estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
-                "estimated_rewards_by_reg_model.shape needs to be equal to action_dist.shape"
+                "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
             )
         estimator_inputs = {
             input_: self.bandit_feedback[input_]
@@ -186,6 +187,11 @@ class OffPolicyEvaluation:
             using a nonparametric bootstrap procedure.
 
         """
+        check_confidence_interval_arguments(
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
         policy_value_interval_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
