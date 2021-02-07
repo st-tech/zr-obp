@@ -1,4 +1,5 @@
 include *.txt
 include *.md
 recursive-include obp/policy/conf *
+recursive-include obp/dataset/obd *
 include LICENSE
