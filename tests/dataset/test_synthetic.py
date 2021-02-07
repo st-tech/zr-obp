@@ -110,15 +110,22 @@ invalid_input_of_calc_policy_value = [
 ]
 
 valid_input_of_calc_policy_value = [
-    (np.ones((2, 3)), np.ones((2, 3, 1)), "valid shape",),
+    (
+        np.ones((2, 3)),
+        np.ones((2, 3, 1)),
+        "valid shape",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "expected_reward, action_dist, description", invalid_input_of_calc_policy_value,
+    "expected_reward, action_dist, description",
+    invalid_input_of_calc_policy_value,
 )
 def test_synthetic_calc_policy_value_using_invalid_inputs(
-    expected_reward, action_dist, description,
+    expected_reward,
+    action_dist,
+    description,
 ):
     n_actions = 10
     dataset = SyntheticBanditDataset(n_actions=n_actions)
@@ -130,10 +137,13 @@ def test_synthetic_calc_policy_value_using_invalid_inputs(
 
 
 @pytest.mark.parametrize(
-    "expected_reward, action_dist, description", valid_input_of_calc_policy_value,
+    "expected_reward, action_dist, description",
+    valid_input_of_calc_policy_value,
 )
 def test_synthetic_calc_policy_value_using_valid_inputs(
-    expected_reward, action_dist, description,
+    expected_reward,
+    action_dist,
+    description,
 ):
     n_actions = 10
     dataset = SyntheticBanditDataset(n_actions=n_actions)

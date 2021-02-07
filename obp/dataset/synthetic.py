@@ -201,7 +201,8 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
             action = np.array(
                 [
                     self.random_.choice(
-                        np.arange(self.n_actions), p=behavior_policy_[i],
+                        np.arange(self.n_actions),
+                        p=behavior_policy_[i],
                     )
                     for i in np.arange(n_rounds)
                 ]
@@ -289,7 +290,9 @@ class SyntheticBanditDataset(BaseSyntheticBanditDataset):
 
 
 def logistic_reward_function(
-    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for synthetic bandit datasets.
 
@@ -328,7 +331,9 @@ def logistic_reward_function(
 
 
 def linear_reward_function(
-    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear mean reward function for synthetic bandit datasets.
 
@@ -367,7 +372,9 @@ def linear_reward_function(
 
 
 def linear_behavior_policy(
-    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear contextual behavior policy for synthetic bandit datasets.
 
