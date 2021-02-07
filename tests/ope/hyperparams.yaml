@@ -13,3 +13,5 @@ random_forest:
   max_depth: 5
   min_samples_leaf: 10
   random_state: 12345
+ridge:
+  alpha: 0.2

@@ -99,3 +99,9 @@ def random_action_dist(synthetic_bandit_feedback) -> np.ndarray:
         n_rounds=synthetic_bandit_feedback["n_rounds"]
     )
     return action_dist
+
+
+def generate_action_dist(i, j, k):
+    x = np.random.uniform(size=(i, j, k))
+    action_dist = x / x.sum(axis=1)[:, np.newaxis, :]
+    return action_dist
