@@ -97,7 +97,10 @@ if __name__ == "__main__":
     random_state = args.random_state
     np.random.seed(random_state)
 
-    obd = OpenBanditDataset(behavior_policy=behavior_policy, campaign=campaign,)
+    obd = OpenBanditDataset(
+        behavior_policy=behavior_policy,
+        campaign=campaign,
+    )
     # compute action distribution by evaluation policy
     kwargs = dict(
         n_actions=obd.n_actions, len_list=obd.len_list, random_state=random_state
@@ -112,7 +115,8 @@ if __name__ == "__main__":
     # ground-truth policy value of an evaluation policy
     # , which is estimated with factual (observed) rewards (on-policy estimation)
     ground_truth_policy_value = OpenBanditDataset.calc_on_policy_policy_value_estimate(
-        behavior_policy=evaluation_policy, campaign=campaign,
+        behavior_policy=evaluation_policy,
+        campaign=campaign,
     )
 
     def process(b: int):
@@ -136,7 +140,8 @@ if __name__ == "__main__":
         )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
-            bandit_feedback=bandit_feedback, ope_estimators=ope_estimators,
+            bandit_feedback=bandit_feedback,
+            ope_estimators=ope_estimators,
         )
         action_dist = np.tile(
             action_dist_single_round, (bandit_feedback["n_rounds"], 1, 1)
@@ -149,12 +154,17 @@ if __name__ == "__main__":
 
         return relative_ee_b
 
-    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
-        [delayed(process)(i) for i in np.arange(n_runs)]
-    )
+    processed = Parallel(
+        backend="multiprocessing",
+        n_jobs=n_jobs,
+        verbose=50,
+    )([delayed(process)(i) for i in np.arange(n_runs)])
     relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
     for b, relative_ee_b in enumerate(processed):
-        for (estimator_name, relative_ee_,) in relative_ee_b.items():
+        for (
+            estimator_name,
+            relative_ee_,
+        ) in relative_ee_b.items():
             relative_ee_dict[estimator_name][b] = relative_ee_
     relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
 
