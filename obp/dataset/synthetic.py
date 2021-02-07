@@ -201,7 +201,8 @@ class SyntheticBanditDataset(BaseBanditDataset):
             action = np.array(
                 [
                     self.random_.choice(
-                        np.arange(self.n_actions), p=behavior_policy_[i],
+                        np.arange(self.n_actions),
+                        p=behavior_policy_[i],
                     )
                     for i in np.arange(n_rounds)
                 ]
@@ -248,9 +249,50 @@ class SyntheticBanditDataset(BaseBanditDataset):
             pscore=pscore,
         )
 
+    def calc_ground_truth_policy_value(
+        self, expected_reward: np.ndarray, action_dist: np.ndarray
+    ) -> float:
+        """Calculate the policy value of given action distribution on the given expected_reward.
+
+        Parameters
+        -----------
+        expected_reward: array-like, shape (n_rounds, n_actions)
+            Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+            This is often the expected_reward of the test set of logged bandit feedback data.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        Returns
+        ----------
+        policy_value: float
+            The policy value of the given action distribution on the given bandit feedback data.
+
+        """
+        if not isinstance(expected_reward, np.ndarray):
+            raise ValueError("expected_reward must be ndarray")
+        if not isinstance(action_dist, np.ndarray):
+            raise ValueError("action_dist must be ndarray")
+        if action_dist.ndim != 3:
+            raise ValueError(
+                f"action_dist must be 3-dimensional, but is {action_dist.ndim}."
+            )
+        if expected_reward.shape[0] != action_dist.shape[0]:
+            raise ValueError(
+                "the size of axis 0 of expected_reward must be the same as that of action_dist"
+            )
+        if expected_reward.shape[1] != action_dist.shape[1]:
+            raise ValueError(
+                "the size of axis 1 of expected_reward must be the same as that of action_dist"
+            )
+
+        return np.average(expected_reward, weights=action_dist[:, :, 0], axis=1).mean()
+
 
 def logistic_reward_function(
-    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for synthetic bandit datasets.
 
@@ -289,7 +331,9 @@ def logistic_reward_function(
 
 
 def linear_reward_function(
-    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear mean reward function for synthetic bandit datasets.
 
@@ -328,7 +372,9 @@ def linear_reward_function(
 
 
 def linear_behavior_policy(
-    context: np.ndarray, action_context: np.ndarray, random_state: Optional[int] = None,
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear contextual behavior policy for synthetic bandit datasets.
 
