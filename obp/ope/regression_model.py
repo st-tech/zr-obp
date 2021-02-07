@@ -62,7 +62,10 @@ class RegressionModel(BaseEstimator):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if self.fitting_method not in ["normal", "iw", "mrdr"]:
+        if not (
+            isinstance(self.fitting_method, str)
+            and self.fitting_method in ["normal", "iw", "mrdr"]
+        ):
             raise ValueError(
                 f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
             )
@@ -70,9 +73,13 @@ class RegressionModel(BaseEstimator):
             raise ValueError(
                 f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
             )
-        if not (isinstance(self.len_list, int) and self.list > 0):
+        if not (isinstance(self.len_list, int) and self.len_list > 0):
             raise ValueError(
                 f"len_list must be a positive integer, but {self.len_list} is given"
+            )
+        if not isinstance(self.base_model, BaseEstimator):
+            raise ValueError(
+                "base_model must be BaseEstimator or a child class of BaseEstimator"
             )
 
         self.base_model_list = [
@@ -148,8 +155,10 @@ class RegressionModel(BaseEstimator):
                 raise ValueError(
                     f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
                 )
-            if pscore is None:
-                pscore = np.ones_like(action) / self.n_actions
+            if not np.allclose(action_dist.sum(axis=1), 1):
+                raise ValueError("action_dist must be a probability distribution")
+        if pscore is None:
+            pscore = np.ones_like(action) / self.n_actions
 
         for position_ in np.arange(self.len_list):
             idx = position == position_
@@ -158,6 +167,8 @@ class RegressionModel(BaseEstimator):
                 action=action[idx],
                 action_context=self.action_context,
             )
+            if X.shape[0] == 0:
+                raise ValueError(f"No training data at position {position_}")
             # train the base model according to the given `fitting method`
             if self.fitting_method == "normal":
                 self.base_model_list[position_].fit(X, reward[idx])
@@ -289,6 +300,11 @@ class RegressionModel(BaseEstimator):
         if not (isinstance(n_folds, int) and n_folds > 0):
             raise ValueError(
                 f"n_folds must be a positive integer, but {n_folds} is given"
+            )
+
+        if random_state is not None and not isinstance(random_state, int):
+            raise ValueError(
+                f"random_state must be an integer, but {random_state} is given"
             )
 
         if self.len_list == 1:

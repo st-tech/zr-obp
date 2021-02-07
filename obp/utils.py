@@ -245,9 +245,9 @@ def check_bandit_feedback_inputs(
             raise ValueError("action_context must be ndarray")
         if action_context.ndim != 2:
             raise ValueError("action_context must be 2-dimensional")
-        if (action.max() + 1) != action_context.shape[0]:
+        if action.max() >= action_context.shape[0]:
             raise ValueError(
-                "the number of action and the size of the first dimension of action_context must be same."
+                "action elements must be smaller than the size of the first dimension of action_context"
             )
 
 
