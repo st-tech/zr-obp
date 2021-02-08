@@ -12,7 +12,7 @@ print(__version__)
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-package_data_list = ["obp/policy/conf/prior_bts.yaml"]
+package_data_list = ["obp/policy/conf/prior_bts.yaml", "obp/dataset/obd/"]
 
 setup(
     name="obp",

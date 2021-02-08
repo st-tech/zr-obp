@@ -11,12 +11,12 @@ from sklearn.base import ClassifierMixin, is_classifier, clone
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state, check_X_y
 
-from .base import BaseSyntheticBanditDataset
+from .base import BaseBanditDataset
 from ..types import BanditFeedback
 
 
 @dataclass
-class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
+class MultiClassToBanditReduction(BaseBanditDataset):
     """Class for handling multi-class classification data as logged bandit feedback data.
 
     Note
@@ -149,12 +149,13 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert is_classifier(
-            self.base_classifier_b
-        ), f"base_classifier_b must be a classifier"
-        assert (0.0 <= self.alpha_b < 1.0) and isinstance(
-            self.alpha_b, float
-        ), f"alpha_b must be a float in the [0,1) interval, but {self.alpha_b} is given"
+        if not is_classifier(self.base_classifier_b):
+            raise ValueError(f"base_classifier_b must be a classifier")
+        if not isinstance(self.alpha_b, float) or not (0.0 <= self.alpha_b < 1.0):
+            raise ValueError(
+                f"alpha_b must be a float in the [0,1) interval, but {self.alpha_b} is given"
+            )
+
         self.X, y = check_X_y(X=self.X, y=self.y, ensure_2d=True, multi_output=False)
         self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index action
         # fully observed labels
@@ -177,7 +178,9 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
         return self.y.shape[0]
 
     def split_train_eval(
-        self, eval_size: Union[int, float] = 0.25, random_state: Optional[int] = None,
+        self,
+        eval_size: Union[int, float] = 0.25,
+        random_state: Optional[int] = None,
     ) -> None:
         """Split the original data into the training (used for policy learning) and evaluation (used for OPE) sets.
 
@@ -204,7 +207,8 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
         self.n_rounds_ev = self.X_ev.shape[0]
 
     def obtain_batch_bandit_feedback(
-        self, random_state: Optional[int] = None,
+        self,
+        random_state: Optional[int] = None,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback, an evaluation policy, and its ground-truth policy value.
 
@@ -214,10 +218,6 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
 
         Parameters
         -----------
-        eval_size: float or int, default=0.25
-            If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
-            If int, represents the absolute number of test samples.
-
         random_state: int, default=None
             Controls the random seed in sampling actions.
 
@@ -279,9 +279,10 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
             axis 2 represents the length of list; it is always 1 in the current implementation.
 
         """
-        assert (0.0 <= alpha_e <= 1.0) and isinstance(
-            alpha_e, float
-        ), f"alpha_e must be a float in the [0,1] interval, but {alpha_e} is given"
+        if not isinstance(alpha_e, float) or not (0.0 <= alpha_e <= 1.0):
+            raise ValueError(
+                f"alpha_e must be a float in the [0,1] interval, but {alpha_e} is given"
+            )
         # train a base ML classifier
         if base_classifier_e is None:
             base_clf_e = clone(self.base_classifier_b)
@@ -317,10 +318,10 @@ class MultiClassToBanditReduction(BaseSyntheticBanditDataset):
             policy value of a given action distribution (mostly evaluation policy).
 
         """
-        assert action_dist.ndim == 3 and isinstance(
-            action_dist, np.ndarray
-        ), f"action_dist must be a 3-D np.ndarray"
-        assert (
-            action_dist.shape[0] == self.n_rounds_ev
-        ), "the size of axis 0 of action_dist must be the same as the number of samples in the evaluation set"
+        if not isinstance(action_dist, np.ndarray) or action_dist.ndim != 3:
+            raise ValueError(f"action_dist must be a 3-D np.ndarray")
+        if action_dist.shape[0] != self.n_rounds_ev:
+            raise ValueError(
+                "the size of axis 0 of action_dist must be the same as the number of samples in the evaluation set"
+            )
         return action_dist[np.arange(self.n_rounds_ev), self.y_ev].mean()

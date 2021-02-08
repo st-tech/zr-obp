@@ -4,7 +4,7 @@
 
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
 
-**[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](https://github.com/st-tech/zr-obp/tree/master/slides/slides_EN.pdf)** | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/tree/master/obd)** | **[日本語](https://github.com/st-tech/zr-obp/blob/master/README_JN.md)**
+**[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](./slides/slides_EN.pdf)** | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd)** | **[日本語](./README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -16,19 +16,17 @@
     - [Algorithms and OPE Estimators Supported](#algorithms-and-ope-estimators-supported)
   - [Topics and Tasks](#topics-and-tasks)
 - [Installation](#installation)
-  - [Requirements](#requirements)
 - [Usage](#usage)
   - [(1) Data loading and preprocessing](#1-data-loading-and-preprocessing)
   - [(2) Off-Policy Learning](#2-off-policy-learning)
   - [(3) Off-Policy Evaluation](#3-off-policy-evaluation)
 - [Citation](#citation)
-- [Project Team](#project-team)
 - [Google Group](#google-group)
-- [Contact](#contact)
+- [Contribution](#contribution)
 - [License](#license)
+- [Project Team](#project-team)
+- [Contact](#contact)
 - [References](#references)
-  - [Papers](#papers)
-  - [Projects](#projects)
 
 </details>
 
@@ -45,92 +43,110 @@ The following figure presents examples of displayed fashion items as actions.
   <img width="45%" src="./images/recommended_fashion_items.png" />
   <figcaption>
   <p align="center">
-  Recommended fashion items as actions in ZOZOTOWN
+  Recommended fashion items as actions in the ZOZOTOWN recommendation interface
   </p>
   </figcaption>
 </p>
 
-We collected the data in a 7-days experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
-Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy, which was pre-trained for about a month before the data collection period.
+We collected the data in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively. Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection. This dataset is unique in that it
+contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset).
 
 <p align="center">
-  <img width="70%" src="./images/statistics_of_obd.png" />
+  <img width="90%" src="./images/obd_stats.png" />
 </p>
 
-The small size version of our data is available at [./obd](https://github.com/st-tech/zr-obp/tree/master/obd).
-This can be used for running some [examples](https://github.com/st-tech/zr-obp/tree/master/examples).
+The small size version of our data is available at [obd](./obd).
+One can use this example data to run some [examples](./examples).
 We release the full size version of our data at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
 Please download the full size version for research uses.
-Please see [./obd/README.md](https://github.com/st-tech/zr-obp/blob/master/obd/README.md) for the description of the dataset.
+Please see [obd/README.md](./obd/README.md) for the dataset description.
 
 ## Open Bandit Pipeline (OBP)
 
-*Open Bandit Pipeline* is a series of implementations of dataset preprocessing, policy learning methods, OPE estimators, and the evaluation of OPE protocols.
-This pipeline allows researchers to focus on building their own OPE estimator and easily compare it with others’ methods in realistic and reproducible ways.
-Thus, it facilitates reproducible research on bandit algorithms and off-policy evaluation.
+*Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair, transparent, and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
 
 <p align="center">
-  <img width="90%" src="./images/overview.png" />
+  <img width="80%" src="./images/overview.png" />
   <figcaption>
   <p align="center">
-    Structure of Open Bandit Pipeline
+    Overview of the Open Bandit Pipeline
   </p>
   </figcaption>
 </p>
 
 Open Bandit Pipeline consists of the following main modules.
 
-- **dataset module**: This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit datasets.
-- **policy module**: This module provides interfaces for training online and offline bandit policies. It also implements several standard policy learning methods.
-- **simulator module**: This module provides functions for conducting offline bandit simulation.
-- **ope module**: This module provides interfaces for OPE estimators. It also implements several standard and advanced OPE estimators.
+- [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit data and transform multi-class classification data to bandit data.
+- [**policy module**](./obp/policy/): This module provides interfaces for implementing new online and offline bandit policies. It also implements several standard policy learning methods.
+- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when we want to implement the ReplayMethod to evaluate the performance of online or adaptive bandit policies with logged bandit data.
+- [**ope module**](./obp/ope/): This module provides interfaces for implementing OPE estimators. It also implements several standard and advanced OPE estimators.
 
 ### Algorithms and OPE Estimators Supported
 
-- Bandit Algorithms (implemented in **policy module**)
-  - Online
-    - Context-free
-      - Random
-      - Epsilon Greedy
-      - Bernoulli Thompson Sampling
-    - Contextual (Linear)
-      - Linear Epsilon Greedy
-      - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
-      - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
-    - Contextual (Logistic)
-      - Logistic Epsilon Greedy
-      - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
-      - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
-  - Offline (Off-Policy Learning)
-    - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+<details>
+<summary><strong>Bandit Algorithms </strong>(click to expand)</summary>
+<br>
 
+- Online
+  - Context-free
+    - Random
+    - Epsilon Greedy
+    - Bernoulli Thompson Sampling
+  - Contextual (Linear)
+    - Linear Epsilon Greedy
+    - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
+    - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
+  - Contextual (Logistic)
+    - Logistic Epsilon Greedy
+    - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+    - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
+- Offline (Off-Policy Learning)
+  - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
 
-- OPE Estimators (implemented in **ope module**)
-  - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
-  - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
-  - [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
-  - [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
-  - [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
-  - [Switch Estimators](https://arxiv.org/abs/1612.01205)
-  - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
-  - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
-  - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+</details>
 
-In addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
+<details>
+<summary><strong>OPE Estimators </strong>(click to expand)</summary>
+<br>
+
+- [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
+- [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
+- [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
+- [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+- [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
+- [Switch Estimators](https://arxiv.org/abs/1612.01205)
+- [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
+- [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
+- [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+
+</details>
+
+Please refer to to our [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of the estimators implemented.
+Note that, in addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
-Moreover, the pipeline provides an interface for handling real-world logged bandit feedback datasets.
-Thus, practitioners can combine their own datasets with the pipeline and easily evaluate bandit algorithms' performances in their settings.
+Moreover, the pipeline provides an interface for handling real-world logged bandit feedback data.
+Thus, practitioners can combine their own data with the pipeline and easily evaluate bandit algorithms' performances in their settings with OPE.
 
 
 ## Topics and Tasks
-Currently, Open Bandit Dataset & Pipeline facilitate evaluation and comparison related to the following research topics.
+Currently, Open Bandit Dataset and Pipeline facilitate the following research topics or practical tasks.
 
-- **Bandit Algorithms**: Our data include large-scale logged bandit feedback collected by the uniform random policy. Therefore, it enables the evaluation of new online bandit algorithms, including contextual and combinatorial algorithms, in a large real-world setting.
+### Research
 
+Researchers can evaluate the performance of their bandit algorithms (in bandit papers) or the accuracy of their OPE estimators (in OPE papers) in an easy, standardized manner with the Open Bandit Pipeline. One can implement these types of experiments for their research papers using synthetic bandit data, multi-class classification data, or the real-world Open Bandit Dataset.
 
-- **Off-Policy Evaluation**: We present implementations of behavior policies used when collecting datasets as a part of our pipeline. Our open data also contains logged bandit feedback data generated by *multiple* different bandit policies. Therefore, it enables the evaluation of off-policy evaluation with ground-truth for the performance of evaluation policies.
+- **Evaluation of Bandit Algorithms with Synthetic/Classification/Open Bandit Data**
+- **Evaluation of OPE with Synthetic/Classification/Open Bandit Data**
 
-Please refer to to our [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE.
+In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples](./examples/). One can learn how to implement the OPE experiments with the pipeline from the example contents.
+
+### Practice
+
+Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of online bandit algorithms by combining the simulator module and the ReplayMethod in the ope module. Moreover, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
+
+- **Implementing Online/Offline(Batch) Bandit Algorithms**
+- **Off-Policy Evaluation of Online Bandit Algorithms**
+- **Off-Policy Evaluation of Offline(Batch) Bandit Algorithms**
 
 
 # Installation
@@ -148,23 +164,121 @@ cd zr-obp
 python setup.py install
 ```
 
+Open Bandit Pipeline supports Python 3.7 or newer.
 
-## Requirements
-- **python>=3.7.0**
-- matplotlib>=3.2.2
-- numpy>=1.18.1
-- pandas>=0.25.1
-- pyyaml>=5.1
-- seaborn>=0.10.1
-- scikit-learn>=0.23.1
-- scipy>=1.4.1
-- tqdm>=4.41.1
+# Usage Examples
+
+## Example with Synthetic Bandit Data
+
+Here is an example of conducting OPE of the performance of IPWLearner as an evaluation policy using Direct Method (DM), Inverse Probability Weighting (IPW), Doubly Robust (DR) as OPE estimators.
+
+```python
+# a case for implementing OPE of the IPWLearner using synthetic bandit data
+from sklearn.linear_model import LogisticRegression
+# import open bandit pipeline (obp)
+from obp.dataset import SyntheticBanditDataset
+from obp.policy import IPWLearner
+from obp.ope import (
+    OffPolicyEvaluation,
+    RegressionModel,
+    InverseProbabilityWeighting as IPW,
+    DirectMethod as DM,
+    DoublyRobust as DR,
+)
+
+# (1) Generate Synthetic Bandit Data
+dataset = SyntheticBanditDataset(n_actions=10, reward_type="binary")
+bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=1000)
+bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=1000)
+
+# (2) Off-Policy Learning
+eval_policy = IPWLearner(n_actions=dataset.n_actions, base_classifier=LogisticRegression())
+eval_policy.fit(
+    context=bandit_feedback_train["context"],
+    action=bandit_feedback_train["action"],
+    reward=bandit_feedback_train["reward"],
+    pscore=bandit_feedback_train["pscore"]
+)
+action_dist = eval_policy.predict(context=bandit_feedback_test["context"])
+
+# (3) Off-Policy Evaluation
+regression_model = RegressionModel(
+    n_actions=dataset.n_actions,
+    base_model=LogisticRegression(),
+)
+estimated_rewards_by_reg_model = regression_model.fit_predict(
+    context=bandit_feedback_test["context"],
+    action=bandit_feedback_test["action"],
+    reward=bandit_feedback_test["reward"],
+)
+ope = OffPolicyEvaluation(
+    bandit_feedback=bandit_feedback_test,
+    ope_estimators=[IPW(), DM(), DR()]
+)
+ope.visualize_off_policy_estimates(
+    action_dist=action_dist,
+    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+)
+```
+<p align="center">
+  <img width="60%" src="./images/ope_results_example.png" />
+  <figcaption>
+  <p align="center">
+    Performance of IPWLearner estimated by OPE
+  </p>
+  </figcaption>
+</p>
 
 
-# Usage
+A formal quickstart example with synthetic bandit data is available at [examples/quickstart/synthetic.ipynb](./examples/quickstart/synthetic.ipynb).
+We also prepare a script to conduct the evaluation of OPE experiment with synthetic bandit data in [examples/synthetic](./examples/synthetic/).
 
-We show an example of conducting offline evaluation of the performance of BernoulliTS as an evaluation policy using Inverse Probability Weighting (IPW) and logged bandit feedback generated by the Random policy (behavior policy).
-We see that only ten lines of code are sufficient to complete OPE from scratch.
+## Example with Multi-Class Classification Data
+
+Researchers often use multi-class classification data to evaluate the estimation accuracy of OPE estimators.
+Open Bandit Pipeline implements this kind of OPE experiments with multi-class classification data in an easy manner as follows.
+
+```python
+# a case for implementing an experiment to evaluate the accuracy of OPE using classification data
+from sklearn.datasets import load_digits
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+# import open bandit pipeline (obp)
+from obp.dataset import MultiClassToBanditReduction
+from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
+
+# (1) Data loading and multi-class to bandit reduction
+X, y = load_digits(return_X_y=True)
+dataset = MultiClassToBanditReduction(X=X, y=y, base_classifier_b=LogisticRegression(random_state=12345))
+dataset.split_train_eval(eval_size=0.7, random_state=12345)
+bandit_feedback = dataset.obtain_batch_bandit_feedback(random_state=12345)
+
+# (2) Evaluation Policy Derivation
+# obtain action choice probabilities by an evaluation policy and its ground-truth policy value
+action_dist = dataset.obtain_action_dist_by_eval_policy(base_classifier_e=RandomForestClassifier(random_state=12345))
+# calculate the ground-truth performance of the evaluation policy
+ground_truth = dataset.calc_ground_truth_policy_value(action_dist=action_dist)
+print(ground_truth)
+0.9634340222575517
+
+# (3) Off-Policy Evaluation and Evaluation of OPE
+ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW()])
+# evaluate the estimation performance (accuracy) of IPW by the relative estimation error (relative-ee)
+relative_estimation_errors = ope.evaluate_performance_of_estimators(
+        ground_truth_policy_value=ground_truth,
+        action_dist=action_dist,
+        metric="relative-ee",
+)
+print(relative_estimation_errors)
+{'ipw': 0.01827255896321327} # the accuracy of IPW in OPE
+```
+
+A formal quickstart example with multi-class classification data is available at [examples/quickstart/multiclass.ipynb](./examples/quickstart/multiclass.ipynb).
+We also prepare a script to conduct the evaluation of OPE experiment with multi-class classification data in [examples/multiclass](./examples/multiclass/).
+
+## Example with Open Bandit Dataset
+
+Here is an example of conducting OPE of the performance of BernoulliTS as an evaluation policy using Inverse Probability Weighting (IPW) and logged bandit feedback generated by the Random policy (behavior policy) on the ZOZOTOWN platform.
 
 ```python
 # a case for implementing OPE of the BernoulliTS policy using log data generated by the Random policy
@@ -176,7 +290,7 @@ from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
-# (2) Off-Policy Learning
+# (2) Production Policy Replication
 evaluation_policy = BernoulliTS(
     n_actions=dataset.n_actions,
     len_list=dataset.len_list,
@@ -198,101 +312,35 @@ print(relative_policy_value_of_bernoulli_ts)
 1.198126...
 ```
 
-A formal introduction with the same example can be found at [quickstart](https://github.com/st-tech/zr-obp/tree/master/examples/quickstart).
-Below, we explain some important features in the example.
-
-
-## (1) Data loading and preprocessing
-
-We prepare an easy-to-use data loader for Open Bandit Dataset.
-
-```python
-# load and preprocess raw data in "All" campaign collected by the Random policy
-dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
-# obtain logged bandit feedback
-bandit_feedback = dataset.obtain_batch_bandit_feedback()
-
-print(bandit_feedback.keys())
-dict_keys(['n_rounds', 'n_actions', 'action', 'position', 'reward', 'pscore', 'context', 'action_context'])
-```
-
-Users can implement their own feature engineering in the `pre_process` method of `obp.dataset.OpenBanditDataset` class.
-We show an example of implementing some new feature engineering processes in [`custom_dataset.py`](https://github.com/st-tech/zr-obp/blob/master/benchmark/cf_policy_search/custom_dataset.py).
-
-Moreover, by following the interface of `obp.dataset.BaseBanditDataset` class, one can handle future open datasets for bandit algorithms other than our Open Bandit Dataset.
-`dataset` module also provide a class to generate synthetic bandit datasets.
-
-## (2) Off-Policy Learning
-
-After preparing a dataset, we now compute the action choice probability of BernoulliTS in the ZOZOTOWN production.
-Then, we can use it as the evaluation policy.
-
-```python
-# define evaluation policy (the Bernoulli TS policy here)
-# by activating the `is_zozotown_prior` argument of BernoulliTS, we can replicate BernoulliTS used in ZOZOTOWN production.
-evaluation_policy = BernoulliTS(
-    n_actions=dataset.n_actions,
-    len_list=dataset.len_list,
-    is_zozotown_prior=True, # replicate the BernoulliTS policy in the ZOZOTOWN production
-    campaign="all",
-    random_state=12345
-)
-# compute the action choice probabilities by the evaluation policy using Monte Carlo simulation
-# action_dist is an array of shape (n_rounds, n_actions, len_list)
-# representing the distribution over actions made by the evaluation policy
-action_dist = evaluation_policy.compute_batch_action_dist(
-    n_sim=100000, n_rounds=bandit_feedback["n_rounds"]
-)
-```
-
-The `compute_batch_action_dist` method of `BernoulliTS` computes the action choice probabilities based on given hyperparameters of the beta distribution.
-When `is_zozotown_prior=True`, hyperparameters used during the data collection process on the ZOZOTOWN platform are set.
-Otherwise, non-informative prior hyperparameters are used.
-`action_dist` is an array representing the action choice probabilities made by the evaluation policy.
-
-Users can implement their own bandit algorithms by following the interfaces implemented in [`./obp/policy/base.py`](https://github.com/st-tech/zr-obp/blob/master/obp/policy/base.py).
-
-## (3) Off-Policy Evaluation
-
-Our final step is **off-policy evaluation** (OPE), which attempts to estimate the performance of a new decision making policy using log data generated by a behavior, past policy.
-Our pipeline also provides an easy procedure for doing OPE as follows.
-
-```python
-# estimate the policy value of BernoulliTS based on its action choice probabilities
-# it is possible to set multiple OPE estimators to the `ope_estimators` argument
-ope = OffPolicyEvaluation(bandit_feedback=bandit_feedback, ope_estimators=[IPW()])
-estimated_policy_value = ope.estimate_policy_values(action_dist=action_dist)
-print(estimated_policy_value)
-{'ipw': 0.004553...} # dictionary containing policy values estimated by each OPE estimator.
-
-# compare the estimated performance of BernoulliTS (evaluation policy)
-# with the ground-truth performance of the Random policy (behavior policy)
-policy_value_improvement = estimated_policy_value['ipw'] / bandit_feedback['reward'].mean()
-# our OPE procedure suggests that BernoulliTS improves Random by 19.81%
-print(policy_value_improvement)
-1.198126...
-```
-Users can implement their own OPE estimator by following the interface of `obp.ope.BaseOffPolicyEstimator` class.
-`obp.ope.OffPolicyEvaluation` class summarizes and compares the policy values estimated by several different estimators.
-A detailed usage of this class can be found at [quickstart](https://github.com/st-tech/zr-obp/tree/master/examples/quickstart). `bandit_feedback['reward'].mean()` is the empirical mean of factual rewards (on-policy estimate of the policy value) in the log and thus is the ground-truth performance of the behavior policy (the Random policy in this example.).
+A formal quickstart example with Open Bandit Dataset is available at [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb). We also prepare a script to conduct the evaluation of OPE using the Open Bandit Dataset in [examples/obd](./examples/obd). Please see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset.
 
 
 # Citation
 If you use our dataset and pipeline in your work, please cite our paper:
 
-Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-**Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms** [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.<br>
+**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**<br>
+[https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 Bibtex:
 ```
-@article{saito2020large,
-  title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
-  author={Saito, Yuta and Shunsuke Aihara and Megumi Matsutani and Yusuke Narita},
+@article{saito2020open,
+  title={Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation},
+  author={Saito, Yuta and Shunsuke, Aihara and Megumi, Matsutani and Yusuke, Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
 ```
 
+# Google Group
+If you are interested in the Open Bandit Project, we can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
+
+# Contribution
+Any contributions to the Open Bandit Pipeline are more than welcome!
+Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute to the project.
+
+# License
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
 # Project Team
 
@@ -301,22 +349,14 @@ Bibtex:
 - Megumi Matsutani (ZOZO Technologies, Inc.)
 - [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
 
-# Google Group
-If you are interested in the Open Bandit Project, we can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
-
 # Contact
 For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
 
-# Contribution
-Thank you for considering contribution to Open Bandit Project!
-Please find [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute to the project.
-
-# License
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
-
 # References
 
-## Papers
+<details>
+<summary><strong>Papers </strong>(click to expand)</summary>
+
 1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
 *Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
 
@@ -348,7 +388,14 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 15. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
 
+</details>
 
-## Projects
-This project is strongly inspired by **Open Graph Benchmark** --a collection of benchmark datasets, data loaders, and evaluators for graph machine learning:
+<details>
+<summary><strong>Projects </strong>(click to expand)</summary>
+
+<br>
+
+The Open Bandit Project is strongly inspired by **Open Graph Benchmark** --a collection of benchmark datasets, data loaders, and evaluators for graph machine learning:
 [[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)].
+
+</details>

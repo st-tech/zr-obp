@@ -3,8 +3,9 @@
 
 """Dataset Class for Real-World Logged Bandit Feedback."""
 from dataclasses import dataclass
+from logging import getLogger, basicConfig, INFO
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,9 @@ from sklearn.utils import check_random_state
 
 from .base import BaseRealBanditDataset
 from ..types import BanditFeedback
+
+logger = getLogger(__name__)
+basicConfig(level=INFO)
 
 
 @dataclass
@@ -33,8 +37,9 @@ class OpenBanditDataset(BaseRealBanditDataset):
     campaign: str
         One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
 
-    data_path: Path, default=Path('./obd')
-        Path that stores Open Bandit Dataset.
+    data_path: Path, default=None
+        Path where the Open Bandit Dataset exists.
+        When `None` is given, this class downloads the example small-sized version of the dataset.
 
     dataset_name: str, default='obd'
         Name of the dataset.
@@ -48,7 +53,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     behavior_policy: str
     campaign: str
-    data_path: Path = Path("./obd")
+    data_path: Optional[Path] = None
     dataset_name: str = "obd"
 
     def __post_init__(self) -> None:
@@ -70,9 +75,14 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
             )
 
-        if not isinstance(self.data_path, Path):
-            raise ValueError("data_path must be a Path type")
-
+        if self.data_path is None:
+            logger.info(
+                "When `data_path` is not given, this class downloads the example small-sized version of the Open Bandit Dataset."
+            )
+            self.data_path = Path(__file__).parent / "obd"
+        else:
+            if not isinstance(self.data_path, Path):
+                raise ValueError("data_path must be a Path type")
         self.data_path = self.data_path / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
 
@@ -104,7 +114,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         cls,
         behavior_policy: str,
         campaign: str,
-        data_path: Path = Path("./obd"),
+        data_path: Optional[Path] = None,
         test_size: float = 0.3,
         is_timeseries_split: bool = False,
     ) -> float:
@@ -119,8 +129,9 @@ class OpenBanditDataset(BaseRealBanditDataset):
         campaign: str
             One of the three possible campaigns considered in ZOZOTOWN (i.e., "all", "men", and "women").
 
-        data_path: Path, default=Path('./obd')
-            Path that stores Open Bandit Dataset.
+        data_path: Path, default=None
+            Path where the Open Bandit Dataset exists.
+            When `None` is given, this class downloads the example small-sized version of the dataset.
 
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
@@ -188,6 +199,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of
             the dataset to include in the evaluation split.
+            This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
             If true, split the original logged bandit feedback data by time series.
@@ -195,7 +207,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         --------
         bandit_feedback: BanditFeedback
-            Batch logged bandit feedback collected by a behavior policy.
+            A dictionary containing batch logged bandit feedback data collected by a behavior policy.
+            The keys of the dictionary are as follows.
+            - n_rounds: number of rounds (size) of the logged bandit data
+            - n_actions: number of actions (:math:`|\mathcal{A}|`)
+            - action: action variables sampled by a behavior policy
+            - position: positions where actions are recommended
+            - reward: reward variables
+            - pscore: action choice probabilities by a behavior policy
+            - context: context vectors such as user-related features and user-item affinity scores
+            - action_context: item-related context vectors
 
         """
         if is_timeseries_split:
@@ -245,6 +266,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of
             the dataset to include in the evaluation split.
+            This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
             If true, split the original logged bandit feedback data by time series.
@@ -255,7 +277,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         --------
         bandit_feedback: BanditFeedback
-            Logged bandit feedback sampled independently from the original data with replacement.
+            A dictionary containing logged bandit feedback data sampled independently from the original data with replacement.
+            The keys of the dictionary are as follows.
+            - n_rounds: number of rounds (size) of the logged bandit data
+            - n_actions: number of actions
+            - action: action variables sampled by a behavior policy
+            - position: positions where actions are recommended by a behavior policy
+            - reward: reward variables
+            - pscore: action choice probabilities by a behavior policy
+            - context: context vectors such as user-related features and user-item affinity scores
+            - action_context: item-related context vectors
 
         """
         bandit_feedback = self.obtain_batch_bandit_feedback(

@@ -1,20 +1,20 @@
 # Open Bandit Dataset
 
-This directory contains the small size (10,000 records for each pair of campaign and behavior policy) version of our data that can be used for running our [examples](https://github.com/st-tech/zr-obp/tree/master/examples/examples_with_obd).
+This directory contains the small size (10,000 records for each pair of campaign and behavior policy) version of our data that can be used for running our [quickstart guide](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart/obd.ipynb) and [examples](https://github.com/st-tech/zr-obp/tree/master/examples/obd).
 The full size version of our data is available at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
 
 
 This dataset is released along with the paper:
 
-Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita. <br>
-**Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms** <br>
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.<br>
+**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**<br>
 [https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
 
 When using this dataset, please cite the paper with following bibtex:
 ```
-@article{saito2020large,
-  title={Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms},
-  author={Saito, Yuta, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita},
+@article{saito2020open,
+  title={Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation},
+  author={Saito, Yuta and Shunsuke, Aihara and Megumi, Matsutani and Yusuke, Narita},
   journal={arXiv preprint arXiv:2008.07146},
   year={2020}
 }
@@ -31,12 +31,12 @@ Here is a detailed description of the fields (they are comma-separated in the CS
 
 **{behavior_policy}/{campaign}.csv** (behavior_policy in (bts, random), campaign in (all, men, women))
 - timestamp: timestamps of impressions.
-- item_id: index of items as arms (index ranges from 0-80 in "All" campaign, 0-33 for "Men" campaign, and 0-46 "Women" campaign).
+- item_id: index of items as arms (index ranges from 0-79 in "All" campaign, 0-33 for "Men" campaign, and 0-45 "Women" campaign).
 - position: the position of an item being recommended (1, 2, or 3 correspond to left, center, and right position of the ZOZOTOWN recommendation interface, respectively).
 - click: target variable that indicates if an item was clicked (1) or not (0).
-- propensity_score: the probability of an item being recommended at each position.
-- user feature 0-4: user-related feature values.
-- user-item affinity 0-: user-item affinity scores induced by the number of past clicks observed between each user-item pair.
+- action_prob: the probability of an item being recommended at the given position.
+- user_features: user-related feature values.
+- user_item_affinity: user-item affinity scores induced by the number of past clicks observed between each user-item pair.
 
 <p align="center">
   <img width="85%" src="../images/dataset.png" />
@@ -58,4 +58,4 @@ Note that user and item features are now anonymized using a hash function.
 For any question, feel free to contact:
 
 - The authors of the paper: saito@hanjuku-kaso.com
-- ZOZO Research: zozo-reseaech@zozo.com
+- ZOZO Research: zozo-research@zozo.com

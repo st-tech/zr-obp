@@ -49,9 +49,10 @@ class LinEpsilonGreedy(BaseContextualPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert (
-            0 <= self.epsilon <= 1
-        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+        if not 0 <= self.epsilon <= 1:
+            raise ValueError(
+                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+            )
         self.policy_name = f"linear_epsilon_greedy_{self.epsilon}"
 
         super().__post_init__()
@@ -80,6 +81,11 @@ class LinEpsilonGreedy(BaseContextualPolicy):
             List of selected actions.
 
         """
+        if context.ndim != 2 or context.shape[0] != 1:
+            raise ValueError(
+                f"context shape must be (1, dim_context),but {context.shape} is given"
+            )
+
         if self.random_.rand() > self.epsilon:
             self.theta_hat = np.concatenate(
                 [
@@ -165,9 +171,10 @@ class LinUCB(BaseContextualPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        assert (
-            0 <= self.epsilon <= 1
-        ), f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+        if self.epsilon < 0:
+            raise ValueError(
+                f"epsilon must be positive scalar, but {self.epsilon} is given"
+            )
         self.policy_name = f"linear_ucb_{self.epsilon}"
 
         super().__post_init__()
@@ -196,6 +203,10 @@ class LinUCB(BaseContextualPolicy):
             List of selected actions.
 
         """
+        if context.ndim != 2 or context.shape[0] != 1:
+            raise ValueError(
+                f"context shape must be (1, dim_context),but {context.shape} is given"
+            )
         self.theta_hat = np.concatenate(
             [
                 self.A_inv[i] @ np.expand_dims(self.b[:, i], axis=1)
@@ -263,9 +274,6 @@ class LinTS(BaseContextualPolicy):
 
     batch_size: int, default=1
         Number of samples used in a batch parameter update.
-
-    alpha_: float, default=1.
-        Prior parameter for the online logistic regression.
 
     random_state: int, default=None
         Controls the random seed in sampling actions.
