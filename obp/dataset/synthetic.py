@@ -184,13 +184,19 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
         return expected_reward_
 
-    def sample_reward_from_mean(self, mean: np.ndarray) -> np.ndarray:
-        """Sample reward given mean"""
+    def sample_reward_given_expected_reward(
+        self,
+        expected_reward: np.ndarray,
+        action: np.ndarray,
+    ) -> np.ndarray:
+        """Sample reward given expected rewards"""
+        expected_reward_factual = expected_reward[np.arange(action.shape[0]), action]
         if self.reward_type == "binary":
-            reward = self.random_.binomial(n=1, p=mean)
+            reward = self.random_.binomial(n=1, p=expected_reward_factual)
         elif self.reward_type == "continuous":
-            a = (self._reward_min - mean) / self.reward_std
-            b = (self.reward_max_ - mean) / self.reward_std
+            mean = expected_reward_factual
+            a = (self.reward_min - mean) / self.reward_std
+            b = (self.reward_max - mean) / self.reward_std
             reward = truncnorm.rvs(
                 a=a,
                 b=b,
@@ -214,14 +220,28 @@ class SyntheticBanditDataset(BaseBanditDataset):
             Selected actions to the contexts.
 
         Returns
-        -----------
+        ---------
         reward: array-like, shape (n_rounds,)
             Sampled rewards given contexts and actions.
         """
-        expected_reward_ = self.calc_expected_reward(context)
-        expected_reward_factual = expected_reward_[np.arange(action.shape[0]), action]
+        if not isinstance(context, np.ndarray):
+            raise ValueError("context must be ndarray")
+        if not isinstance(action, np.ndarray):
+            raise ValueError("action must be ndarray")
+        if context.ndim != 2:
+            raise ValueError(f"context must be 2-dimensional, but is {context.ndim}.")
+        if action.ndim != 1:
+            raise ValueError(f"action must be 1-dimensional, but is {action.ndim}.")
+        if context.shape[0] != action.shape[0]:
+            raise ValueError(
+                "the size of axis 0 of context must be the same as that of action"
+            )
+        if not np.issubdtype(int, action.dtype):
+            raise ValueError("the dtype of action must be a subdtype of int")
 
-        return self.sample_reward_from_mean(expected_reward_factual)
+        expected_reward_ = self.calc_expected_reward(context)
+
+        return self.sample_reward_given_expected_reward(expected_reward_, action)
 
     def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
@@ -267,13 +287,12 @@ class SyntheticBanditDataset(BaseBanditDataset):
         pscore = behavior_policy_[np.arange(n_rounds), action]
 
         expected_reward_ = self.calc_expected_reward(context)
-        expected_reward_factual = expected_reward_[np.arange(n_rounds), action]
-        reward = self.sample_reward_from_mean(expected_reward_factual)
+        reward = self.sample_reward_given_expected_reward(expected_reward_, action)
         if self.reward_type == "continuous":
             # correct expected_reward_, as we use truncated normal distribution here
-            mean = expected_reward_factual
-            a = (self._reward_min - mean) / self.reward_std
-            b = (self.reward_max_ - mean) / self.reward_std
+            mean = expected_reward_
+            a = (self.reward_min - mean) / self.reward_std
+            b = (self.reward_max - mean) / self.reward_std
             expected_reward_ = truncnorm.stats(
                 a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
             )

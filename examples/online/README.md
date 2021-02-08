@@ -27,6 +27,7 @@ python evaluate_off_policy_estimators.py\
     --n_runs $n_runs\
     --n_rounds $n_rounds\
     --n_actions $n_actions\
+    --n_sim $n_sim\
     --dim_context $dim_context\
     --n_jobs $n_jobs\
     --random_state $random_state
@@ -34,6 +35,7 @@ python evaluate_off_policy_estimators.py\
 - `$n_runs` specifies the number of simulation runs in the experiment to estimate standard deviations of the performance of OPE estimators.
 - `$n_rounds` and `$n_actions` specify the number of rounds (or samples) and the number of actions of the synthetic bandit data.
 - `$dim_context` specifies the dimension of context vectors.
+- `$n_sim` specifeis the simulations in the Monte Carlo simulation to compute the ground-truth policy value.
 - `$evaluation_policy_name` specifeis the evaluation policy and should be one of "bernoulli_ts", "epsilon_greedy", "lin_epsilon_greedy", "lin_ts, lin_ucb", "logistic_epsilon_greedy", "logistic_ts", or "logistic_ucb".
 - `$n_jobs` is the maximum number of concurrently running jobs.
 
@@ -42,10 +44,11 @@ For example, the following command compares the estimation performances (relativ
 ```bash
 python evaluate_off_policy_estimators.py\
     --n_runs 20\
-    --n_rounds 100000\
+    --n_rounds 1000\
     --n_actions 30\
     --dim_context 5\
-    --evaluation_policy_name bernoulli_ts
+    --evaluation_policy_name bernoulli_ts\
+    --n_sim 3\
     --n_jobs -1\
     --random_state 12345
 
@@ -53,8 +56,8 @@ python evaluate_off_policy_estimators.py\
 # =============================================
 # random_state=12345
 # ---------------------------------------------
-#         mean       std
-# rm  0.010058  0.005635
+#         mean      std
+# rm  0.202387  0.11685
 # =============================================
 ```
 

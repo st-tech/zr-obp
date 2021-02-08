@@ -92,27 +92,24 @@ def calc_ground_truth_policy_value(
 
     Parameters
     ----------
-    reward_type: str, default='binary'
-        Type of reward variable, which must be either 'binary' or 'continuous'.
-        When 'binary' is given, rewards are sampled from the Bernoulli distribution.
-        When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
-        The mean parameter of the reward distribution is determined by the `expected_reward` in the next argument.
-
     bandit_feedback: BanditFeedback
         Logged bandit feedback data used in offline bandit simulation.
         It must contain "expected_rewards".
+
+    reward_sampler: Callable[[np.ndarray, np.ndarray], np.ndarray]
+        Function sampling reward for each given action-context pair,
+        i.e., :math:`p(r \\mid x, a)`.
 
     policy: BanditPolicy
         Online bandit policy evaluated in offline bandit simulation (i.e., evaluation policy).
 
     n_sim: int, default=100
-        Number of simulations in the Monte Carlo simulation to compute the policy value
-
+        Number of simulations in the Monte Carlo simulation to compute the policy value.
 
     Returns
     --------
     ground_truth_policy_value: float
-        policy value of a given action distribution (mostly evaluation policy).
+        policy value of a given evaluation policy.
     """
     for key_ in [
         "action",
@@ -132,10 +129,10 @@ def calc_ground_truth_policy_value(
     )
 
     cumulative_reward = 0.0
+    dim_context = bandit_feedback["context"].shape[1]
 
     for _ in tqdm(np.arange(n_sim), total=n_sim):
         policy_ = deepcopy(policy)
-        dim_context = bandit_feedback["context"].shape[1]
         for position_, context_, expected_reward_ in zip(
             bandit_feedback["position"],
             bandit_feedback["context"],

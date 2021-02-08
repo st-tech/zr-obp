@@ -130,7 +130,7 @@ if __name__ == "__main__":
         # simulate the evaluation policy
         action_dist = run_bandit_simulation(bandit_feedback, evaluation_policy)
         # estimate the ground-truth policy values of the evaluation policy
-        # using the full expected reward contained in the test set of synthetic bandit feedback
+        # by Monte-Carlo Simulation using p(r|x,a), the distribution of rewards
         ground_truth_policy_value = calc_ground_truth_policy_value(
             bandit_feedback,
             dataset.sample_reward,
