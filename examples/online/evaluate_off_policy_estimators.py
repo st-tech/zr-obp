@@ -20,7 +20,7 @@ from obp.policy import (
     LogisticUCB,
 )
 from obp.ope import OffPolicyEvaluation, ReplayMethod
-from obp.simulator import run_bandit_simulation
+from obp.simulator import calc_ground_truth_policy_value, run_bandit_simulation
 
 
 ope_estimators = [ReplayMethod()]
@@ -49,6 +49,12 @@ if __name__ == "__main__":
         type=int,
         default=5,
         help="dimensions of context vectors characterizing each round.",
+    )
+    parser.add_argument(
+        "--n_sim",
+        type=int,
+        default=1,
+        help="number of simulations to calculate ground truth policy values",
     )
     parser.add_argument(
         "--evaluation_policy_name",
@@ -81,6 +87,7 @@ if __name__ == "__main__":
     n_rounds = args.n_rounds
     n_actions = args.n_actions
     dim_context = args.dim_context
+    n_sim = args.n_sim
     evaluation_policy_name = args.evaluation_policy_name
     n_jobs = args.n_jobs
     random_state = args.random_state
@@ -124,11 +131,12 @@ if __name__ == "__main__":
         action_dist = run_bandit_simulation(bandit_feedback, evaluation_policy)
         # estimate the ground-truth policy values of the evaluation policy
         # using the full expected reward contained in the test set of synthetic bandit feedback
-        ground_truth_policy_value = np.average(
-            bandit_feedback["expected_reward"],
-            weights=action_dist[:, :, 0],
-            axis=1,
-        ).mean()
+        ground_truth_policy_value = calc_ground_truth_policy_value(
+            bandit_feedback,
+            dataset.sample_reward,
+            evaluation_policy,
+            n_sim=n_sim,
+        )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback,

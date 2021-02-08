@@ -154,6 +154,10 @@ class SyntheticBanditDataset(BaseBanditDataset):
             self.expected_reward = self.sample_contextfree_expected_reward()
         if self.behavior_policy_function is None:
             self.behavior_policy = np.ones(self.n_actions) / self.n_actions
+        if self.reward_type == "continuous":
+            self.reward_min = 0
+            self.reward_max = 1e10
+            self.reward_std = 1.0
         # one-hot encoding representations characterizing each action
         self.action_context = np.eye(self.n_actions, dtype=int)
 
@@ -165,6 +169,59 @@ class SyntheticBanditDataset(BaseBanditDataset):
     def sample_contextfree_expected_reward(self) -> np.ndarray:
         """Sample expected reward for each action from the uniform distribution."""
         return self.random_.uniform(size=self.n_actions)
+
+    def calc_expected_reward(self, context: np.ndarray) -> np.ndarray:
+        """Sample expected rewards given contexts"""
+        # sample reward for each round based on the reward function
+        if self.reward_function is None:
+            expected_reward_ = np.tile(self.expected_reward, (context.shape[0], 1))
+        else:
+            expected_reward_ = self.reward_function(
+                context=context,
+                action_context=self.action_context,
+                random_state=self.random_state,
+            )
+
+        return expected_reward_
+
+    def sample_reward_from_mean(self, mean: np.ndarray) -> np.ndarray:
+        """Sample reward given mean"""
+        if self.reward_type == "binary":
+            reward = self.random_.binomial(n=1, p=mean)
+        elif self.reward_type == "continuous":
+            a = (self._reward_min - mean) / self.reward_std
+            b = (self.reward_max_ - mean) / self.reward_std
+            reward = truncnorm.rvs(
+                a=a,
+                b=b,
+                loc=mean,
+                scale=self.reward_std,
+                random_state=self.random_state,
+            )
+        else:
+            raise NotImplementedError
+
+        return reward
+
+    def sample_reward(self, context: np.ndarray, action: np.ndarray) -> np.ndarray:
+        """
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds, dim_context)
+            Context vectors characterizing each round (such as user information).
+
+        action: array-like, shape (n_rounds,)
+            Selected actions to the contexts.
+
+        Returns
+        -----------
+        reward: array-like, shape (n_rounds,)
+            Sampled rewards given contexts and actions.
+        """
+        expected_reward_ = self.calc_expected_reward(context)
+        expected_reward_factual = expected_reward_[np.arange(action.shape[0]), action]
+
+        return self.sample_reward_from_mean(expected_reward_factual)
 
     def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
@@ -209,33 +266,17 @@ class SyntheticBanditDataset(BaseBanditDataset):
             )
         pscore = behavior_policy_[np.arange(n_rounds), action]
 
-        # sample reward for each round based on the reward function
-        if self.reward_function is None:
-            expected_reward_ = np.tile(self.expected_reward, (n_rounds, 1))
-        else:
-            expected_reward_ = self.reward_function(
-                context=context,
-                action_context=self.action_context,
-                random_state=self.random_state,
-            )
+        expected_reward_ = self.calc_expected_reward(context)
         expected_reward_factual = expected_reward_[np.arange(n_rounds), action]
-        if self.reward_type == "binary":
-            reward = self.random_.binomial(n=1, p=expected_reward_factual)
-        elif self.reward_type == "continuous":
-            min_, max_ = 0, 1e10
-            mean, std = expected_reward_factual, 1.0
-            a, b = (min_ - mean) / std, (max_ - mean) / std
-            reward = truncnorm.rvs(
-                a=a, b=b, loc=mean, scale=std, random_state=self.random_state
-            )
+        reward = self.sample_reward_from_mean(expected_reward_factual)
+        if self.reward_type == "continuous":
             # correct expected_reward_, as we use truncated normal distribution here
-            mean = expected_reward_
-            a, b = (min_ - mean) / std, (max_ - mean) / std
+            mean = expected_reward_factual
+            a = (self._reward_min - mean) / self.reward_std
+            b = (self.reward_max_ - mean) / self.reward_std
             expected_reward_ = truncnorm.stats(
-                a=a, b=b, loc=mean, scale=std, moments="m"
+                a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
             )
-        else:
-            raise NotImplementedError
 
         return dict(
             n_rounds=n_rounds,

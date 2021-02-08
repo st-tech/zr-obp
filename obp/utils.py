@@ -167,6 +167,7 @@ def check_bandit_feedback_inputs(
     context: np.ndarray,
     action: np.ndarray,
     reward: np.ndarray,
+    expected_reward: np.ndarray = None,
     position: Optional[np.ndarray] = None,
     pscore: Optional[np.ndarray] = None,
     action_context: Optional[np.ndarray] = None,
@@ -183,6 +184,9 @@ def check_bandit_feedback_inputs(
 
     reward: array-like, shape (n_rounds,)
         Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+
+    expected_reward: array-like, shape (n_rounds, n_actions), default=None
+        Expected rewards (or outcome) in each round, i.e., :math:`\\mathbb{E}[r_t]`.
 
     position: array-like, shape (n_rounds,), default=None
         Positions of each round in the given logged bandit feedback.
@@ -202,6 +206,18 @@ def check_bandit_feedback_inputs(
     assert isinstance(reward, np.ndarray), "reward must be ndarray"
     assert reward.ndim == 1, "reward must be 1-dimensional"
 
+    if expected_reward is not None:
+        assert isinstance(reward, np.ndarray), "expected_reward must be ndarray"
+        assert expected_reward.ndim == 2, "expected_reward must be 2-dimensional"
+        assert (
+            context.shape[0]
+            == action.shape[0]
+            == reward.shape[0]
+            == expected_reward.shape[0]
+        ), "context, action, reward, and expected_reward must be the same size."
+        assert (action.max() + 1) == expected_reward.shape[
+            1
+        ], "the number of action and the size of the second dimension of action_context must be same."
     if pscore is not None:
         assert isinstance(pscore, np.ndarray), "pscore must be ndarray"
         assert pscore.ndim == 1, "pscore must be 1-dimensional"
