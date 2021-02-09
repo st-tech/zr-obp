@@ -167,7 +167,7 @@ def check_bandit_feedback_inputs(
     context: np.ndarray,
     action: np.ndarray,
     reward: np.ndarray,
-    expected_reward: np.ndarray = None,
+    expected_reward: Optional[np.ndarray] = None,
     position: Optional[np.ndarray] = None,
     pscore: Optional[np.ndarray] = None,
     action_context: Optional[np.ndarray] = None,
