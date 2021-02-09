@@ -51,7 +51,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
         If None is set, context **independent** uniform distribution will be used (uniform random behavior policy).
 
-    random_state: int, default=None
+    random_state: int, default=12345
         Controls the random seed in sampling synthetic bandit dataset.
 
     dataset_name: str, default='synthetic_bandit_dataset'
@@ -128,7 +128,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
     ] = None
-    random_state: Optional[int] = None
+    random_state: int = 12345
     dataset_name: str = "synthetic_bandit_dataset"
 
     def __post_init__(self) -> None:
@@ -147,6 +147,10 @@ class SyntheticBanditDataset(BaseBanditDataset):
         ]:
             raise ValueError(
                 f"reward_type must be either 'binary' or 'continuous, but {self.reward_type} is given.'"
+            )
+        if not isinstance(self.random_state, int):
+            raise ValueError(
+                f"random_state must be an integer, but {self.random_state} is given"
             )
 
         self.random_ = check_random_state(self.random_state)

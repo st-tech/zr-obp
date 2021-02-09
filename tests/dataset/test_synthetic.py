@@ -28,6 +28,13 @@ def test_synthetic_init():
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=2, reward_type="aaa")
 
+    # random_state
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, random_state=None)
+
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, random_state="3")
+
     # when reward_function is None, expected_reward is randomly sampled in [0, 1]
     # this check includes the test of `sample_contextfree_expected_reward` function
     dataset = SyntheticBanditDataset(n_actions=2)
