@@ -43,6 +43,64 @@ def test_synthetic_init():
     assert np.allclose(dataset.action_context, ohe)
 
 
+# context, action, description
+invalid_input_of_sample_reward = [
+    ("3", np.ones(2, dtype=int), "context must be ndarray"),
+    (None, np.ones(2, dtype=int), "context must be ndarray"),
+    (np.ones((2, 3)), "3", "action must be ndarray"),
+    (np.ones((2, 3)), None, "action must be ndarray"),
+    (
+        np.ones((2, 3)),
+        np.ones(2, dtype=np.float32),
+        "the dtype of action must be a subdtype of int",
+    ),
+    (np.ones(2), np.ones(2, dtype=int), "context must be 2-dimensional, but is 1."),
+    (
+        np.ones((2, 3)),
+        np.ones((2, 3), dtype=int),
+        "action must be 1-dimensional, but is 2.",
+    ),
+    (
+        np.ones((2, 3)),
+        np.ones(3, dtype=int),
+        "the size of axis 0 of context must be the same as that of action",
+    ),
+]
+
+valid_input_of_sample_reward = [
+    (
+        np.ones((2, 3)),
+        np.ones(2, dtype=int),
+        "valid shape",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "context, action, description",
+    invalid_input_of_sample_reward,
+)
+def test_synthetic_sample_reward_using_invalid_inputs(context, action, description):
+    n_actions = 10
+    dataset = SyntheticBanditDataset(n_actions=n_actions)
+
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = dataset.sample_reward(context=context, action=action)
+
+
+@pytest.mark.parametrize(
+    "context, action, description",
+    valid_input_of_sample_reward,
+)
+def test_synthetic_sample_reward_using_valid_inputs(context, action, description):
+    n_actions = 10
+    dataset = SyntheticBanditDataset(n_actions=n_actions, dim_context=3)
+
+    reward = dataset.sample_reward(context=context, action=action)
+    assert isinstance(reward, np.ndarray), "Invalid response of sample_reward"
+    assert reward.shape == action.shape, "Invalid response of sample_reward"
+
+
 def test_synthetic_obtain_batch_bandit_feedback():
     # n_rounds
     with pytest.raises(ValueError):
