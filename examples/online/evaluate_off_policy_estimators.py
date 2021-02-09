@@ -128,14 +128,16 @@ if __name__ == "__main__":
         # sample new data of synthetic logged bandit feedback
         bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         # simulate the evaluation policy
-        action_dist = run_bandit_simulation(bandit_feedback, evaluation_policy)
+        action_dist = run_bandit_simulation(
+            bandit_feedback=bandit_feedback, policy=evaluation_policy
+        )
         # estimate the ground-truth policy values of the evaluation policy
-        # by Monte-Carlo Simulation using p(r|x,a), the distribution of rewards
+        # by Monte-Carlo Simulation using p(r|x,a), the reward distribution
         ground_truth_policy_value = calc_ground_truth_policy_value(
-            bandit_feedback,
-            dataset.sample_reward,
-            evaluation_policy,
-            n_sim=n_sim,
+            bandit_feedback=bandit_feedback,
+            reward_sampler=dataset.sample_reward,  # p(r|x,a)
+            policy=evaluation_policy,
+            n_sim=n_sim,  # the number of simulations
         )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(

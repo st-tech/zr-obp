@@ -1,4 +1,4 @@
-# Example with Online Bndit Algorithms
+# Example with Online Bandit Algorithms
 
 
 ## Description

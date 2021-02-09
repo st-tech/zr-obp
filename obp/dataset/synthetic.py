@@ -210,7 +210,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         return reward
 
     def sample_reward(self, context: np.ndarray, action: np.ndarray) -> np.ndarray:
-        """Sample rewards given contexts and actions, i.e., :math:`p(r \\mid x, a)`.
+        """Sample rewards given contexts and actions, i.e., :math:`r \\sim p(r \\mid x, a)`.
 
         Parameters
         -----------
