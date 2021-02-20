@@ -5,6 +5,55 @@ import numpy as np
 
 from obp.types import BanditFeedback
 from obp.ope import DirectMethod
+from conftest import generate_action_dist
+
+
+# action_dist, position, estimated_rewards_by_reg_model, description
+invalid_input_of_dm = [
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros((5, 4, 2)),
+        "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        None,
+        "estimated_rewards_by_reg_model must be ndarray",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        "4",
+        "estimated_rewards_by_reg_model must be ndarray",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "action_dist, position, estimated_rewards_by_reg_model, description",
+    invalid_input_of_dm,
+)
+def test_dm_using_invalid_input_data(
+    action_dist: np.ndarray,
+    position: np.ndarray,
+    estimated_rewards_by_reg_model: np.ndarray,
+    description: str,
+) -> None:
+    dm = DirectMethod()
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = dm.estimate_policy_value(
+            action_dist=action_dist,
+            position=position,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = dm.estimate_interval(
+            action_dist=action_dist,
+            position=position,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
 
 
 def test_dm_using_random_evaluation_policy(
