@@ -3,8 +3,9 @@
 
 """Dataset Class for Real-World Logged Bandit Feedback."""
 from dataclasses import dataclass
+from logging import getLogger, basicConfig, INFO
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,9 @@ from sklearn.utils import check_random_state
 
 from .base import BaseRealBanditDataset
 from ..types import BanditFeedback
+
+logger = getLogger(__name__)
+basicConfig(level=INFO)
 
 
 @dataclass
@@ -33,8 +37,9 @@ class OpenBanditDataset(BaseRealBanditDataset):
     campaign: str
         One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
 
-    data_path: Path, default=Path('./obd')
-        Path that stores Open Bandit Dataset.
+    data_path: Path, default=None
+        Path where the Open Bandit Dataset exists.
+        When `None` is given, this class downloads the example small-sized version of the dataset.
 
     dataset_name: str, default='obd'
         Name of the dataset.
@@ -42,28 +47,42 @@ class OpenBanditDataset(BaseRealBanditDataset):
     References
     ------------
     Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
-    "Large-scale Open Dataset, Pipeline, and Benchmark for Bandit Algorithms.", 2020.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2020.
 
     """
 
     behavior_policy: str
     campaign: str
-    data_path: Path = Path("./obd")
+    data_path: Optional[Path] = None
     dataset_name: str = "obd"
 
     def __post_init__(self) -> None:
         """Initialize Open Bandit Dataset Class."""
-        assert self.behavior_policy in [
+        if self.behavior_policy not in [
             "bts",
             "random",
-        ], f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
-        assert self.campaign in [
+        ]:
+            raise ValueError(
+                f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
+            )
+
+        if self.campaign not in [
             "all",
             "men",
             "women",
-        ], f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
-        assert isinstance(self.data_path, Path), f"data_path must be a Path type"
+        ]:
+            raise ValueError(
+                f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
+            )
 
+        if self.data_path is None:
+            logger.info(
+                "When `data_path` is not given, this class downloads the example small-sized version of the Open Bandit Dataset."
+            )
+            self.data_path = Path(__file__).parent / "obd"
+        else:
+            if not isinstance(self.data_path, Path):
+                raise ValueError("data_path must be a Path type")
         self.data_path = self.data_path / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
 
@@ -95,7 +114,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         cls,
         behavior_policy: str,
         campaign: str,
-        data_path: Path = Path("./obd"),
+        data_path: Optional[Path] = None,
         test_size: float = 0.3,
         is_timeseries_split: bool = False,
     ) -> float:
@@ -110,8 +129,9 @@ class OpenBanditDataset(BaseRealBanditDataset):
         campaign: str
             One of the three possible campaigns considered in ZOZOTOWN (i.e., "all", "men", and "women").
 
-        data_path: Path, default=Path('./obd')
-            Path that stores Open Bandit Dataset.
+        data_path: Path, default=None
+            Path where the Open Bandit Dataset exists.
+            When `None` is given, this class downloads the example small-sized version of the dataset.
 
         test_size: float, default=0.3
             If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
@@ -200,9 +220,10 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
         """
         if is_timeseries_split:
-            assert isinstance(test_size, float) & (
-                0 < test_size < 1
-            ), f"test_size must be a float in the (0,1) interval, but {test_size} is given"
+            if not isinstance(test_size, float) or (test_size <= 0 or test_size >= 1):
+                raise ValueError(
+                    f"test_size must be a float in the (0,1) interval, but {test_size} is given"
+                )
             n_rounds_train = np.int(self.n_rounds * (1.0 - test_size))
             return dict(
                 n_rounds=n_rounds_train,

@@ -9,7 +9,6 @@ __all_estimators__ = [
     "DirectMethod",
     "DoublyRobust",
     "DoublyRobustWithShrinkage",
-    "SwitchInverseProbabilityWeighting",
     "SwitchDoublyRobust",
     "SelfNormalizedDoublyRobust",
 ]

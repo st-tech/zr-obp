@@ -14,7 +14,6 @@ In the following, we evaluate the estimation performances of
 - Self-Normalized Inverse Probability Weighting (SNIPW)
 - Doubly Robust (DR)
 - Self-Normalized Doubly Robust (SNDR)
-- Switch Inverse Probability Weighting (Switch-IPW)
 - Switch Doubly Robust (Switch-DR)
 - Doubly Robust with Optimistic Shrinkage (DRos)
 
@@ -59,23 +58,21 @@ python evaluate_off_policy_estimators.py\
     --n_jobs -1\
     --random_state 12345
 
-# relative-ee of OPE estimators and their standard deviations (lower is better).
+# relative-ee of OPE estimators and their standard deviations (lower means accurate).
 # It appears that the performances of some OPE estimators depend on the choice of their hyperparameters.
 # =============================================
 # random_state=12345
 # ---------------------------------------------
 #                           mean       std
-# dm                    0.011110  0.000565
-# ipw                   0.001953  0.000387
-# snipw                 0.002036  0.000835
-# dr                    0.001573  0.000631
-# sndr                  0.001578  0.000625
-# switch-ipw (tau=1)    0.138523  0.000514
-# switch-ipw (tau=100)  0.001953  0.000387
-# switch-dr (tau=1)     0.021875  0.000414
-# switch-dr (tau=100)   0.001573  0.000631
-# dr-os (lambda=1)      0.010952  0.000567
-# dr-os (lambda=100)    0.001835  0.000884
+# dm                    0.180916  0.000650
+# ipw                   0.013690  0.008988
+# snipw                 0.014984  0.006156
+# dr                    0.007802  0.003867
+# sndr                  0.010062  0.002300
+# switch-dr (tau=1)     0.180916  0.000650
+# switch-dr (tau=100)   0.007802  0.003867
+# dr-os (lambda=1)      0.180708  0.000646
+# dr-os (lambda=100)    0.162749  0.000371
 # =============================================
 ```
 

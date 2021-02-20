@@ -4,7 +4,7 @@
 
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
 
-**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[スライド](https://github.com/st-tech/zr-obp/tree/master/slides/slides_JN.pdf)**  | **[Quickstart](https://github.com/st-tech/zr-obp/blob/master/examples/quickstart)** | **[Open Bandit Dataset](https://github.com/st-tech/zr-obp/blob/master/obd/README_JN.md)** | **[解説ブログ記事](https://techblog.zozo.com/entry/openbanditproject)**
+**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[スライド](./slides/slides_JN.pdf)**  | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd/README_JN.md)** | **[解説ブログ記事](https://techblog.zozo.com/entry/openbanditproject)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -23,12 +23,10 @@
   - [(3) オフ方策評価 （Off-Policy Evaluation）](#3-オフ方策評価-off-policy-evaluation)
 - [引用](#引用)
 - [Google Group](#google-group)
-- [Contact](#contact)
 - [ライセンス](#ライセンス)
 - [プロジェクトチーム](#プロジェクトチーム)
+- [Contact](#contact)
 - [参考](#参考)
-  - [論文](#論文)
-  - [実装](#実装)
 
 </details>
 
@@ -42,7 +40,7 @@
 バンディットアルゴリズムによるファッションアイテム推薦の例は以下の通りです.
 
 <p align="center">
-  <img width="45%" src="./images/recommended_fashion_items.png" />
+  <img width="50%" src="./images/recommended_fashion_items.png" />
   <figcaption>
     <p align="center">
       図1. ZOZOTOWNにおけるファッションアイテムの推薦の例
@@ -55,7 +53,7 @@
 図2はOpen Bandit Datasetの記述統計を示しています.
 
 <p align="center">
-  <img width="70%" src="./images/statistics_of_obd.png" />
+  <img width="75%" src="./images/statistics_of_obd.png" />
   <figcaption>
     <p align="center">
       図2. Open Bandit Datasetのキャンペーンとデータ収集方策ごとの記述統計
@@ -63,7 +61,7 @@
   </figcaption>
 </p>
 
-[実装例](https://github.com/st-tech/zr-obp/tree/master/examples)を実行するための少量データは, [./obd/](https://github.com/st-tech/zr-obp/tree/master/obd)にあります.
+[実装例](./examples)を実行するための少量データは, [./obd/](./obd)にあります.
 Open Bandit Datasetのフルサイズ版は[https://research.zozo.com/data.html](https://research.zozo.com/data.html)にあります.
 研究用途にはフルサイズ版をダウンロードしてください.
 
@@ -83,41 +81,49 @@ Open Bandit Datasetのフルサイズ版は[https://research.zozo.com/data.html]
 
 Open Bandit Pipeline は, 以下の主要モジュールで構成されています.
 
-- **datasetモジュール**。このモジュールは, Open Bandit Dataset用のデータ読み込みクラスとデータの前処理するための柔軟なインターフェースを提供します. また人工データを生成するクラスも実装しています.
-- **policyモジュール**: このモジュールは, バンディットアルゴリズムのためのインターフェイスを提供します. 加えて, いくつかの標準なバンディットアルゴリズムを実装しています.
-- **simulatorモジュール**: このモジュールは, オフラインのバンディットシミュレーションを行うための関数を提供します.
-- **opeモジュール**:　このモジュールは, いくつかの標準的なオフ方策推定量を実装しています. また新たにオフ方策推定量を実装するためのインターフェースを提供します.
+- [**datasetモジュール**](./obp/dataset): このモジュールは, Open Bandit Dataset用のデータ読み込みクラスとデータの前処理するための柔軟なインターフェースを提供します. また人工データを生成するクラスも実装しています.
+- [**policyモジュール**](./obp/policy): このモジュールは, バンディットアルゴリズムのためのインターフェイスを提供します. 加えて, いくつかの標準なバンディットアルゴリズムを実装しています.
+- [**simulatorモジュール**](./obp/simulator): このモジュールは, オフラインのバンディットシミュレーションを行うための関数を提供します.
+- [**opeモジュール**](./obp/ope):　このモジュールは, いくつかの標準的なオフ方策推定量を実装しています. また新たにオフ方策推定量を実装するためのインターフェースを提供します.
 
 
 ### 実装されているバンディットアルゴリズムとオフ方策推定量
 
-- バンディットアルゴリズム (**policy module**に実装)
-  - Online
-    - Context-free
-      - Random
-      - Epsilon Greedy
-      - Bernoulli Thompson Sampling
-    - Linear (contextual)
-      - Linear Epsilon Greedy
-      - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
-      - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
-    - Logistic (contextual)
-      - Logistic Epsilon Greedy
-      - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
-      - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
-  - Offline (Off-Policy Learning)
-    - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+<details>
+<summary><strong>バンディットアルゴリズム (policy moduleに実装)</strong></summary>
 
-- オフ方策推定量 (**ope module**に実装)
-  - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
-  - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
-  - [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
-  - [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
-  - [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
-  - [Switch Estimators](https://arxiv.org/abs/1612.01205)
-  - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
-  - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
-  - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+- Online
+  - Context-free
+    - Random
+    - Epsilon Greedy
+    - Bernoulli Thompson Sampling
+  - Linear (contextual)
+    - Linear Epsilon Greedy
+    - [Linear Thompson Sampling](http://proceedings.mlr.press/v28/agrawal13)
+    - [Linear Upper Confidence Bound](https://dl.acm.org/doi/pdf/10.1145/1772690.1772758)
+  - Logistic (contextual)
+    - Logistic Epsilon Greedy
+    - [Logistic Thompson Sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling)
+    - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
+- Offline (Off-Policy Learning)
+  - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+
+</details>
+
+<details>
+<summary><strong>オフ方策推定量 (ope moduleに実装)</strong></summary>
+
+- [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
+- [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
+- [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
+- [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+- [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
+- [Switch Estimators](https://arxiv.org/abs/1612.01205)
+- [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
+- [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
+- [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+
+</details>
 
 私たちのパイプラインは, 上記のアルゴリズムや推定量に加えて柔軟なインターフェースも提供しています.
 したがって研究者は, 独自のバンディットアルゴリズムやオフ方策推定量を容易に実装し, 我々のデータとパイプラインを用いてそれらの性能を評価することができます.
@@ -291,10 +297,6 @@ Bibtex:
 # Google Group
 本プロジェクトの最新アップデート情報は、次のGoogle Groupにて随時お知らせしています: https://groups.google.com/g/open-bandit-project
 
-# Contact
-論文・公開データセット・ソフトウェアに関するご質問は、次のメールアドレスにお願いいたします: saito@hanjuku-kaso.com
-
-
 # ライセンス
 このプロジェクトはApache 2.0ライセンスを採用しています.
 詳細は, [LICENSE](https://github.com/st-tech/zr-obp/blob/master/LICENSE)を参照してください.
@@ -307,10 +309,15 @@ Bibtex:
 - 松谷恵 (ZOZO Technologies, Inc.)
 - [成田悠輔](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
 
+# Contact
+論文・公開データセット・ソフトウェアに関するご質問は、次のメールアドレスにお願いいたします: saito@hanjuku-kaso.com
+
 
 # 参考
 
-## 論文
+<details>
+<summary><strong>論文</strong></summary>
+
 1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
 *Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
 
@@ -341,6 +348,9 @@ Bibtex:
 14.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
 
 15. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
+</details>
 
-## 実装
+<details>
+<summary><strong>オープンソースプロジェクト</strong></summary>
 本プロジェクトは **Open Graph Benchmark** ([[github](https://github.com/snap-stanford/ogb)] [[project page](https://ogb.stanford.edu)] [[paper](https://arxiv.org/abs/2005.00687)]) を参考にしています.
+</details>
