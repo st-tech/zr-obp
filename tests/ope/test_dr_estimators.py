@@ -5,29 +5,24 @@ import numpy as np
 
 from obp.types import BanditFeedback
 from obp.ope import (
-    InverseProbabilityWeighting,
     DirectMethod,
     DoublyRobust,
     DoublyRobustWithShrinkage,
-    SwitchInverseProbabilityWeighting,
     SwitchDoublyRobust,
     SelfNormalizedDoublyRobust,
 )
 from conftest import generate_action_dist
 
 # prepare instances
-ipw = InverseProbabilityWeighting()
 dm = DirectMethod()
 dr = DoublyRobust()
 dr_shrink_0 = DoublyRobustWithShrinkage(lambda_=0.0)
 dr_shrink_max = DoublyRobustWithShrinkage(lambda_=1e10)
 sndr = SelfNormalizedDoublyRobust()
-switch_ipw_0 = SwitchInverseProbabilityWeighting(tau=0.0)
-switch_ipw_max = SwitchInverseProbabilityWeighting(tau=1e10)
 switch_dr_0 = SwitchDoublyRobust(tau=0.0)
 switch_dr_max = SwitchDoublyRobust(tau=1e10)
 
-dr_estimators = [dr, dr_shrink_0, sndr, switch_ipw_0, switch_dr_0]
+dr_estimators = [dr, dr_shrink_0, sndr, switch_dr_0]
 
 
 # dr and self-normalized dr
@@ -233,7 +228,7 @@ def test_dr_using_invalid_input_data(
             )
 
 
-# switch-ipw and switch-dr
+# switch-dr
 
 invalid_input_of_switch = [
     ("a", "switching hyperparameter must be float"),
@@ -248,9 +243,6 @@ invalid_input_of_switch = [
 def test_switch_using_invalid_input_data(tau: float, description: str) -> None:
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = SwitchDoublyRobust(tau=tau)
-
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = SwitchInverseProbabilityWeighting(tau=tau)
 
 
 # dr-os
@@ -300,9 +292,8 @@ def test_dr_variants_using_valid_input_data(
 ) -> None:
     # check dr variants
     switch_dr = SwitchDoublyRobust(tau=hyperparameter)
-    switch_ipw = SwitchInverseProbabilityWeighting(tau=hyperparameter)
     dr_os = DoublyRobustWithShrinkage(lambda_=hyperparameter)
-    for estimator in [switch_dr, switch_ipw, dr_os]:
+    for estimator in [switch_dr, dr_os]:
         est = estimator.estimate_policy_value(
             action_dist=action_dist,
             action=action,
@@ -407,36 +398,6 @@ def test_dr_shrinkage_using_random_evaluation_policy(
     assert (
         np.abs(dr_value - dr_shrink_max_value) < 1e-5
     ), "DoublyRobustWithShrinkage (lambda=inf) should be almost the same as DoublyRobust"
-
-
-def test_switch_ipw_using_random_evaluation_policy(
-    synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
-) -> None:
-    """
-    Test the switch_ipw estimators using synthetic bandit data and random evaluation policy
-    """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
-    action_dist = random_action_dist
-    # prepare input dict
-    input_dict = {
-        k: v
-        for k, v in synthetic_bandit_feedback.items()
-        if k in ["reward", "action", "pscore", "position"]
-    }
-    input_dict["action_dist"] = action_dist
-    input_dict["estimated_rewards_by_reg_model"] = expected_reward
-    dm_value = dm.estimate_policy_value(**input_dict)
-    ipw_value = ipw.estimate_policy_value(**input_dict)
-    switch_ipw_0_value = switch_ipw_0.estimate_policy_value(**input_dict)
-    switch_ipw_max_value = switch_ipw_max.estimate_policy_value(**input_dict)
-    assert (
-        dm_value == switch_ipw_0_value
-    ), "SwitchIPW (tau=0) should be the same as DirectMethod"
-    assert (
-        ipw_value == switch_ipw_max_value
-    ), "SwitchIPW (tau=1e10) should be the same as IPW"
 
 
 def test_switch_dr_using_random_evaluation_policy(

@@ -247,7 +247,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
     )
-    # test most of the estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
+    # test all estimators
     all_estimators = ope.__all_estimators__
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
@@ -288,7 +288,7 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
     expected_reward = np.expand_dims(
         synthetic_bandit_feedback["expected_reward"], axis=-1
     )
-    # test most of the estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
+    # test all estimators
     all_estimators = ope.__all_estimators__
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
@@ -340,12 +340,12 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
     # compute statistics of ground truth policy value
     gt_mean = q_pi_e.mean()
     gt_std = q_pi_e.std(ddof=1)
-    # test most of the estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
+    # test most of the estimators (ReplayMethod is not tested because it is out of scope)
     all_estimators = ope.__all_estimators__
     estimators = [
         getattr(ope.estimators, estimator_name)()
         for estimator_name in all_estimators
-        if estimator_name not in ["ReplayMethod", "SwitchInverseProbabilityWeighting"]
+        if estimator_name not in ["ReplayMethod"]
     ]
     # conduct OPE
     ope_instance = OffPolicyEvaluation(
@@ -377,7 +377,7 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
         synthetic_bandit_feedback["expected_reward"], axis=-1
     )
     action_dist = random_action_dist
-    # test most of the estimators (ReplayMethod is not tested because it is out of scope; Switch-ipw(\tau=1) is not tested because it is known to be biased in this situation)
+    # test all estimators
     all_estimators = ope.__all_estimators__
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
