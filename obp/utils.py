@@ -246,19 +246,27 @@ def check_bandit_feedback_inputs(
         raise ValueError("reward must be ndarray")
     if reward.ndim != 1:
         raise ValueError("reward must be 1-dimensional")
+    if not (action.dtype == int and action.min() >= 0):
+        raise ValueError("action elements must be non-negative integers")
 
     if expected_reward is not None:
-        assert isinstance(reward, np.ndarray), "expected_reward must be ndarray"
-        assert expected_reward.ndim == 2, "expected_reward must be 2-dimensional"
-        assert (
+        if not isinstance(expected_reward, np.ndarray):
+            raise ValueError("expected_reward must be ndarray")
+        if expected_reward.ndim != 2:
+            raise ValueError("expected_reward must be 2-dimensional")
+        if not (
             context.shape[0]
             == action.shape[0]
             == reward.shape[0]
             == expected_reward.shape[0]
-        ), "context, action, reward, and expected_reward must be the same size."
-        assert (action.max() + 1) == expected_reward.shape[
-            1
-        ], "the number of action and the size of the second dimension of action_context must be same."
+        ):
+            raise ValueError(
+                "context, action, reward, and expected_reward must be the same size."
+            )
+        if action.max() >= expected_reward.shape[1]:
+            raise ValueError(
+                "action elements must be smaller than the size of the second dimension of expected_reward"
+            )
     if pscore is not None:
         if not isinstance(pscore, np.ndarray):
             raise ValueError("pscore must be ndarray")
@@ -270,6 +278,9 @@ def check_bandit_feedback_inputs(
             raise ValueError(
                 "context, action, reward, and pscore must be the same size."
             )
+        if np.any(pscore <= 0):
+            raise ValueError("pscore must be positive")
+
     if position is not None:
         if not isinstance(position, np.ndarray):
             raise ValueError("position must be ndarray")
@@ -281,6 +292,8 @@ def check_bandit_feedback_inputs(
             raise ValueError(
                 "context, action, reward, and position must be the same size."
             )
+        if not (position.dtype == int and position.min() >= 0):
+            raise ValueError("position elements must be non-negative integers")
     else:
         if not (context.shape[0] == action.shape[0] == reward.shape[0]):
             raise ValueError("context, action, and reward must be the same size.")
@@ -289,9 +302,9 @@ def check_bandit_feedback_inputs(
             raise ValueError("action_context must be ndarray")
         if action_context.ndim != 2:
             raise ValueError("action_context must be 2-dimensional")
-        if (action.max() + 1) != action_context.shape[0]:
+        if action.max() >= action_context.shape[0]:
             raise ValueError(
-                "the number of action and the size of the first dimension of action_context must be same."
+                "action elements must be smaller than the size of the first dimension of action_context"
             )
 
 

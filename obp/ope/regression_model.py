@@ -62,17 +62,26 @@ class RegressionModel(BaseEstimator):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        assert self.fitting_method in [
-            "normal",
-            "iw",
-            "mrdr",
-        ], f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
-        assert self.n_actions > 1 and isinstance(
-            self.n_actions, int
-        ), f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-        assert self.len_list > 0 and isinstance(
-            self.len_list, int
-        ), f"len_list must be a positive integer, but {self.len_list} is given"
+        if not (
+            isinstance(self.fitting_method, str)
+            and self.fitting_method in ["normal", "iw", "mrdr"]
+        ):
+            raise ValueError(
+                f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
+            )
+        if not (isinstance(self.n_actions, int) and self.n_actions > 1):
+            raise ValueError(
+                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+            )
+        if not (isinstance(self.len_list, int) and self.len_list > 0):
+            raise ValueError(
+                f"len_list must be a positive integer, but {self.len_list} is given"
+            )
+        if not isinstance(self.base_model, BaseEstimator):
+            raise ValueError(
+                "base_model must be BaseEstimator or a child class of BaseEstimator"
+            )
+
         self.base_model_list = [
             clone(self.base_model) for _ in np.arange(self.len_list)
         ]
@@ -129,20 +138,27 @@ class RegressionModel(BaseEstimator):
         if self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            assert (
-                isinstance(position, np.ndarray) and position.ndim == 1
-            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
+            if not (isinstance(position, np.ndarray) and position.ndim == 1):
+                raise ValueError(
+                    "when len_list > 1, position must be a 1-dimensional ndarray"
+                )
+            if position.max() >= self.len_list:
+                raise ValueError(
+                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                )
         if self.fitting_method in ["iw", "mrdr"]:
-            assert (
-                isinstance(action_dist, np.ndarray) and action_dist.ndim == 3
-            ), f"when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
-            assert action_dist.shape == (
-                n_rounds,
-                self.n_actions,
-                self.len_list,
-            ), f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
-            if pscore is None:
-                pscore = np.ones_like(action) / self.n_actions
+            if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
+                raise ValueError(
+                    "when fitting_method is either 'iw' or 'mrdr', action_dist (a 3-dimensional ndarray) must be given"
+                )
+            if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
+                raise ValueError(
+                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                )
+            if not np.allclose(action_dist.sum(axis=1), 1):
+                raise ValueError("action_dist must be a probability distribution")
+        if pscore is None:
+            pscore = np.ones_like(action) / self.n_actions
 
         for position_ in np.arange(self.len_list):
             idx = position == position_
@@ -151,6 +167,8 @@ class RegressionModel(BaseEstimator):
                 action=action[idx],
                 action_context=self.action_context,
             )
+            if X.shape[0] == 0:
+                raise ValueError(f"No training data at position {position_}")
             # train the base model according to the given `fitting method`
             if self.fitting_method == "normal":
                 self.base_model_list[position_].fit(X, reward[idx])
@@ -279,24 +297,36 @@ class RegressionModel(BaseEstimator):
         )
         n_rounds = context.shape[0]
 
-        assert n_folds > 0 and isinstance(
-            n_folds, int
-        ), f"n_folds must be a positive integer, but {n_folds} is given"
+        if not (isinstance(n_folds, int) and n_folds > 0):
+            raise ValueError(
+                f"n_folds must be a positive integer, but {n_folds} is given"
+            )
+
+        if random_state is not None and not isinstance(random_state, int):
+            raise ValueError(
+                f"random_state must be an integer, but {random_state} is given"
+            )
+
         if self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            assert (
-                isinstance(position, np.ndarray) and position.ndim == 1
-            ), f"when len_list > 1, position must be a 1-dimensional ndarray"
+            if not (isinstance(position, np.ndarray) and position.ndim == 1):
+                raise ValueError(
+                    "when len_list > 1, position must be a 1-dimensional ndarray"
+                )
+            if position.max() >= self.len_list:
+                raise ValueError(
+                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                )
         if self.fitting_method in ["iw", "mrdr"]:
-            assert (
-                isinstance(action_dist, np.ndarray) and action_dist.ndim == 3
-            ), f"when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
-            assert action_dist.shape == (
-                n_rounds,
-                self.n_actions,
-                self.len_list,
-            ), f"shape of action_dist must be (n_rounds, n_actions, len_list)={n_rounds, self.n_actions, self.len_list}, but is {action_dist.shape}"
+            if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
+                raise ValueError(
+                    "when fitting_method is either 'iw' or 'mrdr', action_dist (a 3-dimensional ndarray) must be given"
+                )
+            if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
+                raise ValueError(
+                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                )
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions
 
@@ -334,7 +364,10 @@ class RegressionModel(BaseEstimator):
         return estimated_rewards_by_reg_model
 
     def _pre_process_for_reg_model(
-        self, context: np.ndarray, action: np.ndarray, action_context: np.ndarray,
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        action_context: np.ndarray,
     ) -> np.ndarray:
         """Preprocess feature vectors to train a give regression model.
 
