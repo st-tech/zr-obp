@@ -257,8 +257,18 @@ class OffPolicyEvaluation:
                 random_state=random_state,
             )
         )
-
-        return policy_value_df.T, policy_value_interval_df.T
+        policy_value_of_behavior_policy = self.bandit_feedback["reward"].mean()
+        policy_value_df = policy_value_df.T
+        if policy_value_of_behavior_policy <= 0:
+            logger.warning(
+                f"Policy value of the behavior policy is {policy_value_of_behavior_policy} (<=0); relative estimated policy value is set to np.nan"
+            )
+            policy_value_df["relative_estimated_policy_value"] = np.nan
+        else:
+            policy_value_df["relative_estimated_policy_value"] = (
+                policy_value_df.estimated_policy_value / policy_value_of_behavior_policy
+            )
+        return policy_value_df, policy_value_interval_df.T
 
     def visualize_off_policy_estimates(
         self,

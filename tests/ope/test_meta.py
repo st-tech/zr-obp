@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 from dataclasses import dataclass
 import itertools
+from copy import deepcopy
 
 import pytest
 import numpy as np
@@ -557,6 +558,10 @@ def test_meta_summarize_off_policy_estimates(
         },
         index=["estimated_policy_value"],
     ).T
+    expected_value["relative_estimated_policy_value"] = (
+        expected_value["estimated_policy_value"]
+        / synthetic_bandit_feedback["reward"].mean()
+    )
     expected_interval = pd.DataFrame(
         {
             "ipw": {k: v + ipw.eps for k, v in mock_confidence_interval.items()},
@@ -565,6 +570,30 @@ def test_meta_summarize_off_policy_estimates(
     ).T
     assert_frame_equal(value, expected_value), "Invalid summarization (policy value)"
     assert_frame_equal(interval, expected_interval), "Invalid summarization (interval)"
+    # check relative estimated policy value when the average of bandit_feedback["reward"] is zero
+    zero_reward_bandit_feedback = deepcopy(synthetic_bandit_feedback)
+    zero_reward_bandit_feedback["reward"] = np.zeros(
+        zero_reward_bandit_feedback["reward"].shape[0]
+    )
+    ope_ = OffPolicyEvaluation(
+        bandit_feedback=zero_reward_bandit_feedback, ope_estimators=[ipw, ipw3]
+    )
+    value, _ = ope_.summarize_off_policy_estimates(
+        action_dist=action_dist,
+        estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        alpha=alpha,
+        n_bootstrap_samples=n_bootstrap_samples,
+        random_state=random_state,
+    )
+    expected_value = pd.DataFrame(
+        {
+            "ipw": mock_policy_value + ipw.eps,
+            "ipw3": mock_policy_value + ipw3.eps,
+        },
+        index=["estimated_policy_value"],
+    ).T
+    expected_value["relative_estimated_policy_value"] = np.nan
+    assert_frame_equal(value, expected_value), "Invalid summarization (policy value)"
 
 
 invalid_input_of_evaluation_performance_of_estimators = [
