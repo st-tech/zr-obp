@@ -286,7 +286,7 @@ def check_ope_inputs(
     reward: Optional[np.ndarray] = None,
     pscore: Optional[np.ndarray] = None,
     estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
-) -> Optional[AssertionError]:
+) -> Optional[ValueError]:
     """Check inputs for bandit learning or simulation.
 
     Parameters
@@ -339,17 +339,17 @@ def check_ope_inputs(
             )
     elif action_dist.shape[2] > 1:
         raise ValueError(
-            "position elements must be given when the third dimension of action_dist is greator than 1"
+            "position elements must be given when the third dimension of action_dist is greater than 1"
         )
 
     # estimated_rewards_by_reg_model
-    if (
-        estimated_rewards_by_reg_model is not None
-        and estimated_rewards_by_reg_model.shape != action_dist.shape
-    ):
-        raise ValueError(
-            "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
-        )
+    if estimated_rewards_by_reg_model is not None:
+        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
+            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
+        if estimated_rewards_by_reg_model.shape != action_dist.shape:
+            raise ValueError(
+                "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
+            )
 
     # action, reward
     if action is not None or reward is not None:

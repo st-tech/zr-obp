@@ -70,7 +70,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.zeros(5) - 1,
+        np.zeros(5, dtype=int) - 1,
         np.zeros((5, 4, 3)),
         "position elements must be non-negative integers",
     ),
@@ -99,23 +99,23 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 3)),
-        "position elements must be given when the third dimension of action_dist is greator than 1",
+        "position elements must be given when the third dimension of action_dist is greater than 1",
     ),
 ]
 
 valid_input_of_estimation = [
     (
         generate_action_dist(5, 4, 3),
-        np.zeros(5, dtype=int),
+        np.random.choice(4, size=5),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
         "all argumnents are given and len_list > 1",
     ),
     (
         generate_action_dist(5, 4, 1),
-        np.zeros(5, dtype=int),
+        np.random.choice(4, size=5),
         np.zeros(5, dtype=int),
         np.ones(5),
         np.zeros(5, dtype=int),
@@ -124,7 +124,7 @@ valid_input_of_estimation = [
     ),
     (
         generate_action_dist(5, 4, 1),
-        np.zeros(5, dtype=int),
+        np.random.choice(4, size=5),
         np.zeros(5, dtype=int),
         np.ones(5),
         None,
@@ -364,7 +364,7 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
         # test the performance of each estimator
         assert (
             np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
-        ), f"OPE of {key} did not work well (absolute error is greator than 3*sigma)"
+        ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
 
 
 def test_response_format_of_ope_estimators_using_random_evaluation_policy(

@@ -22,7 +22,7 @@ invalid_input_of_ipw = [
         None,
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action must be ndarray",
     ),
     (
@@ -30,7 +30,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         None,
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "reward must be ndarray",
     ),
     (
@@ -38,7 +38,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         None,
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "pscore must be ndarray",
     ),
     (
@@ -46,7 +46,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=float),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action elements must be non-negative integers",
     ),
     (
@@ -54,7 +54,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int) - 1,
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action elements must be non-negative integers",
     ),
     (
@@ -62,7 +62,7 @@ invalid_input_of_ipw = [
         "4",
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action must be ndarray",
     ),
     (
@@ -70,7 +70,7 @@ invalid_input_of_ipw = [
         np.zeros((3, 2), dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action must be 1-dimensional",
     ),
     (
@@ -78,7 +78,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int) + 8,
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action elements must be smaller than the second dimension of action_dist",
     ),
     (
@@ -86,7 +86,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         "4",
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "reward must be ndarray",
     ),
     (
@@ -94,7 +94,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.zeros((3, 2), dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "reward must be 1-dimensional",
     ),
     (
@@ -102,7 +102,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.zeros(4, dtype=int),
         np.ones(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action and reward must be the same size.",
     ),
     (
@@ -110,7 +110,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         "4",
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "pscore must be ndarray",
     ),
     (
@@ -118,7 +118,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones((5, 3)),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "pscore must be 1-dimensional",
     ),
     (
@@ -126,7 +126,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(4),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "action, reward, and pscore must be the same size.",
     ),
     (
@@ -134,7 +134,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.arange(5),
-        np.random.choice([0, 1, 2], size=5),
+        np.random.choice(3, size=5),
         "pscore must be positive",
     ),
 ]
