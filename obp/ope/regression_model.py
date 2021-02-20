@@ -144,16 +144,16 @@ class RegressionModel(BaseEstimator):
                 )
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but {position.max()}"
+                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
         if self.fitting_method in ["iw", "mrdr"]:
             if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
                 raise ValueError(
-                    "when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
+                    "when fitting_method is either 'iw' or 'mrdr', action_dist (a 3-dimensional ndarray) must be given"
                 )
             if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
                 raise ValueError(
-                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
+                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
                 )
             if not np.allclose(action_dist.sum(axis=1), 1):
                 raise ValueError("action_dist must be a probability distribution")
@@ -316,16 +316,16 @@ class RegressionModel(BaseEstimator):
                 )
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but {position.max()}"
+                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
         if self.fitting_method in ["iw", "mrdr"]:
             if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
                 raise ValueError(
-                    "when fitting_method is either 'iw' or 'mrdr', action_dist must be a 3-dimensional ndarray"
+                    "when fitting_method is either 'iw' or 'mrdr', action_dist (a 3-dimensional ndarray) must be given"
                 )
             if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
                 raise ValueError(
-                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list})"
+                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
                 )
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions

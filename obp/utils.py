@@ -170,7 +170,7 @@ def check_bandit_feedback_inputs(
     position: Optional[np.ndarray] = None,
     pscore: Optional[np.ndarray] = None,
     action_context: Optional[np.ndarray] = None,
-) -> Optional[AssertionError]:
+) -> Optional[ValueError]:
     """Check inputs for bandit learning or simulation.
 
     Parameters

@@ -30,7 +30,7 @@ with open(cd_path / "hyperparams.yaml", "rb") as f:
 
 
 # action_context, n_actions, len_list, fitting_method, base_model, description
-n_rounds = 10
+n_rounds = 1000
 n_actions = 3
 len_list = 3
 
@@ -99,7 +99,7 @@ invalid_input_of_initializing_regression_models = [
 invalid_input_of_fitting_regression_models = [
     (
         None,  #
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         np.random.choice(len_list, size=n_rounds),
@@ -131,7 +131,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         None,  #
         np.ones(n_rounds) * 2,
         np.random.choice(len_list, size=n_rounds),
@@ -147,7 +147,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7, 3)),  #
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         np.random.choice(len_list, size=n_rounds),
@@ -163,7 +163,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=(n_rounds, 3)),  #
+        np.random.choice(n_actions, size=(n_rounds, 3)),  #
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         np.random.choice(len_list, size=n_rounds),
@@ -179,7 +179,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=(n_rounds, 3)),  #
         np.ones(n_rounds) * 2,
         np.random.choice(len_list, size=n_rounds),
@@ -227,71 +227,71 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         "3",  #
         np.random.choice(len_list, size=n_rounds),
         None,
         n_actions,
         len_list,
-        "normal",
+        "iw",
         Ridge(**hyperparams["ridge"]),
-        None,
+        generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
         "pscore must be ndarray",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones((n_rounds, 2)) * 2,  #
         np.random.choice(len_list, size=n_rounds),
         None,
         n_actions,
         len_list,
-        "normal",
+        "iw",
         Ridge(**hyperparams["ridge"]),
-        None,
+        generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
         "pscore must be 1-dimensional",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds - 1) * 2,  #
         np.random.choice(len_list, size=n_rounds),
         None,
         n_actions,
         len_list,
-        "normal",
+        "iw",
         Ridge(**hyperparams["ridge"]),
-        None,
+        generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
         "context, action, reward, and pscore must be the same size.",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.arange(n_rounds),  #
         np.random.choice(len_list, size=n_rounds),
         None,
         n_actions,
         len_list,
-        "normal",
+        "iw",
         Ridge(**hyperparams["ridge"]),
-        None,
+        generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
         "pscore must be positive",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         "3",  #
@@ -307,7 +307,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         np.random.choice(len_list, size=(n_rounds, 3)),  #
@@ -323,7 +323,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         np.random.choice(len_list, size=n_rounds - 1),  #
@@ -339,7 +339,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         np.random.choice(["a", "1"], size=n_rounds),  #
@@ -355,7 +355,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds),
+        np.random.choice(n_actions, size=n_rounds),
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         np.random.choice([-1, -3], size=n_rounds),  #
@@ -371,7 +371,7 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds - 1),  #
+        np.random.choice(n_actions, size=n_rounds - 1),  #
         np.random.uniform(size=n_rounds),
         None,
         None,
@@ -387,16 +387,16 @@ invalid_input_of_fitting_regression_models = [
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(range(n_actions), size=n_rounds - 1),  #
+        np.random.choice(n_actions, size=n_rounds - 1),  #
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
         None,
         None,
         n_actions,
         len_list,
-        "normal",
+        "iw",
         Ridge(**hyperparams["ridge"]),
-        None,
+        generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
         "context, action, reward, and pscore must be the same size",
@@ -645,6 +645,38 @@ valid_input_of_regression_models = [
         1,
         "valid input without cross fitting",
     ),
+    (
+        np.random.uniform(size=(n_rounds, 7)),
+        np.arange(n_rounds) % n_actions,
+        np.random.uniform(size=n_rounds),
+        None,
+        np.random.choice(len_list, size=n_rounds),
+        np.random.uniform(size=(n_actions, 8)),
+        n_actions,
+        len_list,
+        "normal",
+        Ridge(**hyperparams["ridge"]),
+        None,
+        1,
+        1,
+        "valid input without pscore and action_dist",
+    ),
+    (
+        np.random.uniform(size=(n_rounds, 7)),
+        np.arange(n_rounds) % n_actions,
+        np.random.uniform(size=n_rounds),
+        np.ones(n_rounds) * 2,
+        np.random.choice(len_list, size=n_rounds),
+        np.random.uniform(size=(n_actions, 8)),
+        n_actions,
+        len_list,
+        "iw",
+        Ridge(**hyperparams["ridge"]),
+        generate_action_dist(n_rounds, n_actions, len_list),
+        1,
+        1,
+        "valid input when fitting_method is iw",
+    ),
 ]
 
 
@@ -706,9 +738,7 @@ def test_fitting_regression_models_using_invalid_input_data(
                 context=context,
                 action=action,
                 reward=reward,
-                pscore=pscore,
                 position=position,
-                action_dist=action_dist,
                 n_folds=n_folds,
                 random_state=random_state,
             )
@@ -760,9 +790,7 @@ def test_regression_models_using_valid_input_data(
             context=context,
             action=action,
             reward=reward,
-            pscore=pscore,
             position=position,
-            action_dist=action_dist,
             n_folds=n_folds,
             random_state=random_state,
         )
@@ -805,7 +833,7 @@ def test_performance_of_binary_outcome_models(
         for model_name, model in binary_model_dict.items():
             regression_model = RegressionModel(
                 n_actions=bandit_feedback["n_actions"],
-                len_list=bandit_feedback["position"].ndim,
+                len_list=int(bandit_feedback["position"].max() + 1),
                 action_context=bandit_feedback["action_context"],
                 base_model=model(**hyperparams[model_name]),
                 fitting_method=fit_method,
