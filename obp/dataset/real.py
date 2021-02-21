@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from logging import getLogger, basicConfig, INFO
 from pathlib import Path
 from typing import Optional
+from typing import Union
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -191,7 +193,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     def obtain_batch_bandit_feedback(
         self, test_size: float = 0.3, is_timeseries_split: bool = False
-    ) -> BanditFeedback:
+    ) -> Union[BanditFeedback, Tuple[BanditFeedback, BanditFeedback]]:
         """Obtain batch logged bandit feedback.
 
         Parameters
@@ -225,21 +227,26 @@ class OpenBanditDataset(BaseRealBanditDataset):
                     f"test_size must be a float in the (0,1) interval, but {test_size} is given"
                 )
             n_rounds_train = np.int(self.n_rounds * (1.0 - test_size))
-            return dict(
+            bandit_feedback_train = dict(
                 n_rounds=n_rounds_train,
                 n_actions=self.n_actions,
                 action=self.action[:n_rounds_train],
-                action_test=self.action[n_rounds_train:],
                 position=self.position[:n_rounds_train],
-                position_test=self.position[n_rounds_train:],
                 reward=self.reward[:n_rounds_train],
-                reward_test=self.reward[n_rounds_train:],
                 pscore=self.pscore[:n_rounds_train],
-                pscore_test=self.pscore[n_rounds_train:],
                 context=self.context[:n_rounds_train],
-                context_test=self.context[n_rounds_train:],
                 action_context=self.action_context,
             )
+            bandit_feedback_test = dict(
+                n_actions=self.n_actions,
+                action=self.action[n_rounds_train:],
+                position=self.position[n_rounds_train:],
+                reward=self.reward[n_rounds_train:],
+                pscore=self.pscore[n_rounds_train:],
+                context=self.context[n_rounds_train:],
+                action_context=self.action_context,
+            )
+            return bandit_feedback_train, bandit_feedback_test
         else:
             return dict(
                 n_rounds=self.n_rounds,
