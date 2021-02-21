@@ -107,7 +107,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
                     [ 0.,  0.,  4., ..., 15.,  3.,  0.]]),
             'action': array([6, 8, 5, ..., 2, 5, 9]),
             'reward': array([1., 1., 1., ..., 1., 1., 1.]),
-            'position': array([0, 0, 0, ..., 0, 0, 0]),
+            'position': None,
             'pscore': array([0.82, 0.82, 0.82, ..., 0.82, 0.82, 0.82])
         }
 
@@ -252,7 +252,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
             context=self.X_ev,
             action=action,
             reward=reward,
-            position=np.zeros(self.n_rounds_ev, dtype=int),
+            position=None,  # position effect is not considered in classification data
             pscore=pi_b[np.arange(self.n_rounds_ev), action],
         )
 

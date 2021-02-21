@@ -46,6 +46,10 @@ def run_bandit_simulation(
     policy_ = policy
     selected_actions_list = list()
     dim_context = bandit_feedback["context"].shape[1]
+    if bandit_feedback["position"] is None:
+        bandit_feedback["position"] = np.zeros_like(
+            bandit_feedback["action"], dtype=int
+        )
     for action_, reward_, position_, context_ in tqdm(
         zip(
             bandit_feedback["action"],

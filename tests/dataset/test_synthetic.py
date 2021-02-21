@@ -137,10 +137,7 @@ def test_synthetic_obtain_batch_bandit_feedback():
         bandit_feedback["action"].ndim == 1
         and len(bandit_feedback["action"]) == n_rounds
     )
-    assert (
-        bandit_feedback["position"].ndim == 1
-        and len(bandit_feedback["position"]) == n_rounds
-    )
+    assert bandit_feedback["position"] is None
     assert (
         bandit_feedback["reward"].ndim == 1
         and len(bandit_feedback["reward"]) == n_rounds

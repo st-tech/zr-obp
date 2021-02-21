@@ -45,10 +45,10 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(tau=1, estimator_name="switch-dr (tau=1)"),
-    SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
-    DoublyRobustWithShrinkage(lambda_=1, estimator_name="dr-os (lambda=1)"),
-    DoublyRobustWithShrinkage(lambda_=100, estimator_name="dr-os (lambda=100)"),
+    SwitchDoublyRobust(tau=1., estimator_name="switch-dr (tau=1)"),
+    SwitchDoublyRobust(tau=100., estimator_name="switch-dr (tau=100)"),
+    DoublyRobustWithShrinkage(lambda_=1., estimator_name="dr-os (lambda=1)"),
+    DoublyRobustWithShrinkage(lambda_=100., estimator_name="dr-os (lambda=100)"),
 ]
 
 if __name__ == "__main__":
@@ -119,15 +119,15 @@ if __name__ == "__main__":
         behavior_policy_function=linear_behavior_policy,
         random_state=random_state,
     )
-    # define evaluation policy using IPWLearner
-    evaluation_policy = IPWLearner(
-        n_actions=dataset.n_actions,
-        base_classifier=base_model_dict[base_model_for_evaluation_policy](
-            **hyperparams[base_model_for_evaluation_policy]
-        ),
-    )
 
     def process(i: int):
+        # define evaluation policy using IPWLearner
+        evaluation_policy = IPWLearner(
+            n_actions=dataset.n_actions,
+            base_classifier=base_model_dict[base_model_for_evaluation_policy](
+                **hyperparams[base_model_for_evaluation_policy]
+            ),
+        )
         # sample new training and test sets of synthetic logged bandit feedback
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
@@ -142,13 +142,6 @@ if __name__ == "__main__":
         action_dist = evaluation_policy.predict(
             context=bandit_feedback_test["context"],
         )
-        # estimate the ground-truth policy values of the evaluation policy
-        # using the full expected reward contained in the test set of synthetic bandit feedback
-        ground_truth_policy_value = np.average(
-            bandit_feedback_test["expected_reward"],
-            weights=action_dist[:, :, 0],
-            axis=1,
-        ).mean()
         # estimate the mean reward function of the test set of synthetic bandit feedback with ML model
         regression_model = RegressionModel(
             n_actions=dataset.n_actions,
@@ -166,22 +159,31 @@ if __name__ == "__main__":
         )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
-            bandit_feedback=bandit_feedback_test, ope_estimators=ope_estimators,
+            bandit_feedback=bandit_feedback_test,
+            ope_estimators=ope_estimators,
         )
         relative_ee_i = ope.evaluate_performance_of_estimators(
-            ground_truth_policy_value=ground_truth_policy_value,
+            ground_truth_policy_value=dataset.calc_ground_truth_policy_value(
+                expected_reward=bandit_feedback_test["expected_reward"],
+                action_dist=action_dist,
+            ),
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
 
         return relative_ee_i
 
-    processed = Parallel(backend="multiprocessing", n_jobs=n_jobs, verbose=50,)(
-        [delayed(process)(i) for i in np.arange(n_runs)]
-    )
+    processed = Parallel(
+        backend="multiprocessing",
+        n_jobs=n_jobs,
+        verbose=50,
+    )([delayed(process)(i) for i in np.arange(n_runs)])
     relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
     for i, relative_ee_i in enumerate(processed):
-        for (estimator_name, relative_ee_,) in relative_ee_i.items():
+        for (
+            estimator_name,
+            relative_ee_,
+        ) in relative_ee_i.items():
             relative_ee_dict[estimator_name][i] = relative_ee_
     relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
 
