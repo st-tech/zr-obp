@@ -348,13 +348,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     """Off-policy learner using neural networks with off-policy estimators."""
 
     context_size: int
-    objective: str
+    objective = doubly_robust_tensor
     hidden_layer_size: Tuple[int, ...] = (100,)
     activation: str = "relu"
     solver: str = "adam"
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
-    learning_rate: str = "constant"
     learning_rate_init: float = 0.0001
     max_iter: int = 200
     shuffle: bool = True
@@ -385,7 +384,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         elif self.activation == "relu":
             activation_layer = nn.ReLU
         else:
-            raise NotImplementedError("")
+            raise NotImplementedError(
+                "activation should be one of 'identity', 'logistic', 'tanh', or 'relu'"
+            )
 
         layer_list = []
         input_size = self.context_size
@@ -396,6 +397,34 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         self.nn_model = nn.Sequential(OrderedDict(layer_list))
 
+        if self.solver == "adam":
+            self.optimizer = optim.Adam(
+                self.nn_model.parameters(),
+                lr=self.learning_rate_init,
+                betas=(self.beta_1, beta_2),
+                eps=self.epsilon,
+                weight_decay=self.alpha,
+            )
+        elif self.solver == "lbfgs":
+            self.optimizer = optim.LBFGS(
+                self.nn_model.parameters(),
+                lr=self.learning_rate_init,
+                max_iter=self.max_iter,
+                max_eval=self.max_fun,
+            )
+        elif self.solver == "sgd":
+            self.optimizer = optim.SGD(
+                self.nn_model.parameters(),
+                lr=self.learning_rate_init,
+                momentum=self.momentum,
+                weight_decay=self.alpha,
+                nesterov=self.nestrovs_momentum,
+            )
+        else:
+            raise NotImplementedError(
+                "solver should be one of 'adam', 'lbfgs', or 'sgd'"
+            )
+
     def fit(
         self,
         context: np.ndarray,
@@ -403,7 +432,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         reward: np.ndarray,
         pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
-        expected_reward_by_reg_model: Optional[np.ndarray] = None,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
     ) -> None:
         """Fits an offline bandit policy using the given logged bandit feedback data.
 
@@ -427,7 +456,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             When `len_list` > 1, position has to be set.
             Currently, this feature is not supported.
 
-        expected_reward_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+        estimated_rewards: array-like, shape (n_rounds, n_actions, len_list), default=None
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
         """
         check_bandit_feedback_inputs(
@@ -441,7 +470,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             n_actions = np.int(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
         if estimated_rewards_by_reg_model is None:
-            estiimated_rewards_by_reg_model = np.zeros(
+            estimated_rewards_by_reg_model = np.zeros(
                 (context.shape[0], self.n_actions, self.len_list)
             )
 
@@ -470,43 +499,82 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             pscore_tensor,
             estimated_rewards_by_reg_model_tensor,
         )
-        loader = torch.util.data.DataLoader(
-            dataset,
-            batch_size=batch_size_,
-            shuffle=self.shuffle,
-        )
 
-        if self.solver == "adam":
-            optimizer = optim.Adam(
-                lr=self.learning_rate_init,
-                betas=(self.beta_1, beta_2),
-                eps=self.epsilon,
-                weight_decay=self.alpha,
+        if self.early_stopping:
+            validation_size = int(context.shape[0] * self.validation_fraction)
+            train_size = context.shape[0] - validation_size
+            train_dataset, validation_dataset = torch.util.data.random_split(
+                dataset, [train_size, validation_size]
             )
-        elif self.solver == "lbfgs":
-            optimizer = optim.LBFGS(
-                lr=self.learning_rate_init,
-                max_iter=self.max_iter,
-                max_eval=self.max_fun,
-                tolerance_grad=self.tol,
+            train_loader = torch.util.data.DataLoader(
+                train_dataset,
+                batch_size=batch_size_,
+                shuffle=self.shuffle,
             )
-        elif self.solver == "sgd":
-            optimizer = optim.SGD(
-                lr=self.learning_rate_init,
-                momentum=self.momentum,
-                weight_decay=self.alpha,
-                nesterov=self.nestrovs_momentum,
+            validation_loader = torch.util.data.DataLoader(
+                validation_dataset,
+                batch_size=batch_size_,
+                shuffle=self.shuffle,
+            )
+            n_not_improved = 0
+        else:
+            train_loader = torch.util.data.DataLoader(
+                dataset,
+                batch_size=batch_size_,
+                shuffle=self.shuffle,
             )
 
         if self.solver in ("adam", "sgd"):
+            previous_loss = None
             for epoch in range(self.max_iter):
                 self.nn_model.train()
-                for bach_idx, (x, a, r, p, q_hat) in enumerate(loader):
-                    optimizer.zero_grad()
+                for bacth_idx, (x, a, r, p, q_hat) in enumerate(train_loader):
+                    self.optimizer.zero_grad()
                     action_dist = self.nn_model(x)
-                    loss = -1.0 * doubly_robust_tensor(r, a, p, action_dist, q_hat)
+                    loss = -1.0 * self.objective(
+                        reward=r,
+                        action=a,
+                        pscore=p,
+                        action_dist=action_dist,
+                        estimated_reward_by_reg_model=q_hat,
+                    )
                     loss.backward()
-                    optimizer.step()
+                    self.optimizer.step()
+
+                if self.early_stopping and previous_loss is not None:
+                    self.nn_model.eval()
+                    for bacth_idx, (x, a, r, p, q_hat) in enumerate(validation_loader):
+                        action_dist = self.nn_model(x)
+                        loss = -1.0 * self.objective(
+                            reward=r,
+                            action=a,
+                            pscore=p,
+                            action_dist=action_dist,
+                            estimated_reward_by_reg_model=q_hat,
+                        )
+                        if loss - previous_loss < self.tol:
+                            n_not_improved += 1
+                        else:
+                            n_not_improved = 0
+                        if n_not_improved > self.n_iter_no_change:
+                            break
+        elif self.solver == "lbfgs":
+            for bactch_idx, (x, a, r, p, q_hat) in enumerate(train_loader):
+
+                def closure():
+                    self.optimizer.zero_grad()
+                    action_dist = self.nn_model(x)
+                    loss = -1.0 * self.objective(
+                        reward=r,
+                        action=a,
+                        pscore=p,
+                        action_dist=action_dist,
+                        estimated_reward_by_reg_model=q_hat,
+                    )
+                    loss.backward()
+                    return loss
+
+                self.optimizer.step(closure)
 
     def predict(self, context: np.ndarray) -> np.ndarray:
         """Predict best actions for new data.
@@ -528,14 +596,19 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             If you want a non-repetitive action set, please use the `sample_action` method.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+        self.model.eval()
+        x = torch.from_numpy(context)
+        y = self.nn_model(x)
+        predicted_actions_at_position = torch.argmax(y, dim=1).numpy()
+        n_rounds = context.shape[0]
+        action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
+        action_dist[
+            np.arange(n_rounds),
+            predicted_actions_at_position,
+            np.ones(n_rounds, dtype=int) * position_,
+        ] = 1
 
-        self.nn_model.eval()
-        context_tensor = torch.from_numpy(context)
-        output = self.nn_model(context_tensor)
-
-        return ouput.numpy()
+        return action_dist
 
     def predict_score(self, context: np.ndarray) -> np.ndarray:
         """Predict non-negative scores for all possible products of action and position.
@@ -555,14 +628,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             isinstance(context, np.ndarray) and context.ndim == 2
         ), "context must be 2-dimensional ndarray"
 
-        n_rounds = context.shape[0]
-        score_predicted = np.zeros((n_rounds, self.n_actions, self.len_list))
-        for position_ in np.arange(self.len_list):
-            score_predicteds_at_position = self.base_classifier_list[
-                position_
-            ].predict_proba(context)
-            score_predicted[:, :, position_] = score_predicteds_at_position
-        return score_predicted
+        self.model.eval()
+        x = torch.from_numpy(context)
+        y = self.nn_model(x)
+        return y.numpy()
 
     def sample_action(
         self,
