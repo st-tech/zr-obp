@@ -299,9 +299,14 @@ class OpenBanditDataset(BaseRealBanditDataset):
             - action_context: item-related context vectors
 
         """
-        bandit_feedback = self.obtain_batch_bandit_feedback(
-            test_size=test_size, is_timeseries_split=is_timeseries_split
-        )
+        if is_timeseries_split:
+            bandit_feedback = self.obtain_batch_bandit_feedback(
+                test_size=test_size, is_timeseries_split=is_timeseries_split
+            )[0]
+        else:
+            bandit_feedback = self.obtain_batch_bandit_feedback(
+                test_size=test_size, is_timeseries_split=is_timeseries_split
+            )
         n_rounds = bandit_feedback["n_rounds"]
         random_ = check_random_state(random_state)
         bootstrap_idx = random_.choice(np.arange(n_rounds), size=n_rounds, replace=True)
