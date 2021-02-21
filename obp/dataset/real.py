@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from logging import getLogger, basicConfig, INFO
 from pathlib import Path
 from typing import Optional
+from typing import Union
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -147,13 +149,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
             This parameter is used as a ground-truth policy value in the evaluation of OPE estimators.
 
         """
-        return (
-            cls(behavior_policy=behavior_policy, campaign=campaign, data_path=data_path)
-            .obtain_batch_bandit_feedback(
-                test_size=test_size, is_timeseries_split=is_timeseries_split
-            )["reward_test"]
-            .mean()
+        bandit_feedback = cls(
+            behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
+        ).obtain_batch_bandit_feedback(
+            test_size=test_size, is_timeseries_split=is_timeseries_split
         )
+        if is_timeseries_split:
+            bandit_feedback_test = bandit_feedback[1]
+        else:
+            bandit_feedback_test = bandit_feedback
+        return bandit_feedback_test["reward"].mean()
 
     def load_raw_data(self) -> None:
         """Load raw open bandit dataset."""
@@ -191,7 +196,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     def obtain_batch_bandit_feedback(
         self, test_size: float = 0.3, is_timeseries_split: bool = False
-    ) -> BanditFeedback:
+    ) -> Union[BanditFeedback, Tuple[BanditFeedback, BanditFeedback]]:
         """Obtain batch logged bandit feedback.
 
         Parameters
@@ -225,21 +230,27 @@ class OpenBanditDataset(BaseRealBanditDataset):
                     f"test_size must be a float in the (0,1) interval, but {test_size} is given"
                 )
             n_rounds_train = np.int(self.n_rounds * (1.0 - test_size))
-            return dict(
+            bandit_feedback_train = dict(
                 n_rounds=n_rounds_train,
                 n_actions=self.n_actions,
                 action=self.action[:n_rounds_train],
-                action_test=self.action[n_rounds_train:],
                 position=self.position[:n_rounds_train],
-                position_test=self.position[n_rounds_train:],
                 reward=self.reward[:n_rounds_train],
-                reward_test=self.reward[n_rounds_train:],
                 pscore=self.pscore[:n_rounds_train],
-                pscore_test=self.pscore[n_rounds_train:],
                 context=self.context[:n_rounds_train],
-                context_test=self.context[n_rounds_train:],
                 action_context=self.action_context,
             )
+            bandit_feedback_test = dict(
+                n_rounds=n_rounds_train,
+                n_actions=self.n_actions,
+                action=self.action[n_rounds_train:],
+                position=self.position[n_rounds_train:],
+                reward=self.reward[n_rounds_train:],
+                pscore=self.pscore[n_rounds_train:],
+                context=self.context[n_rounds_train:],
+                action_context=self.action_context,
+            )
+            return bandit_feedback_train, bandit_feedback_test
         else:
             return dict(
                 n_rounds=self.n_rounds,
@@ -247,7 +258,6 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 action=self.action,
                 position=self.position,
                 reward=self.reward,
-                reward_test=self.reward,
                 pscore=self.pscore,
                 context=self.context,
                 action_context=self.action_context,
@@ -289,9 +299,14 @@ class OpenBanditDataset(BaseRealBanditDataset):
             - action_context: item-related context vectors
 
         """
-        bandit_feedback = self.obtain_batch_bandit_feedback(
-            test_size=test_size, is_timeseries_split=is_timeseries_split
-        )
+        if is_timeseries_split:
+            bandit_feedback = self.obtain_batch_bandit_feedback(
+                test_size=test_size, is_timeseries_split=is_timeseries_split
+            )[0]
+        else:
+            bandit_feedback = self.obtain_batch_bandit_feedback(
+                test_size=test_size, is_timeseries_split=is_timeseries_split
+            )
         n_rounds = bandit_feedback["n_rounds"]
         random_ = check_random_state(random_state)
         bootstrap_idx = random_.choice(np.arange(n_rounds), size=n_rounds, replace=True)
