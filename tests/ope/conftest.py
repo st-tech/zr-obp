@@ -92,9 +92,7 @@ def expected_reward_0() -> np.ndarray:
 @pytest.fixture(scope="session")
 def random_action_dist(synthetic_bandit_feedback) -> np.ndarray:
     n_actions = synthetic_bandit_feedback["n_actions"]
-    evaluation_policy = Random(
-        n_actions=n_actions, len_list=synthetic_bandit_feedback["position"].ndim
-    )
+    evaluation_policy = Random(n_actions=n_actions, len_list=1)
     action_dist = evaluation_policy.compute_batch_action_dist(
         n_rounds=synthetic_bandit_feedback["n_rounds"]
     )

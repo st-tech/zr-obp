@@ -100,7 +100,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
                     [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]),
             'action': array([7, 4, 0, ..., 7, 9, 6]),
-            'position': array([0, 0, 0, ..., 0, 0, 0]),
+            'position': None,
             'reward': array([0, 1, 1, ..., 0, 1, 0]),
             'expected_reward': array([[0.80210203, 0.73828559, 0.83199558, ..., 0.81190503, 0.70617705,
                     0.68985306],
@@ -308,7 +308,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             context=context,
             action_context=self.action_context,
             action=action,
-            position=np.zeros(n_rounds, dtype=int),
+            position=None,  # position effect is not considered in synthetic data
             reward=reward,
             expected_reward=expected_reward_,
             pscore=pscore,

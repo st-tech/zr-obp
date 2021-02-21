@@ -833,7 +833,6 @@ def test_performance_of_binary_outcome_models(
         for model_name, model in binary_model_dict.items():
             regression_model = RegressionModel(
                 n_actions=bandit_feedback["n_actions"],
-                len_list=int(bandit_feedback["position"].max() + 1),
                 action_context=bandit_feedback["action_context"],
                 base_model=model(**hyperparams[model_name]),
                 fitting_method=fit_method,
@@ -854,7 +853,6 @@ def test_performance_of_binary_outcome_models(
                     action=bandit_feedback["action"],
                     reward=bandit_feedback["reward"],
                     pscore=bandit_feedback["pscore"],
-                    position=bandit_feedback["position"],
                     action_dist=action_dist,
                     n_folds=3,  # 3-fold cross-fitting
                     random_state=random_state,
@@ -864,7 +862,7 @@ def test_performance_of_binary_outcome_models(
                 y_score=estimated_rewards_by_reg_model[
                     np.arange(bandit_feedback["reward"].shape[0]),
                     bandit_feedback["action"],
-                    bandit_feedback["position"],
+                    np.zeros_like(bandit_feedback["action"], dtype=int),
                 ],
             )
             # compare dr criteria
