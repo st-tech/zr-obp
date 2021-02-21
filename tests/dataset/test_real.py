@@ -2,6 +2,8 @@ import pytest
 import numpy as np
 import pandas as pd
 
+from typing import Tuple
+
 from obp.dataset import OpenBanditDataset
 
 
@@ -63,22 +65,26 @@ def test_obtain_batch_bandit_feedback():
     assert "action_context" in bandit_feedback.keys()
 
     # is_timeseries_split=True
-    dataset2 = OpenBanditDataset(behavior_policy="random", campaign="all")
-    bandit_feedback2 = dataset2.obtain_batch_bandit_feedback(is_timeseries_split=True)
+    bandit_feedback_timeseries = dataset.obtain_batch_bandit_feedback(
+        is_timeseries_split=True
+    )
+    assert isinstance(bandit_feedback_timeseries, Tuple)
+    bandit_feedback_train = bandit_feedback_timeseries[0]
+    bandit_feedback_test = bandit_feedback_timeseries[1]
 
-    assert "n_rounds" in bandit_feedback2.keys()
-    assert "n_actions" in bandit_feedback2.keys()
-    assert "action" in bandit_feedback2.keys()
-    assert "action_test" in bandit_feedback2.keys()
-    assert "position" in bandit_feedback2.keys()
-    assert "position_test" in bandit_feedback2.keys()
-    assert "reward" in bandit_feedback2.keys()
-    assert "reward_test" in bandit_feedback2.keys()
-    assert "pscore" in bandit_feedback2.keys()
-    assert "pscore_test" in bandit_feedback2.keys()
-    assert "context" in bandit_feedback2.keys()
-    assert "context_test" in bandit_feedback2.keys()
-    assert "action_context" in bandit_feedback2.keys()
+    bf_train_elems = {
+        "n_rounds",
+        "n_actions",
+        "action",
+        "position",
+        "reward",
+        "pscore",
+        "context",
+        "action_context",
+    }
+    bf_test_elems = bf_train_elems - {"n_rounds"}
+    assert all(k in bandit_feedback_train.keys() for k in bf_train_elems)
+    assert all(k in bandit_feedback_test.keys() for k in bf_test_elems)
 
 
 def test_calc_on_policy_policy_value_estimate():
