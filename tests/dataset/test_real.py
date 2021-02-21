@@ -72,7 +72,7 @@ def test_obtain_batch_bandit_feedback():
     bandit_feedback_train = bandit_feedback_timeseries[0]
     bandit_feedback_test = bandit_feedback_timeseries[1]
 
-    bf_train_elems = {
+    bf_elems = {
         "n_rounds",
         "n_actions",
         "action",
@@ -82,9 +82,8 @@ def test_obtain_batch_bandit_feedback():
         "context",
         "action_context",
     }
-    bf_test_elems = bf_train_elems - {"n_rounds"}
-    assert all(k in bandit_feedback_train.keys() for k in bf_train_elems)
-    assert all(k in bandit_feedback_test.keys() for k in bf_test_elems)
+    assert all(k in bandit_feedback_train.keys() for k in bf_elems)
+    assert all(k in bandit_feedback_test.keys() for k in bf_elems)
 
 
 def test_calc_on_policy_policy_value_estimate():

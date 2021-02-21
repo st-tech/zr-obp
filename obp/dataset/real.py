@@ -149,13 +149,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
             This parameter is used as a ground-truth policy value in the evaluation of OPE estimators.
 
         """
-        return (
-            cls(behavior_policy=behavior_policy, campaign=campaign, data_path=data_path)
-            .obtain_batch_bandit_feedback(
-                test_size=test_size, is_timeseries_split=is_timeseries_split
-            )["reward_test"]
-            .mean()
+        bandit_feedback = cls(
+            behavior_policy=behavior_policy, campaign=campaign, data_path=data_path
+        ).obtain_batch_bandit_feedback(
+            test_size=test_size, is_timeseries_split=is_timeseries_split
         )
+        if is_timeseries_split:
+            bandit_feedback_test = bandit_feedback[1]
+        else:
+            bandit_feedback_test = bandit_feedback
+        return bandit_feedback_test["reward"].mean()
 
     def load_raw_data(self) -> None:
         """Load raw open bandit dataset."""
@@ -238,6 +241,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 action_context=self.action_context,
             )
             bandit_feedback_test = dict(
+                n_rounds=n_rounds_train,
                 n_actions=self.n_actions,
                 action=self.action[n_rounds_train:],
                 position=self.position[n_rounds_train:],
@@ -254,7 +258,6 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 action=self.action,
                 position=self.position,
                 reward=self.reward,
-                reward_test=self.reward,
                 pscore=self.pscore,
                 context=self.context,
                 action_context=self.action_context,
