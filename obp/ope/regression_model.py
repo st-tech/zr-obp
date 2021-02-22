@@ -235,7 +235,7 @@ class RegressionModel(BaseEstimator):
         action_dist: Optional[np.ndarray] = None,
         n_folds: int = 1,
         random_state: Optional[int] = None,
-    ) -> None:
+    ) -> np.ndarray:
         """Fit the regression model on given logged bandit feedback data and predict the reward function of the same data.
 
         Note
