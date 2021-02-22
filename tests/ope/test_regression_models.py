@@ -454,7 +454,7 @@ invalid_input_of_fitting_regression_models = [
         np.arange(n_rounds) % n_actions,
         np.random.uniform(size=n_rounds),
         np.ones(n_rounds) * 2,
-        None,  #
+        np.ones((n_rounds, 2)),  #
         np.random.uniform(size=(n_actions, 8)),
         n_actions,
         len_list,
@@ -463,7 +463,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "when len_list > 1, position must be a 1-dimensional ndarray",
+        "position must be 1-dimensional",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -650,16 +650,16 @@ valid_input_of_regression_models = [
         np.arange(n_rounds) % n_actions,
         np.random.uniform(size=n_rounds),
         None,
-        np.random.choice(len_list, size=n_rounds),
+        None,
         np.random.uniform(size=(n_actions, 8)),
         n_actions,
-        len_list,
+        1,
         "normal",
         Ridge(**hyperparams["ridge"]),
         None,
         1,
         1,
-        "valid input without pscore and action_dist",
+        "valid input without pscore, position, and action_dist",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

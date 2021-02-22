@@ -135,13 +135,9 @@ class RegressionModel(BaseEstimator):
         )
         n_rounds = context.shape[0]
 
-        if self.len_list == 1:
+        if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            if not (isinstance(position, np.ndarray) and position.ndim == 1):
-                raise ValueError(
-                    "when len_list > 1, position must be a 1-dimensional ndarray"
-                )
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
@@ -307,13 +303,9 @@ class RegressionModel(BaseEstimator):
                 f"random_state must be an integer, but {random_state} is given"
             )
 
-        if self.len_list == 1:
+        if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            if not (isinstance(position, np.ndarray) and position.ndim == 1):
-                raise ValueError(
-                    "when len_list > 1, position must be a 1-dimensional ndarray"
-                )
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
