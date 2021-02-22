@@ -49,33 +49,6 @@ python train_regression_model.py\
     --is_timeseries_split False
 ```
 
-<!--
-```
-for model in random_forest
-do
-    for pi_b in bts
-    do
-        for camp in all
-        do
-            for is_mrdr in True False
-            do
-                for is_timeseries in True False
-                do
-                    python train_regression_model.py\
-                        --n_runs 30\
-                        --base_model $model\
-                        --behavior_policy $pi_b\
-                        --campaign $camp\
-                        --is_mrdr $is_mrdr\
-                        --n_jobs 1\
-                        --is_timeseries_split $is_timeseries
-                done
-            done
-        done
-    done
-done
-``` -->
-
 
 ## Evaluating Off-Policy Estimators
 
@@ -133,27 +106,3 @@ python benchmark_off_policy_estimators.py\
 ```
 
 The results of our benchmark experiments can be found in Section 5 of [our paper](https://arxiv.org/abs/2008.07146).
-
-<!--
-```
-for model in logistic_regression
-do
-    for pi_b in random
-    do
-        for camp in women all
-        do
-            for is_timeseries in True False
-            do
-                python benchmark_off_policy_estimators.py\
-                    --n_runs 30\
-                    --base_model $model\
-                    --behavior_policy $pi_b\
-                    --campaign $camp\
-                    --n_jobs 10\
-                    --is_timeseries_split $is_timeseries
-            done
-        done
-    done
-done
-```
--->

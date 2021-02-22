@@ -1,4 +1,5 @@
 import argparse
+from copy import deepcopy
 import yaml
 import pickle
 from distutils.util import strtobool
@@ -8,7 +9,7 @@ from typing import Dict
 import numpy as np
 from pandas import DataFrame
 from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss, roc_auc_score
@@ -39,26 +40,16 @@ def relative_ce(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 def evaluate_reg_model(
     bandit_feedback: BanditFeedback,
-    is_timeseries_split: bool,
     estimated_rewards_by_reg_model: np.ndarray,
-    is_for_reg_model: bool,
 ) -> Dict[str, float]:
     """Evaluate the estimation performance of regression model by AUC and RCE."""
     performance_reg_model = dict(auc=0.0, rce=0.0)
-    if is_timeseries_split:
-        factual_rewards = bandit_feedback["reward_test"]
-        estimated_factual_rewards = estimated_rewards_by_reg_model[
-            np.arange(factual_rewards.shape[0]),
-            bandit_feedback["action_test"].astype(int),
-            bandit_feedback["position_test"].astype(int),
-        ]
-    else:
-        factual_rewards = bandit_feedback["reward"][~is_for_reg_model]
-        estimated_factual_rewards = estimated_rewards_by_reg_model[
-            np.arange((~is_for_reg_model).sum()),
-            bandit_feedback["action"][~is_for_reg_model].astype(int),
-            bandit_feedback["position"][~is_for_reg_model].astype(int),
-        ]
+    factual_rewards = bandit_feedback["reward"]
+    estimated_factual_rewards = estimated_rewards_by_reg_model[
+        np.arange(factual_rewards.shape[0]),
+        bandit_feedback["action"].astype(int),
+        bandit_feedback["position"].astype(int),
+    ]
     performance_reg_model["auc"] = roc_auc_score(
         y_true=factual_rewards, y_score=estimated_factual_rewards
     )
@@ -139,6 +130,7 @@ if __name__ == "__main__":
     test_size = args.test_size
     is_timeseries_split = args.is_timeseries_split
     is_mrdr = args.is_mrdr
+    fitting_method = "mrdr" if is_mrdr else "normal"
     n_sim_to_compute_action_dist = args.n_sim_to_compute_action_dist
     n_jobs = args.n_jobs
     random_state = args.random_state
@@ -159,105 +151,93 @@ if __name__ == "__main__":
     )
     # action distribution by evaluation policy
     # (more robust doubly robust needs evaluation policy information)
-    if is_mrdr:
-        if behavior_policy == "random":
-            policy = BernoulliTS(
-                n_actions=obd.n_actions,
-                len_list=obd.len_list,
-                is_zozotown_prior=True,  # replicate the policy in the ZOZOTOWN production
-                campaign=campaign,
-                random_state=random_state,
-            )
-        else:
-            policy = Random(
-                n_actions=obd.n_actions,
-                len_list=obd.len_list,
-                random_state=random_state,
-            )
-        action_dist_single_round = policy.compute_batch_action_dist(
-            n_sim=n_sim_to_compute_action_dist
+    if behavior_policy == "random":
+        policy = BernoulliTS(
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            is_zozotown_prior=True,  # replicate the policy in the ZOZOTOWN production
+            campaign=campaign,
+            random_state=random_state,
         )
+    else:
+        policy = Random(
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            random_state=random_state,
+        )
+    action_dist_single_round = policy.compute_batch_action_dist(
+        n_sim=n_sim_to_compute_action_dist
+    )
 
-    def process(b: int):
+    def process(b: int) -> Dict[str, float]:
         # sample bootstrap from batch logged bandit feedback
-        bandit_feedback = obd.sample_bootstrap_bandit_feedback(
-            test_size=test_size,
-            is_timeseries_split=is_timeseries_split,
-            random_state=b,
+        if is_timeseries_split:
+            bandit_feedback_train = obd.sample_bootstrap_bandit_feedback(
+                test_size=test_size,
+                is_timeseries_split=True,
+                random_state=b,
+            )
+            bandit_feedback_test = obd.obtain_batch_bandit_feedback(
+                test_size=test_size,
+                is_timeseries_split=True,
+            )[1]
+        else:
+            bandit_feedback_train = obd.sample_bootstrap_bandit_feedback(
+                random_state=b,
+            )
+            bandit_feedback_test = deepcopy(bandit_feedback_train)
+            # split data into two folds (data for training reg_model and for ope)
+            is_for_reg_model = np.random.binomial(
+                n=1, p=0.3, size=bandit_feedback_train["n_rounds"]
+            ).astype(bool)
+            with open(reg_model_path / f"is_for_reg_model_{b}.pkl", "wb") as f:
+                pickle.dump(
+                    is_for_reg_model,
+                    f,
+                )
+            bandit_feedback_train["n_rounds"] = is_for_reg_model.sum()
+            bandit_feedback_test["n_rounds"] = (~is_for_reg_model).sum()
+            for key in ["context", "action", "reward", "pscore", "position"]:
+                bandit_feedback_train[key] = bandit_feedback_train[key][
+                    is_for_reg_model
+                ]
+                bandit_feedback_test[key] = bandit_feedback_test[key][~is_for_reg_model]
+        model_file_name = f"reg_model_mrdr_{b}.pkl" if is_mrdr else f"reg_model_{b}.pkl"
+        reg_model = RegressionModel(
+            n_actions=obd.n_actions,
+            len_list=obd.len_list,
+            action_context=bandit_feedback_train["action_context"],
+            base_model=base_model_dict[base_model](**hyperparams[base_model]),
+            fitting_method=fitting_method,
         )
-        # split data into two folds (data for training reg_model and for ope)
-        is_for_reg_model = np.random.binomial(
-            n=1, p=0.3, size=bandit_feedback["n_rounds"]
-        ).astype(bool)
-        with open(reg_model_path / f"is_for_reg_model_{b}.pkl", "wb") as f:
+        # train regression model on logged bandit feedback data
+        reg_model.fit(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            pscore=bandit_feedback_train["pscore"],
+            position=bandit_feedback_train["position"],
+            action_dist=np.tile(
+                action_dist_single_round, (bandit_feedback_train["n_rounds"], 1, 1)
+            ),
+        )
+        with open(reg_model_path / model_file_name, "wb") as f:
             pickle.dump(
-                is_for_reg_model,
+                reg_model,
                 f,
             )
-        if is_mrdr:
-            reg_model = RegressionModel(
-                n_actions=obd.n_actions,
-                len_list=obd.len_list,
-                action_context=bandit_feedback["action_context"],
-                base_model=base_model_dict[base_model](**hyperparams[base_model]),
-                fitting_method="mrdr",
-            )
-            # train regression model on logged bandit feedback data
-            reg_model.fit(
-                context=bandit_feedback["context"][is_for_reg_model],
-                action=bandit_feedback["action"][is_for_reg_model],
-                reward=bandit_feedback["reward"][is_for_reg_model],
-                pscore=bandit_feedback["pscore"][is_for_reg_model],
-                position=bandit_feedback["position"][is_for_reg_model],
-                action_dist=np.tile(
-                    action_dist_single_round, (is_for_reg_model.sum(), 1, 1)
-                ),
-            )
-            with open(reg_model_path / f"reg_model_mrdr_{b}.pkl", "wb") as f:
-                pickle.dump(
-                    reg_model,
-                    f,
-                )
-        else:
-            reg_model = RegressionModel(
-                n_actions=obd.n_actions,
-                len_list=obd.len_list,
-                action_context=bandit_feedback["action_context"],
-                base_model=base_model_dict[base_model](**hyperparams[base_model]),
-                fitting_method="normal",
-            )
-            # train regression model on logged bandit feedback data
-            reg_model.fit(
-                context=bandit_feedback["context"][is_for_reg_model],
-                action=bandit_feedback["action"][is_for_reg_model],
-                reward=bandit_feedback["reward"][is_for_reg_model],
-                position=bandit_feedback["position"][is_for_reg_model],
-            )
-            with open(reg_model_path / f"reg_model_{b}.pkl", "wb") as f:
-                pickle.dump(
-                    reg_model,
-                    f,
-                )
-            # evaluate the estimation performance of the regression model by AUC and RCE
-            if is_timeseries_split:
-                estimated_rewards_by_reg_model = reg_model.predict(
-                    context=bandit_feedback["context_test"],
-                )
-            else:
-                estimated_rewards_by_reg_model = reg_model.predict(
-                    context=bandit_feedback["context"][~is_for_reg_model],
-                )
-            performance_reg_model_b = evaluate_reg_model(
-                bandit_feedback=bandit_feedback,
-                is_timeseries_split=is_timeseries_split,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                is_for_reg_model=is_for_reg_model,
-            )
+        # evaluate the estimation performance of the regression model by AUC and RCE
+        estimated_rewards_by_reg_model = reg_model.predict(
+            context=bandit_feedback_test["context"],
+        )
+        performance_reg_model_b = evaluate_reg_model(
+            bandit_feedback=bandit_feedback_test,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
 
-            return performance_reg_model_b
+        return performance_reg_model_b
 
     processed = Parallel(
-        backend="multiprocessing",
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])
@@ -268,5 +248,5 @@ if __name__ == "__main__":
             for metric, metric_value in performance_reg_model_b.items():
                 performance_reg_model[metric][b] = metric_value
         DataFrame(performance_reg_model).describe().T.round(6).to_csv(
-            log_path / f"performance_reg_model.csv"
+            log_path / "performance_reg_model.csv"
         )

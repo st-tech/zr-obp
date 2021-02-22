@@ -93,14 +93,6 @@ if __name__ == "__main__":
     random_state = args.random_state
     np.random.seed(random_state)
 
-    # synthetic data generator with uniformly random policy
-    dataset = SyntheticBanditDataset(
-        n_actions=n_actions,
-        dim_context=dim_context,
-        reward_function=logistic_reward_function,
-        behavior_policy_function=None,  # uniformly random
-        random_state=random_state,
-    )
     # define evaluation policy
     evaluation_policy_dict = dict(
         bernoulli_ts=BernoulliTS(n_actions=n_actions, random_state=random_state),
@@ -125,6 +117,14 @@ if __name__ == "__main__":
     evaluation_policy = evaluation_policy_dict[evaluation_policy_name]
 
     def process(i: int):
+        # synthetic data generator with uniformly random policy
+        dataset = SyntheticBanditDataset(
+            n_actions=n_actions,
+            dim_context=dim_context,
+            reward_function=logistic_reward_function,
+            behavior_policy_function=None,  # uniformly random
+            random_state=i,
+        )
         # sample new data of synthetic logged bandit feedback
         bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         # simulate the evaluation policy
@@ -152,7 +152,6 @@ if __name__ == "__main__":
         return relative_ee_i
 
     processed = Parallel(
-        backend="multiprocessing",
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])
