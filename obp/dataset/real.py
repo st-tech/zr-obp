@@ -241,7 +241,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 action_context=self.action_context,
             )
             bandit_feedback_test = dict(
-                n_rounds=n_rounds_train,
+                n_rounds=(self.n_rounds - n_rounds_train),
                 n_actions=self.n_actions,
                 action=self.action[n_rounds_train:],
                 position=self.position[n_rounds_train:],
