@@ -148,11 +148,8 @@ class SyntheticBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"reward_type must be either 'binary' or 'continuous, but {self.reward_type} is given.'"
             )
-        if not isinstance(self.random_state, int):
-            raise ValueError(
-                f"random_state must be an integer, but {self.random_state} is given"
-            )
-
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
         if self.reward_function is None:
             self.expected_reward = self.sample_contextfree_expected_reward()
