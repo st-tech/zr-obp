@@ -27,18 +27,18 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(tau=5, estimator_name="switch-dr (tau=5)"),
-    SwitchDoublyRobust(tau=10, estimator_name="switch-dr (tau=10)"),
-    SwitchDoublyRobust(tau=50, estimator_name="switch-dr (tau=50)"),
-    SwitchDoublyRobust(tau=100, estimator_name="switch-dr (tau=100)"),
-    SwitchDoublyRobust(tau=500, estimator_name="switch-dr (tau=500)"),
-    SwitchDoublyRobust(tau=1000, estimator_name="switch-dr (tau=1000)"),
-    DoublyRobustWithShrinkage(lambda_=5, estimator_name="dr-os (lambda=5)"),
-    DoublyRobustWithShrinkage(lambda_=10, estimator_name="dr-os (lambda=10)"),
-    DoublyRobustWithShrinkage(lambda_=50, estimator_name="dr-os (lambda=50)"),
-    DoublyRobustWithShrinkage(lambda_=100, estimator_name="dr-os (lambda=100)"),
-    DoublyRobustWithShrinkage(lambda_=500, estimator_name="dr-os (lambda=500)"),
-    DoublyRobustWithShrinkage(lambda_=1000, estimator_name="dr-os (lambda=1000)"),
+    SwitchDoublyRobust(tau=5.0, estimator_name="switch-dr (tau=5)"),
+    SwitchDoublyRobust(tau=10.0, estimator_name="switch-dr (tau=10)"),
+    SwitchDoublyRobust(tau=50.0, estimator_name="switch-dr (tau=50)"),
+    SwitchDoublyRobust(tau=100.0, estimator_name="switch-dr (tau=100)"),
+    SwitchDoublyRobust(tau=500.0, estimator_name="switch-dr (tau=500)"),
+    SwitchDoublyRobust(tau=1000.0, estimator_name="switch-dr (tau=1000)"),
+    DoublyRobustWithShrinkage(lambda_=5.0, estimator_name="dr-os (lambda=5)"),
+    DoublyRobustWithShrinkage(lambda_=10.0, estimator_name="dr-os (lambda=10)"),
+    DoublyRobustWithShrinkage(lambda_=50.0, estimator_name="dr-os (lambda=50)"),
+    DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
+    DoublyRobustWithShrinkage(lambda_=500.0, estimator_name="dr-os (lambda=500)"),
+    DoublyRobustWithShrinkage(lambda_=1000.0, estimator_name="dr-os (lambda=1000)"),
 ]
 
 if __name__ == "__main__":
@@ -161,13 +161,21 @@ if __name__ == "__main__":
         with open(reg_model_path / f"is_for_reg_model_{b}.pkl", "rb") as f:
             is_for_reg_model = pickle.load(f)
         # sample bootstrap samples from batch logged bandit feedback
-        bandit_feedback = obd.sample_bootstrap_bandit_feedback(
-            test_size=test_size,
-            is_timeseries_split=is_timeseries_split,
-            random_state=b,
-        )
-        for key_ in ["context", "action", "reward", "pscore", "position"]:
-            bandit_feedback[key_] = bandit_feedback[key_][~is_for_reg_model]
+        if is_timeseries_split:
+            bandit_feedback = obd.sample_bootstrap_bandit_feedback(
+                test_size=test_size,
+                is_timeseries_split=is_timeseries_split,
+                random_state=b,
+            )
+        else:
+            bandit_feedback = obd.sample_bootstrap_bandit_feedback(
+                test_size=test_size,
+                is_timeseries_split=is_timeseries_split,
+                random_state=b,
+            )
+            bandit_feedback["n_rounds"] = (~is_for_reg_model).sum()
+            for key_ in ["context", "action", "reward", "pscore", "position"]:
+                bandit_feedback[key_] = bandit_feedback[key_][~is_for_reg_model]
         # estimate the mean reward function using the pre-trained reg_model
         estimated_rewards_by_reg_model = reg_model.predict(
             context=bandit_feedback["context"],
@@ -197,7 +205,6 @@ if __name__ == "__main__":
         return relative_ee_b
 
     processed = Parallel(
-        backend="multiprocessing",
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])

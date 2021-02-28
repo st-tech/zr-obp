@@ -301,7 +301,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         )
         return np.expand_dims(pi_e, 2)
 
-    def calc_ground_truth_policy_value(self, action_dist: np.ndarray) -> np.ndarray:
+    def calc_ground_truth_policy_value(self, action_dist: np.ndarray) -> float:
         """Calculate the ground-truth policy value of a given action distribution.
 
         Parameters

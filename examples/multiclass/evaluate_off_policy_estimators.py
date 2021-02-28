@@ -48,10 +48,10 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(tau=1., estimator_name="switch-dr (tau=1)"),
-    SwitchDoublyRobust(tau=100., estimator_name="switch-dr (tau=100)"),
-    DoublyRobustWithShrinkage(lambda_=1., estimator_name="dr-os (lambda=1)"),
-    DoublyRobustWithShrinkage(lambda_=100., estimator_name="dr-os (lambda=100)"),
+    SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr (tau=1)"),
+    SwitchDoublyRobust(tau=100.0, estimator_name="switch-dr (tau=100)"),
+    DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
+    DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
 ]
 
 if __name__ == "__main__":
@@ -187,7 +187,6 @@ if __name__ == "__main__":
         return relative_ee_i
 
     processed = Parallel(
-        backend="multiprocessing",
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])

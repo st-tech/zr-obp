@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 from pandas import DataFrame
 from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.experimental import enable_hist_gradient_boosting  # nopa
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
@@ -45,10 +45,10 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(tau=1., estimator_name="switch-dr (tau=1)"),
-    SwitchDoublyRobust(tau=100., estimator_name="switch-dr (tau=100)"),
-    DoublyRobustWithShrinkage(lambda_=1., estimator_name="dr-os (lambda=1)"),
-    DoublyRobustWithShrinkage(lambda_=100., estimator_name="dr-os (lambda=100)"),
+    SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr (tau=1)"),
+    SwitchDoublyRobust(tau=100.0, estimator_name="switch-dr (tau=100)"),
+    DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
+    DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
 ]
 
 if __name__ == "__main__":
@@ -109,18 +109,16 @@ if __name__ == "__main__":
     base_model_for_reg_model = args.base_model_for_reg_model
     n_jobs = args.n_jobs
     random_state = args.random_state
-    np.random.seed(random_state)
-
-    # synthetic data generator
-    dataset = SyntheticBanditDataset(
-        n_actions=n_actions,
-        dim_context=dim_context,
-        reward_function=logistic_reward_function,
-        behavior_policy_function=linear_behavior_policy,
-        random_state=random_state,
-    )
 
     def process(i: int):
+        # synthetic data generator
+        dataset = SyntheticBanditDataset(
+            n_actions=n_actions,
+            dim_context=dim_context,
+            reward_function=logistic_reward_function,
+            behavior_policy_function=linear_behavior_policy,
+            random_state=i,
+        )
         # define evaluation policy using IPWLearner
         evaluation_policy = IPWLearner(
             n_actions=dataset.n_actions,
@@ -174,7 +172,6 @@ if __name__ == "__main__":
         return relative_ee_i
 
     processed = Parallel(
-        backend="multiprocessing",
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])

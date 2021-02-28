@@ -155,7 +155,6 @@ if __name__ == "__main__":
         return relative_ee_b
 
     processed = Parallel(
-        backend="multiprocessing",
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])
