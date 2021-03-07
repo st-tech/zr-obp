@@ -231,8 +231,9 @@ def test_dr_using_invalid_input_data(
 # switch-dr
 
 invalid_input_of_switch = [
-    ("a", "switching hyperparameter must be float"),
+    ("a", "switching hyperparameter must be float or integer"),
     (-1.0, "switching hyperparameter must be larger than or equal to zero"),
+    (np.nan, "switching hyperparameter must not be nan"),
 ]
 
 
@@ -245,10 +246,25 @@ def test_switch_using_invalid_input_data(tau: float, description: str) -> None:
         _ = SwitchDoublyRobust(tau=tau)
 
 
+valid_input_of_switch = [
+    (3.0, "float tau"),
+    (2, "integer tau"),
+]
+
+
+@pytest.mark.parametrize(
+    "tau, description",
+    valid_input_of_switch,
+)
+def test_switch_using_valid_input_data(tau: float, description: str) -> None:
+    _ = SwitchDoublyRobust(tau=tau)
+
+
 # dr-os
 invalid_input_of_shrinkage = [
-    ("a", "shrinkage hyperparameter must be float"),
+    ("a", "shrinkage hyperparameter must be float or integer"),
     (-1.0, "shrinkage hyperparameter must be larger than or equal to zero"),
+    (np.nan, "shrinkage hyperparameter must not be nan"),
 ]
 
 
@@ -259,6 +275,20 @@ invalid_input_of_shrinkage = [
 def test_shrinkage_using_invalid_input_data(lambda_: float, description: str) -> None:
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = DoublyRobustWithShrinkage(lambda_=lambda_)
+
+
+valid_input_of_shrinkage = [
+    (3.0, "float lambda_"),
+    (2, "integer lambda_"),
+]
+
+
+@pytest.mark.parametrize(
+    "lambda_, description",
+    valid_input_of_shrinkage,
+)
+def test_shrinkage_using_valid_input_data(lambda_: float, description: str) -> None:
+    _ = DoublyRobustWithShrinkage(lambda_=lambda_)
 
 
 # dr variants
