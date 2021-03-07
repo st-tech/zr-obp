@@ -32,6 +32,7 @@ setup(
         "seaborn>=0.10.1",
         "scikit-learn>=0.23.1",
         "scipy>=1.4.1",
+        "torch>=1.7.1",
         "tqdm>=4.41.1",
     ],
     license="Apache License",

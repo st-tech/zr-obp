@@ -4,7 +4,7 @@
 """Offline Bandit Algorithms."""
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Tuple, Optional, Union
+from typing import Any, Callable, Tuple, Optional, Union
 
 import numpy as np
 from scipy.special import softmax
@@ -17,7 +17,7 @@ import torch.optim as optim
 from tqdm import tqdm
 
 from .base import BaseOfflinePolicyLearner
-from ..ope.estimators import BaseOffPolicyEstimator
+
 from ..utils import check_bandit_feedback_inputs
 
 
@@ -362,6 +362,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     dim_context: Optional[int] = None
         Number of dimensions of context vectors.
 
+    ope_estimator_fun: Callable[[Any], Tensor]
+        Function returns the value of an OPE estimator.
+
     hidden_layer_size: Tuple[int, ...], default = (100,)
         The i th element specifies the size of the i th layer.
 
@@ -451,7 +454,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     """
 
     dim_context: Optional[int] = None
-    ope_estimator: Optional[BaseOffPolicyEstimator] = None
+    ope_estimator_fun: Optional[Callable[[Any], torch.Tensor]] = None
     hidden_layer_size: Tuple[int, ...] = (100,)
     activation: str = "relu"
     solver: str = "adam"
@@ -484,9 +487,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"dim_context must be a positive integer, but {self.dim_context} is given"
             )
 
-        if not isinstance(self.ope_estimator, BaseOffPolicyEstimator):
+        if not callable(self.ope_estimator_fun):
             raise ValueError(
-                f"ope_estimator must be BaseOffPolicyEstimator, but {self.ope_estimator} is given"
+                f"ope_estimator_fun must be callable, but {self.ope_estimator_fun} is given"
             )
 
         if not isinstance(self.hidden_layer_size, tuple) or any(
@@ -621,7 +624,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             layer_list.append(("a{}".format(i), activation_layer()))
             input_size = h
         layer_list.append(("output", nn.Linear(input_size, self.n_actions)))
-        layer_list.append(("softmax", nn.Softmax()))
+        layer_list.append(("softmax", nn.Softmax(dim=1)))
 
         self.nn_model = nn.Sequential(OrderedDict(layer_list))
 
@@ -672,11 +675,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             raise ValueError("batch_size must be a positive integer or 'auto'")
 
         dataset = NNPolicyDataset(
-            context,
+            torch.from_numpy(context).float(),
             action,
-            reward,
-            pscore,
-            estimated_rewards_by_reg_model,
+            torch.from_numpy(reward).float(),
+            torch.from_numpy(pscore).float(),
+            torch.from_numpy(estimated_rewards_by_reg_model).float(),
             position,
         )
 
@@ -807,12 +810,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 def closure():
                     optimizer.zero_grad()
                     action_dist = self.nn_model(x).unsqueeze(-1)
-                    loss = -1.0 * self.ope_estimator.estimate_policy_value_tensor(
+                    loss = -1.0 * self.ope_estimator_fun(
                         reward=r,
                         action=a,
                         pscore=p,
                         action_dist=action_dist,
-                        estimated_reward_by_reg_model=q_hat,
+                        estimated_rewards_by_reg_model=q_hat,
                         position=pos,
                     )
                     loss.backward()
@@ -829,12 +832,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 for x, a, r, p, q_hat, pos in training_data_loader:
                     optimizer.zero_grad()
                     action_dist = self.nn_model(x).unsqueeze(-1)
-                    loss = -1.0 * self.ope_estimator.estimate_policy_value_tensor(
+                    loss = -1.0 * self.ope_estimator_fun(
                         reward=r,
                         action=a,
                         pscore=p,
                         action_dist=action_dist,
-                        estimated_reward_by_reg_model=q_hat,
+                        estimated_rewards_by_reg_model=q_hat,
                         position=pos,
                     )
                     loss.backward()
@@ -854,12 +857,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                     self.nn_model.eval()
                     for x, a, r, p, q_hat, pos in validation_data_loader:
                         action_dist = self.nn_model(x).unsqueeze(-1)
-                        loss = -1.0 * self.ope_estimator.estimate_policy_value_tensor(
+                        loss = -1.0 * self.ope_estimator_fun(
                             reward=r,
                             action=a,
                             pscore=p,
                             action_dist=action_dist,
-                            estimated_reward_by_reg_model=q_hat,
+                            estimated_rewards_by_reg_model=q_hat,
                             position=pos,
                         )
                         loss_value = loss.item()
@@ -901,7 +904,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         self.nn_model.eval()
-        x = torch.from_numpy(context)
+        x = torch.from_numpy(context).float()
         y = self.nn_model(x).detach().numpy()
         predicted_actions = np.argmax(y, axis=1)
         n_rounds = context.shape[0]
@@ -978,7 +981,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         self.nn_model.eval()
-        x = torch.from_numpy(context)
+        x = torch.from_numpy(context).float()
         y = self.nn_model(x).detach().numpy()
         return y[:, :, np.newaxis]
 

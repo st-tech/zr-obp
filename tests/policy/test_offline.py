@@ -147,12 +147,13 @@ def test_ipw_learner_sample_action():
     assert sampled_action.shape[2] == len_list
 
 
+ipw = InverseProbabilityWeighting()
 invalid_input_of_nn_policy_learner_init = [
     (
         0,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -178,7 +179,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         -1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -204,7 +205,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         -1,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -250,13 +251,13 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "ope_estimator must be BaseOffPolicyEstimator",
+        "ope_estimator_fun must be callable",
     ),
     (
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, ""),
         "relu",
         "adam",
@@ -282,7 +283,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "sigmoid",
         "adam",
@@ -308,7 +309,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adagrad",
@@ -334,7 +335,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -360,7 +361,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -386,7 +387,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -412,7 +413,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -438,7 +439,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -464,7 +465,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -490,7 +491,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -516,7 +517,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -542,7 +543,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -568,7 +569,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -594,7 +595,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "lbfgs",
@@ -620,7 +621,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -646,7 +647,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -672,7 +673,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -698,7 +699,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -724,7 +725,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -750,7 +751,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -779,7 +780,7 @@ valid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
         "adam",
@@ -805,7 +806,7 @@ valid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        InverseProbabilityWeighting(),
+        ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "logistic",
         "sgd",
@@ -831,14 +832,14 @@ valid_input_of_nn_policy_learner_init = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, ope_estimator, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
+    "n_actions, len_list, dim_context, ope_estimator_fun, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
     invalid_input_of_nn_policy_learner_init,
 )
 def test_nn_policy_learner_init_using_invalid_inputs(
     n_actions,
     len_list,
     dim_context,
-    ope_estimator,
+    ope_estimator_fun,
     hidden_layer_size,
     activation,
     solver,
@@ -865,7 +866,7 @@ def test_nn_policy_learner_init_using_invalid_inputs(
             n_actions=n_actions,
             len_list=len_list,
             dim_context=dim_context,
-            ope_estimator=ope_estimator,
+            ope_estimator_fun=ope_estimator_fun,
             hidden_layer_size=hidden_layer_size,
             activation=activation,
             solver=solver,
@@ -889,14 +890,14 @@ def test_nn_policy_learner_init_using_invalid_inputs(
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, ope_estimator, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
+    "n_actions, len_list, dim_context, ope_estimator_fun, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
     valid_input_of_nn_policy_learner_init,
 )
 def test_nn_policy_learner_init_using_valid_inputs(
     n_actions,
     len_list,
     dim_context,
-    ope_estimator,
+    ope_estimator_fun,
     hidden_layer_size,
     activation,
     solver,
@@ -922,7 +923,7 @@ def test_nn_policy_learner_init_using_valid_inputs(
         n_actions=n_actions,
         len_list=len_list,
         dim_context=dim_context,
-        ope_estimator=ope_estimator,
+        ope_estimator_fun=ope_estimator_fun,
         hidden_layer_size=hidden_layer_size,
         activation=activation,
         solver=solver,
@@ -953,9 +954,10 @@ def test_nn_policy_learner_create_train_data_for_opl():
     pscore = np.array([0.5] * 100, dtype=np.float32)
     estimated_rewards_by_reg_model = np.ones((100, 2), dtype=np.float32)
     position = np.zeros((100,), dtype=np.int32)
+    ipw = InverseProbabilityWeighting()
 
     learner1 = NNPolicyLearner(
-        n_actions=2, dim_context=2, ope_estimator=InverseProbabilityWeighting()
+        n_actions=2, dim_context=2, ope_estimator_fun=ipw.estimate_policy_value_tensor
     )
 
     training_loader, validation_loader = learner1._create_train_data_for_opl(
@@ -973,7 +975,7 @@ def test_nn_policy_learner_create_train_data_for_opl():
     learner2 = NNPolicyLearner(
         n_actions=2,
         dim_context=2,
-        ope_estimator=InverseProbabilityWeighting(),
+        ope_estimator_fun=ipw.estimate_policy_value_tensor,
         early_stopping=True,
     )
 
@@ -995,11 +997,14 @@ def test_nn_policy_learner_fit():
     action = np.zeros((100,), dtype=int)
     reward = np.ones((100,), dtype=np.float32)
     pscore = np.array([0.5] * 100, dtype=np.float32)
+    ipw = InverseProbabilityWeighting()
 
     # inconsistency with the shape
     with pytest.raises(ValueError):
         learner = NNPolicyLearner(
-            n_actions=2, dim_context=2, ope_estimator=InverseProbabilityWeighting()
+            n_actions=2,
+            dim_context=2,
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         variant_context = np.ones((101, 2), dtype=np.float32)
         learner.fit(
@@ -1009,7 +1014,9 @@ def test_nn_policy_learner_fit():
     # inconsistency between dim_context and context
     with pytest.raises(ValueError):
         learner = NNPolicyLearner(
-            n_actions=2, dim_context=3, ope_estimator=InverseProbabilityWeighting()
+            n_actions=2,
+            dim_context=3,
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
 
@@ -1022,6 +1029,7 @@ def test_nn_policy_learner_predict():
     action = np.zeros((100,), dtype=int)
     reward = np.ones((100,), dtype=np.float32)
     pscore = np.array([0.5] * 100, dtype=np.float32)
+    ipw = InverseProbabilityWeighting()
 
     # shape error
     with pytest.raises(ValueError):
@@ -1029,7 +1037,7 @@ def test_nn_policy_learner_predict():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator=InverseProbabilityWeighting(),
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([1.0, 1.0], dtype=np.float32)
@@ -1041,7 +1049,7 @@ def test_nn_policy_learner_predict():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator=InverseProbabilityWeighting(),
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
@@ -1053,7 +1061,7 @@ def test_nn_policy_learner_predict():
         n_actions=n_actions,
         len_list=len_list,
         dim_context=2,
-        ope_estimator=InverseProbabilityWeighting(),
+        ope_estimator_fun=ipw.estimate_policy_value_tensor,
     )
     learner.fit(context=context, action=action, reward=reward, pscore=pscore)
     action_dist = learner.predict(context=context_test)
@@ -1070,6 +1078,7 @@ def test_nn_policy_learner_sample_action():
     action = np.zeros((100,), dtype=int)
     reward = np.ones((100,), dtype=np.float32)
     pscore = np.array([0.5] * 100, dtype=np.float32)
+    ipw = InverseProbabilityWeighting()
 
     # shape error
     with pytest.raises(ValueError):
@@ -1077,7 +1086,7 @@ def test_nn_policy_learner_sample_action():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator=InverseProbabilityWeighting(),
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([1.0, 1.0], dtype=np.float32)
@@ -1089,7 +1098,7 @@ def test_nn_policy_learner_sample_action():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator=InverseProbabilityWeighting(),
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
@@ -1099,7 +1108,7 @@ def test_nn_policy_learner_sample_action():
         n_actions=n_actions,
         len_list=len_list,
         dim_context=2,
-        ope_estimator=InverseProbabilityWeighting(),
+        ope_estimator_fun=ipw.estimate_policy_value_tensor,
     )
     learner.fit(context=context, action=action, reward=reward, pscore=pscore)
     action_dist = learner.sample_action(context=context_test)
@@ -1116,6 +1125,7 @@ def test_nn_policy_learner_predict_proba():
     action = np.zeros((100,), dtype=int)
     reward = np.ones((100,), dtype=np.float32)
     pscore = np.array([0.5] * 100, dtype=np.float32)
+    ipw = InverseProbabilityWeighting()
 
     # shape error
     with pytest.raises(ValueError):
@@ -1123,7 +1133,7 @@ def test_nn_policy_learner_predict_proba():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator=InverseProbabilityWeighting(),
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([1.0, 1.0], dtype=np.float32)
@@ -1135,7 +1145,7 @@ def test_nn_policy_learner_predict_proba():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator=InverseProbabilityWeighting(),
+            ope_estimator_fun=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
@@ -1145,7 +1155,7 @@ def test_nn_policy_learner_predict_proba():
         n_actions=n_actions,
         len_list=len_list,
         dim_context=2,
-        ope_estimator=InverseProbabilityWeighting(),
+        ope_estimator_fun=ipw.estimate_policy_value_tensor,
     )
     learner.fit(context=context, action=action, reward=reward, pscore=pscore)
     action_dist = learner.predict_proba(context=context_test)
