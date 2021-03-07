@@ -1098,10 +1098,12 @@ class SwitchDoublyRobust(DoublyRobust):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.tau, float):
+        if not isinstance(self.tau, (float, int)):
             raise ValueError(
-                f"switching hyperparameter must be float, but {self.tau} is given"
+                f"switching hyperparameter must be float or integer, but {self.tau} is given"
             )
+        if self.tau != self.tau:
+            raise ValueError("switching hyperparameter must not be nan")
         if self.tau < 0.0:
             raise ValueError(
                 f"switching hyperparameter must be larger than or equal to zero, but {self.tau} is given"
@@ -1221,10 +1223,12 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.lambda_, float):
+        if not isinstance(self.lambda_, (float, int)):
             raise ValueError(
-                f"shrinkage hyperparameter must be float, but {self.lambda_} is given"
+                f"shrinkage hyperparameter must be float or integer, but {self.lambda_} is given"
             )
+        if self.lambda_ != self.lambda_:
+            raise ValueError("shrinkage hyperparameter must not be nan")
         if self.lambda_ < 0.0:
             raise ValueError(
                 f"shrinkage hyperparameter must be larger than or equal to zero, but {self.lambda_} is given"
