@@ -282,10 +282,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     def _estimate_round_rewards(
         self,
         reward: Union[np.ndarray, torch.Tensor],
-        action: np.ndarray,
+        action: Union[np.ndarray, torch.Tensor],
         pscore: Union[np.ndarray, torch.Tensor],
         action_dist: Union[np.ndarray, torch.Tensor],
-        position: Optional[np.ndarray] = None,
+        position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
         """Estimate rewards for each round.
@@ -295,7 +295,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         reward: array-like or Tensor, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
@@ -304,7 +304,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
             Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: array-like or Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -380,10 +380,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     def estimate_policy_value_tensor(
         self,
         reward: torch.Tensor,
-        action: np.ndarray,
+        action: torch.Tensor,
         pscore: torch.Tensor,
         action_dist: torch.Tensor,
-        position: Optional[np.ndarray] = None,
+        position: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
         """Estimate policy value of an evaluation policy and return PyTorch Tensor.
@@ -394,7 +394,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         reward: Tensor, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: Tensor, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: Tensor, shape (n_rounds,)
@@ -403,7 +403,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         action_dist: Tensor, shape (n_rounds, n_actions, len_list)
             Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -414,8 +414,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         """
         if not isinstance(reward, torch.Tensor):
             raise ValueError("reward must be Tensor")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
+        if not isinstance(action, torch.Tensor):
+            raise ValueError("action must be Tensor")
         if not isinstance(pscore, torch.Tensor):
             raise ValueError("pscore must be Tensor")
 
@@ -558,10 +558,10 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     def _estimate_round_rewards(
         self,
         reward: Union[np.ndarray, torch.Tensor],
-        action: np.ndarray,
+        action: Union[np.ndarray, torch.Tensor],
         pscore: Union[np.ndarray, torch.Tensor],
         action_dist: Union[np.ndarray, torch.Tensor],
-        position: Optional[np.ndarray] = None,
+        position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate rewards for each round.
@@ -571,7 +571,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         reward: array-like or Tensor, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
@@ -580,7 +580,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
             Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: array-like or Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -643,7 +643,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         self,
         action_dist: Union[np.ndarray, torch.Tensor],
         estimated_rewards_by_reg_model: Union[np.ndarray, torch.Tensor],
-        position: Optional[np.ndarray] = None,
+        position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
         """Estimate policy value of an evaluation policy.
@@ -656,7 +656,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: array-like or Tensor, shape (n_rounds, n_actions, len_list)
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: array-like or Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -673,13 +673,13 @@ class DirectMethod(BaseOffPolicyEstimator):
         ]
         pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
 
-        if isinstance(action, np.ndarray):
+        if isinstance(action_dist, np.ndarray):
             return np.average(
                 q_hat_at_position,
                 weights=pi_e_at_position,
                 axis=1,
             )
-        elif isinstance(action, np.ndarray):
+        elif isinstance(action_dist, torch.Tensor):
             return torch.mean(q_hat_at_position * pi_e_at_position, dim=1)
         else:
             raise ValueError("action must be ndarray or Tensor")
@@ -731,7 +731,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         self,
         action_dist: torch.Tensor,
         estimated_rewards_by_reg_model: torch.Tensor,
-        position: Optional[np.ndarray] = None,
+        position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> torch.Tensor:
         """Estimate policy value of an evaluation policy and return PyTorch Tensor.
@@ -745,7 +745,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list)
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: array-like or Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -885,11 +885,11 @@ class DoublyRobust(BaseOffPolicyEstimator):
     def _estimate_round_rewards(
         self,
         reward: Union[np.ndarray, torch.Tensor],
-        action: np.ndarray,
+        action: Union[np.ndarray, torch.Tensor],
         pscore: Union[np.ndarray, torch.Tensor],
         action_dist: Union[np.ndarray, torch.Tensor],
         estimated_rewards_by_reg_model: Union[np.ndarray, torch.Tensor],
-        position: Optional[np.ndarray] = None,
+        position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
         """Estimate rewards for each round.
@@ -899,7 +899,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         reward: array-like or Tensor, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
@@ -911,7 +911,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model or Tensor: array-like, shape (n_rounds, n_actions, len_list)
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: array-like or Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -1015,11 +1015,11 @@ class DoublyRobust(BaseOffPolicyEstimator):
     def estimate_policy_value_tensor(
         self,
         reward: torch.Tensor,
-        action: np.ndarray,
+        action: torch.Tensor,
         pscore: torch.Tensor,
         action_dist: torch.Tensor,
         estimated_rewards_by_reg_model: torch.Tensor,
-        position: Optional[np.ndarray] = None,
+        position: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
         """Estimate policy value of an evaluation policy and return PyTorch Tensor.
@@ -1030,7 +1030,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         reward: Tensor, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: Tensor, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: Tensor, shape (n_rounds,)
@@ -1042,7 +1042,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list)
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -1055,8 +1055,8 @@ class DoublyRobust(BaseOffPolicyEstimator):
             raise ValueError("estimated_rewards_by_reg_model must be Tensor")
         if not isinstance(reward, torch.Tensor):
             raise ValueError("reward must be Tensor")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
+        if not isinstance(action, torch.Tensor):
+            raise ValueError("action must be Tensor")
         if not isinstance(pscore, torch.Tensor):
             raise ValueError("pscore must be Tensor")
 
@@ -1209,11 +1209,11 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     def _estimate_round_rewards(
         self,
         reward: Union[np.ndarray, torch.Tensor],
-        action: np.ndarray,
+        action: Union[np.ndarray, torch.Tensor],
         pscore: Union[np.ndarray, torch.Tensor],
         action_dist: Union[np.ndarray, torch.Tensor],
         estimated_rewards_by_reg_model: Union[np.ndarray, torch.Tensor],
-        position: Optional[np.ndarray] = None,
+        position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
         """Estimate rewards for each round.
@@ -1223,7 +1223,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         reward: array-like or Tensor, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
@@ -1235,7 +1235,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         estimated_rewards_by_reg_model: array-like or Tensor, shape (n_rounds, n_actions, len_list)
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: array-like or Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns
@@ -1462,11 +1462,11 @@ class DoublyRobustWithShrinkage(DoublyRobust):
     def _estimate_round_rewards(
         self,
         reward: Union[np.ndarray, torch.Tensor],
-        action: np.ndarray,
+        action: Union[np.ndarray, torch.Tensor],
         pscore: Union[np.ndarray, torch.Tensor],
         action_dist: Union[np.ndarray, torch.Tensor],
         estimated_rewards_by_reg_model: Union[np.ndarray, torch.Tensor],
-        position: Optional[np.ndarray] = None,
+        position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
         """Estimate rewards for each round.
@@ -1476,7 +1476,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         reward: array-like or Tensor, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
@@ -1488,7 +1488,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         estimated_rewards_by_reg_model: array-like or Tensor, shape (n_rounds, n_actions, len_list)
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        position: array-like, shape (n_rounds,), default=None
+        position: array-like or Tensor, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
         Returns

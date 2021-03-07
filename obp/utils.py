@@ -414,8 +414,8 @@ def check_ope_inputs(
 
 def check_ope_inputs_tensor(
     action_dist: torch.Tensor,
-    position: Optional[np.ndarray] = None,
-    action: Optional[np.ndarray] = None,
+    position: Optional[torch.Tensor] = None,
+    action: Optional[torch.Tensor] = None,
     reward: Optional[torch.Tensor] = None,
     pscore: Optional[torch.Tensor] = None,
     estimated_rewards_by_reg_model: Optional[torch.Tensor] = None,
@@ -428,10 +428,10 @@ def check_ope_inputs_tensor(
     action_dist: Tensor, shape (n_rounds, n_actions, len_list)
         Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
-    position: array-like, shape (n_rounds,), default=None
+    position: Tensor, shape (n_rounds,), default=None
         Positions of each round in the given logged bandit feedback.
 
-    action: array-like, shape (n_rounds,), default=None
+    action: Tensor, shape (n_rounds,), default=None
         Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
     reward: Tensor, shape (n_rounds,), default=None
@@ -452,20 +452,22 @@ def check_ope_inputs_tensor(
         raise ValueError(
             f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
         )
-    if not np.allclose(action_dist.sum(axis=1), 1):
+    action_dist_sum = action_dist.sum(axis=1)
+    action_dist_ones = torch.ones_like(action_dist_sum)
+    if not torch.allclose(action_dist_sum, action_dist_ones):
         raise ValueError("action_dist must be a probability distribution")
 
     # position
     if position is not None:
-        if not isinstance(position, np.ndarray):
-            raise ValueError("position must be ndarray")
+        if not isinstance(position, torch.Tensor):
+            raise ValueError("position must be Tensor")
         if position.ndim != 1:
             raise ValueError("position must be 1-dimensional")
         if not (position.shape[0] == action_dist.shape[0]):
             raise ValueError(
                 "the first dimension of position and the first dimension of action_dist must be the same"
             )
-        if not (position.dtype == int and position.min() >= 0):
+        if not (position.dtype == torch.int64 and position.min() >= 0):
             raise ValueError("position elements must be non-negative integers")
         if position.max() >= action_dist.shape[2]:
             raise ValueError(
@@ -487,17 +489,17 @@ def check_ope_inputs_tensor(
 
     # action, reward
     if action is not None or reward is not None:
-        if not isinstance(action, np.ndarray):
+        if not isinstance(action, torch.Tensor):
             raise ValueError("action must be Tensor")
         if action.ndim != 1:
             raise ValueError("action must be 1-dimensional")
         if not isinstance(reward, torch.Tensor):
-            raise ValueError("reward must be ndarray")
+            raise ValueError("reward must be Tensor")
         if reward.ndim != 1:
             raise ValueError("reward must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0]):
             raise ValueError("action and reward must be the same size.")
-        if not (action.dtype == int and action.min() >= 0):
+        if not (action.dtype == torch.int64 and action.min() >= 0):
             raise ValueError("action elements must be non-negative integers")
         if action.max() >= action_dist.shape[1]:
             raise ValueError(
@@ -512,7 +514,7 @@ def check_ope_inputs_tensor(
             raise ValueError("pscore must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
             raise ValueError("action, reward, and pscore must be the same size.")
-        if np.any(pscore <= 0):
+        if torch.any(pscore <= 0):
             raise ValueError("pscore must be positive")
 
 

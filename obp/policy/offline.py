@@ -234,6 +234,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
     def sample_action(
         self,
         context: np.ndarray,
+        tau: Union[int, float] = 1.0,
         random_state: Optional[int] = None,
     ) -> np.ndarray:
         """Sample (non-repetitive) actions based on scores predicted by a classifier.
@@ -357,7 +358,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         When Open Bandit Dataset is used, 3 should be set.
         Currently, len_list > 1 is not supported.
 
-    dim_context: int
+    dim_context: Optional[int] = None
         Number of dimensions of context vectors.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
@@ -448,8 +449,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     "Adam: A Method for Stochastic Optimization.", 2014
     """
 
-    dim_context: int
-    ope_estimator: BaseOffPolicyEstimator
+    dim_context: Optional[int] = None
+    ope_estimator: Optional[BaseOffPolicyEstimator] = None
     hidden_layer_size: Tuple[int, ...] = (100,)
     activation: str = "relu"
     solver: str = "adam"
@@ -479,7 +480,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.dim_context, int) or self.dim_context <= 0:
             raise ValueError(
-                f"dim_context must be a positive a integer, but {self.dim_context} is given"
+                f"dim_context must be a positive integer, but {self.dim_context} is given"
             )
 
         if not isinstance(self.ope_estimator, BaseOffPolicyEstimator):
@@ -504,10 +505,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"alpha must be a nonnegative float, but {self.alpha} is given"
             )
 
-        if (
-            self.batch_size != "auto"
-            and not isinstance(self.batch_size, int)
-            and self.batch_size <= 0
+        if self.batch_size != "auto" and (
+            not isinstance(self.batch_size, int) or self.batch_size <= 0
         ):
             raise ValueError(
                 f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
@@ -541,7 +540,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
-                f"shuffle must be a bool, but {self.nesterovs_momentum} is given"
+                f"nestrovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
             )
 
         if not isinstance(self.early_stopping, bool):
@@ -579,7 +578,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
             raise ValueError(
-                f"beta_2 must be a nonnegative float, but {self.epsilon} is given"
+                f"epsilon must be a nonnegative float, but {self.epsilon} is given"
             )
 
         if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
@@ -619,7 +618,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         for i, h in enumerate(self.hidden_layer_size):
             layer_list.append(("l{}".format(i), nn.Linear(input_size, h)))
             layer_list.append(("a{}".format(i), activation_layer()))
-        layer_list.append(("output", nn.Softmax()))
+            input_size = h
+        layer_list.append(("output", nn.Linear(input_size, self.n_actions)))
+        layer_list.append(("softmax", nn.Softmax()))
 
         self.nn_model = nn.Sequential(OrderedDict(layer_list))
 
@@ -632,9 +633,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         estimated_rewards_by_reg_model: np.ndarray,
         position: np.ndarray,
         **kwargs,
-    ) -> Tuple[
-        torch.utils.dataset.DataLoader, Optional[torch.utils.dataset.DataLoader]
-    ]:
+    ) -> Tuple[torch.utils.data.DataLoader, Optional[torch.utils.data.DataLoader]]:
         """Create training data for off-policy learning.
 
         Parameters
@@ -671,19 +670,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         else:
             raise ValueError("batch_size must be a positive integer or 'auto'")
 
-        context_tensor = torch.from_numpy(context)
-        reward_tensor = torch.from_numpy(reward)
-        pscore_tensor = torch.from_numpy(pscore)
-        estimated_rewards_by_reg_model_tensor = torch.from_numpy(
-            estimated_rewards_by_reg_model
-        )
-
         dataset = NNPolicyDataset(
-            context_tensor,
+            context,
             action,
-            reward_tensor,
-            pscore_tensor,
-            estimated_rewards_by_reg_model_tensor,
+            reward,
+            pscore,
+            estimated_rewards_by_reg_model,
             position,
         )
 
@@ -695,15 +687,15 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
             validation_size = max(int(context.shape[0] * self.validation_fraction), 1)
             training_size = context.shape[0] - validation_size
-            training_dataset, validation_dataset = torch.util.data.random_split(
+            training_dataset, validation_dataset = torch.utils.data.random_split(
                 dataset, [training_size, validation_size]
             )
-            training_data_loader = torch.util.data.DataLoader(
+            training_data_loader = torch.utils.data.DataLoader(
                 training_dataset,
                 batch_size=batch_size_,
                 shuffle=self.shuffle,
             )
-            validation_data_loader = torch.util.data.DataLoader(
+            validation_data_loader = torch.utils.data.DataLoader(
                 validation_dataset,
                 batch_size=batch_size_,
                 shuffle=self.shuffle,
@@ -711,7 +703,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
             return training_data_loader, validation_data_loader
 
-        data_loader = torch.util.data.DataLoader(
+        data_loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size_,
             shuffle=self.shuffle,
@@ -760,9 +752,14 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             pscore=pscore,
             position=position,
         )
+
+        if context.shape[1] != self.dim_context:
+            raise ValueError(
+                "the second dimension of context must be equal to dim_context"
+            )
+
         if pscore is None:
-            n_actions = np.int(action.max() + 1)
-            pscore = np.ones_like(action) / n_actions
+            pscore = np.ones_like(action) / self.n_actions
         if estimated_rewards_by_reg_model is None:
             estimated_rewards_by_reg_model = np.zeros(
                 (context.shape[0], self.n_actions, self.len_list)
@@ -808,7 +805,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
                 def closure():
                     optimizer.zero_grad()
-                    action_dist = self.nn_model(x)
+                    action_dist = self.nn_model(x).unsqueeze(-1)
                     loss = -1.0 * self.ope_estimator.estimate_policy_value_tensor(
                         reward=r,
                         action=a,
@@ -830,7 +827,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 self.nn_model.train()
                 for x, a, r, p, q_hat, pos in training_data_loader:
                     optimizer.zero_grad()
-                    action_dist = self.nn_model(x)
+                    action_dist = self.nn_model(x).unsqueeze(-1)
                     loss = -1.0 * self.ope_estimator.estimate_policy_value_tensor(
                         reward=r,
                         action=a,
@@ -855,7 +852,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 if self.early_stopping:
                     self.nn_model.eval()
                     for x, a, r, p, q_hat, pos in validation_data_loader:
-                        action_dist = self.nn_model(x)
+                        action_dist = self.nn_model(x).unsqueeze(-1)
                         loss = -1.0 * self.ope_estimator.estimate_policy_value_tensor(
                             reward=r,
                             action=a,
@@ -897,9 +894,14 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         if not isinstance(context, np.ndarray) or context.ndim != 2:
             raise ValueError("context must be 2-dimensional ndarray")
 
+        if context.shape[1] != self.dim_context:
+            raise ValueError(
+                "the second dimension of context must be equal to dim_context"
+            )
+
         self.nn_model.eval()
         x = torch.from_numpy(context)
-        y = self.nn_model(x).numpy()
+        y = self.nn_model(x).detach().numpy()
         predicted_actions = np.argmax(y, axis=1)
         n_rounds = context.shape[0]
         action_dist = np.zeros((n_rounds, self.n_actions, 1))
@@ -930,7 +932,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         """
         if not isinstance(context, np.ndarray) or context.ndim != 2:
             raise ValueError("context must be 2-dimensional ndarray")
-        check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
+
+        if context.shape[1] != self.dim_context:
+            raise ValueError(
+                "the second dimension of context must be equal to dim_context"
+            )
 
         n_rounds = context.shape[0]
         random_ = check_random_state(random_state)
@@ -962,25 +968,29 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action choice probabilities obtained by a trained classifier.
 
         """
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
+        if not isinstance(context, np.ndarray) or context.ndim != 2:
+            raise ValueError("context must be 2-dimensional ndarray")
+
+        if context.shape[1] != self.dim_context:
+            raise ValueError(
+                "the second dimension of context must be equal to dim_context"
+            )
 
         self.nn_model.eval()
         x = torch.from_numpy(context)
-        y = self.nn_model(x).numpy()
+        y = self.nn_model(x).detach().numpy()
         return y[:, :, np.newaxis]
 
 
 @dataclass
-class NNPolicyDataset(torch.utils.data.IterableDataset):
+class NNPolicyDataset(torch.utils.data.Dataset):
     """PyTorch dataset for NNPolicyLearner"""
 
-    context: torch.Tensor
+    context: np.ndarray
     action: np.ndarray
-    reward: torch.Tensor
-    pscore: torch.Tensor
-    estimated_rewards_by_reg_model: torch.Tensor
+    reward: np.ndarray
+    pscore: np.ndarray
+    estimated_rewards_by_reg_model: np.ndarray
     position: np.ndarray
 
     def __post_init__(self):
@@ -995,7 +1005,7 @@ class NNPolicyDataset(torch.utils.data.IterableDataset):
         )
 
     def __getitem__(self, index):
-        return tuple(
+        return (
             self.context[index],
             self.action[index],
             self.reward[index],
@@ -1005,4 +1015,4 @@ class NNPolicyDataset(torch.utils.data.IterableDataset):
         )
 
     def __len__(self):
-        return self.context.size()
+        return self.context.shape[0]
