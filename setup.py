@@ -26,6 +26,7 @@ setup(
     long_description_content_type="text/markdown",
     install_requires=[
         "matplotlib>=3.2.2",
+        "mypy-extensions>=0.4.3",
         "numpy>=1.18.1",
         "pandas>=0.25.1",
         "pyyaml>=5.1",
