@@ -82,7 +82,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         action_dist: Union[np.ndarray, torch.Tensor],
         position: Optional[np.ndarray] = None,
         **kwargs,
-    ) -> np.ndarray:
+    ) -> Union[np.ndarray, torch.Tensor]:
         """Estimate rewards for each round.
 
         Parameters
@@ -563,7 +563,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         action_dist: Union[np.ndarray, torch.Tensor],
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
-    ) -> np.ndarray:
+    ) -> Union[np.ndarray, torch.Tensor]:
         """Estimate rewards for each round.
 
         Parameters
