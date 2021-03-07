@@ -680,7 +680,7 @@ class DirectMethod(BaseOffPolicyEstimator):
                 axis=1,
             )
         elif isinstance(action_dist, torch.Tensor):
-            return torch.mean(q_hat_at_position * pi_e_at_position, dim=1)
+            return torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
             raise ValueError("action must be ndarray or Tensor")
 
@@ -765,12 +765,11 @@ class DirectMethod(BaseOffPolicyEstimator):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
 
-        n_rounds = position.shape[0]
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
-        return torch.mean(q_hat_at_position * pi_e_at_position, dim=1).mean()
+        return self._estimate_round_rewards(
+            position=position,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            action_dist=action_dist,
+        ).mean()
 
     def estimate_interval(
         self,
@@ -939,7 +938,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
                 axis=1,
             )
         elif isinstance(reward, torch.Tensor):
-            estimated_rewards = torch.mean(q_hat_at_position * pi_e_at_position, dim=1)
+            estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
             raise ValueError("reward must be nd-array or Tensor")
 
@@ -1258,7 +1257,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
                 axis=1,
             )
         elif isinstance(reward, torch.Tensor):
-            estimated_rewards = torch.mean(q_hat_at_position * pi_e_at_position, dim=1)
+            estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
             raise ValueError("reward must be nd-array or Tensor")
 
@@ -1519,7 +1518,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
                 axis=1,
             )
         elif isinstance(reward, torch.Tensor):
-            estimated_rewards = torch.mean(q_hat_at_position * pi_e_at_position, dim=1)
+            estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
             raise ValueError("reward must be nd-array or Tensor")
 

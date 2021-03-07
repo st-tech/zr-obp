@@ -2,6 +2,7 @@ import re
 
 import pytest
 import numpy as np
+import torch
 
 from obp.types import BanditFeedback
 from obp.ope import (
@@ -186,6 +187,161 @@ def test_ipw_using_invalid_input_data(
         )
 
 
+# action_dist, action, reward, pscore, position, description
+invalid_input_tensor_of_ipw = [
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        None,
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action must be Tensor",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        None,
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "reward must be Tensor",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        torch.zeros(5, dtype=torch.float32),
+        None,
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "pscore must be Tensor",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.float64),
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action elements must be non-negative integers",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.float64) - 1,
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action elements must be non-negative integers",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        "4",
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action must be Tensor",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros((3, 2), dtype=torch.int64),
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action must be 1-dimensional",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64) + 8,
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action elements must be smaller than the second dimension of action_dist",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        "4",
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "reward must be Tensor",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        torch.zeros((3, 2), dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "reward must be 1-dimensional",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        torch.zeros(4, dtype=torch.float32),
+        torch.ones(5),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action and reward must be the same size.",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        torch.zeros(5, dtype=torch.float32),
+        "4",
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "pscore must be Tensor",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones((5, 3)),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "pscore must be 1-dimensional",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        torch.zeros(5, dtype=torch.float32),
+        torch.ones(4),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "action, reward, and pscore must be the same size.",
+    ),
+    (
+        torch.from_numpy(generate_action_dist(5, 4, 3)),
+        torch.zeros(5, dtype=torch.int64),
+        torch.zeros(5, dtype=torch.float32),
+        torch.from_numpy(np.arange(5)),
+        torch.from_numpy(np.random.choice(3, size=5)),
+        "pscore must be positive",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "action_dist, action, reward, pscore, position, description",
+    invalid_input_tensor_of_ipw,
+)
+def test_ipw_using_invalid_input_tensor_data(
+    action_dist: torch.Tensor,
+    action: torch.Tensor,
+    reward: torch.Tensor,
+    pscore: torch.Tensor,
+    position: torch.Tensor,
+    description: str,
+) -> None:
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = ipw.estimate_policy_value_tensor(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = snipw.estimate_policy_value_tensor(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+
+
 def test_ipw_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
@@ -219,6 +375,32 @@ def test_ipw_using_random_evaluation_policy(
         ):
             _ = estimator.estimate_policy_value(**input_dict)
 
+    input_tensor_dict = {
+        k: v if v is None else torch.from_numpy(v)
+        for k, v in synthetic_bandit_feedback.items()
+        if k in ["reward", "action", "pscore", "position"]
+    }
+    input_tensor_dict["action_dist"] = torch.from_numpy(action_dist)
+    for estimator in [ipw, snipw]:
+        estimated_policy_value = estimator.estimate_policy_value_tensor(
+            **input_tensor_dict
+        )
+        assert isinstance(
+            estimated_policy_value, torch.Tensor
+        ), f"invalid type response: {estimator}"
+    # remove necessary keys
+    del input_tensor_dict["reward"]
+    del input_tensor_dict["pscore"]
+    del input_tensor_dict["action"]
+    for estimator in [ipw, snipw]:
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "estimate_policy_value_tensor() missing 3 required positional arguments: 'reward', 'action', and 'pscore'"
+            ),
+        ):
+            _ = estimator.estimate_policy_value_tensor(**input_tensor_dict)
+
 
 def test_boundedness_of_snipw_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
@@ -242,3 +424,18 @@ def test_boundedness_of_snipw_using_random_evaluation_policy(
     assert (
         estimated_policy_value <= 1
     ), f"estimated policy value of snipw should be smaller than or equal to 1 (because of its 1-boundedness), but the value is: {estimated_policy_value}"
+
+    input_tensor_dict = {
+        k: v if v is None else torch.from_numpy(v)
+        for k, v in synthetic_bandit_feedback.items()
+        if k in ["reward", "action", "pscore", "position"]
+    }
+    input_tensor_dict["action_dist"] = torch.from_numpy(action_dist)
+    # make pscore too small (to check the boundedness of snipw)
+    input_tensor_dict["pscore"] = input_tensor_dict["pscore"] ** 3
+    estimated_policy_value_tensor = snipw.estimate_policy_value_tensor(
+        **input_tensor_dict
+    )
+    assert (
+        estimated_policy_value_tensor.item() <= 1
+    ), f"estimated policy value of snipw should be smaller than or equal to 1 (because of its 1-boundedness), but the value is: {estimated_policy_value_tensor.item()}"
