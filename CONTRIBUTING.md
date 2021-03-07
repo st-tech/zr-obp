@@ -29,3 +29,7 @@ After installing flake8, you can check the coding style by the following command
 # perform checking of the coding style
 $ flake8 .
 ```
+
+## Continuous Integration
+
+Open Bandit Pipeline uses Github Actions to perform continuous integration.
