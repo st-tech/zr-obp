@@ -4,6 +4,7 @@
 """Offline Bandit Algorithms."""
 from collections import OrderedDict
 from dataclasses import dataclass
+import mypy_extensions as mx
 from typing import Any, Callable, Tuple, Optional, Union
 
 import numpy as np
@@ -362,7 +363,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     dim_context: Optional[int] = None
         Number of dimensions of context vectors.
 
-    ope_estimator_fun: Callable[[Any], Tensor]
+    ope_estimator_fun: Callable[[VarArg[Any]], Tensor]
         Function returns the value of an OPE estimator.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
@@ -454,7 +455,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     """
 
     dim_context: Optional[int] = None
-    ope_estimator_fun: Optional[Callable[[Any], torch.Tensor]] = None
+    ope_estimator_fun: Optional[Callable[[mx.VarArg(Any)], torch.Tensor]] = None
     hidden_layer_size: Tuple[int, ...] = (100,)
     activation: str = "relu"
     solver: str = "adam"

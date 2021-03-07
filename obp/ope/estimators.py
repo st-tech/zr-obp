@@ -77,23 +77,23 @@ class ReplayMethod(BaseOffPolicyEstimator):
 
     def _estimate_round_rewards(
         self,
-        reward: Union[np.ndarray, torch.Tensor],
+        reward: np.ndarray,
         action: np.ndarray,
-        action_dist: Union[np.ndarray, torch.Tensor],
+        action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
         **kwargs,
-    ) -> Union[np.ndarray, torch.Tensor]:
+    ) -> np.ndarray:
         """Estimate rewards for each round.
 
         Parameters
         ------------
-        reward: array-like or Tensor, shape (n_rounds,)
+        reward: array-like, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
             Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities by the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
@@ -101,7 +101,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
 
         Returns
         ----------
-        estimated_rewards: array-like or Tensor, shape (n_rounds,)
+        estimated_rewards: array-like, shape (n_rounds,)
             Rewards estimated by the Replay Method for each round.
 
         """

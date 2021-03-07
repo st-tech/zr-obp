@@ -48,9 +48,6 @@ if __name__ == "__main__":
         description="evaluate off-policy estimators with synthetic bandit data."
     )
     parser.add_argument(
-        "--n_runs", type=int, default=1, help="number of simulations in the experiment."
-    )
-    parser.add_argument(
         "--n_rounds",
         type=int,
         default=10000,
@@ -89,18 +86,60 @@ if __name__ == "__main__":
         required=True,
         help="OPE estimator for NNPolicyLearner, dm, ipw, snipw, dr, sndr, or dros.",
     )
+    parser.add_argument(
+        "--n_hidden",
+        type=int,
+        default=100,
+        help="the size of hidden layers",
+    )
+    parser.add_argument(
+        "--n_layers",
+        type=int,
+        default=1,
+        help="the number of hidden layers",
+    )
+    parser.add_argument(
+        "--activation",
+        type=str,
+        choices=["identity", "logistic", "tanh", "relu"],
+        default="relu",
+        help="activation function for the NN Policy Learner",
+    )
+    parser.add_argument(
+        "--solver",
+        type=str,
+        choices=["lbfgs", "sgd", "adam"],
+        default="adam",
+        help="optimizer for the NN Policy Learner",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="batch size for the NN Policy Learner",
+    )
+    parser.add_argument(
+        "--early_stopping",
+        action="store_true",
+        help="use early stopping in training of the NN Policy Learner",
+    )
     parser.add_argument("--random_state", type=int, default=12345)
     args = parser.parse_args()
     print(args)
 
     # configurations
-    n_runs = args.n_runs
     n_rounds = args.n_rounds
     n_actions = args.n_actions
     dim_context = args.dim_context
     base_model_for_evaluation_policy = args.base_model_for_evaluation_policy
     base_model_for_reg_model = args.base_model_for_reg_model
     ope_estimator = args.ope_estimator
+    n_hidden = args.n_hidden
+    n_layers = args.n_layers
+    activation = args.activation
+    solver = args.solver
+    batch_size = args.batch_size if args.batch_size else "auto"
+    early_stopping = args.early_stopping
     random_state = args.random_state
 
     # synthetic data generator
@@ -129,6 +168,7 @@ if __name__ == "__main__":
         n_folds=3,  # 3-fold cross-fitting
         random_state=random_state,
     )
+    # define random evaluation policy
     random_policy = Random(n_actions=dataset.n_actions, random_state=random_state)
     # define evaluation policy using IPWLearner
     ipw_learner = IPWLearner(
@@ -144,6 +184,11 @@ if __name__ == "__main__":
         ope_estimator_fun=ope_estimator_dict[
             ope_estimator
         ].estimate_policy_value_tensor,
+        hidden_layer_size=tuple((n_hidden for _ in range(n_layers))),
+        activation=activation,
+        solver=solver,
+        batch_size=batch_size,
+        early_stopping=early_stopping,
         random_state=random_state,
     )
     # train the evaluation policy on the training set of the synthetic logged bandit feedback
