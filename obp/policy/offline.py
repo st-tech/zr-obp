@@ -380,7 +380,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         - 'identity', the identity function, :math:`f(x) = x`.
         - 'logistic', the sigmoid function, :math:`f(x) = \\frac{1}{1 + \\exp(x)}`.
         - 'tanh', the hyperbolic tangent function, `:math:f(x) = \\frac{\\exp(x) - \\exp(-x)}{\\exp(x) + \\exp(-x)}`
-        - 'relu', the rectfiied linear unit function, `:math:f(x) = \max(0, x)`
+        - 'relu', the rectfiied linear unit function, `:math:f(x) = \\max(0, x)`
 
     solver: str, default='adam'
         Optimizer of the neural network.
