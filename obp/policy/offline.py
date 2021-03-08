@@ -348,7 +348,11 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
 @dataclass
 class NNPolicyLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner using an neural network whose objective function is an off-policy estimator.
+    """Off-policy learner using an neural network whose objective function is an OPE estimator.
+
+    Note
+    --------
+    MLP is implemented in PyTorch.
 
     Parameters
     -----------
@@ -727,6 +731,16 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     ) -> None:
         """Fits an offline bandit policy using the given logged bandit feedback data.
 
+        Note
+        ----------
+        Given the training data :math:`\\mathcal{D}`, this policy maximizes the following objective function:
+
+        .. math::
+
+            \\hat{V}(\\pi_\\theta; \\mathcal{D}) - \\lambda \\Omega(\\theta)
+
+        where :math:`\\hat{V}` is an OPE estimator and :math:`\\lambda \\Omega(\\theta)` is a regularization term.
+
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
@@ -960,7 +974,18 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         self,
         context: np.ndarray,
     ) -> np.ndarray:
-        """Obtains action choice probabilities for new data based on scores predicted by a classifier.
+        """Obtains action choice probabilities for new data.
+
+        Note
+        --------
+        This policy uses multi-layer perceptron (MLP) and the softmax function as the last layer.
+        This is a stochastic policy and represented as follows:
+
+        .. math::
+
+            \\pi_\\theta (a \\mid x) = \\frac{\\exp(f_\\theta(x, a))}{\\sum_{a' \\in \\mathcal{A}} \\exp(f_\\theta(x, a'))}
+
+        where :math:`f__\\theta(x, a)` is MLP with parameter :math:`\\theta`.
 
         Parameters
         ----------------

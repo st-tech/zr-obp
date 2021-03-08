@@ -210,7 +210,7 @@ if __name__ == "__main__":
     ipw_learner_action_dist = ipw_learner.predict(
         context=bandit_feedback_test["context"],
     )
-    nn_policy_learner_action_dist = nn_policy_learner.predict(
+    nn_policy_learner_action_dist = nn_policy_learner.predict_proba(
         context=bandit_feedback_test["context"],
     )
 
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         ],
         columns=["policy value"],
         index=["random", "ipw", "nn"],
-    ).T.round(6)
+    ).round(6)
     print("=" * 45)
     print(f"random_state={random_state}")
     print("-" * 45)
