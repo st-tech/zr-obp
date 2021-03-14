@@ -16,7 +16,6 @@ from .base import BaseContextFreePolicy
 
 # configurations to replicate the Bernoulli Thompson Sampling policy used in ZOZOTOWN production
 prior_bts_file = os.path.join(os.path.dirname(__file__), "conf", "prior_bts.yaml")
-# prior_bts_file = pkg_resources.resource_stream(__name__, "data/emperors.csv")
 with open(prior_bts_file, "rb") as f:
     production_prior_for_bts = yaml.safe_load(f)
 
