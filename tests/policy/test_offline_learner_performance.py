@@ -88,7 +88,6 @@ offline_experiment_configurations = [
 
 @dataclass
 class RandomPolicy(BaseOfflinePolicyLearner):
-
     def __post_init__(self) -> None:
         super().__post_init__()
 
@@ -119,23 +118,23 @@ class UniformSampleWeightLearner(BaseOfflinePolicyLearner):
         ]
 
     def _create_train_data_for_opl(
-            self,
-            context: np.ndarray,
-            action: np.ndarray,
-            reward: np.ndarray,
-            pscore: np.ndarray,
-            **kwargs,
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        pscore: np.ndarray,
+        **kwargs,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         return context, (reward / pscore), action
 
     def fit(
-            self,
-            context: np.ndarray,
-            action: np.ndarray,
-            reward: np.ndarray,
-            pscore: Optional[np.ndarray] = None,
-            position: Optional[np.ndarray] = None,
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
     ) -> None:
 
         if pscore is None:
@@ -151,9 +150,7 @@ class UniformSampleWeightLearner(BaseOfflinePolicyLearner):
                 reward=reward[position == position_],
                 pscore=pscore[position == position_],
             )
-            self.base_classifier_list[position_].fit(
-                X=X, y=y
-            )
+            self.base_classifier_list[position_].fit(X=X, y=y)
 
     def predict(self, context: np.ndarray) -> np.ndarray:
 
@@ -199,9 +196,7 @@ def test_offline_ipwlearner_performance(
             ),
         )
         # baseline method 1. RandomPolicy
-        random_policy = RandomPolicy(
-            n_actions=dataset.n_actions
-        )
+        random_policy = RandomPolicy(n_actions=dataset.n_actions)
         # baseline method 2. UniformSampleWeightLearner
         uniform_sample_weight_policy = UniformSampleWeightLearner(
             n_actions=dataset.n_actions,
@@ -237,9 +232,9 @@ def test_offline_ipwlearner_performance(
         )
         # get the ground truth policy value for each learner
         gt_ipw_learner = dataset.calc_ground_truth_policy_value(
-                expected_reward=bandit_feedback_test["expected_reward"],
-                action_dist=ipw_action_dist,
-            )
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=ipw_action_dist,
+        )
         gt_random_policy = dataset.calc_ground_truth_policy_value(
             expected_reward=bandit_feedback_test["expected_reward"],
             action_dist=random_action_dist,
