@@ -56,13 +56,12 @@ class IPWLearner(BaseOfflinePolicyLearner):
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]
 
+    @staticmethod
     def _create_train_data_for_opl(
-        self,
         context: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        **kwargs,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Create training data for off-policy learning.
 
