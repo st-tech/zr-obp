@@ -145,7 +145,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         if pscore is None:
             n_actions = np.int(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
-        if self.len_list == 1:
+        if position is None or self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
         else:
             if not isinstance(position, np.ndarray) or position.ndim != 1:
