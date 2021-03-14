@@ -129,7 +129,6 @@ class Random(EpsilonGreedy):
     def compute_batch_action_dist(
         self,
         n_rounds: int = 1,
-        n_sim: int = 100000,
     ) -> np.ndarray:
         """Compute the distribution over actions by Monte Carlo simulation.
 
