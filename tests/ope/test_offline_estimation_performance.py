@@ -141,7 +141,7 @@ ope_estimators = [
     "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
     offline_experiment_configurations,
 )
-def test_offline_ipwlearner_performance(
+def test_offline_estimation_performance(
     n_rounds: int,
     n_actions: int,
     dim_context: int,
