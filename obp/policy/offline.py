@@ -144,13 +144,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
         if pscore is None:
             n_actions = np.int(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
-        if self.len_list == 1:
+        if position is None or self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
-        else:
-            if not isinstance(position, np.ndarray) or position.ndim != 1:
-                raise ValueError(
-                    f"when len_list > 1, position must be a 1-dimensional ndarray"
-                )
 
         for position_ in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
