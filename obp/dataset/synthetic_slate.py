@@ -128,6 +128,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     dim_context: int = 1
     reward_type: str = "binary"
     reward_structure: str = "RIPS"
+    exam_weight: Optional[np.ndarray] = None
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
@@ -164,13 +165,20 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"reward_structure must be either 'RIPS', 'SIPS', or 'IIPS', but {self.reward_structure} is given.'"
             )
-        # TODO: implement slot_weight
-        if self.reward_structure == "IIPS":
-            self.slot_weight = np.identity(self.len_list)
-        elif self.reward_structure == "SIPS":
-            self.slot_weight = None
+        if self.exam_weight is None:
+            self.exam_weight = np.ones(self.len_list)
         else:
-            self.slot_weight = None
+            if not isinstance(self.exam_weight, np.ndarray):
+                raise ValueError(
+                    f"exam_weight must be ndarray or None, but {self.exam_weight} is given"
+                )
+        # TODO: implement slot_weight_matrix
+        if self.reward_structure == "IIPS":
+            self.slot_weight_matrix = np.identity(self.len_list)
+        elif self.reward_structure == "SIPS":
+            self.slot_weight_matrix = self.get_sips_slot_weight(self.len_list)
+        else:
+            self.slot_weight_matrix = self.get_rips_slot_weight(self.len_list)
         if not isinstance(self.random_state, int):
             raise ValueError("random_state must be an integer")
         self.random_ = check_random_state(self.random_state)
@@ -182,6 +190,27 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             self.reward_std = 1.0
         # one-hot encoding representations characterizing each action
         self.action_context = np.eye(self.n_actions, dtype=int)
+
+    @staticmethod
+    def get_sips_slot_weight(len_list):
+        slot_weight_matrix = np.ones((len_list, len_list))
+        for position_ in range(len_list):
+            slot_weight_matrix[:, position_] = 1 / np.exp(
+                np.abs(np.arange(len_list) - position_)
+            )
+        return slot_weight_matrix
+
+    @staticmethod
+    def get_rips_slot_weight(len_list):
+        slot_weight_matrix = np.ones((len_list, len_list))
+        for position_ in range(len_list):
+            slot_weight_matrix[:, position_] = 1 / np.exp(
+                np.abs(np.arange(len_list) - position_)
+            )
+            for position_2 in range(len_list):
+                if position_ < position_2:
+                    slot_weight_matrix[position_2, position_] = 0
+        return slot_weight_matrix
 
     def get_marginal_pscore(
         self, perm: List[int], behavior_policy_logit_i_: np.ndarray
@@ -243,6 +272,47 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return action, pscore_joint_above, pscore_joint_all, pscore_marginal
 
+    def sample_contextfree_expected_reward(self) -> np.ndarray:
+        """Sample expected reward for each action and slot from the uniform distribution"""
+        return self.random_.uniform(size=(self.n_actions, self.len_list))
+
+    def sample_reward_given_expected_reward(
+        self, expected_reward: np.ndarray, action: np.ndarray, n_rounds: int
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        # weighted_expected_reward: array-like, shape (n_rounds, n_actions, len_list)
+        expected_reward_ = np.tile(expected_reward, (n_rounds, 1, 1))
+        # action_2d: array-like, shape (n_rounds, len_list)
+        action_2d = action.reshape((n_rounds, self.len_list))
+        # expected_reward_factual_actions: list, shape (len_list, n_rounds)
+        expected_reward_factual = [
+            expected_reward_[np.arange(n_rounds), action_2d[:, position_], position_]
+            for position_ in range(self.len_list)
+        ]
+        if self.reward_type == "binary":
+            reward = np.array(
+                [
+                    self.random_.binomial(n=1, p=expected_reward_factual[position_])
+                    for position_ in range(self.len_list)
+                ]
+            ).T
+        elif self.reward_type == "continuous":
+            reward = np.zeros((self.n_actions, self.len_list))
+            for position_ in range(self.len_list):
+                mean = expected_reward_factual
+                a = (self.reward_min - mean) / self.reward_std
+                b = (self.reward_max - mean) / self.reward_std
+                reward[:, position_] = truncnorm.rvs(
+                    a=a,
+                    b=b,
+                    loc=mean,
+                    scale=self.reward_std,
+                    random_state=self.random_state,
+                )
+        else:
+            raise NotImplementedError
+        # return: two arrays, shape (n_rounds, len_list)
+        return np.array(expected_reward_factual).T, reward
+
     def obtain_batch_bandit_feedback(
         self,
         n_rounds: int,
@@ -299,7 +369,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 context=context,
                 action_context=self.action_context,
                 action=action,
-                slot_weight=self.slot_weight,
+                slot_weight_matrix=self.slot_weight_matrix,
+                exam_weight=self.exam_weight,
                 random_state=self.random_state,
             )
         return dict(
@@ -310,101 +381,61 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             action_context=self.action_context,
             action=action,
             position=np.tile(range(self.len_list), n_rounds),
-            reward=reward,
-            expected_reward=None,
+            reward=reward.reshape(action.shape[0]),
+            expected_reward_factual=expected_reward_factual.reshape(action.shape[0]),
             pscore_joint_above=pscore_joint_above,
             pscore_joint_all=pscore_joint_all,
             pscore_marginal=pscore_marginal,
         )
-
-    def sample_contextfree_expected_reward(self) -> np.ndarray:
-        """Sample expected reward for each action and slot from the uniform distribution"""
-        return self.random_.uniform(size=(self.n_actions, self.len_list))
-
-    def sample_reward_given_expected_reward(
-        self, expected_reward: np.ndarray, action: np.ndarray, n_rounds: int
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        # weighted_expected_reward: array-like, shape (n_rounds, n_actions, len_list)
-        expected_reward_ = np.tile(expected_reward, (n_rounds, 1, 1))
-        # action_2d: array-like, shape (n_rounds, len_list)
-        action_2d = action.reshape((n_rounds, self.len_list))
-        # expected_reward_factual_actions: list, shape (len_list, n_rounds)
-        expected_reward_factual = [
-            expected_reward_[np.arange(n_rounds), action_2d[:, position_], position_]
-            for position_ in range(self.len_list)
-        ]
-        if self.reward_type == "binary":
-            reward = np.array(
-                [
-                    self.random_.binomial(n=1, p=expected_reward_factual[position_])
-                    for position_ in range(self.len_list)
-                ]
-            ).T
-        elif self.reward_type == "continuous":
-            reward = np.zeros((self.n_actions, self.len_list))
-            for position_ in range(self.len_list):
-                mean = expected_reward_factual
-                a = (self.reward_min - mean) / self.reward_std
-                b = (self.reward_max - mean) / self.reward_std
-                reward[:, position_] = truncnorm.rvs(
-                    a=a,
-                    b=b,
-                    loc=mean,
-                    scale=self.reward_std,
-                    random_state=self.random_state,
-                )
-        else:
-            raise NotImplementedError
-        # return: two arrays, shape (n_rounds, len_list)
-        return np.array(expected_reward_factual).T, reward
 
 
 def logistic_weighted_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     action: np.ndarray,
-    slot_weight: np.ndarray,
+    slot_weight_matrix: np.ndarray,
+    exam_weight: np.ndarray,
     random_state: Optional[int] = None,
+    **kwargs,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    slot_weight: array-like, shape (len_list, len_list)
+    slot_weight_matrix: array-like, shape (len_list, len_list)
     """
+    # fix slot_weight_matrix by exam_weight
+    slot_weight_matrix = slot_weight_matrix * exam_weight
     random_ = check_random_state(random_state)
     # action_2d: array-like, shape (n_rounds, len_list)
-    action_2d = action.reshape((context.shape[0], slot_weight.shape[0]))
+    action_2d = action.reshape((context.shape[0], slot_weight_matrix.shape[0]))
     # action_3d: array-like, shape (n_rounds, n_actions, len_list)
     action_3d = np.identity(action_context.shape[0])[action_2d].transpose(0, 2, 1)
-    if slot_weight.shape[0] < action_3d.shape[2]:
+    if slot_weight_matrix.shape[0] < action_3d.shape[2]:
         raise ValueError(
-            "the size of axis 0 of slot_weight must be the same as the size of axis 1 of action_3d"
+            "the size of axis 0 of slot_weight_matrix must be the same as the size of axis 1 of action_3d"
         )
     # expected_reward: array-like, shape (n_rounds, n_actions)
     expected_reward = logistic_reward_function(
         context=context, action_context=action_context, random_state=random_state
     )
-    # expected_reward: array-like, shape (n_rounds, n_actions, len_list)
+    # expected_reward_3d: array-like, shape (n_rounds, n_actions, len_list)
     expected_reward_3d = np.tile(
-        expected_reward, (slot_weight.shape[0], 1, 1)
+        expected_reward, (slot_weight_matrix.shape[0], 1, 1)
     ).transpose(1, 2, 0)
-    # action_weight: array-like, shape (n_actions, len_list)
-    action_weight = action_3d @ slot_weight.T
+    # action_weight: array-like, shape (n_rounds, n_actions, len_list)
+    action_weight = action_3d @ slot_weight_matrix
     # weighted_expected_reward: array-like, shape (n_rounds, n_actions, len_list)
     weighted_expected_reward = action_weight * expected_reward_3d
-    # expected_reward_factual_actions: list, shape (len_list, n_rounds)
-    expected_reward_factual = [
-        weighted_expected_reward[
-            np.arange(context.shape[0]), action_2d[:, position_], position_
-        ]
-        for position_ in range(slot_weight.shape[0])
-    ]
+    # expected_reward_factual: list, shape (n_rounds, len_list)
+    expected_reward_factual = (
+        weighted_expected_reward.sum(axis=1) / slot_weight_matrix.shape[0]
+    )
     reward = np.array(
         [
-            random_.binomial(n=1, p=expected_reward_factual[position_])
-            for position_ in range(slot_weight.shape[0])
+            random_.binomial(n=1, p=expected_reward_factual[:, position_])
+            for position_ in range(slot_weight_matrix.shape[0])
         ]
-    ).T
+    )
     # return: two arrays, shape (n_rounds, len_list)
-    return np.array(expected_reward_factual).T, reward
+    return np.array(expected_reward_factual), reward.T
 
 
 def logistic_reward_function(
