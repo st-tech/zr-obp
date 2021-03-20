@@ -10,6 +10,20 @@ from obp.ope.estimators import DoublyRobustWithShrinkage
 from obp.ope.meta import OffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
 
+__all__ = [
+    "BaseOffPolicyEstimator",
+    "ReplayMethod",
+    "InverseProbabilityWeighting",
+    "SelfNormalizedInverseProbabilityWeighting",
+    "DirectMethod",
+    "DoublyRobust",
+    "SelfNormalizedDoublyRobust",
+    "SwitchDoublyRobust",
+    "DoublyRobustWithShrinkage",
+    "OffPolicyEvaluation",
+    "RegressionModel",
+]
+
 __all_estimators__ = [
     "ReplayMethod",
     "InverseProbabilityWeighting",
