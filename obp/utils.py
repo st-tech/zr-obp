@@ -2,13 +2,10 @@
 # Licensed under the Apache 2.0 License.
 
 """Useful Tools."""
-from inspect import isclass
 from typing import Dict, Optional, Union
 
 import numpy as np
-from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
-from sklearn.utils.validation import _deprecate_positional_args
 
 
 def check_confidence_interval_arguments(
@@ -125,77 +122,6 @@ def convert_to_action_dist(
             pos * np.ones(n_rounds, int),
         ] = 1
     return action_dist
-
-
-@_deprecate_positional_args
-def check_is_fitted(
-    estimator: BaseEstimator, attributes=None, *, msg: str = None, all_or_any=all
-) -> bool:
-    """Perform is_fitted validation for estimator.
-
-    Note
-    ----
-    Checks if the estimator is fitted by verifying the presence of
-    fitted attributes (ending with a trailing underscore) and otherwise
-    raises a NotFittedError with the given message.
-    This utility is meant to be used internally by estimators themselves,
-    typically in their own predict / transform methods.
-
-    Parameters
-    ----------
-    estimator : estimator instance.
-        estimator instance for which the check is performed.
-
-    attributes : str, list or tuple of str, default=None
-        Attribute name(s) given as string or a list/tuple of strings
-        Eg.: ``["coef_", "estimator_", ...], "coef_"``
-        If `None`, `estimator` is considered fitted if there exist an
-        attribute that ends with a underscore and does not start with double
-        underscore.
-
-    msg : string
-        The default error message is, "This %(name)s instance is not fitted
-        yet. Call 'fit' with appropriate arguments before using this
-        estimator."
-        For custom messages if "%(name)s" is present in the message string,
-        it is substituted for the estimator name.
-        Eg. : "Estimator, %(name)s, must be fitted before sparsifying".
-
-    all_or_any : callable, {all, any}, default all
-        Specify whether all or any of the given attributes must exist.
-
-    Returns
-    -------
-    is_fitted: bool
-        Whether the given estimator is fitted or not.
-
-    References
-    -------
-    https://scikit-learn.org/stable/modules/generated/sklearn.utils.validation.check_is_fitted.html
-
-    """
-    if isclass(estimator):
-        raise TypeError("{} is a class, not an instance.".format(estimator))
-    if msg is None:
-        msg = (
-            "This %(name)s instance is not fitted yet. Call 'fit' with "
-            "appropriate arguments before using this estimator."
-        )
-
-    if not hasattr(estimator, "fit"):
-        raise TypeError("%s is not an estimator instance." % (estimator))
-
-    if attributes is not None:
-        if not isinstance(attributes, (list, tuple)):
-            attributes = [attributes]
-        attrs = all_or_any([hasattr(estimator, attr) for attr in attributes])
-    else:
-        attrs = [
-            v for v in vars(estimator) if v.endswith("_") and not v.startswith("__")
-        ]
-
-    is_fitted = len(attrs) != 0
-    return is_fitted
 
 
 def check_bandit_feedback_inputs(
@@ -418,7 +344,7 @@ def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
 
 def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate softmax function."""
-    b = np.expand_dims(np.max(x, axis=1), 1)
+    b = np.max(x, axis=1)[:, np.newaxis]
     numerator = np.exp(x - b)
-    denominator = np.expand_dims(np.sum(numerator, axis=1), 1)
+    denominator = np.sum(numerator, axis=1)[:, np.newaxis]
     return numerator / denominator

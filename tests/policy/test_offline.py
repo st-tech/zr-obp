@@ -4,6 +4,7 @@ from sklearn.linear_model import LogisticRegression
 
 
 from obp.policy.offline import IPWLearner
+from obp.policy.policy_type import PolicyType
 
 
 def test_base_opl_init():
@@ -22,7 +23,7 @@ def test_base_opl_init():
         IPWLearner(n_actions=2, len_list="3")
 
     # policy_type
-    assert IPWLearner(n_actions=2).policy_type == "offline"
+    assert IPWLearner(n_actions=2).policy_type == PolicyType.OFFLINE
 
     # invalid relationship between n_actions and len_list
     with pytest.raises(ValueError):

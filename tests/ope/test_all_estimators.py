@@ -244,9 +244,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     """
     bandit_feedback = synthetic_bandit_feedback
     action_dist = random_action_dist
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     # test all estimators
     all_estimators = ope.__all_estimators__
     estimators = [
@@ -285,9 +283,7 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
     """
     bandit_feedback = synthetic_bandit_feedback
     action_dist = random_action_dist
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     # test all estimators
     all_estimators = ope.__all_estimators__
     estimators = [
@@ -331,9 +327,7 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
     """
     Test the performance of ope estimators using synthetic bandit data and random evaluation policy
     """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # compute ground truth policy value using expected reward
     q_pi_e = np.average(expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1)
@@ -373,9 +367,7 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
     """
     Test the response format of ope estimators using synthetic bandit data and random evaluation policy
     """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # test all estimators
     all_estimators = ope.__all_estimators__

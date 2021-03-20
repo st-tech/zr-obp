@@ -62,9 +62,7 @@ def test_dm_using_random_evaluation_policy(
     """
     Test the performance of the direct method using synthetic bandit data and random evaluation policy
     """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # compute ground truth policy value using expected reward
     q_pi_e = np.average(expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1)

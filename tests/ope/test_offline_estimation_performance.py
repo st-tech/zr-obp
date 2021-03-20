@@ -1,7 +1,7 @@
 import numpy as np
 from pandas import DataFrame
 from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting  # NOQA
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import pytest

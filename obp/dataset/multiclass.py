@@ -150,7 +150,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
     def __post_init__(self) -> None:
         """Initialize Class."""
         if not is_classifier(self.base_classifier_b):
-            raise ValueError(f"base_classifier_b must be a classifier")
+            raise ValueError("base_classifier_b must be a classifier")
         if not isinstance(self.alpha_b, float) or not (0.0 <= self.alpha_b < 1.0):
             raise ValueError(
                 f"alpha_b must be a float in the [0,1) interval, but {self.alpha_b} is given"
@@ -289,7 +289,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         else:
             assert is_classifier(
                 base_classifier_e
-            ), f"base_classifier_e must be a classifier"
+            ), "base_classifier_e must be a classifier"
             base_clf_e = clone(base_classifier_e)
         base_clf_e.fit(X=self.X_tr, y=self.y_tr)
         preds = base_clf_e.predict(self.X_ev).astype(int)
@@ -299,7 +299,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         pi_e[np.arange(self.n_rounds_ev), preds] = (
             alpha_e + (1.0 - alpha_e) / self.n_actions
         )
-        return np.expand_dims(pi_e, 2)
+        return pi_e[:, :, np.newaxis]
 
     def calc_ground_truth_policy_value(self, action_dist: np.ndarray) -> float:
         """Calculate the ground-truth policy value of a given action distribution.
@@ -319,7 +319,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
 
         """
         if not isinstance(action_dist, np.ndarray) or action_dist.ndim != 3:
-            raise ValueError(f"action_dist must be a 3-D np.ndarray")
+            raise ValueError("action_dist must be a 3-D np.ndarray")
         if action_dist.shape[0] != self.n_rounds_ev:
             raise ValueError(
                 "the size of axis 0 of action_dist must be the same as the number of samples in the evaluation set"
