@@ -9,6 +9,8 @@ from typing import Optional
 import numpy as np
 from sklearn.utils import check_random_state
 
+from .policy_type import PolicyType
+
 
 @dataclass
 class BaseContextFreePolicy(metaclass=ABCMeta):
@@ -66,9 +68,9 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
         self.reward_counts = np.zeros(self.n_actions)
 
     @property
-    def policy_type(self) -> str:
+    def policy_type(self) -> PolicyType:
         """Type of the bandit policy."""
-        return "contextfree"
+        return PolicyType.CONTEXT_FREE
 
     def initialize(self) -> None:
         """Initialize Parameters."""
@@ -172,9 +174,9 @@ class BaseContextualPolicy(metaclass=ABCMeta):
         self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
     @property
-    def policy_type(self) -> str:
+    def policy_type(self) -> PolicyType:
         """Type of the bandit policy."""
-        return "contextual"
+        return PolicyType.CONTEXTUAL
 
     def initialize(self) -> None:
         """Initialize policy parameters."""
@@ -231,9 +233,9 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
             )
 
     @property
-    def policy_type(self) -> str:
+    def policy_type(self) -> PolicyType:
         """Type of the bandit policy."""
-        return "offline"
+        return PolicyType.OFFLINE
 
     @abstractmethod
     def fit(

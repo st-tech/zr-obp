@@ -4,6 +4,7 @@ import numpy as np
 from obp.policy.contextfree import EpsilonGreedy
 from obp.policy.contextfree import Random
 from obp.policy.contextfree import BernoulliTS
+from obp.policy.policy_type import PolicyType
 
 
 def test_contextfree_base_exception():
@@ -43,6 +44,9 @@ def test_egreedy_normal_epsilon():
 
     policy2 = EpsilonGreedy(n_actions=3, epsilon=0.3)
     assert 0 <= policy2.epsilon <= 1
+
+    # policy type
+    assert EpsilonGreedy(n_actions=2).policy_type == PolicyType.CONTEXT_FREE
 
 
 def test_egreedy_abnormal_epsilon():
