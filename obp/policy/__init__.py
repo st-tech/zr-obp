@@ -28,5 +28,5 @@ __all__ = [
     "LogisticUCB",
     "LogisticTS",
     "MiniBatchLogisticRegression",
-    "IPWLearner"
+    "IPWLearner",
 ]
