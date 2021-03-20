@@ -2,13 +2,10 @@
 # Licensed under the Apache 2.0 License.
 
 """Useful Tools."""
-from inspect import isclass
 from typing import Dict, Optional, Union
 
 import numpy as np
-from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
-from sklearn.utils.validation import _deprecate_positional_args
 
 
 def check_confidence_interval_arguments(
