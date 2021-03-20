@@ -12,6 +12,7 @@ from sklearn.utils import check_random_state
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
 from ..utils import sigmoid, softmax
+from .reward_type import RewardType
 
 
 @dataclass
@@ -123,7 +124,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
     n_actions: int
     dim_context: int = 1
-    reward_type: str = "binary"
+    reward_type: str = RewardType.BINARY.value
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
@@ -141,12 +142,12 @@ class SyntheticBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"dim_context must be a positive integer, but {self.dim_context} is given"
             )
-        if self.reward_type not in [
-            "binary",
-            "continuous",
+        if RewardType(self.reward_type) not in [
+            RewardType.BINARY,
+            RewardType.CONTINUOUS,
         ]:
             raise ValueError(
-                f"reward_type must be either 'binary' or 'continuous, but {self.reward_type} is given.'"
+                f"reward_type must be either '{RewardType.BINARY.value}' or '{RewardType.CONTINUOUS.value}', but {self.reward_type} is given.'"
             )
         if self.random_state is None:
             raise ValueError("random_state must be given")
@@ -155,7 +156,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             self.expected_reward = self.sample_contextfree_expected_reward()
         if self.behavior_policy_function is None:
             self.behavior_policy = np.ones(self.n_actions) / self.n_actions
-        if self.reward_type == "continuous":
+        if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             self.reward_min = 0
             self.reward_max = 1e10
             self.reward_std = 1.0
@@ -192,9 +193,9 @@ class SyntheticBanditDataset(BaseBanditDataset):
     ) -> np.ndarray:
         """Sample reward given expected rewards"""
         expected_reward_factual = expected_reward[np.arange(action.shape[0]), action]
-        if self.reward_type == "binary":
+        if RewardType(self.reward_type) == RewardType.BINARY:
             reward = self.random_.binomial(n=1, p=expected_reward_factual)
-        elif self.reward_type == "continuous":
+        elif RewardType(self.reward_type) == RewardType.CONTINUOUS:
             mean = expected_reward_factual
             a = (self.reward_min - mean) / self.reward_std
             b = (self.reward_max - mean) / self.reward_std
@@ -290,7 +291,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
         expected_reward_ = self.calc_expected_reward(context)
         reward = self.sample_reward_given_expected_reward(expected_reward_, action)
-        if self.reward_type == "continuous":
+        if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             # correct expected_reward_, as we use truncated normal distribution here
             mean = expected_reward_
             a = (self.reward_min - mean) / self.reward_std
