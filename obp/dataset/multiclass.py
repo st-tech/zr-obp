@@ -299,7 +299,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         pi_e[np.arange(self.n_rounds_ev), preds] = (
             alpha_e + (1.0 - alpha_e) / self.n_actions
         )
-        return np.expand_dims(pi_e, 2)
+        return pi_e[:, :, np.newaxis]
 
     def calc_ground_truth_policy_value(self, action_dist: np.ndarray) -> float:
         """Calculate the ground-truth policy value of a given action distribution.

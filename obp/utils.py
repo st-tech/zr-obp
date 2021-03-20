@@ -344,7 +344,7 @@ def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
 
 def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate softmax function."""
-    b = np.expand_dims(np.max(x, axis=1), 1)
+    b = np.max(x, axis=1)[:, np.newaxis]
     numerator = np.exp(x - b)
-    denominator = np.expand_dims(np.sum(numerator, axis=1), 1)
+    denominator = np.sum(numerator, axis=1)[:, np.newaxis]
     return numerator / denominator
