@@ -323,7 +323,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         """
         assert (
             self.len_list == 1
-        ), f"predict_proba method can be used only when len_list = 1"
+        ), "predict_proba method can be used only when len_list = 1"
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
         ), "context must be 2-dimensional ndarray"

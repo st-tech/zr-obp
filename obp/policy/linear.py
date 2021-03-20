@@ -282,7 +282,7 @@ class LinTS(BaseContextualPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        self.policy_name = f"linear_ts"
+        self.policy_name = "linear_ts"
 
         super().__post_init__()
         self.A_inv = np.concatenate(
