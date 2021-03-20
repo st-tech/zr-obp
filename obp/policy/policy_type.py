@@ -14,9 +14,9 @@ class PolicyType(enum.Enum):
         The policy type is offline.
     """
 
-    CONTEXT_FREE = 0
-    CONTEXTUAL = 1
-    OFFLINE = 2
+    CONTEXT_FREE = enum.auto()
+    CONTEXTUAL = enum.auto()
+    OFFLINE = enum.auto()
 
     def __repr__(self) -> str:
 
