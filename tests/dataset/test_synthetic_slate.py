@@ -7,6 +7,7 @@ import pandas as pd
 from obp.dataset import SyntheticSlateBanditDataset
 from obp.dataset.synthetic_slate import (
     logistic_weighted_reward_function,
+    linear_weighted_reward_function,
     linear_behavior_policy_logit,
 )
 from obp.types import BanditFeedback
@@ -417,3 +418,215 @@ def test_tmp_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_
     # import pdb
 
     # pdb.set_trace()
+
+
+# n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_marginal, description
+valid_input_ = [
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "SIPS",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_weighted_reward_function,
+        False,
+        "SIPS",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "IIPS",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_weighted_reward_function,
+        False,
+        "IIPS",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "RIPS",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_weighted_reward_function,
+        False,
+        "RIPS",
+    ),
+    (
+        10,
+        3,
+        2,
+        "continuous",
+        123,
+        1000,
+        "SIPS",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        linear_weighted_reward_function,
+        False,
+        "SIPS continuous",
+    ),
+    (
+        10,
+        3,
+        2,
+        "continuous",
+        123,
+        1000,
+        "IIPS",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        linear_weighted_reward_function,
+        False,
+        "IIPS continuous",
+    ),
+    (
+        10,
+        3,
+        2,
+        "continuous",
+        123,
+        1000,
+        "RIPS",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        linear_weighted_reward_function,
+        False,
+        "RIPS continuous",
+    ),
+    (
+        10,
+        3,
+        2,
+        "continuous",
+        123,
+        1000,
+        "RIPS",
+        1 / np.exp(np.arange(3)),
+        None,
+        None,
+        False,
+        "Random policy and reward function (continous reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "Cascade",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_weighted_reward_function,
+        False,
+        "Cascade (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "continuous",
+        123,
+        1000,
+        "Cascade",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        linear_weighted_reward_function,
+        False,
+        "Cascade (continous reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "Greedy",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_weighted_reward_function,
+        False,
+        "Greedy (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "continuous",
+        123,
+        1000,
+        "Greedy",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        linear_weighted_reward_function,
+        False,
+        "Greedy (continous reward)",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_marginal, description",
+    valid_input_,
+)
+def test_synthetic_slate_using_valid_inputs(
+    n_actions,
+    len_list,
+    dim_context,
+    reward_type,
+    random_state,
+    n_rounds,
+    reward_structure,
+    exam_weight,
+    behavior_policy_function,
+    reward_function,
+    return_pscore_marginal,
+    description,
+):
+    dataset = SyntheticSlateBanditDataset(
+        n_actions=n_actions,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        exam_weight=exam_weight,
+        random_state=random_state,
+        behavior_policy_function=behavior_policy_function,
+        reward_function=reward_function,
+    )
+    # get feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds, return_pscore_marginal=return_pscore_marginal
+    )
+    # check slate bandit feedback (common test)
+    check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
+    pscore_columns = [
+        "pscore_joint_above",
+        "pscore_joint_all",
+        "pscore_marginal",
+    ]
+    bandit_feedback_df = pd.DataFrame()
+    for column in [
+        "impression_id",
+        "position",
+        "action",
+        "reward",
+        "expected_reward_factual",
+    ] + pscore_columns:
+        bandit_feedback_df[column] = bandit_feedback[column]
+    print(f"-------{description}--------")
+    print(bandit_feedback_df.groupby("position")["reward"].describe())
