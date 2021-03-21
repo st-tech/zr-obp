@@ -6,8 +6,7 @@ import pandas as pd
 
 from obp.dataset import SyntheticSlateBanditDataset
 from obp.dataset.synthetic_slate import (
-    logistic_weighted_reward_function,
-    linear_weighted_reward_function,
+    weighted_reward_function,
     linear_behavior_policy_logit,
 )
 from obp.types import BanditFeedback
@@ -253,7 +252,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         exam_weight=1 / np.exp(np.arange(len_list)),
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
-        reward_function=logistic_weighted_reward_function,
+        reward_function=weighted_reward_function,
     )
     # get feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
@@ -290,7 +289,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         exam_weight=1 / np.exp(np.arange(len_list)),
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
-        reward_function=logistic_weighted_reward_function,
+        reward_function=weighted_reward_function,
     )
     # get feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
@@ -326,7 +325,7 @@ def test_tmp_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_
         exam_weight=1 / np.exp(np.arange(len_list)),
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
-        reward_function=logistic_weighted_reward_function,
+        reward_function=weighted_reward_function,
     )
     # get feedback
     bandit_feedback_r = dataset_r.obtain_batch_bandit_feedback(
@@ -359,7 +358,7 @@ def test_tmp_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_
         exam_weight=1 / np.exp(np.arange(len_list)),
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
-        reward_function=logistic_weighted_reward_function,
+        reward_function=weighted_reward_function,
     )
     # get feedback
     bandit_feedback_s = dataset_s.obtain_batch_bandit_feedback(
@@ -392,7 +391,7 @@ def test_tmp_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_
         exam_weight=1 / np.exp(np.arange(len_list)),
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
-        reward_function=logistic_weighted_reward_function,
+        reward_function=weighted_reward_function,
     )
     # get feedback
     bandit_feedback_i = dataset_i.obtain_batch_bandit_feedback(
@@ -432,7 +431,7 @@ valid_input_ = [
         "SIPS",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        logistic_weighted_reward_function,
+        weighted_reward_function,
         False,
         "SIPS",
     ),
@@ -446,7 +445,7 @@ valid_input_ = [
         "IIPS",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        logistic_weighted_reward_function,
+        weighted_reward_function,
         False,
         "IIPS",
     ),
@@ -460,7 +459,7 @@ valid_input_ = [
         "RIPS",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        logistic_weighted_reward_function,
+        weighted_reward_function,
         False,
         "RIPS",
     ),
@@ -474,7 +473,7 @@ valid_input_ = [
         "SIPS",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        linear_weighted_reward_function,
+        weighted_reward_function,
         False,
         "SIPS continuous",
     ),
@@ -488,7 +487,7 @@ valid_input_ = [
         "IIPS",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        linear_weighted_reward_function,
+        weighted_reward_function,
         False,
         "IIPS continuous",
     ),
@@ -502,7 +501,7 @@ valid_input_ = [
         "RIPS",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        linear_weighted_reward_function,
+        weighted_reward_function,
         False,
         "RIPS continuous",
     ),
@@ -530,7 +529,7 @@ valid_input_ = [
         "Cascade",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        logistic_weighted_reward_function,
+        weighted_reward_function,
         False,
         "Cascade (binary reward)",
     ),
@@ -544,7 +543,7 @@ valid_input_ = [
         "Cascade",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        linear_weighted_reward_function,
+        weighted_reward_function,
         False,
         "Cascade (continous reward)",
     ),
@@ -558,7 +557,7 @@ valid_input_ = [
         "Greedy",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        logistic_weighted_reward_function,
+        weighted_reward_function,
         False,
         "Greedy (binary reward)",
     ),
@@ -572,7 +571,7 @@ valid_input_ = [
         "Greedy",
         1 / np.exp(np.arange(3)),
         linear_behavior_policy_logit,
-        linear_weighted_reward_function,
+        weighted_reward_function,
         False,
         "Greedy (continous reward)",
     ),

@@ -13,7 +13,8 @@ from tqdm import tqdm
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import sigmoid, softmax
+from ..utils import softmax
+from .synthetic import logistic_reward_function, linear_reward_function
 
 
 @dataclass
@@ -24,14 +25,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     -----
     By calling the `obtain_batch_bandit_feedback` method several times,
     we have different bandit samples with the same setting.
-    This can be used to estimate confidence intervals of the performances of OPE estimators.
+    This can be used to estimate confidence intervals of the performances of Slate OPE estimators.
 
     If None is set as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
 
     Parameters
     -----------
-    n_actions: int
+    n_actions: int (>= len_list)
         Number of actions.
+
+    len_list: int (> 1)
+        Length of a list of actions recommended in each impression.
+        When Open Bandit Dataset is used, 3 should be set.
 
     dim_context: int, default=1
         Number of dimensions of context vectors.
@@ -42,24 +47,35 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
         The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
 
-    reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
-        Function generating expected reward for each given action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is set, context **independent** expected reward for each action will be
+    TODO: ---comment---
+    reward_structure: str, default='cascade'
+        TBD
+
+    reward_transition_rate: np.ndarray, default=np.array([0.5, 0.2])
+        TBD
+
+    exam_weight: np.ndarray, default=None
+        TBD
+    ---TODO---:
+
+    reward_function: Callable[[np.ndarray] * 5, np.ndarray]], default=None
+        Function generating slot-level expected reward for each given factual action-context pair,
+        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A}^{\\mathcal{L}} \\rightarrow \\mathbb{R}^{\\mathcal{L}}`.
+        If None is set, context **independent** expected reward for each factual action will be
         sampled from the uniform distribution automatically.
 
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
-        Function generating probability distribution over action space,
-        i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        Function generating logit value of each action in action space,
+        i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
         If None is set, context **independent** uniform distribution will be used (uniform random behavior policy).
 
     random_state: int, default=12345
-        Controls the random seed in sampling synthetic bandit dataset.
+        Controls the random seed in sampling synthetic slate bandit dataset.
 
-    dataset_name: str, default='synthetic_bandit_dataset'
+    dataset_name: str, default='synthetic_slate_bandit_dataset'
         Name of the dataset.
 
-    Examples
+    TODO: Examples
     ----------
 
     .. code-block:: python
@@ -130,7 +146,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     reward_structure: str = "RIPS"
     reward_transition_rate: Optional[np.ndarray] = np.array([0.5, 0.2])
     exam_weight: Optional[np.ndarray] = None
-    reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
+    reward_function: Optional[
+        Callable[
+            [np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray
+        ]
+    ] = None
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
     ] = None
@@ -173,12 +193,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 raise ValueError(
                     f"exam_weight must be ndarray or None, but {self.exam_weight} is given"
                 )
-        # TODO: implement slot_weight_matrix
+        # TODO: fix reward structure names
         if self.reward_structure == "SIPS":
             self.slot_weight_matrix = self.get_sips_slot_weight(self.len_list)
         elif self.reward_structure == "RIPS":
             self.slot_weight_matrix = self.get_rips_slot_weight(self.len_list)
         elif self.reward_structure in ["Cascade", "Greedy"]:
+            # exam weight is reset when reward structure is cascade of greedy
             self.exam_weight = np.ones(self.len_list)
             self.slot_weight_matrix = np.identity(self.len_list)
         else:
@@ -192,6 +213,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             self.reward_min = 0
             self.reward_max = 1e10
             self.reward_std = 1.0
+        # set the base reward function
+        if self.reward_function is not None:
+            if self.reward_type == "binary":
+                self.base_reward_function = logistic_reward_function
+            else:
+                self.base_reward_function = linear_reward_function
         # one-hot encoding representations characterizing each action
         self.action_context = np.eye(self.n_actions, dtype=int)
 
@@ -234,6 +261,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds: int,
         return_pscore_marginal: bool = True,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
+        """TODO: comment"""
         action = np.zeros(n_rounds * self.len_list, dtype=int)
         pscore_joint_above = np.zeros(n_rounds * self.len_list)
         pscore_joint_all = np.zeros(n_rounds * self.len_list)
@@ -283,7 +311,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def sample_reward_given_expected_reward(
         self, expected_reward_factual: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        # expected_reward_factual_actions: list, shape (n_rounds, len_list)
+        """Sample reward for each action and slot based on expected_reward_factual
+
+        Parameters
+        ------------
+        expected_reward_factual: array-like, shape (n_rounds, len_list)
+            expected reward of factual actions
+
+        Returns
+        ----------
+        sampled reward: array-like, shape (n_actions, len_list)
+
+        """
         if self.reward_structure in ["Cascade", "Greedy"]:
             reward = np.zeros(expected_reward_factual.shape)
             for i in tqdm(
@@ -292,6 +331,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 total=reward.shape[0],
             ):
                 previous_reward = 0.0
+                # actions are in order of browsing assumption
                 action_list = (
                     np.arange(3)
                     if self.reward_structure == "Cascade"
@@ -344,7 +384,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 )
         else:
             raise NotImplementedError
-        # return: two arrays, shape (n_rounds, len_list)
+        # return: array-like, shape (n_rounds, len_list)
         return reward
 
     def obtain_batch_bandit_feedback(
@@ -360,10 +400,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds: int
             Number of rounds for synthetic bandit feedback data.
 
+        tau: int or float, default=1.0
+            A temperature parameter, controlling the randomness of the action choice.
+            As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
+
+        return_pscore_marginal: bool, default=True
+            A boolean parameter whether `pscore_marginal` is returned or not.
+            When `n_actions` and `len_list` are large, this parameter should be set to False because of the computational time
+
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            Generated synthetic bandit feedback dataset.
+            Generated synthetic slate bandit feedback dataset.
 
         """
         if not isinstance(n_rounds, int) or n_rounds <= 0:
@@ -381,6 +429,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 action_context=self.action_context,
                 random_state=self.random_state,
             )
+        # check the shape of behavior_policy_logit_
+        if not (
+            isinstance(behavior_policy_logit_, np.ndarray)
+            and behavior_policy_logit_.shape == (n_rounds, self.n_actions)
+        ):
+            raise ValueError("behavior_policy_logit_ is Invalid")
+        # sample action and pscores
         (
             action,
             pscore_joint_above,
@@ -391,13 +446,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             n_rounds=n_rounds,
             return_pscore_marginal=return_pscore_marginal,
         )
-
+        # sample expected reward factual
         if self.reward_function is None:
             expected_reward = self.sample_contextfree_expected_reward()
             expected_reward_tile = np.tile(expected_reward, (n_rounds, 1, 1))
             # action_2d: array-like, shape (n_rounds, len_list)
             action_2d = action.reshape((n_rounds, self.len_list))
-            # expected_reward_factual_actions: list, shape (len_list, n_rounds)
+            # expected_reward_factual: array-like, shape (n_rounds, len_list)
             expected_reward_factual = np.array(
                 [
                     expected_reward_tile[
@@ -407,15 +462,22 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 ]
             ).T
         else:
-
             expected_reward_factual = self.reward_function(
                 context=context,
                 action_context=self.action_context,
                 action=action,
                 slot_weight_matrix=self.slot_weight_matrix,
                 exam_weight=self.exam_weight,
+                base_function=self.base_reward_function,
                 random_state=self.random_state,
             )
+        # check the shape of expected_reward_factual
+        if not (
+            isinstance(expected_reward_factual, np.ndarray)
+            and expected_reward_factual.shape == (n_rounds, self.len_list)
+        ):
+            raise ValueError("expected_reward_factual is Invalid")
+        # sample reward
         reward = self.sample_reward_given_expected_reward(
             expected_reward_factual=expected_reward_factual
         )
@@ -436,16 +498,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         )
 
 
-def linear_weighted_reward_function(
+def weighted_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     action: np.ndarray,
     slot_weight_matrix: np.ndarray,
     exam_weight: np.ndarray,
+    base_function: Callable[[np.ndarray, np.ndarray], np.ndarray],
     random_state: Optional[int] = None,
     **kwargs,
 ) -> np.ndarray:
-    """
+    """TODO: comment
     slot_weight_matrix: array-like, shape (len_list, len_list)
     """
     # fix slot_weight_matrix by exam_weight
@@ -459,7 +522,7 @@ def linear_weighted_reward_function(
             "the size of axis 0 of slot_weight_matrix must be the same as the size of axis 1 of action_3d"
         )
     # expected_reward: array-like, shape (n_rounds, n_actions)
-    expected_reward = linear_reward_function(
+    expected_reward = base_function(
         context=context, action_context=action_context, random_state=random_state
     )
     # expected_reward_3d: array-like, shape (n_rounds, n_actions, len_list)
@@ -476,130 +539,6 @@ def linear_weighted_reward_function(
     )
     # return: array, shape (n_rounds, len_list)
     return np.array(expected_reward_factual)
-
-
-def logistic_weighted_reward_function(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    action: np.ndarray,
-    slot_weight_matrix: np.ndarray,
-    exam_weight: np.ndarray,
-    random_state: Optional[int] = None,
-    **kwargs,
-) -> np.ndarray:
-    """
-    slot_weight_matrix: array-like, shape (len_list, len_list)
-    """
-    # fix slot_weight_matrix by exam_weight
-    slot_weight_matrix = slot_weight_matrix * exam_weight
-    # action_2d: array-like, shape (n_rounds, len_list)
-    action_2d = action.reshape((context.shape[0], slot_weight_matrix.shape[0]))
-    # action_3d: array-like, shape (n_rounds, n_actions, len_list)
-    action_3d = np.identity(action_context.shape[0])[action_2d].transpose(0, 2, 1)
-    if slot_weight_matrix.shape[0] < action_3d.shape[2]:
-        raise ValueError(
-            "the size of axis 0 of slot_weight_matrix must be the same as the size of axis 1 of action_3d"
-        )
-    # expected_reward: array-like, shape (n_rounds, n_actions)
-    expected_reward = logistic_reward_function(
-        context=context, action_context=action_context, random_state=random_state
-    )
-    # expected_reward_3d: array-like, shape (n_rounds, n_actions, len_list)
-    expected_reward_3d = np.tile(
-        expected_reward, (slot_weight_matrix.shape[0], 1, 1)
-    ).transpose(1, 2, 0)
-    # action_weight: array-like, shape (n_rounds, n_actions, len_list)
-    action_weight = action_3d @ slot_weight_matrix
-    # weighted_expected_reward: array-like, shape (n_rounds, n_actions, len_list)
-    weighted_expected_reward = action_weight * expected_reward_3d
-    # expected_reward_factual: list, shape (n_rounds, len_list)
-    expected_reward_factual = (
-        weighted_expected_reward.sum(axis=1) / slot_weight_matrix.shape[0]
-    )
-    # return: array, shape (n_rounds, len_list)
-    return np.array(expected_reward_factual)
-
-
-def logistic_reward_function(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: Optional[int] = None,
-) -> np.ndarray:
-    """Logistic mean reward function for synthetic bandit datasets.
-
-    Parameters
-    -----------
-    context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
-
-    action_context: array-like, shape (n_actions, dim_action_context)
-        Vector representation for each action.
-
-    random_state: int, default=None
-        Controls the random seed in sampling dataset.
-
-    Returns
-    ---------
-    expected_reward: array-like, shape (n_rounds, n_actions)
-        Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
-
-    """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
-
-    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
-        raise ValueError("action_context must be 2-dimensional ndarray")
-
-    random_ = check_random_state(random_state)
-    logits = np.zeros((context.shape[0], action_context.shape[0]))
-    # each arm has different coefficient vectors
-    coef_ = random_.uniform(size=(action_context.shape[0], context.shape[1]))
-    action_coef_ = random_.uniform(size=action_context.shape[1])
-    for d in np.arange(action_context.shape[0]):
-        logits[:, d] = context @ coef_[d] + action_context[d] @ action_coef_
-
-    return sigmoid(logits)
-
-
-def linear_reward_function(
-    context: np.ndarray,
-    action_context: np.ndarray,
-    random_state: Optional[int] = None,
-) -> np.ndarray:
-    """Linear mean reward function for synthetic bandit datasets.
-
-    Parameters
-    -----------
-    context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
-
-    action_context: array-like, shape (n_actions, dim_action_context)
-        Vector representation for each action.
-
-    random_state: int, default=None
-        Controls the random seed in sampling dataset.
-
-    Returns
-    ---------
-    expected_reward: array-like, shape (n_rounds, n_actions)
-        Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
-
-    """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
-
-    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
-        raise ValueError("action_context must be 2-dimensional ndarray")
-
-    random_ = check_random_state(random_state)
-    expected_reward = np.zeros((context.shape[0], action_context.shape[0]))
-    # each arm has different coefficient vectors
-    coef_ = random_.uniform(size=(action_context.shape[0], context.shape[1]))
-    action_coef_ = random_.uniform(size=action_context.shape[1])
-    for d in np.arange(action_context.shape[0]):
-        expected_reward[:, d] = context @ coef_[d] + action_context[d] @ action_coef_
-
-    return expected_reward
 
 
 def linear_behavior_policy_logit(
@@ -608,7 +547,7 @@ def linear_behavior_policy_logit(
     random_state: Optional[int] = None,
     tau: Union[int, float] = 1.0,
 ) -> np.ndarray:
-    """Linear contextual behavior policy for synthetic bandit datasets.
+    """Linear contextual behavior policy for synthetic slate bandit datasets.
 
     Parameters
     -----------
@@ -625,11 +564,10 @@ def linear_behavior_policy_logit(
         A temperature parameter, controlling the randomness of the action choice.
         As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
-
     Returns
     ---------
-    behavior_policy: array-like, shape (n_rounds, n_actions)
-        logit given context (:math:`x`), i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+    logit value: array-like, shape (n_rounds, n_actions)
+        logit given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
