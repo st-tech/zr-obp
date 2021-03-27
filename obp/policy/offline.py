@@ -358,10 +358,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         When Open Bandit Dataset is used, 3 should be set.
         Currently, len_list > 1 is not supported.
 
-    dim_context: int, default=None
+    dim_context: int
         Number of dimensions of context vectors.
 
-    off_policy_objective: Callable[[VarArg[Any]], Tensor], default=None
+    off_policy_objective: Callable[[VarArg[Any]], Tensor]
         Function returns the value of an OPE estimator.
         `BaseOffPolicyEstimator.estimate_policy_value_tensor` is supposed to be given here.
 
