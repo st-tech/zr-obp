@@ -6,7 +6,6 @@ from typing import Dict, Optional, Union
 
 import numpy as np
 from sklearn.utils import check_random_state
-from sklearn.utils.validation import _deprecate_positional_args
 import torch
 
 

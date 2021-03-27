@@ -3,7 +3,7 @@ import yaml
 from pathlib import Path
 
 from pandas import DataFrame
-from sklearn.experimental import enable_hist_gradient_boosting  # nopa
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
