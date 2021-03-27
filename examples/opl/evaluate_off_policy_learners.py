@@ -181,7 +181,7 @@ if __name__ == "__main__":
     nn_policy_learner = NNPolicyLearner(
         n_actions=dataset.n_actions,
         dim_context=dim_context,
-        ope_estimator_fun=ope_estimator_dict[
+        off_policy_objective=ope_estimator_dict[
             ope_estimator
         ].estimate_policy_value_tensor,
         hidden_layer_size=tuple((n_hidden for _ in range(n_layers))),
@@ -235,7 +235,11 @@ if __name__ == "__main__":
             [nn_policy_learner_policy_value],
         ],
         columns=["policy value"],
-        index=["random", "ipw", "nn"],
+        index=[
+            "random_policy",
+            "ipw_learner",
+            f"nn_policy_learner (with {ope_estimator})",
+        ],
     ).round(6)
     print("=" * 45)
     print(f"random_state={random_state}")

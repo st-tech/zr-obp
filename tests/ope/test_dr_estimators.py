@@ -579,9 +579,7 @@ def test_dr_using_random_evaluation_policy(
     """
     Test the format of dr variants using synthetic bandit data and random evaluation policy
     """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # prepare input dict
     input_dict = {
@@ -668,9 +666,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     """
     Test the boundedness of sndr estimators using synthetic bandit data and random evaluation policy
     """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # prepare input dict
     input_dict = {
@@ -711,9 +707,7 @@ def test_dr_shrinkage_using_random_evaluation_policy(
     """
     Test the dr shrinkage estimators using synthetic bandit data and random evaluation policy
     """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # prepare input dict
     input_dict = {
@@ -764,9 +758,7 @@ def test_switch_dr_using_random_evaluation_policy(
     """
     Test the switch_dr using synthetic bandit data and random evaluation policy
     """
-    expected_reward = np.expand_dims(
-        synthetic_bandit_feedback["expected_reward"], axis=-1
-    )
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # prepare input dict
     input_dict = {

@@ -81,10 +81,10 @@ python evaluate_off_policy_learners.py\
 # =============================================
 # random_state=12345
 # ---------------------------------------------
-#         policy value
-# random      0.604339
-# ipw         0.767615
-# nn          0.764302
+#                              policy value
+# random_policy                    0.604339
+# ipw_learner                      0.767615
+# nn_policy_learner (with dr)      0.764302
 # =============================================
 ```
 

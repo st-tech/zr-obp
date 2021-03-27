@@ -3,9 +3,9 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 import torch
 
-
 from obp.policy.offline import IPWLearner
 from obp.policy.offline import NNPolicyLearner
+from obp.policy.policy_type import PolicyType
 from obp.ope.estimators import InverseProbabilityWeighting
 
 
@@ -25,7 +25,7 @@ def test_base_opl_init():
         IPWLearner(n_actions=2, len_list="3")
 
     # policy_type
-    assert IPWLearner(n_actions=2).policy_type == "offline"
+    assert IPWLearner(n_actions=2).policy_type == PolicyType.OFFLINE
 
     # invalid relationship between n_actions and len_list
     with pytest.raises(ValueError):
@@ -115,6 +115,9 @@ def test_ipw_learner_predict():
 
     context_test = np.array([i for i in range(10)]).reshape(5, 2)
     action_dist = learner.predict(context=context_test)
+    assert np.allclose(
+        action_dist.sum(1), np.ones_like((context_test.shape[0], len_list))
+    )
     assert action_dist.shape[0] == 5
     assert action_dist.shape[1] == n_actions
     assert action_dist.shape[2] == len_list
@@ -251,7 +254,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "ope_estimator_fun must be callable",
+        "off_policy_objective must be callable",
     ),
     (
         10,
@@ -407,7 +410,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "learning_rate_init must be a nonnegative float",
+        "learning_rate_init must be a positive float",
     ),
     (
         10,
@@ -511,7 +514,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "tol must be a nonnegative float",
+        "tol must be a positive float",
     ),
     (
         10,
@@ -641,7 +644,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "validation_fraction must be a float in \(0., 1.]",
+        "validation_fraction must be a float in",
     ),
     (
         10,
@@ -832,14 +835,14 @@ valid_input_of_nn_policy_learner_init = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, ope_estimator_fun, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
+    "n_actions, len_list, dim_context, off_policy_objective, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
     invalid_input_of_nn_policy_learner_init,
 )
 def test_nn_policy_learner_init_using_invalid_inputs(
     n_actions,
     len_list,
     dim_context,
-    ope_estimator_fun,
+    off_policy_objective,
     hidden_layer_size,
     activation,
     solver,
@@ -866,7 +869,7 @@ def test_nn_policy_learner_init_using_invalid_inputs(
             n_actions=n_actions,
             len_list=len_list,
             dim_context=dim_context,
-            ope_estimator_fun=ope_estimator_fun,
+            off_policy_objective=off_policy_objective,
             hidden_layer_size=hidden_layer_size,
             activation=activation,
             solver=solver,
@@ -890,14 +893,14 @@ def test_nn_policy_learner_init_using_invalid_inputs(
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, ope_estimator_fun, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
+    "n_actions, len_list, dim_context, off_policy_objective, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description",
     valid_input_of_nn_policy_learner_init,
 )
 def test_nn_policy_learner_init_using_valid_inputs(
     n_actions,
     len_list,
     dim_context,
-    ope_estimator_fun,
+    off_policy_objective,
     hidden_layer_size,
     activation,
     solver,
@@ -923,7 +926,7 @@ def test_nn_policy_learner_init_using_valid_inputs(
         n_actions=n_actions,
         len_list=len_list,
         dim_context=dim_context,
-        ope_estimator_fun=ope_estimator_fun,
+        off_policy_objective=off_policy_objective,
         hidden_layer_size=hidden_layer_size,
         activation=activation,
         solver=solver,
@@ -957,7 +960,9 @@ def test_nn_policy_learner_create_train_data_for_opl():
     ipw = InverseProbabilityWeighting()
 
     learner1 = NNPolicyLearner(
-        n_actions=2, dim_context=2, ope_estimator_fun=ipw.estimate_policy_value_tensor
+        n_actions=2,
+        dim_context=2,
+        off_policy_objective=ipw.estimate_policy_value_tensor,
     )
 
     training_loader, validation_loader = learner1._create_train_data_for_opl(
@@ -975,7 +980,7 @@ def test_nn_policy_learner_create_train_data_for_opl():
     learner2 = NNPolicyLearner(
         n_actions=2,
         dim_context=2,
-        ope_estimator_fun=ipw.estimate_policy_value_tensor,
+        off_policy_objective=ipw.estimate_policy_value_tensor,
         early_stopping=True,
     )
 
@@ -1004,7 +1009,7 @@ def test_nn_policy_learner_fit():
         learner = NNPolicyLearner(
             n_actions=2,
             dim_context=2,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         variant_context = np.ones((101, 2), dtype=np.float32)
         learner.fit(
@@ -1016,7 +1021,7 @@ def test_nn_policy_learner_fit():
         learner = NNPolicyLearner(
             n_actions=2,
             dim_context=3,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
 
@@ -1037,7 +1042,7 @@ def test_nn_policy_learner_predict():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([1.0, 1.0], dtype=np.float32)
@@ -1049,7 +1054,7 @@ def test_nn_policy_learner_predict():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
@@ -1061,10 +1066,13 @@ def test_nn_policy_learner_predict():
         n_actions=n_actions,
         len_list=len_list,
         dim_context=2,
-        ope_estimator_fun=ipw.estimate_policy_value_tensor,
+        off_policy_objective=ipw.estimate_policy_value_tensor,
     )
     learner.fit(context=context, action=action, reward=reward, pscore=pscore)
     action_dist = learner.predict(context=context_test)
+    assert np.allclose(
+        action_dist.sum(1), np.ones_like((context_test.shape[0], len_list))
+    )
     assert action_dist.shape[0] == 5
     assert action_dist.shape[1] == n_actions
     assert action_dist.shape[2] == len_list
@@ -1086,7 +1094,7 @@ def test_nn_policy_learner_sample_action():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([1.0, 1.0], dtype=np.float32)
@@ -1098,7 +1106,7 @@ def test_nn_policy_learner_sample_action():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
@@ -1108,10 +1116,13 @@ def test_nn_policy_learner_sample_action():
         n_actions=n_actions,
         len_list=len_list,
         dim_context=2,
-        ope_estimator_fun=ipw.estimate_policy_value_tensor,
+        off_policy_objective=ipw.estimate_policy_value_tensor,
     )
     learner.fit(context=context, action=action, reward=reward, pscore=pscore)
     action_dist = learner.sample_action(context=context_test)
+    assert np.allclose(
+        action_dist.sum(1), np.ones_like((context_test.shape[0], len_list))
+    )
     assert action_dist.shape[0] == context_test.shape[0]
     assert action_dist.shape[1] == n_actions
     assert action_dist.shape[2] == len_list
@@ -1133,7 +1144,7 @@ def test_nn_policy_learner_predict_proba():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([1.0, 1.0], dtype=np.float32)
@@ -1145,7 +1156,7 @@ def test_nn_policy_learner_predict_proba():
             n_actions=n_actions,
             len_list=len_list,
             dim_context=2,
-            ope_estimator_fun=ipw.estimate_policy_value_tensor,
+            off_policy_objective=ipw.estimate_policy_value_tensor,
         )
         learner.fit(context=context, action=action, reward=reward, pscore=pscore)
         invalid_context = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
@@ -1155,10 +1166,13 @@ def test_nn_policy_learner_predict_proba():
         n_actions=n_actions,
         len_list=len_list,
         dim_context=2,
-        ope_estimator_fun=ipw.estimate_policy_value_tensor,
+        off_policy_objective=ipw.estimate_policy_value_tensor,
     )
     learner.fit(context=context, action=action, reward=reward, pscore=pscore)
     action_dist = learner.predict_proba(context=context_test)
+    assert np.allclose(
+        action_dist.sum(1), np.ones_like((context_test.shape[0], len_list))
+    )
     assert action_dist.shape[0] == context_test.shape[0]
     assert action_dist.shape[1] == n_actions
     assert action_dist.shape[2] == len_list

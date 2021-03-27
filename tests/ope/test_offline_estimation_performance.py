@@ -1,13 +1,15 @@
-import argparse
-import yaml
-from pathlib import Path
-
 import numpy as np
 from pandas import DataFrame
 from joblib import Parallel, delayed
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import torch
+import pytest
+from dataclasses import dataclass
+from obp.ope.estimators import BaseOffPolicyEstimator
+
+from typing import Dict
 
 from obp.dataset import (
     SyntheticBanditDataset,
@@ -29,8 +31,26 @@ from obp.ope import (
 
 
 # hyperparameter for the regression model used in model dependent OPE estimators
-with open("./conf/hyperparams.yaml", "rb") as f:
-    hyperparams = yaml.safe_load(f)
+hyperparams = {
+    "lightgbm": {
+        "max_iter": 500,
+        "learning_rate": 0.005,
+        "max_depth": 5,
+        "min_samples_leaf": 10,
+        "random_state": 12345,
+    },
+    "logistic_regression": {
+        "max_iter": 10000,
+        "C": 1000,
+        "random_state": 12345,
+    },
+    "random_forest": {
+        "n_estimators": 500,
+        "max_depth": 5,
+        "min_samples_leaf": 10,
+        "random_state": 12345,
+    },
+}
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
@@ -38,8 +58,77 @@ base_model_dict = dict(
     random_forest=RandomForestClassifier,
 )
 
+offline_experiment_configurations = [
+    (
+        600,
+        10,
+        5,
+        "logistic_regression",
+        "logistic_regression",
+    ),
+    (
+        300,
+        3,
+        2,
+        "lightgbm",
+        "lightgbm",
+    ),
+    (
+        500,
+        5,
+        3,
+        "random_forest",
+        "random_forest",
+    ),
+    (
+        500,
+        3,
+        5,
+        "logistic_regression",
+        "random_forest",
+    ),
+    (
+        400,
+        10,
+        10,
+        "lightgbm",
+        "logistic_regression",
+    ),
+]
+
+
+@dataclass
+class RandomOffPolicyEstimator(BaseOffPolicyEstimator):
+    """Estimate the policy value based on random predictions"""
+
+    estimator_name: str = "random"
+
+    def _estimate_round_rewards(
+        self,
+        action_dist: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        n_rounds = action_dist.shape[0]
+        return np.random.uniform(size=n_rounds)
+
+    def estimate_policy_value(
+        self,
+        action_dist: np.ndarray,
+        **kwargs,
+    ) -> float:
+        """Estimate policy value of an evaluation policy."""
+        return self._estimate_round_rewards(action_dist=action_dist).mean()
+
+    def estimate_policy_value_tensor(self, **kwargs) -> torch.Tensor:
+        pass  # not used in this test
+
+    def estimate_interval(self) -> Dict[str, float]:
+        pass  # not used in this test
+
+
 # compared OPE estimators
 ope_estimators = [
+    RandomOffPolicyEstimator(),
     DirectMethod(),
     InverseProbabilityWeighting(),
     SelfNormalizedInverseProbabilityWeighting(),
@@ -51,65 +140,18 @@ ope_estimators = [
     DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
 ]
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="evaluate off-policy estimators with synthetic bandit data."
-    )
-    parser.add_argument(
-        "--n_runs", type=int, default=1, help="number of simulations in the experiment."
-    )
-    parser.add_argument(
-        "--n_rounds",
-        type=int,
-        default=10000,
-        help="number of rounds for synthetic bandit feedback.",
-    )
-    parser.add_argument(
-        "--n_actions",
-        type=int,
-        default=10,
-        help="number of actions for synthetic bandit feedback.",
-    )
-    parser.add_argument(
-        "--dim_context",
-        type=int,
-        default=5,
-        help="dimensions of context vectors characterizing each round.",
-    )
-    parser.add_argument(
-        "--base_model_for_evaluation_policy",
-        type=str,
-        choices=["logistic_regression", "lightgbm", "random_forest"],
-        required=True,
-        help="base ML model for evaluation policy, logistic_regression, random_forest or lightgbm.",
-    )
-    parser.add_argument(
-        "--base_model_for_reg_model",
-        type=str,
-        choices=["logistic_regression", "lightgbm", "random_forest"],
-        required=True,
-        help="base ML model for regression model, logistic_regression, random_forest or lightgbm.",
-    )
-    parser.add_argument(
-        "--n_jobs",
-        type=int,
-        default=1,
-        help="the maximum number of concurrently running jobs.",
-    )
-    parser.add_argument("--random_state", type=int, default=12345)
-    args = parser.parse_args()
-    print(args)
 
-    # configurations
-    n_runs = args.n_runs
-    n_rounds = args.n_rounds
-    n_actions = args.n_actions
-    dim_context = args.dim_context
-    base_model_for_evaluation_policy = args.base_model_for_evaluation_policy
-    base_model_for_reg_model = args.base_model_for_reg_model
-    n_jobs = args.n_jobs
-    random_state = args.random_state
-
+@pytest.mark.parametrize(
+    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
+    offline_experiment_configurations,
+)
+def test_offline_estimation_performance(
+    n_rounds: int,
+    n_actions: int,
+    dim_context: int,
+    base_model_for_evaluation_policy: str,
+    base_model_for_reg_model: str,
+) -> None:
     def process(i: int):
         # synthetic data generator
         dataset = SyntheticBanditDataset(
@@ -153,7 +195,7 @@ if __name__ == "__main__":
             action=bandit_feedback_test["action"],
             reward=bandit_feedback_test["reward"],
             n_folds=3,  # 3-fold cross-fitting
-            random_state=random_state,
+            random_state=12345,
         )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
@@ -171,9 +213,10 @@ if __name__ == "__main__":
 
         return relative_ee_i
 
+    n_runs = 10
     processed = Parallel(
-        n_jobs=n_jobs,
-        verbose=50,
+        n_jobs=-1,
+        verbose=0,
     )([delayed(process)(i) for i in np.arange(n_runs)])
     relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
     for i, relative_ee_i in enumerate(processed):
@@ -183,14 +226,14 @@ if __name__ == "__main__":
         ) in relative_ee_i.items():
             relative_ee_dict[estimator_name][i] = relative_ee_
     relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
+    relative_ee_df_mean = relative_ee_df["mean"]
 
-    print("=" * 45)
-    print(f"random_state={random_state}")
-    print("-" * 45)
-    print(relative_ee_df[["mean", "std"]])
-    print("=" * 45)
-
-    # save results of the evaluation of off-policy estimators in './logs' directory.
-    log_path = Path("./logs")
-    log_path.mkdir(exist_ok=True, parents=True)
-    relative_ee_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dm"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["ipw"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["snipw"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["sndr"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tau=1)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tau=100)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=1)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=100)"]

@@ -3,7 +3,7 @@
 
 """Bandit Simulator."""
 from copy import deepcopy
-from typing import Optional, Callable
+from typing import Callable
 
 from tqdm import tqdm
 
@@ -11,6 +11,7 @@ import numpy as np
 
 from ..utils import check_bandit_feedback_inputs, convert_to_action_dist
 from ..types import BanditFeedback, BanditPolicy
+from ..policy.policy_type import PolicyType
 
 
 def run_bandit_simulation(
@@ -61,17 +62,17 @@ def run_bandit_simulation(
     ):
 
         # select a list of actions
-        if policy_.policy_type == "contextfree":
+        if policy_.policy_type == PolicyType.CONTEXT_FREE:
             selected_actions = policy_.select_action()
-        elif policy_.policy_type == "contextual":
+        elif policy_.policy_type == PolicyType.CONTEXTUAL:
             selected_actions = policy_.select_action(context_.reshape(1, dim_context))
         action_match_ = action_ == selected_actions[position_]
         # update parameters of a bandit policy
         # only when selected actions&positions are equal to logged actions&positions
         if action_match_:
-            if policy_.policy_type == "contextfree":
+            if policy_.policy_type == PolicyType.CONTEXT_FREE:
                 policy_.update_params(action=action_, reward=reward_)
-            elif policy_.policy_type == "contextual":
+            elif policy_.policy_type == PolicyType.CONTEXTUAL:
                 policy_.update_params(
                     action=action_,
                     reward=reward_,
@@ -144,9 +145,9 @@ def calc_ground_truth_policy_value(
         ):
 
             # select a list of actions
-            if policy_.policy_type == "contextfree":
+            if policy_.policy_type == PolicyType.CONTEXT_FREE:
                 selected_actions = policy_.select_action()
-            elif policy_.policy_type == "contextual":
+            elif policy_.policy_type == PolicyType.CONTEXTUAL:
                 selected_actions = policy_.select_action(
                     context_.reshape(1, dim_context)
                 )
@@ -158,9 +159,9 @@ def calc_ground_truth_policy_value(
             cumulative_reward += expected_reward_[action]
 
             # update parameters of a bandit policy
-            if policy_.policy_type == "contextfree":
+            if policy_.policy_type == PolicyType.CONTEXT_FREE:
                 policy_.update_params(action=action, reward=reward)
-            elif policy_.policy_type == "contextual":
+            elif policy_.policy_type == PolicyType.CONTEXTUAL:
                 policy_.update_params(
                     action=action,
                     reward=reward,

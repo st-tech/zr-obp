@@ -816,7 +816,7 @@ def test_performance_of_binary_outcome_models(
     when the regression model is estimated by a logistic regression
     """
     bandit_feedback = fixed_synthetic_bandit_feedback.copy()
-    expected_reward = np.expand_dims(bandit_feedback["expected_reward"], axis=-1)
+    expected_reward = bandit_feedback["expected_reward"][:, :, np.newaxis]
     action_dist = random_action_dist
     # compute ground truth policy value using expected reward
     q_pi_e = np.average(expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1)

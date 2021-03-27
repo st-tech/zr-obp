@@ -62,13 +62,12 @@ class IPWLearner(BaseOfflinePolicyLearner):
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]
 
+    @staticmethod
     def _create_train_data_for_opl(
-        self,
         context: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        **kwargs,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Create training data for off-policy learning.
 
@@ -151,13 +150,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
         if pscore is None:
             n_actions = np.int(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
-        if self.len_list == 1:
+        if position is None or self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
-        else:
-            if not isinstance(position, np.ndarray) or position.ndim != 1:
-                raise ValueError(
-                    f"when len_list > 1, position must be a 1-dimensional ndarray"
-                )
 
         for position_ in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
@@ -335,7 +329,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         """
         assert (
             self.len_list == 1
-        ), f"predict_proba method can be used only when len_list = 1"
+        ), "predict_proba method can be used only when len_list = 1"
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
         ), "context must be 2-dimensional ndarray"
@@ -348,11 +342,11 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
 @dataclass
 class NNPolicyLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner using an neural network whose objective function is an OPE estimator.
+    """Off-policy learner using a neural network whose objective function is an OPE estimator.
 
     Note
     --------
-    MLP is implemented in PyTorch.
+    The neural network is implemented in PyTorch.
 
     Parameters
     -----------
@@ -364,11 +358,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         When Open Bandit Dataset is used, 3 should be set.
         Currently, len_list > 1 is not supported.
 
-    dim_context: Optional[int] = None
+    dim_context: int, default=None
         Number of dimensions of context vectors.
 
-    ope_estimator_fun: Callable[[VarArg[Any]], Tensor]
+    off_policy_objective: Callable[[VarArg[Any]], Tensor], default=None
         Function returns the value of an OPE estimator.
+        `BaseOffPolicyEstimator.estimate_policy_value_tensor` is supposed to be given here.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
         The i th element specifies the size of the i th layer.
@@ -459,7 +454,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     """
 
     dim_context: Optional[int] = None
-    ope_estimator_fun: Optional[Callable[[mx.VarArg(Any)], torch.Tensor]] = None
+    off_policy_objective: Optional[Callable[[mx.VarArg(Any)], torch.Tensor]] = None
     hidden_layer_size: Tuple[int, ...] = (100,)
     activation: str = "relu"
     solver: str = "adam"
@@ -492,9 +487,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"dim_context must be a positive integer, but {self.dim_context} is given"
             )
 
-        if not callable(self.ope_estimator_fun):
+        if not callable(self.off_policy_objective):
             raise ValueError(
-                f"ope_estimator_fun must be callable, but {self.ope_estimator_fun} is given"
+                f"off_policy_objective must be callable, but {self.off_policy_objective} is given"
             )
 
         if not isinstance(self.hidden_layer_size, tuple) or any(
@@ -526,7 +521,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             or self.learning_rate_init <= 0.0
         ):
             raise ValueError(
-                f"learning_rate_init must be a nonnegative float, but {self.learning_rate_init} is given"
+                f"learning_rate_init must be a positive float, but {self.learning_rate_init} is given"
             )
 
         if not isinstance(self.max_iter, int) or self.max_iter <= 0:
@@ -538,9 +533,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
 
         if not isinstance(self.tol, float) or self.tol <= 0.0:
-            raise ValueError(
-                f"tol must be a nonnegative float, but {self.tol} is given"
-            )
+            raise ValueError(f"tol must be a positive float, but {self.tol} is given")
 
         if not isinstance(self.momentum, float) or not 0.0 <= self.momentum <= 1.0:
             raise ValueError(
@@ -737,9 +730,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         .. math::
 
-            \\hat{V}(\\pi_\\theta; \\mathcal{D}) - \\lambda \\Omega(\\theta)
+            \\hat{V}(\\pi_\\theta; \\mathcal{D}) - \\alpha \\Omega(\\theta)
 
-        where :math:`\\hat{V}` is an OPE estimator and :math:`\\lambda \\Omega(\\theta)` is a regularization term.
+        where :math:`\\hat{V}` is an OPE estimator and :math:`\\alpha \\Omega(\\theta)` is a regularization term.
 
         Parameters
         -----------
@@ -757,6 +750,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            If None is given, a learner assumes that the estimated rewards are zero.
 
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
@@ -825,7 +819,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 def closure():
                     optimizer.zero_grad()
                     action_dist = self.nn_model(x).unsqueeze(-1)
-                    loss = -1.0 * self.ope_estimator_fun(
+                    loss = -1.0 * self.off_policy_objective(
                         reward=r,
                         action=a,
                         pscore=p,
@@ -847,7 +841,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 for x, a, r, p, q_hat, pos in training_data_loader:
                     optimizer.zero_grad()
                     action_dist = self.nn_model(x).unsqueeze(-1)
-                    loss = -1.0 * self.ope_estimator_fun(
+                    loss = -1.0 * self.off_policy_objective(
                         reward=r,
                         action=a,
                         pscore=p,
@@ -872,7 +866,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                     self.nn_model.eval()
                     for x, a, r, p, q_hat, pos in validation_data_loader:
                         action_dist = self.nn_model(x).unsqueeze(-1)
-                        loss = -1.0 * self.ope_estimator_fun(
+                        loss = -1.0 * self.off_policy_objective(
                             reward=r,
                             action=a,
                             pscore=p,
