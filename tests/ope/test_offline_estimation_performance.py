@@ -4,6 +4,7 @@ from joblib import Parallel, delayed
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import torch
 import pytest
 from dataclasses import dataclass
 from obp.ope.estimators import BaseOffPolicyEstimator
@@ -117,6 +118,9 @@ class RandomOffPolicyEstimator(BaseOffPolicyEstimator):
     ) -> float:
         """Estimate policy value of an evaluation policy."""
         return self._estimate_round_rewards(action_dist=action_dist).mean()
+
+    def estimate_policy_value_tensor(self, **kwargs) -> torch.Tensor:
+        pass  # not used in this test
 
     def estimate_interval(self) -> Dict[str, float]:
         pass  # not used in this test

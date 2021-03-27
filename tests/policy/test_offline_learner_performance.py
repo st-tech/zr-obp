@@ -16,7 +16,8 @@ from obp.dataset import (
     linear_behavior_policy,
     logistic_reward_function,
 )
-from obp.policy import IPWLearner
+from obp.policy import IPWLearner, NNPolicyLearner
+from obp.ope import DoublyRobust, RegressionModel
 
 
 # hyperparameter for the regression model used in model dependent OPE estimators
@@ -260,3 +261,114 @@ def test_offline_ipwlearner_performance(
 
     assert np.mean(list_gt_ipw) > np.mean(list_gt_random)
     assert np.mean(list_gt_ipw) > np.mean(list_gt_uniform)
+
+
+@pytest.mark.parametrize(
+    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
+    offline_experiment_configurations,
+)
+def test_offline_nn_policy_learner_performance(
+    n_rounds: int,
+    n_actions: int,
+    dim_context: int,
+    base_model_for_evaluation_policy: str,
+    base_model_for_reg_model: str,
+) -> None:
+    def process(i: int):
+        # synthetic data generator
+        dataset = SyntheticBanditDataset(
+            n_actions=n_actions,
+            dim_context=dim_context,
+            reward_function=logistic_reward_function,
+            behavior_policy_function=linear_behavior_policy,
+            random_state=i,
+        )
+        # estimate the mean reward function of the train set of synthetic bandit feedback with ML model
+        regression_model = RegressionModel(
+            n_actions=dataset.n_actions,
+            action_context=dataset.action_context,
+            base_model=base_model_dict[base_model_for_reg_model](
+                **hyperparams[base_model_for_reg_model]
+            ),
+        )
+        ope_estimator = DoublyRobust()
+        # define evaluation policy using NNPolicyLearner
+        nn_policy = NNPolicyLearner(
+            n_actions=dataset.n_actions,
+            dim_context=dim_context,
+            off_policy_objective=ope_estimator.estimate_policy_value_tensor,
+        )
+        # baseline method 1. RandomPolicy
+        random_policy = RandomPolicy(n_actions=dataset.n_actions)
+        # baseline method 2. UniformSampleWeightLearner
+        uniform_sample_weight_policy = UniformSampleWeightLearner(
+            n_actions=dataset.n_actions,
+            base_classifier=base_model_dict[base_model_for_evaluation_policy](
+                **hyperparams[base_model_for_evaluation_policy]
+            ),
+        )
+        # sample new training and test sets of synthetic logged bandit feedback
+        bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        # estimate the mean reward function of the train set of synthetic bandit feedback with ML model
+        estimated_rewards_by_reg_model = regression_model.fit_predict(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            n_folds=3,  # 3-fold cross-fitting
+            random_state=12345,
+        )
+        # train the evaluation policy on the training set of the synthetic logged bandit feedback
+        nn_policy.fit(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            pscore=bandit_feedback_train["pscore"],
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+        uniform_sample_weight_policy.fit(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            pscore=bandit_feedback_train["pscore"],
+        )
+        # predict the action decisions for the test set of the synthetic logged bandit feedback
+        nn_policy_action_dist = nn_policy.predict(
+            context=bandit_feedback_test["context"],
+        )
+        random_action_dist = random_policy.predict(
+            context=bandit_feedback_test["context"],
+        )
+        uniform_sample_weight_action_dist = uniform_sample_weight_policy.predict(
+            context=bandit_feedback_test["context"],
+        )
+        # get the ground truth policy value for each learner
+        gt_nn_policy_learner = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=nn_policy_action_dist,
+        )
+        gt_random_policy = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=random_action_dist,
+        )
+        gt_uniform_sample_weight_learner = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=uniform_sample_weight_action_dist,
+        )
+
+        return gt_nn_policy_learner, gt_random_policy, gt_uniform_sample_weight_learner
+
+    n_runs = 10
+    processed = Parallel(
+        n_jobs=1,  # PyTorch uses multiple threads
+        verbose=0,
+    )([delayed(process)(i) for i in np.arange(n_runs)])
+    list_gt_nn_policy, list_gt_random, list_gt_uniform = [], [], []
+    for i, ground_truth_policy_values in enumerate(processed):
+        gt_nn_policy, gt_random, gt_uniform = ground_truth_policy_values
+        list_gt_nn_policy.append(gt_nn_policy)
+        list_gt_random.append(gt_random)
+        list_gt_uniform.append(gt_uniform)
+
+    assert np.mean(list_gt_nn_policy) > np.mean(list_gt_random)
+    assert np.mean(list_gt_nn_policy) > np.mean(list_gt_uniform)

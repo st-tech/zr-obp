@@ -12,6 +12,7 @@ from obp.policy.logistic import LogisticUCB
 from obp.policy.logistic import LogisticTS
 from obp.policy.logistic import MiniBatchLogisticRegression
 from obp.policy.offline import IPWLearner
+from obp.policy.offline import NNPolicyLearner
 
 
 __all__ = [
@@ -29,4 +30,5 @@ __all__ = [
     "LogisticTS",
     "MiniBatchLogisticRegression",
     "IPWLearner",
+    "NNPolicyLearner",
 ]
