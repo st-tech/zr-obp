@@ -276,6 +276,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         behavior_policy_logit_: np.ndarray,
         n_rounds: int,
         return_pscore_marginal: bool = True,
+        return_exact_uniform_pscore_marginal: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
         """TODO: comment"""
         action = np.zeros(n_rounds * self.len_list, dtype=int)
@@ -303,16 +304,24 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 action_set = np.delete(action_set, action_set == action_sampled)
                 # calculate marginal pscore
                 if return_pscore_marginal:
-                    pscore_marginal_i_l = 0.0
-                    for perm in permutations(range(self.n_actions), self.len_list):
-                        if sampled_action_index not in perm:
-                            continue
-                        pscore_marginal_i_l += self.get_marginal_pscore(
-                            perm=perm,
-                            behavior_policy_logit_i_=behavior_policy_logit_[i : i + 1],
+                    if return_exact_uniform_pscore_marginal:
+                        pscore_marginal[i * self.len_list + position_] = (
+                            self.len_list / self.n_actions
                         )
-                    pscore_marginal[i * self.len_list + position_] = pscore_marginal_i_l
-
+                    else:
+                        pscore_marginal_i_l = 0.0
+                        for perm in permutations(range(self.n_actions), self.len_list):
+                            if sampled_action_index not in perm:
+                                continue
+                            pscore_marginal_i_l += self.get_marginal_pscore(
+                                perm=perm,
+                                behavior_policy_logit_i_=behavior_policy_logit_[
+                                    i : i + 1
+                                ],
+                            )
+                        pscore_marginal[
+                            i * self.len_list + position_
+                        ] = pscore_marginal_i_l
             # calculate joint pscore all
             start_idx = i * self.len_list
             end_idx = start_idx + self.len_list
@@ -374,6 +383,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds: int,
         tau: Union[int, float] = 1.0,
         return_pscore_marginal: bool = True,
+        return_exact_uniform_pscore_marginal: bool = False,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
 
@@ -390,6 +400,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             A boolean parameter whether `pscore_marginal` is returned or not.
             When `n_actions` and `len_list` are large, this parameter should be set to False because of the computational time
 
+        return_exact_uniform_pscore_marginal: bool, default=False
+            A boolean parameter whether `pscore_marginal` of uniform random policy is returned or not.
+            When using uniform random policy, this parameter should be set to True
+
+
         Returns
         ---------
         bandit_feedback: BanditFeedback
@@ -399,6 +414,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         if not isinstance(n_rounds, int) or n_rounds <= 0:
             raise ValueError(
                 f"n_rounds must be a positive integer, but {n_rounds} is given"
+            )
+        if (
+            return_exact_uniform_pscore_marginal
+            and self.behavior_policy_function is not None
+        ):
+            raise ValueError(
+                "return_exact_uniform_pscore_marginal must not be True when behavior_policy_function is not None"
             )
 
         context = self.random_.normal(size=(n_rounds, self.dim_context))
@@ -427,6 +449,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             behavior_policy_logit_=behavior_policy_logit_,
             n_rounds=n_rounds,
             return_pscore_marginal=return_pscore_marginal,
+            return_exact_uniform_pscore_marginal=return_exact_uniform_pscore_marginal,
         )
         # sample expected reward factual
         if self.base_reward_function is None:
