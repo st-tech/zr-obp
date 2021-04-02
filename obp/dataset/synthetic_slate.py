@@ -13,8 +13,7 @@ from tqdm import tqdm
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import softmax
-from .synthetic import logistic_reward_function, linear_reward_function
+from ..utils import softmax, sigmoid
 
 
 @dataclass
@@ -143,10 +142,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     len_list: int
     dim_context: int = 1
     reward_type: str = "binary"
-    reward_structure: str = "RIPS"
-    reward_transition_rate: Optional[np.ndarray] = np.array([0.5, 0.2])
+    reward_structure: str = "cascade_additive"
+    click_model: Optional[str] = None
     exam_weight: Optional[np.ndarray] = None
-    reward_function: Optional[
+    base_reward_function: Optional[
         Callable[
             [np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray
         ]
@@ -175,6 +174,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"dim_context must be a positive integer, but {self.dim_context} is given"
             )
+        if not isinstance(self.random_state, int):
+            raise ValueError("random_state must be an integer")
+        self.random_ = check_random_state(self.random_state)
         if self.reward_type not in [
             "binary",
             "continuous",
@@ -182,7 +184,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"reward_type must be either 'binary' or 'continuous', but {self.reward_type} is given.'"
             )
-        if self.reward_structure not in ["RIPS", "SIPS", "IIPS", "Cascade", "Greedy"]:
+        if self.reward_structure not in [
+            "cascade_additive",
+            "cascade_exponential",
+            "independent",
+            "standard_additive",
+            "standard_exponential",
+        ]:
             raise ValueError(
                 f"reward_structure must be either 'RIPS', 'SIPS', or 'IIPS', but {self.reward_structure} is given.'"
             )
@@ -193,54 +201,62 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 raise ValueError(
                     f"exam_weight must be ndarray or None, but {self.exam_weight} is given"
                 )
-        # TODO: fix reward structure names
-        if self.reward_structure == "SIPS":
-            self.slot_weight_matrix = self.get_sips_slot_weight(self.len_list)
-        elif self.reward_structure == "RIPS":
-            self.slot_weight_matrix = self.get_rips_slot_weight(self.len_list)
-        elif self.reward_structure in ["Cascade", "Greedy"]:
-            # exam weight is reset when reward structure is cascade of greedy
+            # TODO: remove this line when we implement click models
             self.exam_weight = np.ones(self.len_list)
-            self.slot_weight_matrix = np.identity(self.len_list)
+        # TODO: fix reward structure names
+        if self.reward_structure in ["cascade_additive", "standard_additive"]:
+            self.action_effect_matrix = generate_synmetric_matrix(
+                self.random_state, self.n_actions
+            )
+            self.slot_weight_matrix = None
+            if self.base_reward_function is not None:
+                self.reward_function = action_effect_additive_reward_function
+            self.is_cascade = self.reward_structure == "cascade_additive"
         else:
-            self.slot_weight_matrix = np.identity(self.len_list)
-        if not isinstance(self.random_state, int):
-            raise ValueError("random_state must be an integer")
-        self.random_ = check_random_state(self.random_state)
+            self.action_effect_matrix = None
+            self.is_cascade = None
+            if self.base_reward_function is not None:
+                self.reward_function = slot_weighted_reward_function
+            if self.reward_structure == "standard_exponential":
+                self.slot_weight_matrix = self.get_standard_exponential_slot_weight(
+                    self.len_list
+                )
+            elif self.reward_structure == "cascade_exponential":
+                self.slot_weight_matrix = self.get_cascade_exponential_slot_weight(
+                    self.len_list
+                )
+            else:
+                self.slot_weight_matrix = np.identity(self.len_list)
         if self.behavior_policy_function is None:
             self.behavior_policy = np.ones(self.n_actions) / self.n_actions
         if self.reward_type == "continuous":
             self.reward_min = 0
             self.reward_max = 1e10
             self.reward_std = 1.0
-        # set the base reward function
-        if self.reward_function is not None:
-            if self.reward_type == "binary":
-                self.base_reward_function = logistic_reward_function
-            else:
-                self.base_reward_function = linear_reward_function
         # one-hot encoding representations characterizing each action
         self.action_context = np.eye(self.n_actions, dtype=int)
 
     @staticmethod
-    def get_sips_slot_weight(len_list):
+    def get_standard_exponential_slot_weight(len_list):
         slot_weight_matrix = np.ones((len_list, len_list))
         for position_ in range(len_list):
-            slot_weight_matrix[:, position_] = 1 / np.exp(
+            slot_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
             )
+            slot_weight_matrix[position_, position_] = 1
         return slot_weight_matrix
 
     @staticmethod
-    def get_rips_slot_weight(len_list):
+    def get_cascade_exponential_slot_weight(len_list):
         slot_weight_matrix = np.ones((len_list, len_list))
         for position_ in range(len_list):
-            slot_weight_matrix[:, position_] = 1 / np.exp(
+            slot_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
             )
             for position_2 in range(len_list):
                 if position_ < position_2:
                     slot_weight_matrix[position_2, position_] = 0
+            slot_weight_matrix[position_, position_] = 1
         return slot_weight_matrix
 
     def get_marginal_pscore(
@@ -323,65 +339,31 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         sampled reward: array-like, shape (n_actions, len_list)
 
         """
-        if self.reward_structure in ["Cascade", "Greedy"]:
-            reward = np.zeros(expected_reward_factual.shape)
-            for i in tqdm(
-                np.arange(reward.shape[0]),
-                desc="[sample_reward]",
-                total=reward.shape[0],
-            ):
-                previous_reward = 0.0
-                # actions are in order of browsing assumption
-                action_list = (
-                    np.arange(3)
-                    if self.reward_structure == "Cascade"
-                    else np.argsort(expected_reward_factual[i])[::-1]
-                )
-                if self.reward_type == "binary":
-                    for position_ in action_list:
-                        reward[i, position_] = self.random_.binomial(
-                            n=1,
-                            p=expected_reward_factual[i, position_]
-                            * self.reward_transition_rate[int(previous_reward)],
+        if self.click_model is None:
+            if self.reward_type == "binary":
+                reward = np.array(
+                    [
+                        self.random_.binomial(
+                            n=1, p=expected_reward_factual[:, position_]
                         )
-                        previous_reward = reward[i, position_]
-                else:
-                    for position_ in action_list:
-                        mean = (
-                            expected_reward_factual[i, position_]
-                            * self.reward_transition_rate[int(previous_reward >= 0)]
-                        )
-                        a = (self.reward_min - mean) / self.reward_std
-                        b = (self.reward_max - mean) / self.reward_std
-                        reward[i, position_] = truncnorm.rvs(
-                            a=a,
-                            b=b,
-                            loc=mean,
-                            scale=self.reward_std,
-                            random_state=self.random_state,
-                        )
-                        previous_reward = reward[i, position_]
-
-        elif self.reward_type == "binary":
-            reward = np.array(
-                [
-                    self.random_.binomial(n=1, p=expected_reward_factual[:, position_])
-                    for position_ in range(self.len_list)
-                ]
-            ).T
-        elif self.reward_type == "continuous":
-            reward = np.zeros(expected_reward_factual.shape)
-            for position_ in range(self.len_list):
-                mean = expected_reward_factual[:, position_]
-                a = (self.reward_min - mean) / self.reward_std
-                b = (self.reward_max - mean) / self.reward_std
-                reward[:, position_] = truncnorm.rvs(
-                    a=a,
-                    b=b,
-                    loc=mean,
-                    scale=self.reward_std,
-                    random_state=self.random_state,
-                )
+                        for position_ in range(self.len_list)
+                    ]
+                ).T
+            elif self.reward_type == "continuous":
+                reward = np.zeros(expected_reward_factual.shape)
+                for position_ in range(self.len_list):
+                    mean = expected_reward_factual[:, position_]
+                    a = (self.reward_min - mean) / self.reward_std
+                    b = (self.reward_max - mean) / self.reward_std
+                    reward[:, position_] = truncnorm.rvs(
+                        a=a,
+                        b=b,
+                        loc=mean,
+                        scale=self.reward_std,
+                        random_state=self.random_state,
+                    )
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError
         # return: array-like, shape (n_rounds, len_list)
@@ -447,7 +429,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             return_pscore_marginal=return_pscore_marginal,
         )
         # sample expected reward factual
-        if self.reward_function is None:
+        if self.base_reward_function is None:
             expected_reward = self.sample_contextfree_expected_reward()
             expected_reward_tile = np.tile(expected_reward, (n_rounds, 1, 1))
             # action_2d: array-like, shape (n_rounds, len_list)
@@ -467,8 +449,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 action_context=self.action_context,
                 action=action,
                 slot_weight_matrix=self.slot_weight_matrix,
-                exam_weight=self.exam_weight,
                 base_function=self.base_reward_function,
+                is_cascade=self.is_cascade,
+                reward_type=self.reward_type,
+                len_list=self.len_list,
+                action_effect_matrix=self.action_effect_matrix,
                 random_state=self.random_state,
             )
         # check the shape of expected_reward_factual
@@ -498,33 +483,132 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         )
 
 
-def weighted_reward_function(
+def generate_synmetric_matrix(random_state: int, n_actions: int):
+    random_ = check_random_state(random_state)
+    base_matrix = random_.normal(size=(n_actions, n_actions))
+    return (
+        np.tril(base_matrix) + np.tril(base_matrix).T - np.diag(base_matrix.diagonal())
+    )
+
+
+def action_effect_additive_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     action: np.ndarray,
-    slot_weight_matrix: np.ndarray,
-    exam_weight: np.ndarray,
     base_function: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    action_effect_matrix: np.ndarray,
+    is_cascade: bool,
+    len_list: int,
+    reward_type: str,
+    random_state: Optional[int] = None,
+    **kwargs,
+) -> np.ndarray:
+    """TODO: comment"""
+    if not isinstance(context, np.ndarray) or context.ndim != 2:
+        raise ValueError("context must be 2-dimensional ndarray")
+
+    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
+        raise ValueError("action_context must be 2-dimensional ndarray")
+
+    if not isinstance(action, np.ndarray) or action.ndim != 1:
+        raise ValueError("action must be 1-dimensional ndarray")
+
+    if len_list * context.shape[0] != action.shape[0]:
+        raise ValueError(
+            "the size of axis 0 of context muptiplied by len_list must be the same as that of action"
+        )
+
+    if action_effect_matrix.shape != (
+        action_context.shape[0],
+        action_context.shape[0],
+    ):
+        raise ValueError(
+            f"the shape of action effect matrix must be (action_context.shape[0], action_context.shape[0]), but {action_effect_matrix.shape}"
+        )
+
+    if reward_type not in [
+        "binary",
+        "continuous",
+    ]:
+        raise ValueError(
+            f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given.'"
+        )
+
+    # action_2d: array-like, shape (n_rounds, len_list)
+    action_2d = action.reshape((context.shape[0], len_list))
+    # expected_reward: array-like, shape (n_rounds, n_actions)
+    expected_reward = base_function(
+        context=context, action_context=action_context, random_state=random_state
+    )
+    if reward_type == "binary":
+        expected_reward = np.log(expected_reward / (1 - expected_reward))
+    expected_reward_factual = np.zeros_like(action_2d)
+    for position_ in range(len_list):
+        tmp_fixed_reward = expected_reward[
+            np.arange(context.shape[0]), action_2d[:, position_]
+        ]
+        for position2_ in range(len_list):
+            if is_cascade:
+                if position_ >= position2_:
+                    break
+            elif position_ == position2_:
+                continue
+            tmp_fixed_reward += action_effect_matrix[
+                action_2d[:, position_], action_2d[:, position2_]
+            ]
+        expected_reward_factual[:, position_] = tmp_fixed_reward
+    if reward_type == "binary":
+        expected_reward_factual = sigmoid(expected_reward_factual)
+    assert expected_reward_factual.shape == (
+        context.shape[0],
+        len_list,
+    ), f"response shape must be (n_rounds, len_list), but {expected_reward_factual.shape}"
+    return expected_reward_factual
+
+
+def slot_weighted_reward_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    action: np.ndarray,
+    base_function: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    slot_weight_matrix: np.ndarray,
+    reward_type: str,
     random_state: Optional[int] = None,
     **kwargs,
 ) -> np.ndarray:
     """TODO: comment
     slot_weight_matrix: array-like, shape (len_list, len_list)
     """
-    # fix slot_weight_matrix by exam_weight
-    slot_weight_matrix = slot_weight_matrix * exam_weight
+    if not isinstance(context, np.ndarray) or context.ndim != 2:
+        raise ValueError("context must be 2-dimensional ndarray")
+
+    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
+        raise ValueError("action_context must be 2-dimensional ndarray")
+
+    if not isinstance(action, np.ndarray) or action.ndim != 1:
+        raise ValueError("action must be 1-dimensional ndarray")
+
+    if reward_type not in [
+        "binary",
+        "continuous",
+    ]:
+        raise ValueError(
+            f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given.'"
+        )
+    if slot_weight_matrix.shape[0] * context.shape[0] != action.shape[0]:
+        raise ValueError(
+            "the size of axis 0 of slot_weight_matrix muptiplied by that of context must be the same as that of action"
+        )
     # action_2d: array-like, shape (n_rounds, len_list)
     action_2d = action.reshape((context.shape[0], slot_weight_matrix.shape[0]))
     # action_3d: array-like, shape (n_rounds, n_actions, len_list)
     action_3d = np.identity(action_context.shape[0])[action_2d].transpose(0, 2, 1)
-    if slot_weight_matrix.shape[0] < action_3d.shape[2]:
-        raise ValueError(
-            "the size of axis 0 of slot_weight_matrix must be the same as the size of axis 1 of action_3d"
-        )
     # expected_reward: array-like, shape (n_rounds, n_actions)
     expected_reward = base_function(
         context=context, action_context=action_context, random_state=random_state
     )
+    if reward_type == "binary":
+        expected_reward = np.log(expected_reward / (1 - expected_reward))
     # expected_reward_3d: array-like, shape (n_rounds, n_actions, len_list)
     expected_reward_3d = np.tile(
         expected_reward, (slot_weight_matrix.shape[0], 1, 1)
@@ -534,11 +618,17 @@ def weighted_reward_function(
     # weighted_expected_reward: array-like, shape (n_rounds, n_actions, len_list)
     weighted_expected_reward = action_weight * expected_reward_3d
     # expected_reward_factual: list, shape (n_rounds, len_list)
-    expected_reward_factual = (
-        weighted_expected_reward.sum(axis=1) / slot_weight_matrix.shape[0]
-    )
+    expected_reward_factual = weighted_expected_reward.sum(axis=1)
+    if reward_type == "binary":
+        expected_reward_factual = sigmoid(expected_reward_factual)
+    # q_l = \sum_{a} a3d[i, a, l] q_a + \sum_{a_1, a_2} delta(a_1, a_2)
     # return: array, shape (n_rounds, len_list)
-    return np.array(expected_reward_factual)
+    result = np.array(expected_reward_factual)
+    assert result.shape == (
+        context.shape[0],
+        slot_weight_matrix.shape[0],
+    ), f"response shape must be (n_rounds, len_list), but {result.shape}"
+    return result
 
 
 def linear_behavior_policy_logit(
