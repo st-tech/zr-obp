@@ -219,5 +219,5 @@ if __name__ == "__main__":
         ) in relative_ee_b.items():
             relative_ee[estimator_name][b] = relative_ee_
     DataFrame(relative_ee).describe().T.round(6).to_csv(
-        log_path / f"eval_ope_results.csv"
+        log_path / "eval_ope_results.csv"
     )

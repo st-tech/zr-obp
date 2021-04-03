@@ -4,6 +4,7 @@ import numpy as np
 from obp.policy.linear import LinEpsilonGreedy
 from obp.policy.linear import LinUCB
 from obp.policy.linear import LinTS
+from obp.policy.policy_type import PolicyType
 
 
 def test_linear_base_exception():
@@ -86,6 +87,10 @@ def test_lin_epsilon_abnormal_epsilon():
 def test_lin_epsilon_select_action_exploitation():
     trial_num = 50
     policy = LinEpsilonGreedy(n_actions=2, dim=2, epsilon=0.0)
+
+    # policy type
+    assert policy.policy_type == PolicyType.CONTEXTUAL
+
     context = np.array([1.0, 1.0]).reshape(1, -1)
     policy.update_params(action=0, reward=1.0, context=context)
     policy.update_params(action=0, reward=1.0, context=context)

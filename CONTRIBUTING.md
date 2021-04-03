@@ -8,8 +8,8 @@ Let's make the best Off-Policy Evaluation software together!
 We prepare some conventions as follows:
 
 - [Coding Guidelines](#coding-guidelines)
-- Tests (to appear)
-- Continuous Integration (to appear)
+- [Tests](#tests)
+- [Continuous Integration](#continuous-integration)
 
 ## Coding Guidelines
 
@@ -29,3 +29,16 @@ After installing flake8, you can check the coding style by the following command
 # perform checking of the coding style
 $ flake8 .
 ```
+
+## Tests
+
+We employ pytest as the testing framework. You can run all the tests as follows:
+
+```bash
+# perform all the tests under the tests directory
+$ pytest .
+```
+
+## Continuous Integration
+
+Open Bandit Pipeline uses Github Actions to perform continuous integration.

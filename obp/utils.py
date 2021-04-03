@@ -2,13 +2,11 @@
 # Licensed under the Apache 2.0 License.
 
 """Useful Tools."""
-from inspect import isclass
 from typing import Dict, Optional, Union
 
 import numpy as np
-from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
-from sklearn.utils.validation import _deprecate_positional_args
+import torch
 
 
 def check_confidence_interval_arguments(
@@ -125,77 +123,6 @@ def convert_to_action_dist(
             pos * np.ones(n_rounds, int),
         ] = 1
     return action_dist
-
-
-@_deprecate_positional_args
-def check_is_fitted(
-    estimator: BaseEstimator, attributes=None, *, msg: str = None, all_or_any=all
-) -> bool:
-    """Perform is_fitted validation for estimator.
-
-    Note
-    ----
-    Checks if the estimator is fitted by verifying the presence of
-    fitted attributes (ending with a trailing underscore) and otherwise
-    raises a NotFittedError with the given message.
-    This utility is meant to be used internally by estimators themselves,
-    typically in their own predict / transform methods.
-
-    Parameters
-    ----------
-    estimator : estimator instance.
-        estimator instance for which the check is performed.
-
-    attributes : str, list or tuple of str, default=None
-        Attribute name(s) given as string or a list/tuple of strings
-        Eg.: ``["coef_", "estimator_", ...], "coef_"``
-        If `None`, `estimator` is considered fitted if there exist an
-        attribute that ends with a underscore and does not start with double
-        underscore.
-
-    msg : string
-        The default error message is, "This %(name)s instance is not fitted
-        yet. Call 'fit' with appropriate arguments before using this
-        estimator."
-        For custom messages if "%(name)s" is present in the message string,
-        it is substituted for the estimator name.
-        Eg. : "Estimator, %(name)s, must be fitted before sparsifying".
-
-    all_or_any : callable, {all, any}, default all
-        Specify whether all or any of the given attributes must exist.
-
-    Returns
-    -------
-    is_fitted: bool
-        Whether the given estimator is fitted or not.
-
-    References
-    -------
-    https://scikit-learn.org/stable/modules/generated/sklearn.utils.validation.check_is_fitted.html
-
-    """
-    if isclass(estimator):
-        raise TypeError("{} is a class, not an instance.".format(estimator))
-    if msg is None:
-        msg = (
-            "This %(name)s instance is not fitted yet. Call 'fit' with "
-            "appropriate arguments before using this estimator."
-        )
-
-    if not hasattr(estimator, "fit"):
-        raise TypeError("%s is not an estimator instance." % (estimator))
-
-    if attributes is not None:
-        if not isinstance(attributes, (list, tuple)):
-            attributes = [attributes]
-        attrs = all_or_any([hasattr(estimator, attr) for attr in attributes])
-    else:
-        attrs = [
-            v for v in vars(estimator) if v.endswith("_") and not v.startswith("__")
-        ]
-
-    is_fitted = len(attrs) != 0
-    return is_fitted
 
 
 def check_bandit_feedback_inputs(
@@ -411,6 +338,112 @@ def check_ope_inputs(
             raise ValueError("pscore must be positive")
 
 
+def check_ope_inputs_tensor(
+    action_dist: torch.Tensor,
+    position: Optional[torch.Tensor] = None,
+    action: Optional[torch.Tensor] = None,
+    reward: Optional[torch.Tensor] = None,
+    pscore: Optional[torch.Tensor] = None,
+    estimated_rewards_by_reg_model: Optional[torch.Tensor] = None,
+) -> Optional[ValueError]:
+    """Check inputs for bandit learning or simulation.
+    This is intended for being used with NNPolicyLearner.
+
+    Parameters
+    -----------
+    action_dist: Tensor, shape (n_rounds, n_actions, len_list)
+        Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+    position: Tensor, shape (n_rounds,), default=None
+        Positions of each round in the given logged bandit feedback.
+
+    action: Tensor, shape (n_rounds,), default=None
+        Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+    reward: Tensor, shape (n_rounds,), default=None
+        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+
+    pscore: Tensor, shape (n_rounds,), default=None
+        Propensity scores, the probability of selecting each action by behavior policy,
+        in the given logged bandit feedback.
+
+    estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list), default=None
+        Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+    """
+    # action_dist
+    if not isinstance(action_dist, torch.Tensor):
+        raise ValueError("action_dist must be Tensor")
+    if action_dist.ndim != 3:
+        raise ValueError(
+            f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
+        )
+    action_dist_sum = action_dist.sum(axis=1)
+    action_dist_ones = torch.ones_like(action_dist_sum)
+    if not torch.allclose(action_dist_sum, action_dist_ones):
+        raise ValueError("action_dist must be a probability distribution")
+
+    # position
+    if position is not None:
+        if not isinstance(position, torch.Tensor):
+            raise ValueError("position must be Tensor")
+        if position.ndim != 1:
+            raise ValueError("position must be 1-dimensional")
+        if not (position.shape[0] == action_dist.shape[0]):
+            raise ValueError(
+                "the first dimension of position and the first dimension of action_dist must be the same"
+            )
+        if not (position.dtype == torch.int64 and position.min() >= 0):
+            raise ValueError("position elements must be non-negative integers")
+        if position.max() >= action_dist.shape[2]:
+            raise ValueError(
+                "position elements must be smaller than the third dimension of action_dist"
+            )
+    elif action_dist.shape[2] > 1:
+        raise ValueError(
+            "position elements must be given when the third dimension of action_dist is greater than 1"
+        )
+
+    # estimated_rewards_by_reg_model
+    if estimated_rewards_by_reg_model is not None:
+        if not isinstance(estimated_rewards_by_reg_model, torch.Tensor):
+            raise ValueError("estimated_rewards_by_reg_model must be Tensor")
+        if estimated_rewards_by_reg_model.shape != action_dist.shape:
+            raise ValueError(
+                "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
+            )
+
+    # action, reward
+    if action is not None or reward is not None:
+        if not isinstance(action, torch.Tensor):
+            raise ValueError("action must be Tensor")
+        if action.ndim != 1:
+            raise ValueError("action must be 1-dimensional")
+        if not isinstance(reward, torch.Tensor):
+            raise ValueError("reward must be Tensor")
+        if reward.ndim != 1:
+            raise ValueError("reward must be 1-dimensional")
+        if not (action.shape[0] == reward.shape[0]):
+            raise ValueError("action and reward must be the same size.")
+        if not (action.dtype == torch.int64 and action.min() >= 0):
+            raise ValueError("action elements must be non-negative integers")
+        if action.max() >= action_dist.shape[1]:
+            raise ValueError(
+                "action elements must be smaller than the second dimension of action_dist"
+            )
+
+    # pscpre
+    if pscore is not None:
+        if not isinstance(pscore, torch.Tensor):
+            raise ValueError("pscore must be Tensor")
+        if pscore.ndim != 1:
+            raise ValueError("pscore must be 1-dimensional")
+        if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
+            raise ValueError("action, reward, and pscore must be the same size.")
+        if torch.any(pscore <= 0):
+            raise ValueError("pscore must be positive")
+
+
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate sigmoid function."""
     return 1.0 / (1.0 + np.exp(-x))
@@ -418,7 +451,7 @@ def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
 
 def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate softmax function."""
-    b = np.expand_dims(np.max(x, axis=1), 1)
+    b = np.max(x, axis=1)[:, np.newaxis]
     numerator = np.exp(x - b)
-    denominator = np.expand_dims(np.sum(numerator, axis=1), 1)
+    denominator = np.sum(numerator, axis=1)[:, np.newaxis]
     return numerator / denominator

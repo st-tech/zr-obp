@@ -7,7 +7,7 @@ from pandas import DataFrame
 from joblib import Parallel, delayed
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from custom_dataset import OBDWithInteractionFeatures

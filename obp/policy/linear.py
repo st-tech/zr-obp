@@ -89,7 +89,7 @@ class LinEpsilonGreedy(BaseContextualPolicy):
         if self.random_.rand() > self.epsilon:
             self.theta_hat = np.concatenate(
                 [
-                    self.A_inv[i] @ np.expand_dims(self.b[:, i], axis=1)
+                    self.A_inv[i] @ self.b[:, i][:, np.newaxis]
                     for i in np.arange(self.n_actions)
                 ],
                 axis=1,
@@ -209,7 +209,7 @@ class LinUCB(BaseContextualPolicy):
             )
         self.theta_hat = np.concatenate(
             [
-                self.A_inv[i] @ np.expand_dims(self.b[:, i], axis=1)
+                self.A_inv[i] @ self.b[:, i][:, np.newaxis]
                 for i in np.arange(self.n_actions)
             ],
             axis=1,
@@ -282,7 +282,7 @@ class LinTS(BaseContextualPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        self.policy_name = f"linear_ts"
+        self.policy_name = "linear_ts"
 
         super().__post_init__()
         self.A_inv = np.concatenate(
@@ -311,17 +311,16 @@ class LinTS(BaseContextualPolicy):
         """
         theta_hat = np.concatenate(
             [
-                self.A_inv[i] @ np.expand_dims(self.b[:, i], axis=1)
+                self.A_inv[i] @ self.b[:, i][:, np.newaxis]
                 for i in np.arange(self.n_actions)
             ],
             axis=1,
         )
         theta_sampled = np.concatenate(
             [
-                np.expand_dims(
-                    self.random_.multivariate_normal(theta_hat[:, i], self.A_inv[i]),
-                    axis=1,
-                )
+                self.random_.multivariate_normal(theta_hat[:, i], self.A_inv[i])[
+                    :, np.newaxis
+                ]
                 for i in np.arange(self.n_actions)
             ],
             axis=1,
