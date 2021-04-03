@@ -46,21 +46,33 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
         The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
 
-    TODO: ---comment---
-    reward_structure: str, default='cascade'
-        TBD
+    reward_structure: str, default='cascade_additive'
+        Type of reward structure, which must be either 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', 'standard_exponential'.
+        When 'cascade_additive' or 'standard_additive' is given, action_effect_matrix (:math:`w`) is generated.
+        When 'cascade_exponential', 'standard_exponential', or 'independent' is given, slot_weight_matrix is generated.
+        Expected reward is calculated as follows (:math:`f` is a base reward function of each item-position, and :math:`g` is a transform function):
+            'cascade_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} w_{a(k), a(j)})`.
+            'cascade_exponential': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j < k} g^{-1}(f(x, a(j))) / \\exp(|k-j|))`.
+            'independent': :math:`q_k(x, a) = f(x, a(k))`
+            'standard_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} w_{a(k), a(j)})`.
+            'standard_exponential': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j \\neq k} g^{-1}(f(x, a(j))) / \\exp(|k-j|))`
+        When reward_type is 'continous', transform function is the identity function.
+        When reward_type is 'binray', transform function is the logit function.
 
-    reward_transition_rate: np.ndarray, default=np.array([0.5, 0.2])
-        TBD
+    click_model: str, default=None
+        Type of click model, which must be either None, 'pbm', 'cascade'.
+        When None is given, reward of each slot is sampled using the expected reward of the slot.
+        When 'pbm' is given, reward of each slot is sampled using the position-based model.
+        When 'cascade' is given, reward of each slot is sampled using the cascade model.
 
     exam_weight: np.ndarray, default=None
-        TBD
-    ---TODO---:
+        Slot-level examination probability.
+        When click_model is 'pbm', exam_weight must be defined.
 
-    reward_function: Callable[[np.ndarray] * 5, np.ndarray]], default=None
-        Function generating slot-level expected reward for each given factual action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A}^{\\mathcal{L}} \\rightarrow \\mathbb{R}^{\\mathcal{L}}`.
-        If None is set, context **independent** expected reward for each factual action will be
+    base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
+        Function generating expected reward for each given action-context pair,
+        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+        If None is set, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
@@ -218,11 +230,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             if self.base_reward_function is not None:
                 self.reward_function = slot_weighted_reward_function
             if self.reward_structure == "standard_exponential":
-                self.slot_weight_matrix = self.get_standard_exponential_slot_weight(
+                self.slot_weight_matrix = self.obtain_standard_exponential_slot_weight(
                     self.len_list
                 )
             elif self.reward_structure == "cascade_exponential":
-                self.slot_weight_matrix = self.get_cascade_exponential_slot_weight(
+                self.slot_weight_matrix = self.obtain_cascade_exponential_slot_weight(
                     self.len_list
                 )
             else:
@@ -237,9 +249,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self.action_context = np.eye(self.n_actions, dtype=int)
 
     @staticmethod
-    def get_standard_exponential_slot_weight(len_list):
+    def obtain_standard_exponential_slot_weight(len_list):
         slot_weight_matrix = np.ones((len_list, len_list))
-        for position_ in range(len_list):
+        for position_ in np.arange(len_list):
             slot_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
             )
@@ -247,87 +259,97 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return slot_weight_matrix
 
     @staticmethod
-    def get_cascade_exponential_slot_weight(len_list):
+    def obtain_cascade_exponential_slot_weight(len_list):
         slot_weight_matrix = np.ones((len_list, len_list))
-        for position_ in range(len_list):
+        for position_ in np.arange(len_list):
             slot_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
             )
-            for position_2 in range(len_list):
+            for position_2 in np.arange(len_list):
                 if position_ < position_2:
                     slot_weight_matrix[position_2, position_] = 0
             slot_weight_matrix[position_, position_] = 1
         return slot_weight_matrix
 
-    def get_marginal_pscore(
+    def calc_item_position_pscore(
         self, perm: List[int], behavior_policy_logit_i_: np.ndarray
     ) -> float:
-        action_set = np.arange(self.n_actions)
+        unique_action_set = np.arange(self.n_actions)
         pscore_ = 1.0
         for action in perm:
-            score_ = softmax(behavior_policy_logit_i_[:, action_set])[0]
-            action_index = np.where(action_set == action)[0][0]
+            score_ = softmax(behavior_policy_logit_i_[:, unique_action_set])[0]
+            action_index = np.where(unique_action_set == action)[0][0]
             pscore_ *= score_[action_index]
-            action_set = np.delete(action_set, action_set == action)
+            unique_action_set = np.delete(
+                unique_action_set, unique_action_set == action
+            )
         return pscore_
 
-    def sample_action(
+    def sample_action_and_obtain_pscore(
         self,
         behavior_policy_logit_: np.ndarray,
         n_rounds: int,
-        return_pscore_marginal: bool = True,
-        return_exact_uniform_pscore_marginal: bool = False,
+        return_pscore_item_position: bool = True,
+        return_exact_uniform_pscore_item_position: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
         """TODO: comment"""
         action = np.zeros(n_rounds * self.len_list, dtype=int)
-        pscore_joint_above = np.zeros(n_rounds * self.len_list)
-        pscore_joint_all = np.zeros(n_rounds * self.len_list)
-        if return_pscore_marginal:
-            pscore_marginal = np.zeros(n_rounds * self.len_list)
+        pscore_cascade = np.zeros(n_rounds * self.len_list)
+        pscore = np.zeros(n_rounds * self.len_list)
+        if return_pscore_item_position:
+            pscore_item_position = np.zeros(n_rounds * self.len_list)
         else:
-            pscore_marginal = None
-        for i in tqdm(np.arange(n_rounds), desc="[sample_action]", total=n_rounds):
-            action_set = np.arange(self.n_actions)
+            pscore_item_position = None
+        for i in tqdm(
+            np.arange(n_rounds),
+            desc="[sample_action_and_obtain_pscore]",
+            total=n_rounds,
+        ):
+            unique_action_set = np.arange(self.n_actions)
             pscore_i = 1.0
             for position_ in np.arange(self.len_list):
-                score_ = softmax(behavior_policy_logit_[i : i + 1, action_set])[0]
+                score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[
+                    0
+                ]
                 action_sampled = self.random_.choice(
-                    action_set, p=score_, replace=False
+                    unique_action_set, p=score_, replace=False
                 )
                 action[i * self.len_list + position_] = action_sampled
-                sampled_action_index = np.where(action_set == action_sampled)[0][0]
+                sampled_action_index = np.where(unique_action_set == action_sampled)[0][
+                    0
+                ]
                 # calculate joint pscore
-                pscore_joint_above[i * self.len_list + position_] = (
-                    pscore_i * score_[sampled_action_index]
-                )
                 pscore_i *= score_[sampled_action_index]
-                action_set = np.delete(action_set, action_set == action_sampled)
+                pscore_cascade[i * self.len_list + position_] = pscore_i
+                unique_action_set = np.delete(
+                    unique_action_set, unique_action_set == action_sampled
+                )
                 # calculate marginal pscore
-                if return_pscore_marginal:
-                    if return_exact_uniform_pscore_marginal:
-                        pscore_marginal[i * self.len_list + position_] = (
+                if return_pscore_item_position:
+                    if return_exact_uniform_pscore_item_position:
+                        pscore_item_position[i * self.len_list + position_] = (
                             self.len_list / self.n_actions
                         )
                     else:
-                        pscore_marginal_i_l = 0.0
+                        pscore_item_position_i_l = 0.0
                         for perm in permutations(range(self.n_actions), self.len_list):
                             if sampled_action_index not in perm:
                                 continue
-                            pscore_marginal_i_l += self.get_marginal_pscore(
+                            pscore_item_position_i_l += self.calc_item_position_pscore(
                                 perm=perm,
                                 behavior_policy_logit_i_=behavior_policy_logit_[
                                     i : i + 1
                                 ],
                             )
-                        pscore_marginal[
+                        pscore_item_position[
                             i * self.len_list + position_
-                        ] = pscore_marginal_i_l
+                        ] = pscore_item_position_i_l
             # calculate joint pscore all
             start_idx = i * self.len_list
             end_idx = start_idx + self.len_list
-            pscore_joint_all[start_idx:end_idx] = pscore_i
+            pscore[start_idx:end_idx] = pscore_i
 
-        return action, pscore_joint_above, pscore_joint_all, pscore_marginal
+        return action, pscore_cascade, pscore, pscore_item_position
 
     def sample_contextfree_expected_reward(self) -> np.ndarray:
         """Sample expected reward for each action and slot from the uniform distribution"""
@@ -355,12 +377,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         self.random_.binomial(
                             n=1, p=expected_reward_factual[:, position_]
                         )
-                        for position_ in range(self.len_list)
+                        for position_ in np.arange(self.len_list)
                     ]
                 ).T
             elif self.reward_type == "continuous":
                 reward = np.zeros(expected_reward_factual.shape)
-                for position_ in range(self.len_list):
+                for position_ in np.arange(self.len_list):
                     mean = expected_reward_factual[:, position_]
                     a = (self.reward_min - mean) / self.reward_std
                     b = (self.reward_max - mean) / self.reward_std
@@ -382,8 +404,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self,
         n_rounds: int,
         tau: Union[int, float] = 1.0,
-        return_pscore_marginal: bool = True,
-        return_exact_uniform_pscore_marginal: bool = False,
+        return_pscore_item_position: bool = True,
+        return_exact_uniform_pscore_item_position: bool = False,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
 
@@ -396,12 +418,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             A temperature parameter, controlling the randomness of the action choice.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
-        return_pscore_marginal: bool, default=True
-            A boolean parameter whether `pscore_marginal` is returned or not.
+        return_pscore_item_position: bool, default=True
+            A boolean parameter whether `pscore_item_position` is returned or not.
             When `n_actions` and `len_list` are large, this parameter should be set to False because of the computational time
 
-        return_exact_uniform_pscore_marginal: bool, default=False
-            A boolean parameter whether `pscore_marginal` of uniform random policy is returned or not.
+        return_exact_uniform_pscore_item_position: bool, default=False
+            A boolean parameter whether `pscore_item_position` of uniform random policy is returned or not.
             When using uniform random policy, this parameter should be set to True
 
 
@@ -416,11 +438,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 f"n_rounds must be a positive integer, but {n_rounds} is given"
             )
         if (
-            return_exact_uniform_pscore_marginal
+            return_exact_uniform_pscore_item_position
             and self.behavior_policy_function is not None
         ):
             raise ValueError(
-                "return_exact_uniform_pscore_marginal must not be True when behavior_policy_function is not None"
+                "return_exact_uniform_pscore_item_position must not be True when behavior_policy_function is not None"
             )
 
         context = self.random_.normal(size=(n_rounds, self.dim_context))
@@ -442,14 +464,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         # sample action and pscores
         (
             action,
-            pscore_joint_above,
-            pscore_joint_all,
-            pscore_marginal,
-        ) = self.sample_action(
+            pscore_cascade,
+            pscore,
+            pscore_item_position,
+        ) = self.sample_action_and_obtain_pscore(
             behavior_policy_logit_=behavior_policy_logit_,
             n_rounds=n_rounds,
-            return_pscore_marginal=return_pscore_marginal,
-            return_exact_uniform_pscore_marginal=return_exact_uniform_pscore_marginal,
+            return_pscore_item_position=return_pscore_item_position,
+            return_exact_uniform_pscore_item_position=return_exact_uniform_pscore_item_position,
         )
         # sample expected reward factual
         if self.base_reward_function is None:
@@ -463,7 +485,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     expected_reward_tile[
                         np.arange(n_rounds), action_2d[:, position_], position_
                     ]
-                    for position_ in range(self.len_list)
+                    for position_ in np.arange(self.len_list)
                 ]
             ).T
         else:
@@ -493,16 +515,16 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return dict(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
-            impression_id=np.repeat(np.arange(n_rounds), self.len_list),
+            slate_id=np.repeat(np.arange(n_rounds), self.len_list),
             context=context,
             action_context=self.action_context,
             action=action,
             position=np.tile(range(self.len_list), n_rounds),
             reward=reward.reshape(action.shape[0]),
             expected_reward_factual=expected_reward_factual.reshape(action.shape[0]),
-            pscore_joint_above=pscore_joint_above,
-            pscore_joint_all=pscore_joint_all,
-            pscore_marginal=pscore_marginal,
+            pscore_cascade=pscore_cascade,
+            pscore=pscore,
+            pscore_item_position=pscore_item_position,
         )
 
 
@@ -566,11 +588,11 @@ def action_effect_additive_reward_function(
     if reward_type == "binary":
         expected_reward = np.log(expected_reward / (1 - expected_reward))
     expected_reward_factual = np.zeros_like(action_2d)
-    for position_ in range(len_list):
+    for position_ in np.arange(len_list):
         tmp_fixed_reward = expected_reward[
             np.arange(context.shape[0]), action_2d[:, position_]
         ]
-        for position2_ in range(len_list):
+        for position2_ in np.arange(len_list):
             if is_cascade:
                 if position_ >= position2_:
                     break

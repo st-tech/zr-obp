@@ -50,9 +50,9 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
     # check pscore columns
     pscore_columns: List[str] = []
     pscore_candidate_columns = [
-        "pscore_joint_above",
-        "pscore_joint_all",
-        "pscore_marginal",
+        "pscore_cascade",
+        "pscore",
+        "pscore_item_position",
     ]
     for column in pscore_candidate_columns:
         if column in bandit_feedback and bandit_feedback[column] is not None:
@@ -63,20 +63,20 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
         len(pscore_columns) > 0
     ), f"bandit feedback must contains at least one of the following pscore columns: {pscore_candidate_columns}"
     bandit_feedback_df = pd.DataFrame()
-    for column in ["impression_id", "position", "action"] + pscore_columns:
+    for column in ["slate_id", "position", "action"] + pscore_columns:
         bandit_feedback_df[column] = bandit_feedback[column]
     # sort dataframe
     bandit_feedback_df = (
-        bandit_feedback_df.sort_values(["impression_id", "position"])
+        bandit_feedback_df.sort_values(["slate_id", "position"])
         .reset_index(drop=True)
         .copy()
     )
     # check uniqueness
     assert (
-        bandit_feedback_df.duplicated(["impression_id", "position"]).sum() == 0
+        bandit_feedback_df.duplicated(["slate_id", "position"]).sum() == 0
     ), "position must not be duplicated in each impression"
     assert (
-        bandit_feedback_df.duplicated(["impression_id", "action"]).sum() == 0
+        bandit_feedback_df.duplicated(["slate_id", "action"]).sum() == 0
     ), "action must not be duplicated in each impression"
     # check pscores
     for column in pscore_columns:
@@ -84,51 +84,43 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
             bandit_feedback_df[column] > 1
         )
         assert invalid_pscore_flgs.sum() == 0, "the range of pscores must be [0, 1]"
-    if "pscore_joint_above" in pscore_columns and "pscore_joint_all" in pscore_columns:
+    if "pscore_cascade" in pscore_columns and "pscore" in pscore_columns:
         assert (
-            bandit_feedback_df["pscore_joint_above"]
-            < bandit_feedback_df["pscore_joint_all"]
-        ).sum() == 0, "pscore_joint_above is smaller or equal to pscore_joint_all"
-    if "pscore_marginal" in pscore_columns and "pscore_joint_all" in pscore_columns:
+            bandit_feedback_df["pscore_cascade"] < bandit_feedback_df["pscore"]
+        ).sum() == 0, "pscore_cascade is smaller or equal to pscore"
+    if "pscore_item_position" in pscore_columns and "pscore" in pscore_columns:
         assert (
-            bandit_feedback_df["pscore_marginal"]
-            < bandit_feedback_df["pscore_joint_all"]
-        ).sum() == 0, "pscore_joint_all is smaller or equal to pscore_marginal"
-    if "pscore_marginal" in pscore_columns and "pscore_joint_above" in pscore_columns:
+            bandit_feedback_df["pscore_item_position"] < bandit_feedback_df["pscore"]
+        ).sum() == 0, "pscore is smaller or equal to pscore_item_position"
+    if "pscore_item_position" in pscore_columns and "pscore_cascade" in pscore_columns:
         assert (
-            bandit_feedback_df["pscore_marginal"]
-            < bandit_feedback_df["pscore_joint_above"]
-        ).sum() == 0, "pscore_joint_above is smaller or equal to pscore_marginal"
-    if "pscore_joint_above" in pscore_columns:
-        previous_minimum_pscore_joint_above = (
-            bandit_feedback_df.groupby("impression_id")["pscore_joint_above"]
+            bandit_feedback_df["pscore_item_position"]
+            < bandit_feedback_df["pscore_cascade"]
+        ).sum() == 0, "pscore_cascade is smaller or equal to pscore_item_position"
+    if "pscore_cascade" in pscore_columns:
+        previous_minimum_pscore_cascade = (
+            bandit_feedback_df.groupby("slate_id")["pscore_cascade"]
             .expanding()
             .min()
             .values
         )
         assert (
-            previous_minimum_pscore_joint_above
-            < bandit_feedback_df["pscore_joint_above"]
-        ).sum() == 0, (
-            "pscore_joint_above must be non-decresing sequence in each impression"
+            previous_minimum_pscore_cascade < bandit_feedback_df["pscore_cascade"]
+        ).sum() == 0, "pscore_cascade must be non-decresing sequence in each impression"
+    if "pscore" in pscore_columns:
+        count_pscore_in_expression = bandit_feedback_df.groupby("slate_id").apply(
+            lambda x: x["pscore"].unique().shape[0]
         )
-    if "pscore_joint_all" in pscore_columns:
-        count_pscore_joint_all_in_expression = bandit_feedback_df.groupby(
-            "impression_id"
-        ).apply(lambda x: x["pscore_joint_all"].unique().shape[0])
         assert (
-            count_pscore_joint_all_in_expression != 1
-        ).sum() == 0, "pscore_joint_all must be unique in each impression"
-    if "pscore_joint_all" in pscore_columns and "pscore_joint_above" in pscore_columns:
+            count_pscore_in_expression != 1
+        ).sum() == 0, "pscore must be unique in each impression"
+    if "pscore" in pscore_columns and "pscore_cascade" in pscore_columns:
         last_slot_feedback_df = bandit_feedback_df.drop_duplicates(
-            "impression_id", keep="last"
+            "slate_id", keep="last"
         )
         assert (
-            last_slot_feedback_df["pscore_joint_all"]
-            != last_slot_feedback_df["pscore_joint_above"]
-        ).sum() == 0, (
-            "pscore_joint_all must be the same as pscore_joint_above in the last slot"
-        )
+            last_slot_feedback_df["pscore"] != last_slot_feedback_df["pscore_cascade"]
+        ).sum() == 0, "pscore must be the same as pscore_cascade in the last slot"
 
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behavior_policy():
@@ -151,30 +143,30 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     pscore_columns = [
-        "pscore_joint_above",
-        "pscore_joint_all",
-        "pscore_marginal",
+        "pscore_cascade",
+        "pscore",
+        "pscore_item_position",
     ]
     bandit_feedback_df = pd.DataFrame()
-    for column in ["impression_id", "position", "action"] + pscore_columns:
+    for column in ["slate_id", "position", "action"] + pscore_columns:
         bandit_feedback_df[column] = bandit_feedback[column]
     # check pscore marginal
-    pscore_marginal = float(len_list / n_actions)
+    pscore_item_position = float(len_list / n_actions)
     assert np.allclose(
-        bandit_feedback_df["pscore_marginal"].unique(), [pscore_marginal]
-    ), f"pscore_marginal must be [{pscore_marginal}], but {bandit_feedback_df['pscore_marginal'].unique()}"
+        bandit_feedback_df["pscore_item_position"].unique(), [pscore_item_position]
+    ), f"pscore_item_position must be [{pscore_item_position}], but {bandit_feedback_df['pscore_item_position'].unique()}"
     # check pscore joint
-    pscore_joint_above = []
+    pscore_cascade = []
     pscore_above = 1.0
-    for position_ in range(len_list):
+    for position_ in np.arange(len_list):
         pscore_above = pscore_above * 1.0 / (n_actions - position_)
-        pscore_joint_above.append(pscore_above)
+        pscore_cascade.append(pscore_above)
     assert np.allclose(
-        bandit_feedback_df["pscore_joint_above"], np.tile(pscore_joint_above, n_rounds)
-    ), f"pscore_joint_above must be {pscore_joint_above} for all impresessions"
+        bandit_feedback_df["pscore_cascade"], np.tile(pscore_cascade, n_rounds)
+    ), f"pscore_cascade must be {pscore_cascade} for all impresessions"
     assert np.allclose(
-        bandit_feedback_df["pscore_joint_all"].unique(), [pscore_above]
-    ), f"pscore_joint_all must be {pscore_above} for all impressions"
+        bandit_feedback_df["pscore"].unique(), [pscore_above]
+    ), f"pscore must be {pscore_above} for all impressions"
 
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behavior_policy_largescale():
@@ -194,15 +186,15 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     )
     # get feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_exact_uniform_pscore_marginal=True
+        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
     )
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     # check pscore marginal
-    pscore_marginal = float(len_list / n_actions)
+    pscore_item_position = float(len_list / n_actions)
     assert np.allclose(
-        np.unique(bandit_feedback["pscore_marginal"]), [pscore_marginal]
-    ), f"pscore_marginal must be [{pscore_marginal}], but {np.unique(bandit_feedback['pscore_marginal'])}"
+        np.unique(bandit_feedback["pscore_item_position"]), [pscore_item_position]
+    ), f"pscore_item_position must be [{pscore_item_position}], but {np.unique(bandit_feedback['pscore_item_position'])}"
 
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_policy():
@@ -227,17 +219,17 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     # print reward
     pscore_columns = [
-        "pscore_joint_above",
-        "pscore_joint_all",
-        "pscore_marginal",
+        "pscore_cascade",
+        "pscore",
+        "pscore_item_position",
     ]
     bandit_feedback_df = pd.DataFrame()
-    for column in ["impression_id", "position", "action", "reward"] + pscore_columns:
+    for column in ["slate_id", "position", "action", "reward"] + pscore_columns:
         bandit_feedback_df[column] = bandit_feedback[column]
     print(bandit_feedback_df.groupby("position")["reward"].describe())
 
 
-def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_policy_without_pscore_marginal():
+def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_policy_without_pscore_item_position():
     # set parameters
     n_actions = 80
     len_list = 3
@@ -255,13 +247,13 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
     )
     # get feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_pscore_marginal=False
+        n_rounds=n_rounds, return_pscore_item_position=False
     )
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     assert (
-        bandit_feedback["pscore_marginal"] is None
-    ), f"pscore marginal must be None, but {bandit_feedback['pscore_marginal']}"
+        bandit_feedback["pscore_item_position"] is None
+    ), f"pscore marginal must be None, but {bandit_feedback['pscore_item_position']}"
 
     # random seed should be fixed
     dataset2 = SyntheticSlateBanditDataset(
@@ -274,7 +266,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
     )
     # get feedback
     bandit_feedback2 = dataset2.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_pscore_marginal=False
+        n_rounds=n_rounds, return_pscore_item_position=False
     )
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback2)
@@ -285,7 +277,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
     )
 
 
-# n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_marginal, description
+# n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description
 valid_input_of_obtain_batch_bandit_feedback = [
     (
         10,
@@ -445,7 +437,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_marginal, description",
+    "n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description",
     valid_input_of_obtain_batch_bandit_feedback,
 )
 def test_synthetic_slate_using_valid_inputs(
@@ -459,7 +451,7 @@ def test_synthetic_slate_using_valid_inputs(
     exam_weight,
     behavior_policy_function,
     reward_function,
-    return_pscore_marginal,
+    return_pscore_item_position,
     description,
 ):
     dataset = SyntheticSlateBanditDataset(
@@ -475,18 +467,18 @@ def test_synthetic_slate_using_valid_inputs(
     )
     # get feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_pscore_marginal=return_pscore_marginal
+        n_rounds=n_rounds, return_pscore_item_position=return_pscore_item_position
     )
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     pscore_columns = [
-        "pscore_joint_above",
-        "pscore_joint_all",
-        "pscore_marginal",
+        "pscore_cascade",
+        "pscore",
+        "pscore_item_position",
     ]
     bandit_feedback_df = pd.DataFrame()
     for column in [
-        "impression_id",
+        "slate_id",
         "position",
         "action",
         "reward",
