@@ -4,14 +4,13 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from obp.dataset.synthetic import (
+from obp.dataset import (
     linear_reward_function,
     logistic_reward_function,
-)
-from obp.dataset.synthetic_slate import (
     linear_behavior_policy_logit,
     SyntheticSlateBanditDataset,
 )
+
 from obp.types import BanditFeedback
 
 # n_actions, len_list, dim_context, reward_type, random_state, description
@@ -227,6 +226,8 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
     for column in ["slate_id", "position", "action", "reward"] + pscore_columns:
         bandit_feedback_df[column] = bandit_feedback[column]
     print(bandit_feedback_df.groupby("position")["reward"].describe())
+    if reward_type == "binary":
+        assert set(np.unique(bandit_feedback["reward"])) == set([0, 1])
 
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_policy_without_pscore_item_position():
@@ -275,9 +276,11 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         bandit_feedback["expected_reward_factual"],
         bandit_feedback2["expected_reward_factual"],
     )
+    if reward_type == "binary":
+        assert set(np.unique(bandit_feedback["reward"])) == set([0, 1])
 
 
-# n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description
+# n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description
 valid_input_of_obtain_batch_bandit_feedback = [
     (
         10,
@@ -287,7 +290,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "standard_additive",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -301,7 +305,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "independent",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -315,7 +320,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "cascade_additive",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -329,7 +335,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "standard_additive",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -343,7 +350,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "independent",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -357,7 +365,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "cascade_additive",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -371,7 +380,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "cascade_additive",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         None,
         None,
         False,
@@ -385,7 +395,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "cascade_exponential",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -399,7 +410,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "cascade_exponential",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -413,7 +425,8 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "standard_exponential",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -427,17 +440,168 @@ valid_input_of_obtain_batch_bandit_feedback = [
         123,
         1000,
         "standard_exponential",
-        1 / np.exp(np.arange(3)),
+        None,
+        None,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
         "standard_exponential (continuous reward)",
     ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "cascade_additive",
+        "cascade",
+        None,
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "cascade_additive, cascade click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "cascade_exponential",
+        "cascade",
+        None,
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "cascade_exponential, cascade click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "standard_additive",
+        "cascade",
+        None,
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "standard_additive, cascade click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "standard_exponential",
+        "cascade",
+        None,
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "standard_exponential, cascade click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "independent",
+        "cascade",
+        None,
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "independent, cascade click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "cascade_additive",
+        "pbm",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "cascade_additive, pbm click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "cascade_exponential",
+        "pbm",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "cascade_exponential, pbm click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "standard_additive",
+        "pbm",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "standard_additive, pbm click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "standard_exponential",
+        "pbm",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "standard_exponential, pbm click model (binary reward)",
+    ),
+    (
+        10,
+        3,
+        2,
+        "binary",
+        123,
+        1000,
+        "independent",
+        "pbm",
+        1 / np.exp(np.arange(3)),
+        linear_behavior_policy_logit,
+        logistic_reward_function,
+        False,
+        "independent, pbm click model (binary reward)",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description",
+    "n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description",
     valid_input_of_obtain_batch_bandit_feedback,
 )
 def test_synthetic_slate_using_valid_inputs(
@@ -448,6 +612,7 @@ def test_synthetic_slate_using_valid_inputs(
     random_state,
     n_rounds,
     reward_structure,
+    click_model,
     exam_weight,
     behavior_policy_function,
     reward_function,
@@ -460,6 +625,7 @@ def test_synthetic_slate_using_valid_inputs(
         dim_context=dim_context,
         reward_type=reward_type,
         reward_structure=reward_structure,
+        click_model=click_model,
         exam_weight=exam_weight,
         random_state=random_state,
         behavior_policy_function=behavior_policy_function,
@@ -487,3 +653,5 @@ def test_synthetic_slate_using_valid_inputs(
         bandit_feedback_df[column] = bandit_feedback[column]
     print(f"-------{description}--------")
     print(bandit_feedback_df.groupby("position")["reward"].describe())
+    if reward_type == "binary":
+        assert set(np.unique(bandit_feedback["reward"])) == set([0, 1])

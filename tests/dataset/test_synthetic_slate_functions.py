@@ -92,7 +92,7 @@ def test_linear_behavior_policy_logit_using_valid_input(
     assert logit_value.shape == (context.shape[0], action_context.shape[0])
 
 
-# context, action_context, action, base_function, slot_weight_matrix, reward_type, random_state, err, description
+# context, action_context, action, base_reward_function, slot_weight_matrix, reward_type, random_state, err, description
 invalid_input_of_slot_weighted_reward_function = [
     (
         np.array([5, 2]),
@@ -153,14 +153,14 @@ invalid_input_of_slot_weighted_reward_function = [
 
 
 @pytest.mark.parametrize(
-    "context, action_context, action, base_function, slot_weight_matrix, reward_type, random_state, err, description",
+    "context, action_context, action, base_reward_function, slot_weight_matrix, reward_type, random_state, err, description",
     invalid_input_of_slot_weighted_reward_function,
 )
 def test_slot_weighted_reward_function_using_invalid_input(
     context,
     action_context,
     action,
-    base_function,
+    base_reward_function,
     slot_weight_matrix,
     reward_type,
     random_state,
@@ -173,13 +173,13 @@ def test_slot_weighted_reward_function_using_invalid_input(
             action_context=action_context,
             action=action,
             slot_weight_matrix=slot_weight_matrix,
-            base_function=base_function,
+            base_reward_function=base_reward_function,
             reward_type=reward_type,
             random_state=random_state,
         )
 
 
-# context, action_context, action, base_function, slot_weight_matrix, reward_type, random_state, description
+# context, action_context, action, base_reward_function, slot_weight_matrix, reward_type, random_state, description
 valid_input_of_slot_weighted_reward_function = [
     (
         np.ones([5, 2]),
@@ -205,14 +205,14 @@ valid_input_of_slot_weighted_reward_function = [
 
 
 @pytest.mark.parametrize(
-    "context, action_context, action, base_function, slot_weight_matrix, reward_type, random_state, description",
+    "context, action_context, action, base_reward_function, slot_weight_matrix, reward_type, random_state, description",
     valid_input_of_slot_weighted_reward_function,
 )
 def test_slot_weighted_reward_function_using_valid_input(
     context,
     action_context,
     action,
-    base_function,
+    base_reward_function,
     slot_weight_matrix,
     reward_type,
     random_state,
@@ -223,7 +223,7 @@ def test_slot_weighted_reward_function_using_valid_input(
         action_context=action_context,
         action=action,
         slot_weight_matrix=slot_weight_matrix,
-        base_function=base_function,
+        base_reward_function=base_reward_function,
         reward_type=reward_type,
         random_state=random_state,
     )
@@ -237,7 +237,7 @@ def test_slot_weighted_reward_function_using_valid_input(
         )
 
 
-# context, action_context, action, base_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, err, description
+# context, action_context, action, base_reward_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, err, description
 invalid_input_of_action_effect_reward_function = [
     (
         np.array([5, 2]),
@@ -321,14 +321,14 @@ invalid_input_of_action_effect_reward_function = [
 
 
 @pytest.mark.parametrize(
-    "context, action_context, action, base_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, err, description",
+    "context, action_context, action, base_reward_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, err, description",
     invalid_input_of_action_effect_reward_function,
 )
 def test_action_effect_reward_function_using_invalid_input(
     context,
     action_context,
     action,
-    base_function,
+    base_reward_function,
     action_effect_matrix,
     reward_type,
     is_cascade,
@@ -343,7 +343,7 @@ def test_action_effect_reward_function_using_invalid_input(
             action_context=action_context,
             action=action,
             action_effect_matrix=action_effect_matrix,
-            base_function=base_function,
+            base_reward_function=base_reward_function,
             reward_type=reward_type,
             random_state=random_state,
             len_list=len_list,
@@ -351,7 +351,7 @@ def test_action_effect_reward_function_using_invalid_input(
         )
 
 
-# context, action_context, action, base_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, err, description
+# context, action_context, action, base_reward_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, err, description
 valid_input_of_action_effect_reward_function = [
     (
         np.ones([5, 2]),
@@ -405,14 +405,14 @@ valid_input_of_action_effect_reward_function = [
 
 
 @pytest.mark.parametrize(
-    "context, action_context, action, base_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, description",
+    "context, action_context, action, base_reward_function, action_effect_matrix, reward_type, is_cascade, len_list, random_state, description",
     valid_input_of_action_effect_reward_function,
 )
 def test_action_effect_reward_function_using_valid_input(
     context,
     action_context,
     action,
-    base_function,
+    base_reward_function,
     action_effect_matrix,
     reward_type,
     is_cascade,
@@ -425,7 +425,7 @@ def test_action_effect_reward_function_using_valid_input(
         action_context=action_context,
         action=action,
         action_effect_matrix=action_effect_matrix,
-        base_function=base_function,
+        base_reward_function=base_reward_function,
         reward_type=reward_type,
         random_state=random_state,
         len_list=len_list,
