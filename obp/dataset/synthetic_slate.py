@@ -221,8 +221,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             self.exam_weight = np.ones(self.len_list)
         if self.reward_structure in ["cascade_additive", "standard_additive"]:
             # generate action effect matrix
-            self.action_effect_matrix = generate_synmetric_matrix(
-                self.random_state, self.n_actions
+            self.action_effect_matrix = generate_symmetric_matrix(
+                n_actions=self.n_actions, random_state=self.random_state
             )
             # slot weight matrix is not used when reward structure is additive
             self.slot_weight_matrix = None
@@ -255,7 +255,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     @staticmethod
     def obtain_standard_exponential_slot_weight(len_list):
         """Obtain slot weight matrix for standard exponential reward structure (symmetric matrix)"""
-        slot_weight_matrix = np.ones((len_list, len_list))
+        slot_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             slot_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
@@ -266,7 +266,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     @staticmethod
     def obtain_cascade_exponential_slot_weight(len_list):
         """Obtain slot weight matrix for cascade exponential reward structure (upper triangular matrix)"""
-        slot_weight_matrix = np.ones((len_list, len_list))
+        slot_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             slot_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
@@ -578,12 +578,28 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         )
 
 
-def generate_synmetric_matrix(random_state: int, n_actions: int):
+def generate_symmetric_matrix(n_actions: int, random_state: int) -> np.ndarray:
+    """Generate symmetric matrix
+
+    Parameters
+    -----------
+
+    n_actions: int (>= len_list)
+        Number of actions.
+
+    random_state: int
+        Controls the random seed in sampling elements of matrix.
+
+    Returns
+    ---------
+    symmetric_matrix: array-like, shape (n_actions, n_actions)
+    """
     random_ = check_random_state(random_state)
     base_matrix = random_.normal(size=(n_actions, n_actions))
-    return (
+    symmetric_matrix = (
         np.tril(base_matrix) + np.tril(base_matrix).T - np.diag(base_matrix.diagonal())
     )
+    return symmetric_matrix
 
 
 def action_effect_additive_reward_function(
