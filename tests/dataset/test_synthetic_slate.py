@@ -13,27 +13,99 @@ from obp.dataset import (
 
 from obp.types import BanditFeedback
 
-# n_unique_action, len_list, dim_context, reward_type, random_state, description
+# n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, random_state, description
 invalid_input_of_init = [
-    ("4", 3, 2, "binary", 1, "n_unique_action must be an integer larger than 1"),
-    (1, 3, 2, "binary", 1, "n_unique_action must be an integer larger than 1"),
-    (5, "4", 2, "binary", 1, "len_list must be an integer such that"),
-    (5, -1, 2, "binary", 1, "len_list must be an integer such that"),
-    (5, 10, 2, "binary", 1, "len_list must be an integer such that"),
-    (5, 3, 0, "binary", 1, "dim_context must be a positive integer"),
-    (5, 3, "2", "binary", 1, "dim_context must be a positive integer"),
-    (5, 3, 2, "aaa", 1, "reward_type must be either"),
-    (5, 3, 2, "binary", "x", "random_state must be an integer"),
-    (5, 3, 2, "binary", None, "random_state must be an integer"),
+    (
+        "4",
+        3,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        1,
+        "n_unique_action must be an integer larger than 1",
+    ),
+    (
+        1,
+        3,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        1,
+        "n_unique_action must be an integer larger than 1",
+    ),
+    (
+        5,
+        "4",
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        1,
+        "len_list must be an integer such that",
+    ),
+    (
+        5,
+        -1,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        1,
+        "len_list must be an integer such that",
+    ),
+    (
+        5,
+        10,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        1,
+        "len_list must be an integer such that",
+    ),
+    (
+        5,
+        3,
+        0,
+        "binary",
+        "independent",
+        "pbm",
+        1,
+        "dim_context must be a positive integer",
+    ),
+    (
+        5,
+        3,
+        "2",
+        "binary",
+        "independent",
+        "pbm",
+        1,
+        "dim_context must be a positive integer",
+    ),
+    (5, 3, 2, "aaa", "independent", "pbm", 1, "reward_type must be either"),
+    (5, 3, 2, "binary", "aaa", "pbm", 1, "reward_structure must be either"),
+    (5, 3, 2, "binary", "independent", "aaa", 1, "click_model must be either"),
+    (5, 3, 2, "binary", "independent", "pbm", "x", "random_state must be an integer"),
+    (5, 3, 2, "binary", "independent", "pbm", None, "random_state must be an integer"),
 ]
 
 
 @pytest.mark.parametrize(
-    "n_unique_action, len_list, dim_context, reward_type, random_state, description",
+    "n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, random_state, description",
     invalid_input_of_init,
 )
 def test_synthetic_slate_init_using_invalid_inputs(
-    n_unique_action, len_list, dim_context, reward_type, random_state, description
+    n_unique_action,
+    len_list,
+    dim_context,
+    reward_type,
+    reward_structure,
+    click_model,
+    random_state,
+    description,
 ):
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = SyntheticSlateBanditDataset(
@@ -41,6 +113,8 @@ def test_synthetic_slate_init_using_invalid_inputs(
             len_list=len_list,
             dim_context=dim_context,
             reward_type=reward_type,
+            reward_structure=reward_structure,
+            click_model=click_model,
             random_state=random_state,
         )
 
@@ -137,7 +211,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
         reward_type=reward_type,
         random_state=random_state,
     )
-    # get feedback
+    # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
@@ -183,7 +257,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
         reward_type=reward_type,
         random_state=random_state,
     )
-    # get feedback
+    # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
         n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
     )
@@ -212,7 +286,16 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
     )
-    # get feedback
+    with pytest.raises(ValueError):
+        _ = dataset.obtain_batch_bandit_feedback(n_rounds=-1)
+    with pytest.raises(ValueError):
+        _ = dataset.obtain_batch_bandit_feedback(n_rounds="a")
+    with pytest.raises(ValueError):
+        _ = dataset.obtain_batch_bandit_feedback(
+            n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
+        )
+
+    # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
@@ -246,7 +329,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
     )
-    # get feedback
+    # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
         n_rounds=n_rounds, return_pscore_item_position=False
     )
@@ -265,7 +348,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
     )
-    # get feedback
+    # obtain feedback
     bandit_feedback2 = dataset2.obtain_batch_bandit_feedback(
         n_rounds=n_rounds, return_pscore_item_position=False
     )
@@ -608,7 +691,7 @@ def test_synthetic_slate_using_valid_inputs(
         behavior_policy_function=behavior_policy_function,
         base_reward_function=reward_function,
     )
-    # get feedback
+    # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
         n_rounds=n_rounds, return_pscore_item_position=return_pscore_item_position
     )

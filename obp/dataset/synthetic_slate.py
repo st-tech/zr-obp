@@ -205,6 +205,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"reward_structure must be either 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', or 'standard_exponential', but {self.reward_structure} is given."
             )
+        if self.click_model not in ["cascade", "pbm", None]:
+            raise ValueError(
+                f"click_model must be either 'cascade', 'pbm', or None, but {self.click_model} is given."
+            )
         # set exam_weight (slot-level examination probability).
         # When click_model is 'pbm', exam_weight is :math:`1 / k`, where :math:`k` is the position.
         if self.click_model == "pbm":
@@ -484,7 +488,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             and self.behavior_policy_function is not None
         ):
             raise ValueError(
-                "when return_exact_uniform_pscore_item_position is True, behavior_policy_function must be specified"
+                "when return_exact_uniform_pscore_item_position is True, behavior_policy_function must not be specified (must be random)"
             )
 
         context = self.random_.normal(size=(n_rounds, self.dim_context))
