@@ -14,7 +14,7 @@ from obp.dataset.synthetic_slate import (
 
 
 def test_generate_symmetric_matrix():
-    matrix = generate_symmetric_matrix(n_actions=3, random_state=1)
+    matrix = generate_symmetric_matrix(n_unique_action=3, random_state=1)
     assert matrix.shape == (3, 3)
     assert np.allclose(matrix, matrix.T)
 
@@ -244,7 +244,7 @@ invalid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.tile(np.arange(3), 5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "binary",
         True,
         3,
@@ -257,7 +257,7 @@ invalid_input_of_action_interaction_reward_function = [
         np.array([4, 2]),
         np.tile(np.arange(3), 5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "binary",
         True,
         3,
@@ -270,7 +270,7 @@ invalid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.ones([5, 2]),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "binary",
         True,
         3,
@@ -283,7 +283,7 @@ invalid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.random.choice(5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "binary",
         True,
         3,
@@ -296,7 +296,7 @@ invalid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.ones(10),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "binary",
         True,
         3,
@@ -309,7 +309,7 @@ invalid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.tile(np.arange(3), 5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=3, random_state=1),
+        generate_symmetric_matrix(n_unique_action=3, random_state=1),
         "binary",
         True,
         3,
@@ -358,7 +358,7 @@ valid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.tile(np.arange(3), 5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "binary",
         True,
         3,
@@ -370,7 +370,7 @@ valid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.tile(np.arange(3), 5),
         linear_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "continuous",
         True,
         3,
@@ -382,7 +382,7 @@ valid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.tile(np.arange(3), 5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "binary",
         False,
         3,
@@ -394,7 +394,7 @@ valid_input_of_action_interaction_reward_function = [
         np.ones([4, 2]),
         np.tile(np.arange(3), 5),
         linear_reward_function,
-        generate_symmetric_matrix(n_actions=4, random_state=1),
+        generate_symmetric_matrix(n_unique_action=4, random_state=1),
         "continuous",
         False,
         3,

@@ -30,7 +30,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     Parameters
     -----------
-    n_actions: int (>= len_list)
+    n_unique_action: int (>= len_list)
         Number of actions.
 
     len_list: int (> 1)
@@ -48,7 +48,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     reward_structure: str, default='cascade_additive'
         Type of reward structure, which must be either 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', 'standard_exponential'.
-        When 'cascade_additive' or 'standard_additive' is given, additive action_interaction_matrix (:math:`W \\in \\mathbb{R}^{\\text{n_actions} \\times \\text{n_actions}}`) is generated.
+        When 'cascade_additive' or 'standard_additive' is given, additive action_interaction_matrix (:math:`W \\in \\mathbb{R}^{\\text{n_unique_action} \\times \\text{n_unique_action}}`) is generated.
         When 'cascade_exponential', 'standard_exponential', or 'independent' is given, exponential action_interaction_matrix (:math:`\\in \\mathbb{R}^{\\text{len_list} \\times \\text{len_list}}`) is generated.
         Expected reward is calculated as follows (:math:`f` is a base reward function of each item-position, and :math:`g` is a transform function):
             'cascade_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
@@ -101,7 +101,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         # generate synthetic contextual bandit feedback with 10 actions.
         >>> dataset = SyntheticSlateBanditDataset(
-                n_actions=10,
+                n_unique_action=10,
                 dim_context=5,
                 base_reward_function=logistic_reward_function,
                 behavior_policy_function=linear_behavior_policy,
@@ -117,7 +117,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         >>> bandit_feedback
         {
             'n_rounds': 5,
-            'n_actions': 10,
+            'n_unique_action': 10,
             'slate_id': array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]),
             'context': array([[-0.20470766,  0.47894334, -0.51943872, -0.5557303 ,  1.96578057],
                 [ 1.39340583,  0.09290788,  0.28174615,  0.76902257,  1.24643474],
@@ -153,7 +153,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     """
 
-    n_actions: int
+    n_unique_action: int
     len_list: int
     dim_context: int = 1
     reward_type: str = "binary"
@@ -173,17 +173,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
+        if not isinstance(self.n_unique_action, int) or self.n_unique_action <= 1:
             raise ValueError(
-                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
+                f"n_unique_action must be an integer larger than 1, but {self.n_unique_action} is given"
             )
         if (
             not isinstance(self.len_list, int)
             or self.len_list <= 1
-            or self.len_list > self.n_actions
+            or self.len_list > self.n_unique_action
         ):
             raise ValueError(
-                f"len_list must be an integer such that 1 < len_list <= n_actions, but {self.len_list} is given"
+                f"len_list must be an integer such that 1 < len_list <= n_unique_action, but {self.len_list} is given"
             )
         if not isinstance(self.dim_context, int) or self.dim_context <= 0:
             raise ValueError(
@@ -220,9 +220,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         if self.click_model != "pbm":
             self.exam_weight = np.ones(self.len_list)
         if self.reward_structure in ["cascade_additive", "standard_additive"]:
-            # generate additive action interaction matrix of (n_actions, n_actions)
+            # generate additive action interaction matrix of (n_unique_action, n_unique_action)
             self.action_interaction_matrix = generate_symmetric_matrix(
-                n_actions=self.n_actions, random_state=self.random_state
+                n_unique_action=self.n_unique_action, random_state=self.random_state
             )
             if self.base_reward_function is not None:
                 self.reward_function = action_interaction_additive_reward_function
@@ -241,13 +241,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             else:
                 self.action_interaction_matrix = np.identity(self.len_list)
         if self.behavior_policy_function is None:
-            self.behavior_policy = np.ones(self.n_actions) / self.n_actions
+            self.behavior_policy = np.ones(self.n_unique_action) / self.n_unique_action
         if self.reward_type == "continuous":
             self.reward_min = 0
             self.reward_max = 1e10
             self.reward_std = 1.0
         # one-hot encoding representations characterizing each action
-        self.action_context = np.eye(self.n_actions, dtype=int)
+        self.action_context = np.eye(self.n_unique_action, dtype=int)
 
     @staticmethod
     def obtain_standard_exponential_slot_weight(len_list):
@@ -278,7 +278,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self, action_list: List[int], behavior_policy_logit_i_: np.ndarray
     ) -> float:
         """Calculate pscore_item_position"""
-        unique_action_set = np.arange(self.n_actions)
+        unique_action_set = np.arange(self.n_unique_action)
         pscore_ = 1.0
         for action in action_list:
             score_ = softmax(behavior_policy_logit_i_[:, unique_action_set])[0]
@@ -308,7 +308,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
-            When `n_actions` and `len_list` are large, this parameter should be set to False because of the computational time
+            When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time
 
         return_exact_uniform_pscore_item_position: bool, default=False
             A boolean parameter whether `pscore_item_position` of uniform random policy is returned or not.
@@ -317,19 +317,19 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        action: array-like, shape (n_actions * len_list)
+        action: array-like, shape (n_unique_action * len_list)
             Sampled action.
             Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
 
-        pscore_cascade: array-like, shape (n_actions * len_list)
+        pscore_cascade: array-like, shape (n_unique_action * len_list)
             Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
             i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
 
-        pscore: array-like, shape (n_actions * len_list)
+        pscore: array-like, shape (n_unique_action * len_list)
             Joint action choice probabilities of the slate given context (:math:`x`).
             i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
 
-        pscore_item_position: array-like, shape (n_actions * len_list)
+        pscore_item_position: array-like, shape (n_unique_action * len_list)
             Marginal action choice probabilities of each slot given context (:math:`x`).
             i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
@@ -346,7 +346,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             desc="[sample_action_and_obtain_pscore]",
             total=n_rounds,
         ):
-            unique_action_set = np.arange(self.n_actions)
+            unique_action_set = np.arange(self.n_unique_action)
             pscore_i = 1.0
             for position_ in np.arange(self.len_list):
                 score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[
@@ -369,12 +369,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 if return_pscore_item_position:
                     if return_exact_uniform_pscore_item_position:
                         pscore_item_position[i * self.len_list + position_] = (
-                            self.len_list / self.n_actions
+                            self.len_list / self.n_unique_action
                         )
                     else:
                         pscore_item_position_i_l = 0.0
                         for action_list in permutations(
-                            range(self.n_actions), self.len_list
+                            range(self.n_unique_action), self.len_list
                         ):
                             if sampled_action_index not in action_list:
                                 continue
@@ -396,7 +396,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     def sample_contextfree_expected_reward(self) -> np.ndarray:
         """Sample expected reward for each action and slot from the uniform distribution"""
-        return self.random_.uniform(size=(self.n_actions, self.len_list))
+        return self.random_.uniform(size=(self.n_unique_action, self.len_list))
 
     def sample_reward_given_expected_reward(
         self, expected_reward_factual: np.ndarray
@@ -410,7 +410,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        reward: array-like, shape (n_actions, len_list)
+        reward: array-like, shape (n_unique_action, len_list)
 
         """
         expected_reward_factual = expected_reward_factual * self.exam_weight
@@ -467,7 +467,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
-            When `n_actions` and `len_list` are large, this parameter should be set to False because of the computational time
+            When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time
 
         return_exact_uniform_pscore_item_position: bool, default=False
             A boolean parameter whether `pscore_item_position` of uniform random policy is returned or not.
@@ -505,7 +505,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         # check the shape of behavior_policy_logit_
         if not (
             isinstance(behavior_policy_logit_, np.ndarray)
-            and behavior_policy_logit_.shape == (n_rounds, self.n_actions)
+            and behavior_policy_logit_.shape == (n_rounds, self.n_unique_action)
         ):
             raise ValueError("behavior_policy_logit_ is Invalid")
         # sample action and pscores
@@ -560,7 +560,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return dict(
             n_rounds=n_rounds,
-            n_actions=self.n_actions,
+            n_unique_action=self.n_unique_action,
             slate_id=np.repeat(np.arange(n_rounds), self.len_list),
             context=context,
             action_context=self.action_context,
@@ -574,13 +574,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         )
 
 
-def generate_symmetric_matrix(n_actions: int, random_state: int) -> np.ndarray:
+def generate_symmetric_matrix(n_unique_action: int, random_state: int) -> np.ndarray:
     """Generate symmetric matrix
 
     Parameters
     -----------
 
-    n_actions: int (>= len_list)
+    n_unique_action: int (>= len_list)
         Number of actions.
 
     random_state: int
@@ -588,10 +588,10 @@ def generate_symmetric_matrix(n_actions: int, random_state: int) -> np.ndarray:
 
     Returns
     ---------
-    symmetric_matrix: array-like, shape (n_actions, n_actions)
+    symmetric_matrix: array-like, shape (n_unique_action, n_unique_action)
     """
     random_ = check_random_state(random_state)
-    base_matrix = random_.normal(size=(n_actions, n_actions))
+    base_matrix = random_.normal(size=(n_unique_action, n_unique_action))
     symmetric_matrix = (
         np.tril(base_matrix) + np.tril(base_matrix).T - np.diag(base_matrix.diagonal())
     )
@@ -617,10 +617,10 @@ def action_interaction_additive_reward_function(
     context: array-like, shape (n_rounds, dim_context)
         Context vectors characterizing each round (such as user information).
 
-    action_context: array-like, shape (n_actions, dim_action_context)
+    action_context: array-like, shape (n_unique_action, dim_action_context)
         Vector representation for each action.
 
-    action: array-like, shape (n_actions * len_list)
+    action: array-like, shape (n_unique_action * len_list)
         Sampled action.
         Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
 
@@ -634,7 +634,7 @@ def action_interaction_additive_reward_function(
         Type of reward variable, which must be either 'binary' or 'continuous'.
         When 'binary' is given, expected reward is transformed by logit function.
 
-    action_interaction_matrix (`W`): array-like, shape (n_actions, n_actions)
+    action_interaction_matrix (`W`): array-like, shape (n_unique_action, n_unique_action)
         `W(i, j)` is the interaction term between action `i` and `j`.
 
     len_list: int (> 1)
@@ -687,7 +687,7 @@ def action_interaction_additive_reward_function(
 
     # action_2d: array-like, shape (n_rounds, len_list)
     action_2d = action.reshape((context.shape[0], len_list))
-    # expected_reward: array-like, shape (n_rounds, n_actions)
+    # expected_reward: array-like, shape (n_rounds, n_unique_action)
     expected_reward = base_reward_function(
         context=context, action_context=action_context, random_state=random_state
     )
@@ -734,10 +734,10 @@ def action_interaction_exponential_reward_function(
     context: array-like, shape (n_rounds, dim_context)
         Context vectors characterizing each round (such as user information).
 
-    action_context: array-like, shape (n_actions, dim_action_context)
+    action_context: array-like, shape (n_unique_action, dim_action_context)
         Vector representation for each action.
 
-    action: array-like, shape (n_actions * len_list)
+    action: array-like, shape (n_unique_action * len_list)
         Sampled action.
         Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
 
@@ -785,21 +785,21 @@ def action_interaction_exponential_reward_function(
         )
     # action_2d: array-like, shape (n_rounds, len_list)
     action_2d = action.reshape((context.shape[0], action_interaction_matrix.shape[0]))
-    # action_3d: array-like, shape (n_rounds, n_actions, len_list)
+    # action_3d: array-like, shape (n_rounds, n_unique_action, len_list)
     action_3d = np.identity(action_context.shape[0])[action_2d].transpose(0, 2, 1)
-    # expected_reward: array-like, shape (n_rounds, n_actions)
+    # expected_reward: array-like, shape (n_rounds, n_unique_action)
     expected_reward = base_reward_function(
         context=context, action_context=action_context, random_state=random_state
     )
     if reward_type == "binary":
         expected_reward = np.log(expected_reward / (1 - expected_reward))
-    # expected_reward_3d: array-like, shape (n_rounds, n_actions, len_list)
+    # expected_reward_3d: array-like, shape (n_rounds, n_unique_action, len_list)
     expected_reward_3d = np.tile(
         expected_reward, (action_interaction_matrix.shape[0], 1, 1)
     ).transpose(1, 2, 0)
-    # action_weight: array-like, shape (n_rounds, n_actions, len_list)
+    # action_weight: array-like, shape (n_rounds, n_unique_action, len_list)
     action_weight = action_3d @ action_interaction_matrix
-    # weighted_expected_reward: array-like, shape (n_rounds, n_actions, len_list)
+    # weighted_expected_reward: array-like, shape (n_rounds, n_unique_action, len_list)
     weighted_expected_reward = action_weight * expected_reward_3d
     # expected_reward_factual: list, shape (n_rounds, len_list)
     expected_reward_factual = weighted_expected_reward.sum(axis=1)
@@ -828,7 +828,7 @@ def linear_behavior_policy_logit(
     context: array-like, shape (n_rounds, dim_context)
         Context vectors characterizing each round (such as user information).
 
-    action_context: array-like, shape (n_actions, dim_action_context)
+    action_context: array-like, shape (n_unique_action, dim_action_context)
         Vector representation for each action.
 
     random_state: int, default=None
@@ -840,7 +840,7 @@ def linear_behavior_policy_logit(
 
     Returns
     ---------
-    logit value: array-like, shape (n_rounds, n_actions)
+    logit value: array-like, shape (n_rounds, n_unique_action)
         Logit given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
     """

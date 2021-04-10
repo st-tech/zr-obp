@@ -13,10 +13,10 @@ from obp.dataset import (
 
 from obp.types import BanditFeedback
 
-# n_actions, len_list, dim_context, reward_type, random_state, description
+# n_unique_action, len_list, dim_context, reward_type, random_state, description
 invalid_input_of_init = [
-    ("4", 3, 2, "binary", 1, "n_actions must be an integer larger than 1"),
-    (1, 3, 2, "binary", 1, "n_actions must be an integer larger than 1"),
+    ("4", 3, 2, "binary", 1, "n_unique_action must be an integer larger than 1"),
+    (1, 3, 2, "binary", 1, "n_unique_action must be an integer larger than 1"),
     (5, "4", 2, "binary", 1, "len_list must be an integer such that"),
     (5, -1, 2, "binary", 1, "len_list must be an integer such that"),
     (5, 10, 2, "binary", 1, "len_list must be an integer such that"),
@@ -29,15 +29,15 @@ invalid_input_of_init = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, reward_type, random_state, description",
+    "n_unique_action, len_list, dim_context, reward_type, random_state, description",
     invalid_input_of_init,
 )
 def test_synthetic_slate_init_using_invalid_inputs(
-    n_actions, len_list, dim_context, reward_type, random_state, description
+    n_unique_action, len_list, dim_context, reward_type, random_state, description
 ):
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = SyntheticSlateBanditDataset(
-            n_actions=n_actions,
+            n_unique_action=n_unique_action,
             len_list=len_list,
             dim_context=dim_context,
             reward_type=reward_type,
@@ -124,14 +124,14 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behavior_policy():
     # set parameters
-    n_actions = 10
+    n_unique_action = 10
     len_list = 3
     dim_context = 2
     reward_type = "binary"
     random_state = 12345
     n_rounds = 100
     dataset = SyntheticSlateBanditDataset(
-        n_actions=n_actions,
+        n_unique_action=n_unique_action,
         len_list=len_list,
         dim_context=dim_context,
         reward_type=reward_type,
@@ -150,7 +150,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     for column in ["slate_id", "position", "action"] + pscore_columns:
         bandit_feedback_df[column] = bandit_feedback[column]
     # check pscore marginal
-    pscore_item_position = float(len_list / n_actions)
+    pscore_item_position = float(len_list / n_unique_action)
     assert np.allclose(
         bandit_feedback_df["pscore_item_position"].unique(), [pscore_item_position]
     ), f"pscore_item_position must be [{pscore_item_position}], but {bandit_feedback_df['pscore_item_position'].unique()}"
@@ -158,7 +158,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     pscore_cascade = []
     pscore_above = 1.0
     for position_ in np.arange(len_list):
-        pscore_above = pscore_above * 1.0 / (n_actions - position_)
+        pscore_above = pscore_above * 1.0 / (n_unique_action - position_)
         pscore_cascade.append(pscore_above)
     assert np.allclose(
         bandit_feedback_df["pscore_cascade"], np.tile(pscore_cascade, n_rounds)
@@ -170,14 +170,14 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behavior_policy_largescale():
     # set parameters
-    n_actions = 100
+    n_unique_action = 100
     len_list = 10
     dim_context = 2
     reward_type = "binary"
     random_state = 12345
     n_rounds = 10000
     dataset = SyntheticSlateBanditDataset(
-        n_actions=n_actions,
+        n_unique_action=n_unique_action,
         len_list=len_list,
         dim_context=dim_context,
         reward_type=reward_type,
@@ -190,7 +190,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     # check pscore marginal
-    pscore_item_position = float(len_list / n_actions)
+    pscore_item_position = float(len_list / n_unique_action)
     assert np.allclose(
         np.unique(bandit_feedback["pscore_item_position"]), [pscore_item_position]
     ), f"pscore_item_position must be [{pscore_item_position}], but {np.unique(bandit_feedback['pscore_item_position'])}"
@@ -198,14 +198,14 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_policy():
     # set parameters
-    n_actions = 10
+    n_unique_action = 10
     len_list = 3
     dim_context = 2
     reward_type = "binary"
     random_state = 12345
     n_rounds = 100
     dataset = SyntheticSlateBanditDataset(
-        n_actions=n_actions,
+        n_unique_action=n_unique_action,
         len_list=len_list,
         dim_context=dim_context,
         reward_type=reward_type,
@@ -232,14 +232,14 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_policy_without_pscore_item_position():
     # set parameters
-    n_actions = 80
+    n_unique_action = 80
     len_list = 3
     dim_context = 2
     reward_type = "binary"
     random_state = 12345
     n_rounds = 100
     dataset = SyntheticSlateBanditDataset(
-        n_actions=n_actions,
+        n_unique_action=n_unique_action,
         len_list=len_list,
         dim_context=dim_context,
         reward_type=reward_type,
@@ -258,7 +258,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
 
     # random seed should be fixed
     dataset2 = SyntheticSlateBanditDataset(
-        n_actions=n_actions,
+        n_unique_action=n_unique_action,
         len_list=len_list,
         dim_context=dim_context,
         reward_type=reward_type,
@@ -280,7 +280,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         assert set(np.unique(bandit_feedback["reward"])) == set([0, 1])
 
 
-# n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description
+# n_unique_action, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description
 valid_input_of_obtain_batch_bandit_feedback = [
     (
         10,
@@ -601,11 +601,11 @@ valid_input_of_obtain_batch_bandit_feedback = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description",
+    "n_unique_action, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, exam_weight, behavior_policy_function, reward_function, return_pscore_item_position, description",
     valid_input_of_obtain_batch_bandit_feedback,
 )
 def test_synthetic_slate_using_valid_inputs(
-    n_actions,
+    n_unique_action,
     len_list,
     dim_context,
     reward_type,
@@ -620,7 +620,7 @@ def test_synthetic_slate_using_valid_inputs(
     description,
 ):
     dataset = SyntheticSlateBanditDataset(
-        n_actions=n_actions,
+        n_unique_action=n_unique_action,
         len_list=len_list,
         dim_context=dim_context,
         reward_type=reward_type,
