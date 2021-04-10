@@ -83,7 +83,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     dataset_name: str, default='synthetic_slate_bandit_dataset'
         Name of the dataset.
 
-    TODO: Examples
     ----------
 
     .. code-block:: python
