@@ -66,10 +66,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         When 'cascade' is given, reward of each slot is sampled using the cascade model.
         When using some click model, 'continuous' reward type is unavailable.
 
-    exam_weight: np.ndarray, default=None
-        Slot-level examination probability.
-        When click_model is 'pbm', exam_weight must be defined.
-
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
@@ -207,18 +203,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             "standard_exponential",
         ]:
             raise ValueError(
-                f"reward_structure must be either 'RIPS', 'SIPS', or 'IIPS', but {self.reward_structure} is given.'"
+                f"reward_structure must be either 'RIPS', 'SIPS', or 'IIPS', but {self.reward_structure} is given."
             )
-        if self.click_model == "pbm" and not isinstance(self.exam_weight, np.ndarray):
-            raise ValueError(
-                f"exam_weight must be ndarray when click model is 'pbm', but {self.exam_weight} is given"
-            )
+        # set exam_weight (slot-level examination probability).
+        # When click_model is 'pbm', exam_weight is :math:`1 / k`, where :math:`k` is the position.
+        if self.click_model == "pbm":
+            self.exam_weight = 1 / np.arange(1, self.len_list + 1)
+        else:
+            self.exam_weight = np.ones(self.len_list)
         if self.click_model is not None and self.reward_type == "continuous":
             raise ValueError(
                 "continuous reward type is unavailable when click model is given"
             )
-        if self.click_model != "pbm":
-            self.exam_weight = np.ones(self.len_list)
         if self.reward_structure in ["cascade_additive", "standard_additive"]:
             # generate additive action interaction matrix of (n_unique_action, n_unique_action)
             self.action_interaction_matrix = generate_symmetric_matrix(
