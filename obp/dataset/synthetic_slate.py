@@ -61,9 +61,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     click_model: str, default=None
         Type of click model, which must be either None, 'pbm', 'cascade'.
-        When None is given, reward of each slot is sampled using the expected reward of the slot.
-        When 'pbm' is given, reward of each slot is sampled using the position-based model.
-        When 'cascade' is given, reward of each slot is sampled using the cascade model.
+        When None is given, reward of each slot is sampled based on the expected reward of the slot.
+        When 'pbm' is given, reward of each slot is sampled based on the position-based model.
+        When 'cascade' is given, reward of each slot is sampled based on the cascade model.
         When using some click model, 'continuous' reward type is unavailable.
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
@@ -203,7 +203,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             "standard_exponential",
         ]:
             raise ValueError(
-                f"reward_structure must be either 'RIPS', 'SIPS', or 'IIPS', but {self.reward_structure} is given."
+                f"reward_structure must be either 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', or 'standard_exponential', but {self.reward_structure} is given."
             )
         # set exam_weight (slot-level examination probability).
         # When click_model is 'pbm', exam_weight is :math:`1 / k`, where :math:`k` is the position.
@@ -273,7 +273,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def calc_item_position_pscore(
         self, action_list: List[int], behavior_policy_logit_i_: np.ndarray
     ) -> float:
-        """Calculate pscore_item_position"""
+        """Calculate the marginal propensity score, i.e., the probability that an action (specified by action_list) is presented at a position."""
         unique_action_set = np.arange(self.n_unique_action)
         pscore_ = 1.0
         for action in action_list:
@@ -304,17 +304,16 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
-            When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time
+            When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
 
         return_exact_uniform_pscore_item_position: bool, default=False
             A boolean parameter whether `pscore_item_position` of uniform random policy is returned or not.
-            When using uniform random policy, this parameter should be set to True
-
+            When True is given, actions are sampled by the uniform random behavior policy.
 
         Returns
         ----------
         action: array-like, shape (n_unique_action * len_list)
-            Sampled action.
+            Actions sampled by a behavior policy.
             Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
 
         pscore_cascade: array-like, shape (n_unique_action * len_list)
@@ -348,18 +347,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[
                     0
                 ]
-                action_sampled = self.random_.choice(
+                sampled_action = self.random_.choice(
                     unique_action_set, p=score_, replace=False
                 )
-                action[i * self.len_list + position_] = action_sampled
-                sampled_action_index = np.where(unique_action_set == action_sampled)[0][
+                action[i * self.len_list + position_] = sampled_action
+                sampled_action_index = np.where(unique_action_set == sampled_action)[0][
                     0
                 ]
                 # calculate joint pscore
                 pscore_i *= score_[sampled_action_index]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
                 unique_action_set = np.delete(
-                    unique_action_set, unique_action_set == action_sampled
+                    unique_action_set, unique_action_set == sampled_action
                 )
                 # calculate marginal pscore
                 if return_pscore_item_position:
@@ -370,7 +369,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     else:
                         pscore_item_position_i_l = 0.0
                         for action_list in permutations(
-                            range(self.n_unique_action), self.len_list
+                            np.arange(self.n_unique_action), self.len_list
                         ):
                             if sampled_action_index not in action_list:
                                 continue
@@ -383,7 +382,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         pscore_item_position[
                             i * self.len_list + position_
                         ] = pscore_item_position_i_l
-            # calculate joint pscore all
+            # impute joint pscore
             start_idx = i * self.len_list
             end_idx = start_idx + self.len_list
             pscore[start_idx:end_idx] = pscore_i
@@ -485,7 +484,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             and self.behavior_policy_function is not None
         ):
             raise ValueError(
-                "return_exact_uniform_pscore_item_position must not be True when behavior_policy_function is not None"
+                "when return_exact_uniform_pscore_item_position is True, behavior_policy_function must be specified"
             )
 
         context = self.random_.normal(size=(n_rounds, self.dim_context))
@@ -503,8 +502,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             isinstance(behavior_policy_logit_, np.ndarray)
             and behavior_policy_logit_.shape == (n_rounds, self.n_unique_action)
         ):
-            raise ValueError("behavior_policy_logit_ is Invalid")
-        # sample action and pscores
+            raise ValueError("behavior_policy_logit_ has an invalid shape")
+        # sample actions and calculate pscores
         (
             action,
             pscore_cascade,
@@ -548,7 +547,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             isinstance(expected_reward_factual, np.ndarray)
             and expected_reward_factual.shape == (n_rounds, self.len_list)
         ):
-            raise ValueError("expected_reward_factual is Invalid")
+            raise ValueError("expected_reward_factual has an invalid shape")
         # sample reward
         reward = self.sample_reward_given_expected_reward(
             expected_reward_factual=expected_reward_factual
@@ -561,7 +560,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             context=context,
             action_context=self.action_context,
             action=action,
-            position=np.tile(range(self.len_list), n_rounds),
+            position=np.tile(np.arange(self.len_list), n_rounds),
             reward=reward.reshape(action.shape[0]),
             expected_reward_factual=expected_reward_factual.reshape(action.shape[0]),
             pscore_cascade=pscore_cascade,
@@ -646,7 +645,7 @@ def action_interaction_additive_reward_function(
     Returns
     ---------
     expected_reward_factual: array-like, shape (n_rounds, len_list)
-        Sampled expected reward of factual actions
+        Expected rewards given factual actions
         When is_cascade is true, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
         When is_cascade is false, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
 
@@ -662,7 +661,7 @@ def action_interaction_additive_reward_function(
 
     if len_list * context.shape[0] != action.shape[0]:
         raise ValueError(
-            "the size of axis 0 of context muptiplied by len_list must be the same as that of action"
+            "the size of axis 0 of context times len_list must be the same as that of action"
         )
 
     if action_interaction_matrix.shape != (
@@ -756,7 +755,7 @@ def action_interaction_exponential_reward_function(
     Returns
     ---------
     expected_reward_factual: array-like, shape (n_rounds, len_list)
-        Sampled expected reward of factual actions (:math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} g^{-1}(f(x, a(j))) * W(k, j)`)
+        Expected rewards given factual actions (:math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} g^{-1}(f(x, a(j))) * W(k, j)`)
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
@@ -793,10 +792,10 @@ def action_interaction_exponential_reward_function(
     expected_reward_3d = np.tile(
         expected_reward, (action_interaction_matrix.shape[0], 1, 1)
     ).transpose(1, 2, 0)
-    # action_weight: array-like, shape (n_rounds, n_unique_action, len_list)
-    action_weight = action_3d @ action_interaction_matrix
+    # action_interaction_weight: array-like, shape (n_rounds, n_unique_action, len_list)
+    action_interaction_weight = action_3d @ action_interaction_matrix
     # weighted_expected_reward: array-like, shape (n_rounds, n_unique_action, len_list)
-    weighted_expected_reward = action_weight * expected_reward_3d
+    weighted_expected_reward = action_interaction_weight * expected_reward_3d
     # expected_reward_factual: list, shape (n_rounds, len_list)
     expected_reward_factual = weighted_expected_reward.sum(axis=1)
     if reward_type == "binary":
