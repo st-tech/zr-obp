@@ -807,12 +807,12 @@ def action_interaction_exponential_reward_function(
         expected_reward_factual = sigmoid(expected_reward_factual)
     # q_l = \sum_{a} a3d[i, a, l] q_a + \sum_{a_1, a_2} delta(a_1, a_2)
     # return: array, shape (n_rounds, len_list)
-    result = np.array(expected_reward_factual)
-    assert result.shape == (
+    expected_reward_factual = np.array(expected_reward_factual)
+    assert expected_reward_factual.shape == (
         context.shape[0],
         action_interaction_matrix.shape[0],
-    ), f"response shape must be (n_rounds, len_list), but {result.shape}"
-    return result
+    ), f"response shape must be (n_rounds, len_list), but {expected_reward_factual.shape}"
+    return expected_reward_factual
 
 
 def linear_behavior_policy_logit(
