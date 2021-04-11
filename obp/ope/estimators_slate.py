@@ -75,6 +75,15 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         iw = evaluation_policy_pscore / behavior_policy_pscore
         return reward * iw * reward_weight
 
+    @staticmethod
+    def _extract_reward_by_bootstrap(
+        slate_id: np.ndarray, reward: np.ndarray, sampled_slate: np.ndarray
+    ) -> np.ndarray:
+        sampled_reward = list()
+        for slate in sampled_slate:
+            sampled_reward.extend(reward[slate_id == slate])
+        return np.array(sampled_reward)
+
     def _estimate_slate_confidence_interval_by_bootstrap(
         self,
         slate_id: np.ndarray,
@@ -89,14 +98,15 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
             random_state=random_state,
         )
 
-        n_unique_slate = np.unique(slate_id).shape[0]
+        unique_slate = np.unique(slate_id)
         boot_samples = list()
         random_ = check_random_state(random_state)
         for _ in np.arange(n_bootstrap_samples):
-            sampled_slate = random_.choice(
-                np.arange(n_unique_slate), size=n_unique_slate
+            sampled_slate = random_.choice(unique_slate, size=unique_slate.shape[0])
+            sampled_reward = self._extract_reward_by_bootstrap(
+                slate_id=slate_id, reward=reward, sampled_slate=sampled_slate
             )
-            boot_samples.append(reward[sampled_slate].sum() / n_unique_slate)
+            boot_samples.append(sampled_reward.sum() / unique_slate.shape[0])
         lower_bound = np.percentile(boot_samples, 100 * (alpha / 2))
         upper_bound = np.percentile(boot_samples, 100 * (1.0 - alpha / 2))
         return {
