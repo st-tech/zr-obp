@@ -14,7 +14,7 @@ from ..utils import check_confidence_interval_arguments
 
 @dataclass
 class BaseSlateOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for OPE estimators."""
+    """Base class for Slate OPE estimators."""
 
     @abstractmethod
     def _estimate_round_rewards(self) -> np.ndarray:
@@ -35,7 +35,31 @@ class BaseSlateOffPolicyEstimator(metaclass=ABCMeta):
 # TODO :comment
 @dataclass
 class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
-    """Base Class of Slate Inverse Probability Weighting."""
+    """Base Class of Slate Inverse Probability Weighting.
+
+    len_list: int (> 1)
+        Length of a list of actions recommended in each impression.
+        When Open Bandit Dataset is used, 3 should be set.
+
+    position_weight: array-like, shape (len_list,)
+        Non-negative weight for each slot.
+
+    """
+
+    len_list: int
+    position_weight: Optional[np.ndarray] = None
+
+    def __post_init__(self) -> None:
+        if self.position_weight is None:
+            self.position_weight = np.ones(self.len_list)
+        else:
+            if not isinstance(self.position_weight, np.ndarray):
+                raise ValueError("position weight type")
+            if not (
+                self.position_weight.ndim == 1
+                and self.position_weight.shape[0] == self.len_list
+            ):
+                raise ValueError("position weight shape")
 
     def _estimate_round_rewards(
         self,
@@ -46,52 +70,98 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         position_weight: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate rewards for each round.
+        """Estimate rewards for each round and slot.
 
         Parameters
         ----------
-        reward: array-like or Tensor, shape (n_rounds,)
-            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t, k}`.
 
-        action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        position: array-like, shape (<= n_rounds * len_list,)
+            Positions of each round and slot in the given logged bandit feedback.
 
-        pscore: array-like or Tensor, shape (n_rounds,)
+        behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
-        action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
 
-        position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+        position_weight: array-like, shape (len_list,)
+            Non-negative weight for each slot.
 
         Returns
         ----------
-        estimated_rewards: array-like or Tensor, shape (n_rounds,)
-            Rewards estimated by IPW for each round.
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by IPW for each round and slot (weighted based on position_weight).
 
         """
         reward_weight = np.vectorize(lambda x: position_weight[x])(position)
         iw = evaluation_policy_pscore / behavior_policy_pscore
-        return reward * iw * reward_weight
+        estimated_rewards = reward * iw * reward_weight
+        return estimated_rewards
 
     @staticmethod
     def _extract_reward_by_bootstrap(
-        slate_id: np.ndarray, reward: np.ndarray, sampled_slate: np.ndarray
+        slate_id: np.ndarray, estimated_rewards: np.ndarray, sampled_slate: np.ndarray
     ) -> np.ndarray:
-        sampled_reward = list()
+        """Extract reward based on sampled slate.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            Slate id observed in each round of the logged bandit feedback.
+
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by IPW for each round and slot (weighted based on position_weight).
+
+        sampled_slate: array-like, shape (n_rounds,)
+            Slate id sampled by bootstrap.
+
+        Returns
+        ----------
+        sampled_estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Estimated rewards sampled by bootstrap
+
+        """
+        sampled_estimated_rewards = list()
         for slate in sampled_slate:
-            sampled_reward.extend(reward[slate_id == slate])
-        return np.array(sampled_reward)
+            sampled_estimated_rewards.extend(estimated_rewards[slate_id == slate])
+        sampled_estimated_rewards = np.array(sampled_estimated_rewards)
+        return sampled_estimated_rewards
 
     def _estimate_slate_confidence_interval_by_bootstrap(
         self,
         slate_id: np.ndarray,
-        reward: np.ndarray,
+        estimated_rewards: np.ndarray,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
     ) -> Dict[str, float]:
+        """Estimate confidence interval by nonparametric bootstrap-like procedure.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            Slate id observed in each round of the logged bandit feedback.
+
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by IPW for each round and slot (weighted based on position_weight).
+
+        alpha: float, default=0.05
+            Significant level of confidence intervals.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
         check_confidence_interval_arguments(
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -103,10 +173,12 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         random_ = check_random_state(random_state)
         for _ in np.arange(n_bootstrap_samples):
             sampled_slate = random_.choice(unique_slate, size=unique_slate.shape[0])
-            sampled_reward = self._extract_reward_by_bootstrap(
-                slate_id=slate_id, reward=reward, sampled_slate=sampled_slate
+            sampled_estimated_rewards = self._extract_reward_by_bootstrap(
+                slate_id=slate_id,
+                estimated_rewards=estimated_rewards,
+                sampled_slate=sampled_slate,
             )
-            boot_samples.append(sampled_reward.sum() / unique_slate.shape[0])
+            boot_samples.append(sampled_estimated_rewards.sum() / unique_slate.shape[0])
         lower_bound = np.percentile(boot_samples, 100 * (alpha / 2))
         upper_bound = np.percentile(boot_samples, 100 * (1.0 - alpha / 2))
         return {
@@ -118,23 +190,24 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
 
 @dataclass
 class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
-    """Estimate the policy value by Slate Standard Inverse Probability Scoring (SIPS)."""
+    """Estimate the policy value by Slate Standard Inverse Probability Scoring (SIPS).
 
-    len_list: int
+    Note
+    -------
+    Slate Standard Inverse Probability Scoring (SIPS) estimates the policy value of a given evaluation policy :math:`\\pi_e` by
+
+    Parameters
+    ----------
+    estimator_name: str, default='sips'.
+        Name of off-policy estimator.
+
+    References
+    ------------
+    James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Ben Carterette.
+    "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions", 2020.
+    """
+
     estimator_name: str = "sips"
-    position_weight: Optional[np.ndarray] = None
-
-    def __post_init__(self) -> None:
-        if self.position_weight is None:
-            self.position_weight = np.ones(self.len_list)
-        else:
-            if not isinstance(self.position_weight, np.ndarray):
-                raise ValueError("position weight type")
-            if not (
-                self.position_weight.ndim == 1
-                and self.position_weight.shape[0] == self.len_list
-            ):
-                raise ValueError("position weight shape")
 
     def estimate_policy_value(
         self,
@@ -144,6 +217,28 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
         evaluation_policy_pscore: np.ndarray,
         **kwargs,
     ) -> float:
+        """Estimate policy value of an evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t, k}`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            Positions of each round and slot in the given logged bandit feedback.
+
+        pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        Returns
+        ----------
+        V_hat: float
+            Estimated policy value (performance) of a given evaluation policy.
+
+        """
         return self._estimate_round_rewards(
             reward=reward,
             position=position,
@@ -164,7 +259,41 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        reward = self._estimate_round_rewards(
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            Slate id observed in each round of the logged bandit feedback.
+
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t, k}`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            Positions of each round and slot in the given logged bandit feedback.
+
+        pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        alpha: float, default=0.05
+            P-value.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        estimated_rewards = self._estimate_round_rewards(
             reward=reward,
             position=position,
             behavior_policy_pscore=pscore,
@@ -172,7 +301,7 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             position_weight=self.position_weight,
         )
         return self._estimate_slate_confidence_interval_by_bootstrap(
-            slate_id=slate_id, reward=reward
+            slate_id=slate_id, estimated_rewards=estimated_rewards
         )
 
 
@@ -180,21 +309,7 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
 class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
     """Estimate the policy value by Slate Independent Inverse Probability Scoring (IIPS)."""
 
-    len_list: int
     estimator_name: str = "iips"
-    position_weight: Optional[np.ndarray] = None
-
-    def __post_init__(self) -> None:
-        if self.position_weight is None:
-            self.position_weight = np.ones(self.len_list)
-        else:
-            if not isinstance(self.position_weight, np.ndarray):
-                raise ValueError("position weight type")
-            if not (
-                self.position_weight.ndim == 1
-                and self.position_weight.shape[0] == self.len_list
-            ):
-                raise ValueError("position weight shape")
 
     def estimate_policy_value(
         self,
@@ -224,7 +339,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        reward = self._estimate_round_rewards(
+        estimated_rewards = self._estimate_round_rewards(
             reward=reward,
             position=position,
             behavior_policy_pscore=pscore_item_position,
@@ -232,7 +347,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             position_weight=self.position_weight,
         )
         return self._estimate_slate_confidence_interval_by_bootstrap(
-            slate_id=slate_id, reward=reward
+            slate_id=slate_id, estimated_rewards=estimated_rewards
         )
 
 
@@ -240,21 +355,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
 class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
     """Estimate the policy value by Slate Recursive Inverse Probability Scoring (RIPS)."""
 
-    len_list: int
     estimator_name: str = "rips"
-    position_weight: Optional[np.ndarray] = None
-
-    def __post_init__(self) -> None:
-        if self.position_weight is None:
-            self.position_weight = np.ones(self.len_list)
-        else:
-            if not isinstance(self.position_weight, np.ndarray):
-                raise ValueError("position weight type")
-            if not (
-                self.position_weight.ndim == 1
-                and self.position_weight.shape[0] == self.len_list
-            ):
-                raise ValueError("position weight shape")
 
     def estimate_policy_value(
         self,
@@ -284,7 +385,7 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        reward = self._estimate_round_rewards(
+        estimated_rewards = self._estimate_round_rewards(
             reward=reward,
             position=position,
             behavior_policy_pscore=pscore_cascade,
@@ -292,5 +393,5 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
             position_weight=self.position_weight,
         )
         return self._estimate_slate_confidence_interval_by_bootstrap(
-            slate_id=slate_id, reward=reward
+            slate_id=slate_id, estimated_rewards=estimated_rewards
         )
