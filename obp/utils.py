@@ -173,7 +173,7 @@ def check_bandit_feedback_inputs(
         raise ValueError("reward must be ndarray")
     if reward.ndim != 1:
         raise ValueError("reward must be 1-dimensional")
-    if not (action.dtype == int and action.min() >= 0):
+    if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
         raise ValueError("action elements must be non-negative integers")
 
     if expected_reward is not None:
@@ -219,7 +219,7 @@ def check_bandit_feedback_inputs(
             raise ValueError(
                 "context, action, reward, and position must be the same size."
             )
-        if not (position.dtype == int and position.min() >= 0):
+        if not (np.issubdtype(position.dtype, np.integer) and position.min() >= 0):
             raise ValueError("position elements must be non-negative integers")
     else:
         if not (context.shape[0] == action.shape[0] == reward.shape[0]):
@@ -287,7 +287,7 @@ def check_ope_inputs(
             raise ValueError(
                 "the first dimension of position and the first dimension of action_dist must be the same"
             )
-        if not (position.dtype == int and position.min() >= 0):
+        if not (np.issubdtype(position.dtype, np.integer) and position.min() >= 0):
             raise ValueError("position elements must be non-negative integers")
         if position.max() >= action_dist.shape[2]:
             raise ValueError(
@@ -319,7 +319,7 @@ def check_ope_inputs(
             raise ValueError("reward must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0]):
             raise ValueError("action and reward must be the same size.")
-        if not (action.dtype == int and action.min() >= 0):
+        if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
             raise ValueError("action elements must be non-negative integers")
         if action.max() >= action_dist.shape[1]:
             raise ValueError(
