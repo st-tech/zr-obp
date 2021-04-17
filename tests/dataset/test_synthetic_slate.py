@@ -86,8 +86,8 @@ invalid_input_of_init = [
         "dim_context must be a positive integer",
     ),
     (5, 3, 2, "aaa", "independent", "pbm", 1, "reward_type must be either"),
-    (5, 3, 2, "binary", "aaa", "pbm", 1, "reward_structure must be either"),
-    (5, 3, 2, "binary", "independent", "aaa", 1, "click_model must be either"),
+    (5, 3, 2, "binary", "aaa", "pbm", 1, "reward_structure must be one of"),
+    (5, 3, 2, "binary", "independent", "aaa", 1, "click_model must be one of"),
     (5, 3, 2, "binary", "independent", "pbm", "x", "random_state must be an integer"),
     (5, 3, 2, "binary", "independent", "pbm", None, "random_state must be an integer"),
 ]
@@ -134,7 +134,7 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
             pscore_columns.append(column)
     assert (
         len(pscore_columns) > 0
-    ), f"bandit feedback must contains at least one of the following pscore columns: {pscore_candidate_columns}"
+    ), f"bandit feedback must contain at least one of the following pscore columns: {pscore_candidate_columns}"
     bandit_feedback_df = pd.DataFrame()
     for column in ["slate_id", "position", "action"] + pscore_columns:
         bandit_feedback_df[column] = bandit_feedback[column]
@@ -147,10 +147,10 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
     # check uniqueness
     assert (
         bandit_feedback_df.duplicated(["slate_id", "position"]).sum() == 0
-    ), "position must not be duplicated in each impression"
+    ), "position must not be duplicated in each slate"
     assert (
         bandit_feedback_df.duplicated(["slate_id", "action"]).sum() == 0
-    ), "action must not be duplicated in each impression"
+    ), "action must not be duplicated in each slate"
     # check pscores
     for column in pscore_columns:
         invalid_pscore_flgs = (bandit_feedback_df[column] < 0) | (
@@ -160,16 +160,18 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
     if "pscore_cascade" in pscore_columns and "pscore" in pscore_columns:
         assert (
             bandit_feedback_df["pscore_cascade"] < bandit_feedback_df["pscore"]
-        ).sum() == 0, "pscore_cascade is smaller or equal to pscore"
+        ).sum() == 0, "pscore_cascade must be larger than or equal to pscore"
     if "pscore_item_position" in pscore_columns and "pscore" in pscore_columns:
         assert (
             bandit_feedback_df["pscore_item_position"] < bandit_feedback_df["pscore"]
-        ).sum() == 0, "pscore is smaller or equal to pscore_item_position"
+        ).sum() == 0, "pscore must be larger than or equal to pscore_item_position"
     if "pscore_item_position" in pscore_columns and "pscore_cascade" in pscore_columns:
         assert (
             bandit_feedback_df["pscore_item_position"]
             < bandit_feedback_df["pscore_cascade"]
-        ).sum() == 0, "pscore_cascade is smaller or equal to pscore_item_position"
+        ).sum() == 0, (
+            "pscore_cascade must be larger than or equal to pscore_item_position"
+        )
     if "pscore_cascade" in pscore_columns:
         previous_minimum_pscore_cascade = (
             bandit_feedback_df.groupby("slate_id")["pscore_cascade"]
@@ -179,14 +181,14 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
         )
         assert (
             previous_minimum_pscore_cascade < bandit_feedback_df["pscore_cascade"]
-        ).sum() == 0, "pscore_cascade must be non-decresing sequence in each impression"
+        ).sum() == 0, "pscore_cascade must be non-decresing sequence in each slate"
     if "pscore" in pscore_columns:
         count_pscore_in_expression = bandit_feedback_df.groupby("slate_id").apply(
             lambda x: x["pscore"].unique().shape[0]
         )
         assert (
             count_pscore_in_expression != 1
-        ).sum() == 0, "pscore must be unique in each impression"
+        ).sum() == 0, "pscore must be unique in each slate"
     if "pscore" in pscore_columns and "pscore_cascade" in pscore_columns:
         last_slot_feedback_df = bandit_feedback_df.drop_duplicates(
             "slate_id", keep="last"
@@ -239,7 +241,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     ), f"pscore_cascade must be {pscore_cascade} for all impresessions"
     assert np.allclose(
         bandit_feedback_df["pscore"].unique(), [pscore_above]
-    ), f"pscore must be {pscore_above} for all impressions"
+    ), f"pscore must be {pscore_above} for all slates"
 
 
 def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behavior_policy_largescale():

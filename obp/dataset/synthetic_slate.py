@@ -34,7 +34,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Number of unique actions.
 
     len_list: int (> 1)
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions recommended in each slate.
         When Open Bandit Dataset is used, 3 should be set.
 
     dim_context: int, default=1
@@ -209,9 +209,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         # set exam_weight (slot-level examination probability).
         # When click_model is 'pbm', exam_weight is :math:`1 / k`, where :math:`k` is the position.
         if self.click_model == "pbm":
-            self.exam_weight = 1 / np.arange(1, self.len_list + 1)
+            self.exam_weight = 1.0 / np.arange(1, self.len_list + 1)
         else:
-            self.exam_weight = np.ones(self.len_list)
+            self.exam_weight = np.ones(self.len_list, dtype=float)
         if self.click_model is not None and self.reward_type == "continuous":
             raise ValueError(
                 "continuous reward type is unavailable when click model is given"
@@ -638,7 +638,7 @@ def action_interaction_additive_reward_function(
         `W(i, j)` is the interaction term between action `i` and `j`.
 
     len_list: int (> 1)
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions recommended in each slate.
         When Open Bandit Dataset is used, 3 should be set.
 
     is_cascade: bool
@@ -693,7 +693,7 @@ def action_interaction_additive_reward_function(
     )
     if reward_type == "binary":
         expected_reward = np.log(expected_reward / (1 - expected_reward))
-    expected_reward_factual = np.zeros_like(action_2d)
+    expected_reward_factual = np.zeros_like(action_2d, dtype=float)
     for position_ in np.arange(len_list):
         tmp_fixed_reward = expected_reward[
             np.arange(context.shape[0]), action_2d[:, position_]
