@@ -31,7 +31,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     Parameters
     -----------
     n_unique_action: int (>= len_list)
-        Number of actions.
+        Number of unique actions.
 
     len_list: int (> 1)
         Length of a list of actions recommended in each impression.
@@ -47,7 +47,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
 
     reward_structure: str, default='cascade_additive'
-        Type of reward structure, which must be either 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', 'standard_exponential'.
+        Type of reward structure, which must be one of 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', or 'standard_exponential'.
         When 'cascade_additive' or 'standard_additive' is given, additive action_interaction_matrix (:math:`W \\in \\mathbb{R}^{\\text{n_unique_action} \\times \\text{n_unique_action}}`) is generated.
         When 'cascade_exponential', 'standard_exponential', or 'independent' is given, exponential action_interaction_matrix (:math:`\\in \\mathbb{R}^{\\text{len_list} \\times \\text{len_list}}`) is generated.
         Expected reward is calculated as follows (:math:`f` is a base reward function of each item-position, and :math:`g` is a transform function):
@@ -60,7 +60,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         When reward_type is 'binray', transform function is the logit function.
 
     click_model: str, default=None
-        Type of click model, which must be either None, 'pbm', 'cascade'.
+        Type of click model, which must be one of None, 'pbm', or 'cascade'.
         When None is given, reward of each slot is sampled based on the expected reward of the slot.
         When 'pbm' is given, reward of each slot is sampled based on the position-based model.
         When 'cascade' is given, reward of each slot is sampled based on the cascade model.
@@ -87,7 +87,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     .. code-block:: python
 
-        >>> import numpy as np
         >>> from obp.dataset import (
             logistic_reward_function,
             linear_behavior_policy_logit,
@@ -98,12 +97,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         >>> dataset = SyntheticSlateBanditDataset(
                 n_unique_action=10,
                 dim_context=5,
+                len_list=3,
                 base_reward_function=logistic_reward_function,
-                behavior_policy_function=linear_behavior_policy,
+                behavior_policy_function=linear_behavior_policy_logit,
                 reward_type='binary',
                 reward_structure='cascade_additive',
                 click_model='cascade',
-                exam_weight=None,
                 random_state=12345
             )
         >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(
@@ -154,7 +153,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     reward_type: str = "binary"
     reward_structure: str = "cascade_additive"
     click_model: Optional[str] = None
-    exam_weight: Optional[np.ndarray] = None
     base_reward_function: Optional[
         Callable[
             [np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray
@@ -202,11 +200,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             "standard_exponential",
         ]:
             raise ValueError(
-                f"reward_structure must be either 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', or 'standard_exponential', but {self.reward_structure} is given."
+                f"reward_structure must be one of 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', or 'standard_exponential', but {self.reward_structure} is given."
             )
         if self.click_model not in ["cascade", "pbm", None]:
             raise ValueError(
-                f"click_model must be either 'cascade', 'pbm', or None, but {self.click_model} is given."
+                f"click_model must be one of 'cascade', 'pbm', or None, but {self.click_model} is given."
             )
         # set exam_weight (slot-level examination probability).
         # When click_model is 'pbm', exam_weight is :math:`1 / k`, where :math:`k` is the position.
@@ -231,11 +229,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             # generate exponential action interaction matrix of (len_list, len_list)
             if self.reward_structure == "standard_exponential":
                 self.action_interaction_matrix = (
-                    self.obtain_standard_exponential_slot_weight(self.len_list)
+                    self.obtain_standard_exponential_action_interaction_matrix(
+                        self.len_list
+                    )
                 )
             elif self.reward_structure == "cascade_exponential":
                 self.action_interaction_matrix = (
-                    self.obtain_cascade_exponential_slot_weight(self.len_list)
+                    self.obtain_cascade_exponential_action_interaction_matrix(
+                        self.len_list
+                    )
                 )
             else:
                 self.action_interaction_matrix = np.identity(self.len_list)
@@ -249,8 +251,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self.action_context = np.eye(self.n_unique_action, dtype=int)
 
     @staticmethod
-    def obtain_standard_exponential_slot_weight(len_list):
-        """Obtain slot weight matrix for standard exponential reward structure (symmetric matrix)"""
+    def obtain_standard_exponential_action_interaction_matrix(len_list) -> np.ndarray:
+        """Obtain action interaction matrix for standard exponential reward structure (symmetric matrix)"""
         action_interaction_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             action_interaction_matrix[:, position_] = -1 / np.exp(
@@ -260,8 +262,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return action_interaction_matrix
 
     @staticmethod
-    def obtain_cascade_exponential_slot_weight(len_list):
-        """Obtain slot weight matrix for cascade exponential reward structure (upper triangular matrix)"""
+    def obtain_cascade_exponential_action_interaction_matrix(len_list) -> np.ndarray:
+        """Obtain action interaction matrix for cascade exponential reward structure (upper triangular matrix)"""
         action_interaction_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             action_interaction_matrix[:, position_] = -1 / np.exp(
@@ -411,7 +413,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         reward: array-like, shape (n_unique_action, len_list)
 
         """
-        expected_reward_factual = expected_reward_factual * self.exam_weight
+        expected_reward_factual *= self.exam_weight
         if self.reward_type == "binary":
             reward = np.array(
                 [
