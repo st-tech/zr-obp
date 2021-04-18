@@ -2,6 +2,11 @@ import pytest
 import numpy as np
 
 from obp.ope import SlateStandardIPS, SlateIndependentIPS, SlateRecursiveIPS
+from obp.dataset import (
+    logistic_reward_function,
+    linear_behavior_policy_logit,
+    SyntheticSlateBanditDataset,
+)
 
 # setting
 len_list = 3
@@ -611,3 +616,195 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
         n_bootstrap_samples=n_bootstrap_samples,
         random_state=random_state,
     )
+
+
+def test_slate_ope_performance_using_cascade_additive_log():
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    n_rounds = 1000
+    reward_structure = "cascade_additive"
+    click_model = None
+    behavior_policy_function = linear_behavior_policy_logit
+    reward_function = logistic_reward_function
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        random_state=random_state,
+        behavior_policy_function=behavior_policy_function,
+        base_reward_function=reward_function,
+    )
+    random_behavior_dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        random_state=random_state,
+        behavior_policy_function=None,
+        base_reward_function=reward_function,
+    )
+    # obtain feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    slate_id = bandit_feedback["slate_id"]
+    reward = bandit_feedback["reward"]
+    pscore = bandit_feedback["pscore"]
+    pscore_item_position = bandit_feedback["pscore_item_position"]
+    pscore_cascade = bandit_feedback["pscore_cascade"]
+    position = bandit_feedback["position"]
+
+    # obtain random behavior feedback
+    random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
+    )
+
+    sips_estimated_policy_value = sips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore"],
+    )
+    iips_estimated_policy_value = iips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore_item_position,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore_item_position"],
+    )
+    rips_estimated_policy_value = rips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore_cascade,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore_cascade"],
+    )
+    # compute statistics of ground truth policy value
+    q_pi_e = (
+        random_behavior_feedback["reward"]
+        .reshape((n_rounds, dataset.len_list))
+        .mean(axis=1)
+    )
+    gt_mean = q_pi_e.mean()
+    gt_std = q_pi_e.std(ddof=1)
+    print("Cascade additive")
+    # check the performance of OPE
+    ci_bound = gt_std * 3 / np.sqrt(q_pi_e.shape[0])
+    print(f"gt_mean: {gt_mean}, 3 * gt_std / sqrt(n): {ci_bound}")
+    estimated_policy_value = {
+        "sips": sips_estimated_policy_value,
+        "iips": iips_estimated_policy_value,
+        "rips": rips_estimated_policy_value,
+    }
+    for key in estimated_policy_value:
+        print(
+            f"estimated_value: {estimated_policy_value[key]} ------ estimator: {key}, "
+        )
+        # test the performance of each estimator
+        assert (
+            np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
+        ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
+
+
+def test_slate_ope_performance_using_independent_log():
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    n_rounds = 1000
+    reward_structure = "independent"
+    click_model = None
+    behavior_policy_function = linear_behavior_policy_logit
+    reward_function = logistic_reward_function
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        random_state=random_state,
+        behavior_policy_function=behavior_policy_function,
+        base_reward_function=reward_function,
+    )
+    random_behavior_dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        random_state=random_state,
+        behavior_policy_function=None,
+        base_reward_function=reward_function,
+    )
+    # obtain feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    slate_id = bandit_feedback["slate_id"]
+    reward = bandit_feedback["reward"]
+    pscore = bandit_feedback["pscore"]
+    pscore_item_position = bandit_feedback["pscore_item_position"]
+    pscore_cascade = bandit_feedback["pscore_cascade"]
+    position = bandit_feedback["position"]
+
+    # obtain random behavior feedback
+    random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
+    )
+
+    sips_estimated_policy_value = sips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore"],
+    )
+    iips_estimated_policy_value = iips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore_item_position,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore_item_position"],
+    )
+    rips_estimated_policy_value = rips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore_cascade,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore_cascade"],
+    )
+    # compute statistics of ground truth policy value
+    q_pi_e = (
+        random_behavior_feedback["reward"]
+        .reshape((n_rounds, dataset.len_list))
+        .mean(axis=1)
+    )
+    gt_mean = q_pi_e.mean()
+    gt_std = q_pi_e.std(ddof=1)
+    print("Independent")
+    # check the performance of OPE
+    ci_bound = gt_std * 3 / np.sqrt(q_pi_e.shape[0])
+    print(f"gt_mean: {gt_mean}, 3 * gt_std / sqrt(n): {ci_bound}")
+    estimated_policy_value = {
+        "sips": sips_estimated_policy_value,
+        "iips": iips_estimated_policy_value,
+        "rips": rips_estimated_policy_value,
+    }
+    for key in estimated_policy_value:
+        print(
+            f"estimated_value: {estimated_policy_value[key]} ------ estimator: {key}, "
+        )
+        # test the performance of each estimator
+        assert (
+            np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
+        ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
