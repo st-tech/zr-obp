@@ -239,7 +239,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             raise ValueError(
                 "the size of axis 0 of context must be the same as that of action"
             )
-        if not np.issubdtype(int, action.dtype):
+        if not np.issubdtype(action.dtype, np.integer):
             raise ValueError("the dtype of action must be a subdtype of int")
 
         expected_reward_ = self.calc_expected_reward(context)
