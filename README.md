@@ -344,10 +344,13 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 # Project Team
 
-- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Tokyo Institute of Technology)
+- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd.)
 - [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Technologies, Inc.)
 - Megumi Matsutani (ZOZO Technologies, Inc.)
 - [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
+- [Masahiro Nomura](https://twitter.com/nomuramasahir0) (CyberAgent, Inc. / Hanjuku-kaso Co., Ltd.)
+- [Koichi Takayama](https://fullflu.hatenablog.com/) (Hanjuku-kaso Co., Ltd.)
+- [Ryo Kuroiwa](https://kurorororo.github.io) (University of Toronto / Hanjuku-kaso Co., Ltd.)
 
 # Contact
 For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
