@@ -11,6 +11,7 @@ from obp.dataset import (
     SyntheticBanditDataset,
     logistic_reward_function,
     linear_behavior_policy,
+    SyntheticSlateBanditDataset,
 )
 from obp.utils import sigmoid
 
@@ -30,6 +31,30 @@ def synthetic_bandit_feedback() -> BanditFeedback:
         random_state=random_state,
     )
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    return bandit_feedback
+
+
+# generate synthetic slate dataset using SyntheticBanditDataset
+@pytest.fixture(scope="session")
+def synthetic_slate_bandit_feedback() -> BanditFeedback:
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    n_rounds = 100
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+    )
+    # obtain feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
+    )
     return bandit_feedback
 
 

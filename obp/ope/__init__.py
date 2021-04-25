@@ -11,6 +11,7 @@ from obp.ope.estimators_slate import SlateStandardIPS
 from obp.ope.estimators_slate import SlateIndependentIPS
 from obp.ope.estimators_slate import SlateRecursiveIPS
 from obp.ope.meta import OffPolicyEvaluation
+from obp.ope.meta_slate import SlateOffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
 
 __all__ = [
@@ -24,6 +25,7 @@ __all__ = [
     "SwitchDoublyRobust",
     "DoublyRobustWithShrinkage",
     "OffPolicyEvaluation",
+    "SlateOffPolicyEvaluation",
     "RegressionModel",
     "SlateStandardIPS",
     "SlateIndependentIPS",

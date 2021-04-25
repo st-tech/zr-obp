@@ -7,10 +7,9 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
-from sklearn.utils import check_random_state
 
 from ..utils import (
-    check_confidence_interval_arguments,
+    estimate_confidence_interval_by_bootstrap,
     check_sips_ope_inputs,
     check_iips_ope_inputs,
     check_rips_ope_inputs,
@@ -37,7 +36,6 @@ class BaseSlateOffPolicyEstimator(metaclass=ABCMeta):
         raise NotImplementedError
 
 
-# TODO :comment
 @dataclass
 class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
     """Base Class of Slate Inverse Probability Weighting.
@@ -84,35 +82,6 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         estimated_rewards = reward * iw
         return estimated_rewards
 
-    @staticmethod
-    def _extract_reward_by_bootstrap(
-        slate_id: np.ndarray, estimated_rewards: np.ndarray, sampled_slate: np.ndarray
-    ) -> np.ndarray:
-        """Extract reward based on sampled slate.
-
-        Parameters
-        ----------
-        slate_id: array-like, shape (<= n_rounds * len_list,)
-            Slate id observed in each round of the logged bandit feedback.
-
-        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
-            Rewards estimated by IPW for each round and slot.
-
-        sampled_slate: array-like, shape (n_rounds,)
-            Slate id sampled by bootstrap.
-
-        Returns
-        ----------
-        sampled_estimated_rewards: array-like, shape (<= n_rounds * len_list,)
-            Estimated rewards sampled by bootstrap
-
-        """
-        sampled_estimated_rewards = list()
-        for slate in sampled_slate:
-            sampled_estimated_rewards.extend(estimated_rewards[slate_id == slate])
-        sampled_estimated_rewards = np.array(sampled_estimated_rewards)
-        return sampled_estimated_rewards
-
     def _estimate_slate_confidence_interval_by_bootstrap(
         self,
         slate_id: np.ndarray,
@@ -146,30 +115,18 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        check_confidence_interval_arguments(
+        unique_slate = np.unique(slate_id)
+        # sum estimated_rewards in each slate
+        estimated_round_rewards = list()
+        for slate in unique_slate:
+            estimated_round_rewards.append(estimated_rewards[slate_id == slate].sum())
+        estimated_round_rewards = np.array(estimated_round_rewards)
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
-
-        unique_slate = np.unique(slate_id)
-        boot_samples = list()
-        random_ = check_random_state(random_state)
-        for _ in np.arange(n_bootstrap_samples):
-            sampled_slate = random_.choice(unique_slate, size=unique_slate.shape[0])
-            sampled_estimated_rewards = self._extract_reward_by_bootstrap(
-                slate_id=slate_id,
-                estimated_rewards=estimated_rewards,
-                sampled_slate=sampled_slate,
-            )
-            boot_samples.append(sampled_estimated_rewards.sum() / unique_slate.shape[0])
-        lower_bound = np.percentile(boot_samples, 100 * (alpha / 2))
-        upper_bound = np.percentile(boot_samples, 100 * (1.0 - alpha / 2))
-        return {
-            "mean": np.mean(boot_samples),
-            f"{100 * (1. - alpha)}% CI (lower)": lower_bound,
-            f"{100 * (1. - alpha)}% CI (upper)": upper_bound,
-        }
 
 
 @dataclass
@@ -236,12 +193,15 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             pscore=pscore,
             evaluation_policy_pscore=evaluation_policy_pscore,
         )
-        return self._estimate_round_rewards(
-            reward=reward,
-            position=position,
-            behavior_policy_pscore=pscore,
-            evaluation_policy_pscore=evaluation_policy_pscore,
-        ).mean()
+        return (
+            self._estimate_round_rewards(
+                reward=reward,
+                position=position,
+                behavior_policy_pscore=pscore,
+                evaluation_policy_pscore=evaluation_policy_pscore,
+            ).sum()
+            / np.unique(slate_id).shape[0]
+        )
 
     def estimate_interval(
         self,
@@ -340,7 +300,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         reward: np.ndarray,
         position: np.ndarray,
         pscore_item_position: np.ndarray,
-        evaluation_policy_pscore: np.ndarray,
+        evaluation_policy_pscore_item_position: np.ndarray,
         **kwargs,
     ) -> float:
         """Estimate policy value of an evaluation policy.
@@ -359,7 +319,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
             Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t, k}|x_t)`.
 
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
             Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         Returns
@@ -373,14 +333,17 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             reward=reward,
             position=position,
             pscore_item_position=pscore_item_position,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
         )
-        return self._estimate_round_rewards(
-            reward=reward,
-            position=position,
-            behavior_policy_pscore=pscore_item_position,
-            evaluation_policy_pscore=evaluation_policy_pscore,
-        ).mean()
+        return (
+            self._estimate_round_rewards(
+                reward=reward,
+                position=position,
+                behavior_policy_pscore=pscore_item_position,
+                evaluation_policy_pscore=evaluation_policy_pscore_item_position,
+            ).sum()
+            / np.unique(slate_id).shape[0]
+        )
 
     def estimate_interval(
         self,
@@ -388,7 +351,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         reward: np.ndarray,
         position: np.ndarray,
         pscore_item_position: np.ndarray,
-        evaluation_policy_pscore: np.ndarray,
+        evaluation_policy_pscore_item_position: np.ndarray,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -410,7 +373,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
             Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t, k}|x_t)`.
 
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
             Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         alpha: float, default=0.05
@@ -433,13 +396,13 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             reward=reward,
             position=position,
             pscore_item_position=pscore_item_position,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
         )
         estimated_rewards = self._estimate_round_rewards(
             reward=reward,
             position=position,
             behavior_policy_pscore=pscore_item_position,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore=evaluation_policy_pscore_item_position,
         )
         return self._estimate_slate_confidence_interval_by_bootstrap(
             slate_id=slate_id,
@@ -478,7 +441,7 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
         reward: np.ndarray,
         position: np.ndarray,
         pscore_cascade: np.ndarray,
-        evaluation_policy_pscore: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
         **kwargs,
     ) -> float:
         """Estimate policy value of an evaluation policy.
@@ -497,7 +460,7 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+        evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         Returns
@@ -512,14 +475,17 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
             reward=reward,
             position=position,
             pscore_cascade=pscore_cascade,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
         )
-        return self._estimate_round_rewards(
-            reward=reward,
-            position=position,
-            behavior_policy_pscore=pscore_cascade,
-            evaluation_policy_pscore=evaluation_policy_pscore,
-        ).mean()
+        return (
+            self._estimate_round_rewards(
+                reward=reward,
+                position=position,
+                behavior_policy_pscore=pscore_cascade,
+                evaluation_policy_pscore=evaluation_policy_pscore_cascade,
+            ).sum()
+            / np.unique(slate_id).shape[0]
+        )
 
     def estimate_interval(
         self,
@@ -527,7 +493,7 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
         reward: np.ndarray,
         position: np.ndarray,
         pscore_cascade: np.ndarray,
-        evaluation_policy_pscore: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -549,7 +515,7 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+        evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
@@ -572,13 +538,13 @@ class SlateRecursiveIPS(BaseSlateInverseProbabilityWeighting):
             reward=reward,
             position=position,
             pscore_cascade=pscore_cascade,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
         )
         estimated_rewards = self._estimate_round_rewards(
             reward=reward,
             position=position,
             behavior_policy_pscore=pscore_cascade,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore=evaluation_policy_pscore_cascade,
         )
         return self._estimate_slate_confidence_interval_by_bootstrap(
             slate_id=slate_id,

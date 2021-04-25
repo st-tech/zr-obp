@@ -429,6 +429,12 @@ def check_sips_ope_inputs(
     )
     if (distinct_count_pscore_in_slate != 1).sum() > 0:
         raise ValueError("pscore must be unique in each slate")
+    # check pscore uniqueness of evaluation policy
+    distinct_count_evaluation_policy_pscore_in_slate = bandit_feedback_df.groupby(
+        "slate_id"
+    ).apply(lambda x: x["evaluation_policy_pscore"].unique().shape[0])
+    if (distinct_count_evaluation_policy_pscore_in_slate != 1).sum() > 0:
+        raise ValueError("evaluation_policy_pscore must be unique in each slate")
 
 
 def check_iips_ope_inputs(
@@ -436,7 +442,7 @@ def check_iips_ope_inputs(
     reward: np.ndarray,
     position: np.ndarray,
     pscore_item_position: np.ndarray,
-    evaluation_policy_pscore: np.ndarray,
+    evaluation_policy_pscore_item_position: np.ndarray,
 ) -> Optional[ValueError]:
     """Check inputs for sips ope.
 
@@ -454,8 +460,8 @@ def check_iips_ope_inputs(
     pscore_item_position: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
-    evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+    evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
+        Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
     """
     # position
@@ -481,12 +487,16 @@ def check_iips_ope_inputs(
         raise ValueError("pscore_item_position must be in the range of (0, 1]")
 
     # evaluation_policy_pscore
-    if not isinstance(evaluation_policy_pscore, np.ndarray):
-        raise ValueError("evaluation_policy_pscore must be ndarray")
-    if evaluation_policy_pscore.ndim != 1:
-        raise ValueError("evaluation_policy_pscore must be 1-dimensional")
-    if np.any(evaluation_policy_pscore <= 0) or np.any(evaluation_policy_pscore > 1):
-        raise ValueError("evaluation_policy_pscore must be in the range of (0, 1]")
+    if not isinstance(evaluation_policy_pscore_item_position, np.ndarray):
+        raise ValueError("evaluation_policy_pscore_item_position must be ndarray")
+    if evaluation_policy_pscore_item_position.ndim != 1:
+        raise ValueError("evaluation_policy_pscore_item_position must be 1-dimensional")
+    if np.any(evaluation_policy_pscore_item_position <= 0) or np.any(
+        evaluation_policy_pscore_item_position > 1
+    ):
+        raise ValueError(
+            "evaluation_policy_pscore_item_position must be in the range of (0, 1]"
+        )
 
     # slate id
     if not isinstance(slate_id, np.ndarray):
@@ -500,18 +510,15 @@ def check_iips_ope_inputs(
         == position.shape[0]
         == reward.shape[0]
         == pscore_item_position.shape[0]
-        == evaluation_policy_pscore.shape[0]
+        == evaluation_policy_pscore_item_position.shape[0]
     ):
         raise ValueError(
-            "slate_id, position, reward, pscore_item_position, and evaluation_policy_pscore must be the same size."
+            "slate_id, position, reward, pscore_item_position, and evaluation_policy_pscore_item_position must be the same size."
         )
 
     bandit_feedback_df = pd.DataFrame()
     bandit_feedback_df["slate_id"] = slate_id
-    bandit_feedback_df["reward"] = reward
     bandit_feedback_df["position"] = position
-    bandit_feedback_df["pscore_item_position"] = pscore_item_position
-    bandit_feedback_df["evaluation_policy_pscore"] = evaluation_policy_pscore
     # check uniqueness
     if bandit_feedback_df.duplicated(["slate_id", "position"]).sum() > 0:
         raise ValueError("position must not be duplicated in each slate")
@@ -522,7 +529,7 @@ def check_rips_ope_inputs(
     reward: np.ndarray,
     position: np.ndarray,
     pscore_cascade: np.ndarray,
-    evaluation_policy_pscore: np.ndarray,
+    evaluation_policy_pscore_cascade: np.ndarray,
 ) -> Optional[ValueError]:
     """Check inputs for sips ope.
 
@@ -540,8 +547,8 @@ def check_rips_ope_inputs(
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
-    evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+    evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+        Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
     """
     # position
@@ -567,12 +574,16 @@ def check_rips_ope_inputs(
         raise ValueError("pscore_cascade must be in the range of (0, 1]")
 
     # evaluation_policy_pscore
-    if not isinstance(evaluation_policy_pscore, np.ndarray):
-        raise ValueError("evaluation_policy_pscore must be ndarray")
-    if evaluation_policy_pscore.ndim != 1:
-        raise ValueError("evaluation_policy_pscore must be 1-dimensional")
-    if np.any(evaluation_policy_pscore <= 0) or np.any(evaluation_policy_pscore > 1):
-        raise ValueError("evaluation_policy_pscore must be in the range of (0, 1]")
+    if not isinstance(evaluation_policy_pscore_cascade, np.ndarray):
+        raise ValueError("evaluation_policy_pscore_cascade must be ndarray")
+    if evaluation_policy_pscore_cascade.ndim != 1:
+        raise ValueError("evaluation_policy_pscore_cascade must be 1-dimensional")
+    if np.any(evaluation_policy_pscore_cascade <= 0) or np.any(
+        evaluation_policy_pscore_cascade > 1
+    ):
+        raise ValueError(
+            "evaluation_policy_pscore_cascade must be in the range of (0, 1]"
+        )
 
     # slate id
     if not isinstance(slate_id, np.ndarray):
@@ -586,10 +597,10 @@ def check_rips_ope_inputs(
         == position.shape[0]
         == reward.shape[0]
         == pscore_cascade.shape[0]
-        == evaluation_policy_pscore.shape[0]
+        == evaluation_policy_pscore_cascade.shape[0]
     ):
         raise ValueError(
-            "slate_id, position, reward, pscore_cascade, and evaluation_policy_pscore must be the same size."
+            "slate_id, position, reward, pscore_cascade, and evaluation_policy_pscore_cascade must be the same size."
         )
 
     bandit_feedback_df = pd.DataFrame()
@@ -597,7 +608,9 @@ def check_rips_ope_inputs(
     bandit_feedback_df["reward"] = reward
     bandit_feedback_df["position"] = position
     bandit_feedback_df["pscore_cascade"] = pscore_cascade
-    bandit_feedback_df["evaluation_policy_pscore"] = evaluation_policy_pscore
+    bandit_feedback_df[
+        "evaluation_policy_pscore_cascade"
+    ] = evaluation_policy_pscore_cascade
     # sort dataframe
     bandit_feedback_df = (
         bandit_feedback_df.sort_values(["slate_id", "position"])
@@ -618,6 +631,20 @@ def check_rips_ope_inputs(
         previous_minimum_pscore_cascade < bandit_feedback_df["pscore_cascade"]
     ).sum() > 0:
         raise ValueError("pscore_cascade must be non-increasing sequence in each slate")
+    # check pscore_cascade structure of evaluation policy
+    previous_minimum_evaluation_policy_pscore_cascade = (
+        bandit_feedback_df.groupby("slate_id")["evaluation_policy_pscore_cascade"]
+        .expanding()
+        .min()
+        .values
+    )
+    if (
+        previous_minimum_evaluation_policy_pscore_cascade
+        < bandit_feedback_df["evaluation_policy_pscore_cascade"]
+    ).sum() > 0:
+        raise ValueError(
+            "evaluation_policy_pscore_cascade must be non-increasing sequence in each slate"
+        )
 
 
 def check_ope_inputs_tensor(
