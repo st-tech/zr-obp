@@ -111,12 +111,6 @@ class BaseContextualPolicy(metaclass=ABCMeta):
     batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
-    alpha_: float, default=1.
-        Prior parameter for the online logistic regression.
-
-    lambda_: float, default=1.
-        Regularization hyperparameter for the online logistic regression.
-
     random_state: int, default=None
         Controls the random seed in sampling actions.
 
@@ -126,8 +120,6 @@ class BaseContextualPolicy(metaclass=ABCMeta):
     n_actions: int
     len_list: int = 1
     batch_size: int = 1
-    alpha_: float = 1.0
-    lambda_: float = 1.0
     random_state: Optional[int] = None
 
     def __post_init__(self) -> None:
@@ -155,20 +147,8 @@ class BaseContextualPolicy(metaclass=ABCMeta):
                 f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
             )
 
-        if not isinstance(self.alpha_, float) or self.alpha_ <= 0.0:
-            raise ValueError(
-                f"alpha_ should be a positive float, but {self.alpha_} is given"
-            )
-
-        if not isinstance(self.lambda_, float) or self.lambda_ <= 0.0:
-            raise ValueError(
-                f"lambda_ should be a positive float, but {self.lambda_} is given"
-            )
-
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
-        self.alpha_list = self.alpha_ * np.ones(self.n_actions)
-        self.lambda_list = self.lambda_ * np.ones(self.n_actions)
         self.action_counts = np.zeros(self.n_actions, dtype=int)
         self.reward_lists = [[] for _ in np.arange(self.n_actions)]
         self.context_lists = [[] for _ in np.arange(self.n_actions)]
