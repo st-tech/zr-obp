@@ -14,11 +14,11 @@ from ..utils import sigmoid
 
 
 @dataclass
-class LogisticEpsilonGreedy(BaseContextualPolicy):
-    """Logistic Epsilon Greedy.
+class BaseLogisticPolicy(BaseContextualPolicy):
+    """Base class for contextual bandit policies using logistic regression.
 
     Parameters
-    -----------
+    ----------
     dim: int
         Number of dimensions of context vectors.
 
@@ -41,54 +41,35 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
     random_state: int, default=None
         Controls the random seed in sampling actions.
 
-    epsilon: float, default=0.
-        Exploration hyperparameter that must take value in the range of [0., 1.].
-
     """
 
-    epsilon: float = 0.0
+    alpha_: float = 1.0
+    lambda_: float = 1.0
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not 0 <= self.epsilon <= 1:
-            raise ValueError(
-                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
-            )
-        self.policy_name = f"logistic_egreedy_{self.epsilon}"
-
         super().__post_init__()
+        if not isinstance(self.alpha_, float) or self.alpha_ <= 0.0:
+            raise ValueError(
+                f"alpha_ should be a positive float, but {self.alpha_} is given"
+            )
+
+        if not isinstance(self.lambda_, float) or self.lambda_ <= 0.0:
+            raise ValueError(
+                f"lambda_ should be a positive float, but {self.lambda_} is given"
+            )
+
+        self.alpha_list = self.alpha_ * np.ones(self.n_actions)
+        self.lambda_list = self.lambda_ * np.ones(self.n_actions)
         self.model_list = [
             MiniBatchLogisticRegression(
-                lambda_=self.lambda_list[i], alpha=self.alpha_list[i], dim=self.dim
+                lambda_=self.lambda_list[i],
+                alpha=self.alpha_list[i],
+                dim=self.dim,
+                random_state=self.random_state,
             )
             for i in np.arange(self.n_actions)
         ]
-        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
-        self.context_lists = [[] for _ in np.arange(self.n_actions)]
-
-    def select_action(self, context: np.ndarray) -> np.ndarray:
-        """Select action for new data.
-
-        Parameters
-        ----------
-        context: array-like, shape (1, dim_context)
-            Observed context vector.
-
-        Returns
-        ----------
-        selected_actions: array-like, shape (len_list, )
-            List of selected actions.
-
-        """
-        if self.random_.rand() > self.epsilon:
-            theta = np.array(
-                [model.predict_proba(context) for model in self.model_list]
-            ).flatten()
-            return theta.argsort()[::-1][: self.len_list]
-        else:
-            return self.random_.choice(
-                self.n_actions, size=self.len_list, replace=False
-            )
 
     def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
         """Update policy parameters.
@@ -121,7 +102,77 @@ class LogisticEpsilonGreedy(BaseContextualPolicy):
 
 
 @dataclass
-class LogisticUCB(BaseContextualPolicy):
+class LogisticEpsilonGreedy(BaseLogisticPolicy):
+    """Logistic Epsilon Greedy.
+
+    Parameters
+    -----------
+    dim: int
+        Number of dimensions of context vectors.
+
+    n_actions: int
+        Number of actions.
+
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
+        When Open Bandit Dataset is used, 3 should be set.
+
+    batch_size: int, default=1
+        Number of samples used in a batch parameter update.
+
+    random_state: int, default=None
+        Controls the random seed in sampling actions.
+
+    alpha_: float, default=1.
+        Prior parameter for the online logistic regression.
+
+    lambda_: float, default=1.
+        Regularization hyperparameter for the online logistic regression.
+
+    epsilon: float, default=0.
+        Exploration hyperparameter that must take value in the range of [0., 1.].
+
+    """
+
+    epsilon: float = 0.0
+
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        if not 0 <= self.epsilon <= 1:
+            raise ValueError(
+                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
+            )
+        self.policy_name = f"logistic_egreedy_{self.epsilon}"
+
+        super().__post_init__()
+
+    def select_action(self, context: np.ndarray) -> np.ndarray:
+        """Select action for new data.
+
+        Parameters
+        ----------
+        context: array-like, shape (1, dim_context)
+            Observed context vector.
+
+        Returns
+        ----------
+        selected_actions: array-like, shape (len_list, )
+            List of selected actions.
+
+        """
+        if self.random_.rand() > self.epsilon:
+            theta = np.array(
+                [model.predict_proba(context) for model in self.model_list]
+            ).flatten()
+            return theta.argsort()[::-1][: self.len_list]
+        else:
+            return self.random_.choice(
+                self.n_actions, size=self.len_list, replace=False
+            )
+
+
+@dataclass
+class LogisticUCB(BaseLogisticPolicy):
     """Logistic Upper Confidence Bound.
 
     Parameters
@@ -139,14 +190,14 @@ class LogisticUCB(BaseContextualPolicy):
     batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
+    random_state: int, default=None
+        Controls the random seed in sampling actions.
+
     alpha_: float, default=1.
         Prior parameter for the online logistic regression.
 
     lambda_: float, default=1.
         Regularization hyperparameter for the online logistic regression.
-
-    random_state: int, default=None
-        Controls the random seed in sampling actions.
 
     epsilon: float, default=0.
         Exploration hyperparameter that must take value in the range of [0., 1.].
@@ -169,14 +220,6 @@ class LogisticUCB(BaseContextualPolicy):
         self.policy_name = f"logistic_ucb_{self.epsilon}"
 
         super().__post_init__()
-        self.model_list = [
-            MiniBatchLogisticRegression(
-                lambda_=self.lambda_list[i], alpha=self.alpha_list[i], dim=self.dim
-            )
-            for i in np.arange(self.n_actions)
-        ]
-        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
-        self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -204,38 +247,9 @@ class LogisticUCB(BaseContextualPolicy):
         ucb_score = theta + self.epsilon * std
         return ucb_score.argsort()[::-1][: self.len_list]
 
-    def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
-        """Update policy parameters.
-
-        Parameters
-        ------------
-        action: int
-            Selected action by the policy.
-
-        reward: float
-            Observed reward for the chosen action and position.
-
-        context: array-like, shape (1, dim_context)
-            Observed context vector.
-
-        """
-        self.n_trial += 1
-        self.action_counts[action] += 1
-        self.reward_lists[action].append(reward)
-        self.context_lists[action].append(context)
-        if self.n_trial % self.batch_size == 0:
-            for action, model in enumerate(self.model_list):
-                if not len(self.reward_lists[action]) == 0:
-                    model.fit(
-                        X=np.concatenate(self.context_lists[action], axis=0),
-                        y=np.array(self.reward_lists[action]),
-                    )
-            self.reward_lists = [[] for _ in np.arange(self.n_actions)]
-            self.context_lists = [[] for _ in np.arange(self.n_actions)]
-
 
 @dataclass
-class LogisticTS(BaseContextualPolicy):
+class LogisticTS(BaseLogisticPolicy):
     """Logistic Thompson Sampling.
 
     Parameters
@@ -253,14 +267,14 @@ class LogisticTS(BaseContextualPolicy):
     batch_size: int, default=1
         Number of samples used in a batch parameter update.
 
+    random_state: int, default=None
+        Controls the random seed in sampling actions.
+
     alpha_: float, default=1.
         Prior parameter for the online logistic regression.
 
     lambda_: float, default=1.
         Regularization hyperparameter for the online logistic regression.
-
-    random_state: int, default=None
-        Controls the random seed in sampling actions.
 
     References
     ----------
@@ -274,17 +288,6 @@ class LogisticTS(BaseContextualPolicy):
     def __post_init__(self) -> None:
         """Initialize class."""
         super().__post_init__()
-        self.model_list = [
-            MiniBatchLogisticRegression(
-                lambda_=self.lambda_list[i],
-                alpha=self.alpha_list[i],
-                dim=self.dim,
-                random_state=self.random_state,
-            )
-            for i in np.arange(self.n_actions)
-        ]
-        self.reward_lists = [[] for _ in np.arange(self.n_actions)]
-        self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -304,35 +307,6 @@ class LogisticTS(BaseContextualPolicy):
             [model.predict_proba_with_sampling(context) for model in self.model_list]
         ).flatten()
         return theta.argsort()[::-1][: self.len_list]
-
-    def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
-        """Update policy parameters.
-
-        Parameters
-        ----------
-        action: int
-            Selected action by the policy.
-
-        reward: float
-            Observed reward for the chosen action and position.
-
-        context: array-like, shape (1, dim_context)
-            Observed context vector.
-
-        """
-        self.n_trial += 1
-        self.action_counts[action] += 1
-        self.reward_lists[action].append(reward)
-        self.context_lists[action].append(context)
-        if self.n_trial % self.batch_size == 0:
-            for action, model in enumerate(self.model_list):
-                if not len(self.reward_lists[action]) == 0:
-                    model.fit(
-                        X=np.concatenate(self.context_lists[action], axis=0),
-                        y=np.array(self.reward_lists[action]),
-                    )
-            self.reward_lists = [[] for _ in np.arange(self.n_actions)]
-            self.context_lists = [[] for _ in np.arange(self.n_actions)]
 
 
 @dataclass

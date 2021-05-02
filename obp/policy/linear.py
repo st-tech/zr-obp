@@ -10,7 +10,81 @@ from .base import BaseContextualPolicy
 
 
 @dataclass
-class LinEpsilonGreedy(BaseContextualPolicy):
+class BaseLinPolicy(BaseContextualPolicy):
+    """Base class for contextual bandit policies using linear regression.
+
+    Parameters
+    ------------
+    dim: int
+        Number of dimensions of context vectors.
+
+    n_actions: int
+        Number of actions.
+
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
+        When Open Bandit Dataset is used, 3 should be set.
+
+    batch_size: int, default=1
+        Number of samples used in a batch parameter update.
+
+    random_state: int, default=None
+        Controls the random seed in sampling actions.
+
+    epsilon: float, default=0.
+        Exploration hyperparameter that must take value in the range of [0., 1.].
+
+    """
+
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        super().__post_init__()
+        self.theta_hat = np.zeros((self.dim, self.n_actions))
+        self.A_inv = np.concatenate(
+            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
+        ).reshape(self.n_actions, self.dim, self.dim)
+        self.b = np.zeros((self.dim, self.n_actions))
+
+        self.A_inv_temp = np.concatenate(
+            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
+        ).reshape(self.n_actions, self.dim, self.dim)
+        self.b_temp = np.zeros((self.dim, self.n_actions))
+
+    def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
+        """Update policy parameters.
+
+        Parameters
+        ------------
+        action: int
+            Selected action by the policy.
+
+        reward: float
+            Observed reward for the chosen action and position.
+
+        context: array-like, shape (1, dim_context)
+            Observed context vector.
+
+        """
+        self.n_trial += 1
+        self.action_counts[action] += 1
+        # update the inverse matrix by the Woodbury formula
+        self.A_inv_temp[action] -= (
+            self.A_inv_temp[action]
+            @ context.T
+            @ context
+            @ self.A_inv_temp[action]
+            / (1 + context @ self.A_inv_temp[action] @ context.T)[0][0]
+        )
+        self.b_temp[:, action] += reward * context.flatten()
+        if self.n_trial % self.batch_size == 0:
+            self.A_inv, self.b = (
+                np.copy(self.A_inv_temp),
+                np.copy(self.b_temp),
+            )
+
+
+@dataclass
+class LinEpsilonGreedy(BaseLinPolicy):
     """Linear Epsilon Greedy.
 
     Parameters
@@ -56,16 +130,6 @@ class LinEpsilonGreedy(BaseContextualPolicy):
         self.policy_name = f"linear_epsilon_greedy_{self.epsilon}"
 
         super().__post_init__()
-        self.theta_hat = np.zeros((self.dim, self.n_actions))
-        self.A_inv = np.concatenate(
-            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
-        ).reshape(self.n_actions, self.dim, self.dim)
-        self.b = np.zeros((self.dim, self.n_actions))
-
-        self.A_inv_temp = np.concatenate(
-            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
-        ).reshape(self.n_actions, self.dim, self.dim)
-        self.b_temp = np.zeros((self.dim, self.n_actions))
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -101,41 +165,9 @@ class LinEpsilonGreedy(BaseContextualPolicy):
                 self.n_actions, size=self.len_list, replace=False
             )
 
-    def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
-        """Update policy parameters.
-
-        Parameters
-        ------------
-        action: int
-            Selected action by the policy.
-
-        reward: float
-            Observed reward for the chosen action and position.
-
-        context: array-like, shape (1, dim_context)
-            Observed context vector.
-
-        """
-        self.n_trial += 1
-        self.action_counts[action] += 1
-        # update the inverse matrix by the Woodbury formula
-        self.A_inv_temp[action] -= (
-            self.A_inv_temp[action]
-            @ context.T
-            @ context
-            @ self.A_inv_temp[action]
-            / (1 + context @ self.A_inv_temp[action] @ context.T)[0][0]
-        )
-        self.b_temp[:, action] += reward * context.flatten()
-        if self.n_trial % self.batch_size == 0:
-            self.A_inv, self.b = (
-                np.copy(self.A_inv_temp),
-                np.copy(self.b_temp),
-            )
-
 
 @dataclass
-class LinUCB(BaseContextualPolicy):
+class LinUCB(BaseLinPolicy):
     """Linear Upper Confidence Bound.
 
     Parameters
@@ -178,16 +210,6 @@ class LinUCB(BaseContextualPolicy):
         self.policy_name = f"linear_ucb_{self.epsilon}"
 
         super().__post_init__()
-        self.theta_hat = np.zeros((self.dim, self.n_actions))
-        self.A_inv = np.concatenate(
-            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
-        ).reshape(self.n_actions, self.dim, self.dim)
-        self.b = np.zeros((self.dim, self.n_actions))
-
-        self.A_inv_temp = np.concatenate(
-            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
-        ).reshape(self.n_actions, self.dim, self.dim)
-        self.b_temp = np.zeros((self.dim, self.n_actions))
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -224,40 +246,9 @@ class LinUCB(BaseContextualPolicy):
         ucb_scores = (context @ self.theta_hat + self.epsilon * sigma_hat).flatten()
         return ucb_scores.argsort()[::-1][: self.len_list]
 
-    def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
-        """Update policy parameters.
 
-        Parameters
-        ----------
-        action: int
-            Selected action by the policy.
-
-        reward: float
-            Observed reward for the chosen action and position.
-
-        context: array-like, shape (1, dim_context)
-            Observed context vector.
-
-        """
-        self.n_trial += 1
-        self.action_counts[action] += 1
-        # update the inverse matrix by the Woodbury formula
-        self.A_inv_temp[action] -= (
-            self.A_inv_temp[action]
-            @ context.T
-            @ context
-            @ self.A_inv_temp[action]
-            / (1 + context @ self.A_inv_temp[action] @ context.T)[0][0]
-        )
-        self.b_temp[:, action] += reward * context.flatten()
-        if self.n_trial % self.batch_size == 0:
-            self.A_inv, self.b = (
-                np.copy(self.A_inv_temp),
-                np.copy(self.b_temp),
-            )
-
-
-class LinTS(BaseContextualPolicy):
+@dataclass
+class LinTS(BaseLinPolicy):
     """Linear Thompson Sampling.
 
     Parameters
@@ -285,15 +276,6 @@ class LinTS(BaseContextualPolicy):
         self.policy_name = "linear_ts"
 
         super().__post_init__()
-        self.A_inv = np.concatenate(
-            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
-        ).reshape(self.n_actions, self.dim, self.dim)
-        self.b = np.zeros((self.dim, self.n_actions))
-
-        self.A_inv_temp = np.concatenate(
-            [np.identity(self.dim) for _ in np.arange(self.n_actions)]
-        ).reshape(self.n_actions, self.dim, self.dim)
-        self.b_temp = np.zeros((self.dim, self.n_actions))
 
     def select_action(self, context: np.ndarray) -> np.ndarray:
         """Select action for new data.
@@ -309,7 +291,7 @@ class LinTS(BaseContextualPolicy):
             List of selected actions.
 
         """
-        theta_hat = np.concatenate(
+        self.theta_hat = np.concatenate(
             [
                 self.A_inv[i] @ self.b[:, i][:, np.newaxis]
                 for i in np.arange(self.n_actions)
@@ -318,7 +300,7 @@ class LinTS(BaseContextualPolicy):
         )
         theta_sampled = np.concatenate(
             [
-                self.random_.multivariate_normal(theta_hat[:, i], self.A_inv[i])[
+                self.random_.multivariate_normal(self.theta_hat[:, i], self.A_inv[i])[
                     :, np.newaxis
                 ]
                 for i in np.arange(self.n_actions)
@@ -328,35 +310,3 @@ class LinTS(BaseContextualPolicy):
 
         predicted_rewards = (context @ theta_sampled).flatten()
         return predicted_rewards.argsort()[::-1][: self.len_list]
-
-    def update_params(self, action: int, reward: float, context: np.ndarray) -> None:
-        """Update policy parameters.
-
-        Parameters
-        ----------
-        action: int
-            Selected action by the policy.
-
-        reward: float
-            Observed reward for the chosen action and position.
-
-        context: array-like, shape (1, dim_context)
-            Observed context vector.
-
-        """
-        self.n_trial += 1
-        self.action_counts[action] += 1
-        # update the inverse matrix by the Woodbury formula
-        self.A_inv_temp[action] -= (
-            self.A_inv_temp[action]
-            @ context.T
-            @ context
-            @ self.A_inv_temp[action]
-            / (1 + context @ self.A_inv_temp[action] @ context.T)[0][0]
-        )
-        self.b_temp[:, action] += reward * context.flatten()
-        if self.n_trial % self.batch_size == 0:
-            self.A_inv, self.b = (
-                np.copy(self.A_inv_temp),
-                np.copy(self.b_temp),
-            )
