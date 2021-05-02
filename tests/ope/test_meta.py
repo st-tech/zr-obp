@@ -317,6 +317,16 @@ invalid_input_of_create_estimator_inputs = [
         np.zeros((2, 3, 3)),
         "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
     ),
+    (
+        np.zeros((2, 3, 4)),
+        {"dm": np.zeros((2, 3, 3))},
+        r"estimated_rewards_by_reg_model\[dm\].shape must be the same as action_dist.shape",
+    ),
+    (
+        np.zeros((2, 3, 4)),
+        {"dm": None},
+        r"estimated_rewards_by_reg_model\[dm\] must be ndarray",
+    ),
     (np.zeros((2, 3)), None, "action_dist.ndim must be 3-dimensional"),
     ("3", None, "action_dist must be ndarray"),
     (None, None, "action_dist must be ndarray"),
@@ -326,6 +336,11 @@ valid_input_of_create_estimator_inputs = [
     (
         np.zeros((2, 3, 4)),
         np.zeros((2, 3, 4)),
+        "same shape",
+    ),
+    (
+        np.zeros((2, 3, 4)),
+        {"dm": np.zeros((2, 3, 4))},
         "same shape",
     ),
     (np.zeros((2, 3, 1)), None, "estimated_rewards_by_reg_model is None"),
@@ -404,7 +419,8 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
         action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
-    assert set(estimator_inputs.keys()) == set(
+    assert set(estimator_inputs.keys()) == set(["ipw"])
+    assert set(estimator_inputs["ipw"].keys()) == set(
         [
             "reward",
             "action",
