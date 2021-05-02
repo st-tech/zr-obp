@@ -26,6 +26,7 @@ ope_estimators = [
     InverseProbabilityWeighting(),
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
+    DoublyRobust(estimator_name="mrdr"),
     SelfNormalizedDoublyRobust(),
     SwitchDoublyRobust(tau=5.0, estimator_name="switch-dr (tau=5)"),
     SwitchDoublyRobust(tau=10.0, estimator_name="switch-dr (tau=10)"),
@@ -177,12 +178,18 @@ if __name__ == "__main__":
             for key_ in ["context", "action", "reward", "pscore", "position"]:
                 bandit_feedback[key_] = bandit_feedback[key_][~is_for_reg_model]
         # estimate the mean reward function using the pre-trained reg_model
-        estimated_rewards_by_reg_model = reg_model.predict(
+        estimated_rewards_by_reg_model_default = reg_model.predict(
             context=bandit_feedback["context"],
         )
         estimated_rewards_by_reg_model_mrdr = reg_model_mrdr.predict(
             context=bandit_feedback["context"],
         )
+        estimated_rewards_by_reg_model = {
+            estimator.estimator_name: estimated_rewards_by_reg_model_mrdr
+            if estimator.estimator_name == "mrdr"
+            else estimated_rewards_by_reg_model_default
+            for estimator in ope_estimators
+        }
         # evaluate the estimation performance of OPE estimators
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback,
@@ -196,11 +203,6 @@ if __name__ == "__main__":
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
-        relative_ee_b["mrdr"] = ope.evaluate_performance_of_estimators(
-            ground_truth_policy_value=ground_truth_policy_value,
-            action_dist=action_dist,
-            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model_mrdr,
-        )["dr"]
 
         return relative_ee_b
 
@@ -210,8 +212,7 @@ if __name__ == "__main__":
     )([delayed(process)(i) for i in np.arange(n_runs)])
 
     # save results of the evaluation of ope in './logs' directory.
-    estimator_names = [est.estimator_name for est in ope_estimators] + ["mrdr"]
-    relative_ee = {est: np.zeros(n_runs) for est in estimator_names}
+    relative_ee = {est.estimator_name: np.zeros(n_runs) for est in ope_estimators}
     for b, relative_ee_b in enumerate(processed):
         for (
             estimator_name,
