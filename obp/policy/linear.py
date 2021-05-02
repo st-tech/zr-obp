@@ -11,7 +11,7 @@ from .base import BaseContextualPolicy
 
 @dataclass
 class BaseLinPolicy(BaseContextualPolicy):
-    """Linear Epsilon Greedy.
+    """Base class for contextual bandit policies using linear regression.
 
     Parameters
     ------------
