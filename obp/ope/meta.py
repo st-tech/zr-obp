@@ -107,7 +107,7 @@ class OffPolicyEvaluation:
             )
         elif isinstance(estimated_rewards_by_reg_model, dict):
             for estimator_name, value in estimated_rewards_by_reg_model.items():
-                if value is None:
+                if not isinstance(value, np.ndarray):
                     raise ValueError(
                         f"estimated_rewards_by_reg_model[{estimator_name}] must be ndarray"
                     )
