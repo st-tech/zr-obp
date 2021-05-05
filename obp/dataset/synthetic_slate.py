@@ -368,9 +368,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate marginal pscore
                 if return_pscore_item_position:
                     if return_exact_uniform_pscore_item_position:
-                        pscore_item_position[i * self.len_list + position_] = (
-                            self.len_list / self.n_unique_action
-                        )
+                        pscore_item_position_i_l = self.len_list / self.n_unique_action
+                    elif position_ == 0:
+                        pscore_item_position_i_l = pscore_i
                     else:
                         pscore_item_position_i_l = 0.0
                         for action_list in permutations(
@@ -384,9 +384,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                                     i : i + 1
                                 ],
                             )
-                        pscore_item_position[
-                            i * self.len_list + position_
-                        ] = pscore_item_position_i_l
+                    pscore_item_position[
+                        i * self.len_list + position_
+                    ] = pscore_item_position_i_l
             # impute joint pscore
             start_idx = i * self.len_list
             end_idx = start_idx + self.len_list
