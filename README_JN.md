@@ -304,13 +304,16 @@ Bibtex:
 
 # プロジェクトチーム
 
-- [齋藤優太](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社)
-- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Technologies, Inc.)
-- 松谷恵 (ZOZO Technologies, Inc.)
+- [齋藤優太](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / コーネル大学)
+- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (株式会社ZOZOテクノロジーズ)
+- 松谷恵 (株式会社ZOZOテクノロジーズ)
 - [成田悠輔](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
+
+## 開発メンバー
 - [野村将寛](https://twitter.com/nomuramasahir0) (株式会社サイバーエージェント / 半熟仮想株式会社)
 - [高山晃一](https://fullflu.hatenablog.com/) (半熟仮想株式会社)
 - [黒岩稜](https://kurorororo.github.io) (トロント大学 / 半熟仮想株式会社)
+- [清原明加](https://sites.google.com/view/harukakiyohara) (東京工業大学 / 半熟仮想株式会社)
 
 # Contact
 論文・公開データセット・ソフトウェアに関するご質問は、次のメールアドレスにお願いいたします: saito@hanjuku-kaso.com
