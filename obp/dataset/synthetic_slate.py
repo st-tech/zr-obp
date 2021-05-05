@@ -56,7 +56,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             'independent': :math:`q_k(x, a) = f(x, a(k))`
             'standard_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
             'standard_exponential': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j \\neq k} g^{-1}(f(x, a(j))) / \\exp(|k-j|))`.
-        When reward_type is 'continuos', transform function is the identity function.
+        When reward_type is 'continuous', transform function is the identity function.
         When reward_type is 'binary', transform function is the logit function.
 
     click_model: str, default=None
@@ -190,7 +190,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             "continuous",
         ]:
             raise ValueError(
-                f"reward_type must be either 'binary' or 'continuous', but {self.reward_type} is given.'"
+                f"reward_type must be either 'binary' or 'continuous', but {self.reward_type} is given."
             )
         if self.reward_structure not in [
             "cascade_additive",
@@ -467,11 +467,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
-            When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time
+            When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time.
 
         return_exact_uniform_pscore_item_position: bool, default=False
             A boolean parameter whether `pscore_item_position` of uniform random policy is returned or not.
-            When using uniform random policy, this parameter should be set to True
+            When using uniform random policy, this parameter should be set to True.
 
 
         Returns
@@ -622,7 +622,7 @@ def action_interaction_additive_reward_function(
 
     action: array-like, shape (n_unique_action * len_list)
         Sampled action.
-        Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
+        Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
@@ -642,7 +642,7 @@ def action_interaction_additive_reward_function(
         When Open Bandit Dataset is used, 3 should be set.
 
     is_cascade: bool
-        Whether reward structure is cascade-type or not
+        Whether reward structure is cascade-type or not.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -650,9 +650,9 @@ def action_interaction_additive_reward_function(
     Returns
     ---------
     expected_reward_factual: array-like, shape (n_rounds, len_list)
-        Expected rewards given factual actions
-        When is_cascade is true, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
-        When is_cascade is false, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
+        Expected rewards given factual actions.
+        When is_cascade is True, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
+        When is_cascade is False, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
@@ -682,7 +682,7 @@ def action_interaction_additive_reward_function(
         "continuous",
     ]:
         raise ValueError(
-            f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given.'"
+            f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given."
         )
 
     # action_2d: array-like, shape (n_rounds, len_list)
@@ -739,7 +739,7 @@ def action_interaction_exponential_reward_function(
 
     action: array-like, shape (n_unique_action * len_list)
         Sampled action.
-        Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
+        Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
@@ -760,7 +760,7 @@ def action_interaction_exponential_reward_function(
     Returns
     ---------
     expected_reward_factual: array-like, shape (n_rounds, len_list)
-        Expected rewards given factual actions (:math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} g^{-1}(f(x, a(j))) * W(k, j)`)
+        Expected rewards given factual actions (:math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} g^{-1}(f(x, a(j))) * W(k, j)`).
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
@@ -781,7 +781,7 @@ def action_interaction_exponential_reward_function(
         )
     if action_interaction_matrix.shape[0] * context.shape[0] != action.shape[0]:
         raise ValueError(
-            "the size of axis 0 of action_interaction_matrix muptiplied by that of context must be the same as that of action"
+            "the size of axis 0 of action_interaction_matrix multiplied by that of context must be the same as that of action"
         )
     # action_2d: array-like, shape (n_rounds, len_list)
     action_2d = action.reshape((context.shape[0], action_interaction_matrix.shape[0]))
