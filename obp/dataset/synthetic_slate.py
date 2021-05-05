@@ -376,7 +376,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         for action_list in permutations(
                             np.arange(self.n_unique_action), self.len_list
                         ):
-                            if sampled_action_index not in action_list:
+                            if sampled_action_index != action_list[position_]:
                                 continue
                             pscore_item_position_i_l += self.calc_item_position_pscore(
                                 action_list=action_list,
