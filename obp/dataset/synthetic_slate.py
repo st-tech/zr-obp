@@ -777,7 +777,7 @@ def action_interaction_exponential_reward_function(
         "continuous",
     ]:
         raise ValueError(
-            f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given.'"
+            f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given."
         )
     if action_interaction_matrix.shape[0] * context.shape[0] != action.shape[0]:
         raise ValueError(
