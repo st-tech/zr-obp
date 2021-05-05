@@ -56,8 +56,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             'independent': :math:`q_k(x, a) = f(x, a(k))`
             'standard_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
             'standard_exponential': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j \\neq k} g^{-1}(f(x, a(j))) / \\exp(|k-j|))`.
-        When reward_type is 'continous', transform function is the identity function.
-        When reward_type is 'binray', transform function is the logit function.
+        When reward_type is 'continuos', transform function is the identity function.
+        When reward_type is 'binary', transform function is the logit function.
 
     click_model: str, default=None
         Type of click model, which must be one of None, 'pbm', or 'cascade'.
