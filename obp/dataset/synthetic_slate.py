@@ -75,7 +75,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating logit value of each action in action space,
         i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
-        If None is set, context **independent** uniform distribution will be used (uniform random behavior policy).
+        If None is set, context **independent** uniform distribution will be used (uniform behavior policy).
 
     random_state: int, default=12345
         Controls the random seed in sampling synthetic slate bandit dataset.
@@ -242,7 +242,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             else:
                 self.action_interaction_matrix = np.identity(self.len_list)
         if self.behavior_policy_function is None:
-            self.behavior_policy = np.ones(self.n_unique_action) / self.n_unique_action
+            self.uniform_behavior_policy = (
+                np.ones(self.n_unique_action) / self.n_unique_action
+            )
         if self.reward_type == "continuous":
             self.reward_min = 0
             self.reward_max = 1e10
@@ -295,7 +297,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         behavior_policy_logit_: np.ndarray,
         n_rounds: int,
         return_pscore_item_position: bool = True,
-        return_exact_uniform_pscore_item_position: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
         """Sample action and obtain pscores.
 
@@ -310,10 +311,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
             When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
-
-        return_exact_uniform_pscore_item_position: bool, default=False
-            A boolean parameter whether `pscore_item_position` of uniform random policy is returned or not.
-            When True is given, actions are sampled by the uniform random behavior policy.
 
         Returns
         ----------
@@ -367,7 +364,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 )
                 # calculate marginal pscore
                 if return_pscore_item_position:
-                    if return_exact_uniform_pscore_item_position:
+                    if self.behavior_policy_function is None:  # uniform random
                         pscore_item_position_i_l = 1 / self.n_unique_action
                     elif position_ == 0:
                         pscore_item_position_i_l = pscore_i
@@ -452,7 +449,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds: int,
         tau: Union[int, float] = 1.0,
         return_pscore_item_position: bool = True,
-        return_exact_uniform_pscore_item_position: bool = False,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
 
@@ -469,11 +465,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             A boolean parameter whether `pscore_item_position` is returned or not.
             When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time.
 
-        return_exact_uniform_pscore_item_position: bool, default=False
-            A boolean parameter whether `pscore_item_position` of uniform random policy is returned or not.
-            When using uniform random policy, this parameter should be set to True.
-
-
         Returns
         ---------
         bandit_feedback: BanditFeedback
@@ -484,18 +475,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"n_rounds must be a positive integer, but {n_rounds} is given"
             )
-        if (
-            return_exact_uniform_pscore_item_position
-            and self.behavior_policy_function is not None
-        ):
-            raise ValueError(
-                "when return_exact_uniform_pscore_item_position is True, behavior_policy_function must not be specified (must be random)"
-            )
 
         context = self.random_.normal(size=(n_rounds, self.dim_context))
         # sample actions for each round based on the behavior policy
         if self.behavior_policy_function is None:
-            behavior_policy_logit_ = np.tile(self.behavior_policy, (n_rounds, 1))
+            behavior_policy_logit_ = np.tile(
+                self.uniform_behavior_policy, (n_rounds, 1)
+            )
         else:
             behavior_policy_logit_ = self.behavior_policy_function(
                 context=context,
@@ -518,7 +504,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             behavior_policy_logit_=behavior_policy_logit_,
             n_rounds=n_rounds,
             return_pscore_item_position=return_pscore_item_position,
-            return_exact_uniform_pscore_item_position=return_exact_uniform_pscore_item_position,
         )
         # sample expected reward factual
         if self.base_reward_function is None:
