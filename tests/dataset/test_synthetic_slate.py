@@ -260,9 +260,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
         random_state=random_state,
     )
     # obtain feedback
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
-    )
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     # check pscore marginal
@@ -292,10 +290,6 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         _ = dataset.obtain_batch_bandit_feedback(n_rounds=-1)
     with pytest.raises(ValueError):
         _ = dataset.obtain_batch_bandit_feedback(n_rounds="a")
-    with pytest.raises(ValueError):
-        _ = dataset.obtain_batch_bandit_feedback(
-            n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
-        )
 
     # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
