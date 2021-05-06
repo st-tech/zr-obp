@@ -349,9 +349,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             unique_action_set = np.arange(self.n_unique_action)
             pscore_i = 1.0
             for position_ in np.arange(self.len_list):
-                score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[
-                    0
-                ]
+                if return_exact_uniform_pscore_item_position:
+                    score_ = 1 / self.n_unique_action
+                else:
+                    score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[
+                        0
+                    ]
                 sampled_action = self.random_.choice(
                     unique_action_set, p=score_, replace=False
                 )
@@ -368,7 +371,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate marginal pscore
                 if return_pscore_item_position:
                     if return_exact_uniform_pscore_item_position:
-                        pscore_item_position_i_l = self.len_list / self.n_unique_action
+                        pscore_item_position_i_l = 1 / self.n_unique_action
                     elif position_ == 0:
                         pscore_item_position_i_l = pscore_i
                     else:
