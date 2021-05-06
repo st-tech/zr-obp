@@ -349,7 +349,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             unique_action_set = np.arange(self.n_unique_action)
             pscore_i = 1.0
             for position_ in np.arange(self.len_list):
-                if return_exact_uniform_pscore_item_position:
+                if return_exact_uniform_pscore_item_position and position_ == 0:
                     score_ = 1 / self.n_unique_action
                 else:
                     score_ = softmax(
