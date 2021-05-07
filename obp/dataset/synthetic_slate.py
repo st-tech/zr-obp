@@ -217,7 +217,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 "continuous reward type is unavailable when click model is given"
             )
         if self.reward_structure in ["cascade_additive", "standard_additive"]:
-            # generate additive action interaction matrix of (n_unique_action, n_unique_action)
+            # generate additive action interaction weight matrix of (n_unique_action, n_unique_action)
             self.action_interaction_weight_matrix = generate_symmetric_matrix(
                 n_unique_action=self.n_unique_action, random_state=self.random_state
             )
@@ -226,7 +226,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         else:
             if self.base_reward_function is not None:
                 self.reward_function = action_interaction_exponential_reward_function
-            # generate exponential action interaction matrix of (len_list, len_list)
+            # generate exponential action interaction weight matrix of (len_list, len_list)
             if self.reward_structure == "standard_exponential":
                 self.action_interaction_weight_matrix = (
                     self.obtain_standard_exponential_action_interaction_weight_matrix(
@@ -256,7 +256,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def obtain_standard_exponential_action_interaction_weight_matrix(
         len_list,
     ) -> np.ndarray:
-        """Obtain action interaction matrix for standard exponential reward structure (symmetric matrix)"""
+        """Obtain action interaction weight matrix for standard exponential reward structure (symmetric matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             action_interaction_weight_matrix[:, position_] = -1 / np.exp(
@@ -269,7 +269,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def obtain_cascade_exponential_action_interaction_weight_matrix(
         len_list,
     ) -> np.ndarray:
-        """Obtain action interaction matrix for cascade exponential reward structure (upper triangular matrix)"""
+        """Obtain action interaction weight matrix for cascade exponential reward structure (upper triangular matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             action_interaction_weight_matrix[:, position_] = -1 / np.exp(
