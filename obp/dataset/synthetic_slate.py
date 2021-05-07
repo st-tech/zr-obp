@@ -48,8 +48,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     reward_structure: str, default='cascade_additive'
         Type of reward structure, which must be one of 'cascade_additive', 'cascade_exponential', 'independent', 'standard_additive', or 'standard_exponential'.
-        When 'cascade_additive' or 'standard_additive' is given, additive action_interaction_matrix (:math:`W \\in \\mathbb{R}^{\\text{n_unique_action} \\times \\text{n_unique_action}}`) is generated.
-        When 'cascade_exponential', 'standard_exponential', or 'independent' is given, exponential action_interaction_matrix (:math:`\\in \\mathbb{R}^{\\text{len_list} \\times \\text{len_list}}`) is generated.
+        When 'cascade_additive' or 'standard_additive' is given, additive action_interaction_weight_matrix (:math:`W \\in \\mathbb{R}^{\\text{n_unique_action} \\times \\text{n_unique_action}}`) is generated.
+        When 'cascade_exponential', 'standard_exponential', or 'independent' is given, exponential action_interaction_weight_matrix (:math:`\\in \\mathbb{R}^{\\text{len_list} \\times \\text{len_list}}`) is generated.
         Expected reward is calculated as follows (:math:`f` is a base reward function of each item-position, and :math:`g` is a transform function):
             'cascade_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
             'cascade_exponential': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j < k} g^{-1}(f(x, a(j))) / \\exp(|k-j|))`.
@@ -218,7 +218,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
         if self.reward_structure in ["cascade_additive", "standard_additive"]:
             # generate additive action interaction matrix of (n_unique_action, n_unique_action)
-            self.action_interaction_matrix = generate_symmetric_matrix(
+            self.action_interaction_weight_matrix = generate_symmetric_matrix(
                 n_unique_action=self.n_unique_action, random_state=self.random_state
             )
             if self.base_reward_function is not None:
@@ -228,19 +228,19 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 self.reward_function = action_interaction_exponential_reward_function
             # generate exponential action interaction matrix of (len_list, len_list)
             if self.reward_structure == "standard_exponential":
-                self.action_interaction_matrix = (
+                self.action_interaction_weight_matrix = (
                     self.obtain_standard_exponential_action_interaction_matrix(
                         self.len_list
                     )
                 )
             elif self.reward_structure == "cascade_exponential":
-                self.action_interaction_matrix = (
+                self.action_interaction_weight_matrix = (
                     self.obtain_cascade_exponential_action_interaction_matrix(
                         self.len_list
                     )
                 )
             else:
-                self.action_interaction_matrix = np.identity(self.len_list)
+                self.action_interaction_weight_matrix = np.identity(self.len_list)
         if self.behavior_policy_function is None:
             self.uniform_behavior_policy = (
                 np.ones(self.n_unique_action) / self.n_unique_action
@@ -253,29 +253,29 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self.action_context = np.eye(self.n_unique_action, dtype=int)
 
     @staticmethod
-    def obtain_standard_exponential_action_interaction_matrix(len_list) -> np.ndarray:
+    def obtain_standard_exponential_action_interaction_weight_matrix(len_list) -> np.ndarray:
         """Obtain action interaction matrix for standard exponential reward structure (symmetric matrix)"""
-        action_interaction_matrix = np.identity(len_list)
+        action_interaction_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
-            action_interaction_matrix[:, position_] = -1 / np.exp(
+            action_interaction_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
             )
-            action_interaction_matrix[position_, position_] = 1
-        return action_interaction_matrix
+            action_interaction_weight_matrix[position_, position_] = 1
+        return action_interaction_weight_matrix
 
     @staticmethod
-    def obtain_cascade_exponential_action_interaction_matrix(len_list) -> np.ndarray:
+    def obtain_cascade_exponential_action_interaction_weight_matrix(len_list) -> np.ndarray:
         """Obtain action interaction matrix for cascade exponential reward structure (upper triangular matrix)"""
         action_interaction_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
-            action_interaction_matrix[:, position_] = -1 / np.exp(
+            action_interaction_weight_matrix[:, position_] = -1 / np.exp(
                 np.abs(np.arange(len_list) - position_)
             )
             for position_2 in np.arange(len_list):
                 if position_ < position_2:
-                    action_interaction_matrix[position_2, position_] = 0
-            action_interaction_matrix[position_, position_] = 1
-        return action_interaction_matrix
+                    action_interaction_weight_matrix[position_2, position_] = 0
+            action_interaction_weight_matrix[position_, position_] = 1
+        return action_interaction_weight_matrix
 
     def calc_item_position_pscore(
         self, action_list: List[int], behavior_policy_logit_i_: np.ndarray
@@ -525,7 +525,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 context=context,
                 action_context=self.action_context,
                 action=action,
-                action_interaction_matrix=self.action_interaction_matrix,
+                action_interaction_weight_matrix=self.action_interaction_weight_matrix,
                 base_reward_function=self.base_reward_function,
                 is_cascade="cascade" in self.reward_structure,
                 reward_type=self.reward_type,
@@ -588,7 +588,7 @@ def action_interaction_additive_reward_function(
     action_context: np.ndarray,
     action: np.ndarray,
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    action_interaction_matrix: np.ndarray,
+    action_interaction_weight_matrix: np.ndarray,
     is_cascade: bool,
     len_list: int,
     reward_type: str,
@@ -619,7 +619,7 @@ def action_interaction_additive_reward_function(
         Type of reward variable, which must be either 'binary' or 'continuous'.
         When 'binary' is given, expected reward is transformed by logit function.
 
-    action_interaction_matrix (`W`): array-like, shape (n_unique_action, n_unique_action)
+    action_interaction_weight_matrix (`W`): array-like, shape (n_unique_action, n_unique_action)
         `W(i, j)` is the interaction term between action `i` and `j`.
 
     len_list: int (> 1)
@@ -654,12 +654,12 @@ def action_interaction_additive_reward_function(
             "the size of axis 0 of context times len_list must be the same as that of action"
         )
 
-    if action_interaction_matrix.shape != (
+    if action_interaction_weight_matrix.shape != (
         action_context.shape[0],
         action_context.shape[0],
     ):
         raise ValueError(
-            f"the shape of action effect matrix must be (action_context.shape[0], action_context.shape[0]), but {action_interaction_matrix.shape}"
+            f"the shape of action_interaction_weight_matrix must be (action_context.shape[0], action_context.shape[0]), but {action_interaction_matrix.shape}"
         )
 
     if reward_type not in [
@@ -689,7 +689,7 @@ def action_interaction_additive_reward_function(
                     break
             elif position_ == position2_:
                 continue
-            tmp_fixed_reward += action_interaction_matrix[
+            tmp_fixed_reward += action_interaction_weight_matrix[
                 action_2d[:, position_], action_2d[:, position2_]
             ]
         expected_reward_factual[:, position_] = tmp_fixed_reward
@@ -707,7 +707,7 @@ def action_interaction_exponential_reward_function(
     action_context: np.ndarray,
     action: np.ndarray,
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    action_interaction_matrix: np.ndarray,
+    action_interaction_weight_matrix: np.ndarray,
     reward_type: str,
     random_state: Optional[int] = None,
     **kwargs,
@@ -736,7 +736,7 @@ def action_interaction_exponential_reward_function(
         Type of reward variable, which must be either 'binary' or 'continuous'.
         When 'binary' is given, expected reward is transformed by logit function.
 
-    action_interaction_matrix (`W`): array-like, shape (len_list, len_list)
+    action_interaction_weight_matrix (`W`): array-like, shape (len_list, len_list)
         `W(i, j)` is the weight of how the expected reward of slot `i` affects that of slot `j`.
 
     random_state: int, default=None
@@ -764,9 +764,9 @@ def action_interaction_exponential_reward_function(
         raise ValueError(
             f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given."
         )
-    if action_interaction_matrix.shape[0] * context.shape[0] != action.shape[0]:
+    if action_interaction_weight_matrix.shape[0] * context.shape[0] != action.shape[0]:
         raise ValueError(
-            "the size of axis 0 of action_interaction_matrix multiplied by that of context must be the same as that of action"
+            "the size of axis 0 of action_interaction_weight_matrix multiplied by that of context must be the same as that of action"
         )
     # action_2d: array-like, shape (n_rounds, len_list)
     action_2d = action.reshape((context.shape[0], action_interaction_matrix.shape[0]))
@@ -780,7 +780,7 @@ def action_interaction_exponential_reward_function(
         expected_reward = np.log(expected_reward / (1 - expected_reward))
     # expected_reward_3d: array-like, shape (n_rounds, n_unique_action, len_list)
     expected_reward_3d = np.tile(
-        expected_reward, (action_interaction_matrix.shape[0], 1, 1)
+        expected_reward, (action_interaction_weight_matrix.shape[0], 1, 1)
     ).transpose(1, 2, 0)
     # action_interaction_weight: array-like, shape (n_rounds, n_unique_action, len_list)
     action_interaction_weight = action_3d @ action_interaction_matrix
@@ -795,7 +795,7 @@ def action_interaction_exponential_reward_function(
     expected_reward_factual = np.array(expected_reward_factual)
     assert expected_reward_factual.shape == (
         context.shape[0],
-        action_interaction_matrix.shape[0],
+        action_interaction_weight_matrix.shape[0],
     ), f"response shape must be (n_rounds, len_list), but {expected_reward_factual.shape}"
     return expected_reward_factual
 
