@@ -315,7 +315,7 @@ invalid_input_of_action_interaction_reward_function = [
         3,
         1,
         ValueError,
-        "the shape of action effect matrix must be",
+        "the shape of action_interaction_weight_matrix must be",
     ),
 ]
 
