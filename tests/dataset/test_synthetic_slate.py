@@ -160,17 +160,17 @@ def check_slate_bandit_feedback(bandit_feedback: BanditFeedback):
     if "pscore_cascade" in pscore_columns and "pscore" in pscore_columns:
         assert (
             bandit_feedback_df["pscore_cascade"] < bandit_feedback_df["pscore"]
-        ).sum() == 0, "pscore_cascade must be larger than or equal to pscore"
+        ).sum() == 0, "pscore must be smaller than or equal to pscore_cascade"
     if "pscore_item_position" in pscore_columns and "pscore" in pscore_columns:
         assert (
             bandit_feedback_df["pscore_item_position"] < bandit_feedback_df["pscore"]
-        ).sum() == 0, "pscore must be larger than or equal to pscore_item_position"
+        ).sum() == 0, "pscore must be smaller than or equal to pscore_item_position"
     if "pscore_item_position" in pscore_columns and "pscore_cascade" in pscore_columns:
         assert (
             bandit_feedback_df["pscore_item_position"]
             < bandit_feedback_df["pscore_cascade"]
         ).sum() == 0, (
-            "pscore_cascade must be larger than or equal to pscore_item_position"
+            "pscore_cascade must be smaller than or equal to pscore_item_position"
         )
     if "pscore_cascade" in pscore_columns:
         previous_minimum_pscore_cascade = (
@@ -226,9 +226,9 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     for column in ["slate_id", "position", "action"] + pscore_columns:
         bandit_feedback_df[column] = bandit_feedback[column]
     # check pscore marginal
-    pscore_item_position = float(len_list / n_unique_action)
+    pscore_item_position = 1 / n_unique_action
     assert np.allclose(
-        bandit_feedback_df["pscore_item_position"].unique(), [pscore_item_position]
+        bandit_feedback_df["pscore_item_position"].unique(), pscore_item_position
     ), f"pscore_item_position must be [{pscore_item_position}], but {bandit_feedback_df['pscore_item_position'].unique()}"
     # check pscore joint
     pscore_cascade = []
@@ -260,15 +260,13 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
         random_state=random_state,
     )
     # obtain feedback
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
-    )
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     # check slate bandit feedback (common test)
     check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
     # check pscore marginal
-    pscore_item_position = float(len_list / n_unique_action)
+    pscore_item_position = 1 / n_unique_action
     assert np.allclose(
-        np.unique(bandit_feedback["pscore_item_position"]), [pscore_item_position]
+        np.unique(bandit_feedback["pscore_item_position"]), pscore_item_position
     ), f"pscore_item_position must be [{pscore_item_position}], but {np.unique(bandit_feedback['pscore_item_position'])}"
 
 
@@ -292,10 +290,6 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         _ = dataset.obtain_batch_bandit_feedback(n_rounds=-1)
     with pytest.raises(ValueError):
         _ = dataset.obtain_batch_bandit_feedback(n_rounds="a")
-    with pytest.raises(ValueError):
-        _ = dataset.obtain_batch_bandit_feedback(
-            n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
-        )
 
     # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
