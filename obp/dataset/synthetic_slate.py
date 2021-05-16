@@ -563,7 +563,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             pscore_item_position=pscore_item_position,
         )
 
-    def calc_on_policy_value(self, reward: np.ndarray, slate_id: np.ndarray) -> float:
+    def calc_on_policy_policy_value(
+        self, reward: np.ndarray, slate_id: np.ndarray
+    ) -> float:
         """Calculate the policy value of given reward and slate_id.
 
         Parameters
@@ -601,7 +603,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         context: np.ndarray,
         random_state: int,
         epsilon: Optional[float] = 1.0,
-        action_2d: Optional[np.ndarray] = None,
+        action: Optional[np.ndarray] = None,
+        slate_id: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Generate pscores of three types of evaluation policies ('random', 'optimal', 'anti-optimal').
 
@@ -624,10 +628,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Exploration hyperparameter that must take value in the range of [0., 1.].
             When evaluation_policy_type is 'random', this argument is unnecessary.
 
-        action_2d: array-like, shape (n_rounds, len_list), default=None
+        action: array-like, shape (n_rounds * len_list,), default=None
             Actions sampled by a behavior policy.
-            Action list of slate `i` is stored in action[`i`].
-            When bandit_feedback is obtained by `obtain_batch_bandit_feedback`, we can obtain action_2d as follows: bandit_feedback["action"].reshape((n_rounds, len_list))
+            Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
             When evaluation_policy_type is 'random', this argument is unnecessary.
 
 
@@ -675,8 +678,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 action_context=self.action_context,
                 random_state=random_state,
             )
-            if not isinstance(action_2d, np.ndarray) or action_2d.ndim != 2:
-                raise ValueError("action_2d must be 2-dimensional ndarray")
+            if (
+                not isinstance(action, np.ndarray)
+                or action.ndim != 1
+                or action.shape[0] != context.shape[0] * self.len_list
+            ):
+                raise ValueError(
+                    "action must be 1-dimensional ndarray, shape (n_rounds * len_list)"
+                )
+            action_2d = action.reshape((context.shape[0], self.len_list))
             if context.shape[0] != action_2d.shape[0]:
                 raise ValueError(
                     "the size of axis 0 of context must be the same as that of action_2d"

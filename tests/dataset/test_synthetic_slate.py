@@ -749,7 +749,7 @@ invalid_input_of_calc_true_policy_value = [
     "slate_id, reward, description",
     invalid_input_of_calc_true_policy_value,
 )
-def test_calc_on_policy_value_using_invalid_input_data(
+def test_calc_on_policy_policy_value_using_invalid_input_data(
     slate_id, reward, description
 ) -> None:
     # set parameters
@@ -766,7 +766,7 @@ def test_calc_on_policy_value_using_invalid_input_data(
         random_state=random_state,
     )
     with pytest.raises(ValueError, match=f"{description}*"):
-        _ = dataset.calc_on_policy_value(reward=reward, slate_id=slate_id)
+        _ = dataset.calc_on_policy_policy_value(reward=reward, slate_id=slate_id)
 
 
 # slate_id, reward, description
@@ -790,7 +790,7 @@ valid_input_of_calc_true_policy_value = [
     "slate_id, reward, result, description",
     valid_input_of_calc_true_policy_value,
 )
-def test_calc_on_policy_value_using_valid_input_data(
+def test_calc_on_policy_policy_value_using_valid_input_data(
     slate_id, reward, result, description
 ) -> None:
     # set parameters
@@ -807,16 +807,18 @@ def test_calc_on_policy_value_using_valid_input_data(
         random_state=random_state,
         behavior_policy_function=linear_behavior_policy_logit,
     )
-    assert result == dataset.calc_on_policy_value(reward=reward, slate_id=slate_id)
+    assert result == dataset.calc_on_policy_policy_value(
+        reward=reward, slate_id=slate_id
+    )
 
 
-# evaluation_policy_type, epsilon, context, action_2d, random_state, err, description
+# evaluation_policy_type, epsilon, context, action, random_state, err, description
 invalid_input_of_generate_evaluation_policy_pscore = [
     (
         "awesome",  #
         1.0,
         np.ones([5, 2]),
-        np.tile(np.arange(3), 5).reshape((5, 3)),
+        np.tile(np.arange(3), 5),
         1.0,
         ValueError,
         "evaluation_policy_type must be",
@@ -825,7 +827,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         "optimal",
         1.0,
         np.array([5, 2]),  #
-        np.tile(np.arange(3), 5).reshape((5, 3)),
+        np.tile(np.arange(3), 5),
         1.0,
         ValueError,
         "context must be 2-dimensional ndarray",
@@ -834,10 +836,10 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         "optimal",
         1.0,
         np.ones([5, 2]),
-        np.ones(5),  #
+        np.ones([5, 2]),  #
         1,
         ValueError,
-        "action_2d must be 2-dimensional ndarray",
+        "action must be 1-dimensional ndarray",
     ),
     (
         "optimal",
@@ -846,22 +848,22 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.random.choice(5),  #
         1,
         ValueError,
-        "action_2d must be 2-dimensional ndarray",
+        "action must be 1-dimensional ndarray",
     ),
     (
         "optimal",
         1.0,
         np.ones([5, 2]),
-        np.ones([4, 2]),  #
+        np.ones(5),  #
         1,
         ValueError,
-        "the size of axis 0",
+        "action must be 1-dimensional ndarray, shape (n_rounds * len_list)",
     ),
     (
         "optimal",
         1.0,
         np.ones([5, 2]),
-        np.ones([5, 2]),  #
+        np.ones(15),  #
         1,
         ValueError,
         "actions of each slate must not be duplicated",
@@ -870,7 +872,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         "optimal",
         -1.0,  #
         np.ones([5, 2]),
-        np.ones([4, 2]),
+        np.tile(np.arange(3), 5),
         1,
         ValueError,
         "",
@@ -879,14 +881,14 @@ invalid_input_of_generate_evaluation_policy_pscore = [
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_type, epsilon, context, action_2d, random_state, err, description",
+    "evaluation_policy_type, epsilon, context, action, random_state, err, description",
     invalid_input_of_generate_evaluation_policy_pscore,
 )
 def test_generate_evaluation_policy_pscore_using_invalid_input_data(
     evaluation_policy_type,
     epsilon,
     context,
-    action_2d,
+    action,
     random_state,
     err,
     description,
@@ -911,7 +913,7 @@ def test_generate_evaluation_policy_pscore_using_invalid_input_data(
                 evaluation_policy_type=evaluation_policy_type,
                 epsilon=epsilon,
                 context=context,
-                action_2d=action_2d,
+                action=action,
                 random_state=random_state,
             )
     else:
@@ -920,7 +922,7 @@ def test_generate_evaluation_policy_pscore_using_invalid_input_data(
                 evaluation_policy_type=evaluation_policy_type,
                 epsilon=epsilon,
                 context=context,
-                action_2d=action_2d,
+                action=action,
                 random_state=random_state,
             )
 
@@ -993,7 +995,7 @@ def test_generate_evaluation_policy_pscore_using_valid_input_data(
         context=bandit_feedback["context"],
         random_state=random_state,
         epsilon=epsilon,
-        action_2d=bandit_feedback["action"].reshape((n_rounds, len_list)),
+        action=bandit_feedback["action"],
     )
     if evaluation_policy_type == "random" or epsilon == 1.0:
         # pscores of random evaluation policy must be the same as those of bandit feedback using random behavior policy
