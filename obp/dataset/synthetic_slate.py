@@ -5,6 +5,7 @@
 from dataclasses import dataclass
 from typing import Optional, Callable, Tuple, Union, List
 from itertools import permutations
+from math import factorial
 
 import numpy as np
 from scipy.stats import truncnorm
@@ -318,19 +319,19 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        action: array-like, shape (n_unique_action * len_list)
+        action: array-like, shape (n_rounds * len_list)
             Actions sampled by a behavior policy.
             Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
 
-        pscore_cascade: array-like, shape (n_unique_action * len_list)
+        pscore_cascade: array-like, shape (n_rounds * len_list)
             Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
             i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
 
-        pscore: array-like, shape (n_unique_action * len_list)
+        pscore: array-like, shape (n_rounds * len_list)
             Joint action choice probabilities of the slate given context (:math:`x`).
             i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
 
-        pscore_item_position: array-like, shape (n_unique_action * len_list)
+        pscore_item_position: array-like, shape (n_rounds * len_list)
             Marginal action choice probabilities of each slot given context (:math:`x`).
             i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
@@ -411,7 +412,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        reward: array-like, shape (n_unique_action, len_list)
+        reward: array-like, shape (n_rounds, len_list)
 
         """
         expected_reward_factual *= self.exam_weight
@@ -562,6 +563,234 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             pscore_item_position=pscore_item_position,
         )
 
+    def calc_on_policy_value(self, reward: np.ndarray, slate_id: np.ndarray) -> float:
+        """Calculate the policy value of given reward and slate_id.
+
+        Parameters
+        -----------
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t, k}`.
+
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            Slate id observed in each round of the logged bandit feedback.
+
+        Returns
+        ----------
+        policy_value: float
+            The policy value of the given reward and slate_id.
+
+        """
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(slate_id, np.ndarray):
+            raise ValueError("slate_id must be ndarray")
+        if reward.ndim != 1:
+            raise ValueError(f"reward must be 1-dimensional, but is {reward.ndim}.")
+        if slate_id.ndim != 1:
+            raise ValueError(f"slate_id must be 1-dimensional, but is {slate_id.ndim}.")
+        if reward.shape[0] != slate_id.shape[0]:
+            raise ValueError(
+                "the size of axis 0 of reward must be the same as that of slate_id"
+            )
+
+        return reward.sum() / np.unique(slate_id).shape[0]
+
+    def generate_evaluation_policy_pscore(
+        self,
+        evaluation_policy_type: str,
+        context: np.ndarray,
+        random_state: int,
+        epsilon: Optional[float] = 1.0,
+        action_2d: Optional[np.ndarray] = None,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Generate pscores of three types of evaluation policies ('random', 'optimal', 'anti-optimal').
+
+        Parameters
+        -----------
+        evaluation_policy_type: str
+            Type of evaluation policy, which must be one of 'optimal', 'anti-optimal', or 'random'.
+            When 'optimal' is given, we sort actions by their base expected rewards (outputs of `base_reward_function`) and extract top-L actions (L=`len_list`) for each slate.
+            When 'anti-optimal' is given, we sort actions by their base expected rewards (outputs of `base_reward_function`) and extract bottom-L actions (L=`len_list`) for each slate.
+            We calculate three propensity scores of the epsilon-greedy policy.
+            When 'random' is given, we calculate three propensity scores of the random policy.
+
+        context: array-like, shape (n_rounds, dim_context)
+            Context vectors characterizing each round (such as user information).
+
+        random_state: int
+            Controls the random seed in sampling synthetic slate bandit dataset.
+
+        epsilon: float, default=1.
+            Exploration hyperparameter that must take value in the range of [0., 1.].
+            When evaluation_policy_type is 'random', this argument is unnecessary.
+
+        action_2d: array-like, shape (n_rounds, len_list), default=None
+            Actions sampled by a behavior policy.
+            Action list of slate `i` is stored in action[`i`].
+            When bandit_feedback is obtained by `obtain_batch_bandit_feedback`, we can obtain action_2d as follows: bandit_feedback["action"].reshape((n_rounds, len_list))
+            When evaluation_policy_type is 'random', this argument is unnecessary.
+
+
+        Returns
+        ----------
+        pscore: array-like, shape (n_unique_action * len_list)
+            Joint action choice probabilities of the slate given context (:math:`x`).
+            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+
+        pscore_item_position: array-like, shape (n_unique_action * len_list)
+            Marginal action choice probabilities of each slot given context (:math:`x`).
+            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+
+        pscore_cascade: array-like, shape (n_unique_action * len_list)
+            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
+            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+
+        """
+        if evaluation_policy_type not in ["optimal", "anti-optimal", "random"]:
+            raise ValueError(
+                f"evaluation_policy_type must be 'optimal', 'anti-optimal', or 'random', but {evaluation_policy_type} is given"
+            )
+        if not isinstance(context, np.ndarray) or context.ndim != 2:
+            raise ValueError("context must be 2-dimensional ndarray")
+
+        # [Caution]: OverflowError raises when integer division result is too large for a float
+        cascade_npr = [
+            factorial(self.n_unique_action) / factorial(self.n_unique_action - x - 1)
+            for x in np.arange(self.len_list)
+        ]
+        random_pscore = np.ones(context.shape[0] * self.len_list) / cascade_npr[-1]
+        random_pscore_item_position = (
+            np.ones(context.shape[0] * self.len_list) / self.n_unique_action
+        )
+        random_pscore_cascade = 1.0 / np.tile(cascade_npr, context.shape[0])
+        if evaluation_policy_type == "random":
+            pscore = random_pscore
+            pscore_item_position = random_pscore_item_position
+            pscore_cascade = random_pscore_cascade
+
+        else:
+            # base_expected_reward: array-like, shape (n_rounds, n_unique_action)
+            base_expected_reward = self.base_reward_function(
+                context=context,
+                action_context=self.action_context,
+                random_state=random_state,
+            )
+            if not isinstance(action_2d, np.ndarray) or action_2d.ndim != 2:
+                raise ValueError("action_2d must be 2-dimensional ndarray")
+            if context.shape[0] != action_2d.shape[0]:
+                raise ValueError(
+                    "the size of axis 0 of context must be the same as that of action_2d"
+                )
+            if set([np.unique(x).shape[0] for x in action_2d]) != set([self.len_list]):
+                raise ValueError("actions of each slate must not be duplicated")
+
+            check_scalar(
+                epsilon, name="epsilon", target_type=(float), min_val=0.0, max_val=1.0
+            )
+            if evaluation_policy_type == "optimal":
+                sorted_actions = base_expected_reward.argsort(axis=1)[
+                    :, -self.len_list :
+                ]
+                (
+                    pscore,
+                    pscore_item_position,
+                    pscore_cascade,
+                ) = self._calc_epsilon_greedy_pscore(
+                    epsilon=epsilon,
+                    action_2d=action_2d,
+                    sorted_actions=sorted_actions,
+                    random_pscore=random_pscore,
+                    random_pscore_item_position=random_pscore_item_position,
+                    random_pscore_cascade=random_pscore_cascade,
+                )
+            else:
+                sorted_actions = base_expected_reward.argsort(axis=1)[
+                    :, : self.len_list
+                ]
+                (
+                    pscore,
+                    pscore_item_position,
+                    pscore_cascade,
+                ) = self._calc_epsilon_greedy_pscore(
+                    epsilon=epsilon,
+                    action_2d=action_2d,
+                    sorted_actions=sorted_actions,
+                    random_pscore=random_pscore,
+                    random_pscore_item_position=random_pscore_item_position,
+                    random_pscore_cascade=random_pscore_cascade,
+                )
+        return pscore, pscore_item_position, pscore_cascade
+
+    def _calc_epsilon_greedy_pscore(
+        self,
+        epsilon: float,
+        action_2d: np.ndarray,
+        sorted_actions: np.ndarray,
+        random_pscore: np.ndarray,
+        random_pscore_item_position: np.ndarray,
+        random_pscore_cascade: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Calculate pscores given action_2d, sorted_actions, and random pscores.
+
+        Parameters
+        -----------
+        epsilon: float, default=1.
+            Exploration hyperparameter that must take value in the range of [0., 1.].
+            When evaluation_policy_type is 'random', this argument is unnecessary.
+
+        action_2d: array-like, shape (n_rounds, len_list), default=None
+            Actions sampled by a behavior policy.
+            Action list of slate `i` is stored in action[`i`].
+            When bandit_feedback is obtained by `obtain_batch_bandit_feedback`, we can obtain action_2d as follows: bandit_feedback["action"].reshape((n_rounds, len_list))
+            When evaluation_policy_type is 'random', this argument is unnecessary.
+
+        random_pscore: array-like, shape (n_unique_action * len_list)
+            Joint action choice probabilities of the slate given context (:math:`x`) when the evaluation policy is random.
+            i.e., :math:`\\frac{1}{{}_{n} P _r)`, where :math:`n` is `n_unique_actions` and :math:`r` is `len_list`.
+
+        random_pscore_item_position: array-like, shape (n_unique_action * len_list)
+            Marginal action choice probabilities of each slot given context (:math:`x`) when the evaluation policy is random.
+            i.e., :math:`\\frac{1}{n)`, where :math:`n` is `n_unique_actions`.
+
+        random_pscore_cascade: array-like, shape (n_unique_action * len_list)
+            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`) when the evaluation policy is random.
+            i.e., :math:`\\frac{1}{{}_{n} P _k)`, where :math:`n` is `n_unique_actions`.
+
+
+        Returns
+        ----------
+        pscore: array-like, shape (n_unique_action * len_list)
+            Joint action choice probabilities of the slate given context (:math:`x`).
+            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+
+        pscore_item_position: array-like, shape (n_unique_action * len_list)
+            Marginal action choice probabilities of each slot given context (:math:`x`).
+            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+
+        pscore_cascade: array-like, shape (n_unique_action * len_list)
+            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
+            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+
+        """
+        if not isinstance(action_2d, np.ndarray) or action_2d.ndim != 2:
+            raise ValueError("action_2d must be 2-dimensional ndarray")
+        if set([np.unique(x).shape[0] for x in action_2d]) != set([self.len_list]):
+            raise ValueError("actions of each slate must not be duplicated")
+        match_action_flg = sorted_actions == action_2d
+        pscore_flg = np.repeat(match_action_flg.all(axis=1), self.len_list)
+        pscore_item_position_flg = match_action_flg.flatten()
+        pscore_cascade_flg = match_action_flg.cumprod(axis=1).flatten()
+        # calculate pscores
+        pscore = pscore_flg * (1 - epsilon) + epsilon * random_pscore
+        pscore_item_position = (
+            pscore_item_position_flg * (1 - epsilon)
+            + epsilon * random_pscore_item_position
+        )
+        pscore_cascade = (
+            pscore_cascade_flg * (1 - epsilon) + epsilon * random_pscore_cascade
+        )
+        return pscore, pscore_item_position, pscore_cascade
+
 
 def generate_symmetric_matrix(n_unique_action: int, random_state: int) -> np.ndarray:
     """Generate symmetric matrix
@@ -609,7 +838,7 @@ def action_interaction_additive_reward_function(
     action_context: array-like, shape (n_unique_action, dim_action_context)
         Vector representation for each action.
 
-    action: array-like, shape (n_unique_action * len_list)
+    action: array-like, shape (n_rounds * len_list)
         Sampled action.
         Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
 
@@ -726,7 +955,7 @@ def action_interaction_exponential_reward_function(
     action_context: array-like, shape (n_unique_action, dim_action_context)
         Vector representation for each action.
 
-    action: array-like, shape (n_unique_action * len_list)
+    action: array-like, shape (n_rounds * len_list)
         Sampled action.
         Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
 
