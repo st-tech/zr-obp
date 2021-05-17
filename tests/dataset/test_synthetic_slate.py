@@ -711,3 +711,383 @@ def test_synthetic_slate_using_valid_inputs(
     print(bandit_feedback_df.groupby("position")["reward"].describe())
     if reward_type == "binary":
         assert set(np.unique(bandit_feedback["reward"])) == set([0, 1])
+
+
+n_rounds = 5
+len_list = 3
+# slate_id, reward, description
+invalid_input_of_calc_true_policy_value = [
+    (
+        np.repeat(np.arange(n_rounds), len_list),
+        "4",  #
+        "reward must be ndarray",
+    ),
+    (
+        np.repeat(np.arange(n_rounds), len_list),
+        np.zeros((n_rounds, len_list), dtype=int),  #
+        "reward must be 1-dimensional",
+    ),
+    (
+        "4",  #
+        np.zeros(n_rounds * len_list, dtype=int),
+        "slate_id must be ndarray",
+    ),
+    (
+        np.repeat(np.arange(n_rounds), len_list).reshape((n_rounds, len_list)),  #
+        np.zeros(n_rounds * len_list, dtype=int),
+        "slate_id must be 1-dimensional",
+    ),
+    (
+        np.repeat(np.arange(n_rounds), len_list),
+        np.zeros(n_rounds * len_list - 1, dtype=int),  #
+        "the size of axis 0 of reward must be the same as that of slate_id",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "slate_id, reward, description",
+    invalid_input_of_calc_true_policy_value,
+)
+def test_calc_on_policy_policy_value_using_invalid_input_data(
+    slate_id, reward, description
+) -> None:
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+    )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = dataset.calc_on_policy_policy_value(reward=reward, slate_id=slate_id)
+
+
+# slate_id, reward, description
+valid_input_of_calc_true_policy_value = [
+    (
+        np.array([1, 1, 2, 2, 3, 4]),
+        np.array([0, 1, 1, 0, 0, 0]),
+        0.5,
+        "4 slate ids",
+    ),
+    (
+        np.array([1, 1]),
+        np.array([2, 3]),
+        5,
+        "one slate id",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "slate_id, reward, result, description",
+    valid_input_of_calc_true_policy_value,
+)
+def test_calc_on_policy_policy_value_using_valid_input_data(
+    slate_id, reward, result, description
+) -> None:
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        behavior_policy_function=linear_behavior_policy_logit,
+    )
+    assert result == dataset.calc_on_policy_policy_value(
+        reward=reward, slate_id=slate_id
+    )
+
+
+# evaluation_policy_type, epsilon, context, action, random_state, err, description
+invalid_input_of_generate_evaluation_policy_pscore = [
+    (
+        "awesome",  #
+        1.0,
+        np.ones([5, 2]),
+        np.tile(np.arange(3), 5),
+        1.0,
+        ValueError,
+        "evaluation_policy_type must be",
+    ),
+    (
+        "optimal",
+        1.0,
+        np.array([5, 2]),  #
+        np.tile(np.arange(3), 5),
+        1.0,
+        ValueError,
+        "context must be 2-dimensional ndarray",
+    ),
+    (
+        "optimal",
+        1.0,
+        np.ones([5, 2]),
+        np.ones([5, 2]),  #
+        1,
+        ValueError,
+        "action must be 1-dimensional ndarray",
+    ),
+    (
+        "optimal",
+        1.0,
+        np.ones([5, 2]),
+        np.random.choice(5),  #
+        1,
+        ValueError,
+        "action must be 1-dimensional ndarray",
+    ),
+    (
+        "optimal",
+        1.0,
+        np.ones([5, 2]),
+        np.ones(5),  #
+        1,
+        ValueError,
+        "action must be 1-dimensional ndarray, shape (n_rounds * len_list)",
+    ),
+    (
+        "optimal",
+        1.0,
+        np.ones([5, 2]),
+        np.ones(15),  #
+        1,
+        ValueError,
+        "actions of each slate must not be duplicated",
+    ),
+    (
+        "optimal",
+        -1.0,  #
+        np.ones([5, 2]),
+        np.tile(np.arange(3), 5),
+        1,
+        ValueError,
+        "",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "evaluation_policy_type, epsilon, context, action, random_state, err, description",
+    invalid_input_of_generate_evaluation_policy_pscore,
+)
+def test_generate_evaluation_policy_pscore_using_invalid_input_data(
+    evaluation_policy_type,
+    epsilon,
+    context,
+    action,
+    random_state,
+    err,
+    description,
+) -> None:
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        base_reward_function=logistic_reward_function,
+    )
+    if description == "":
+        with pytest.raises(err):
+            _ = dataset.generate_evaluation_policy_pscore(
+                evaluation_policy_type=evaluation_policy_type,
+                epsilon=epsilon,
+                context=context,
+                action=action,
+                random_state=random_state,
+            )
+    else:
+        with pytest.raises(err, match=f"{description}*"):
+            _ = dataset.generate_evaluation_policy_pscore(
+                evaluation_policy_type=evaluation_policy_type,
+                epsilon=epsilon,
+                context=context,
+                action=action,
+                random_state=random_state,
+            )
+
+
+# evaluation_policy_type, epsilon, description
+valid_input_of_generate_evaluation_policy_pscore = [
+    (
+        "optimal",
+        0.1,
+        "optimal evaluation policy",
+    ),
+    (
+        "anti-optimal",
+        0.1,
+        "anti-optimal evaluation policy",
+    ),
+    (
+        "random",
+        None,
+        "random evaluation policy",
+    ),
+    (
+        "optimal",
+        0.0,
+        "optimal evaluation policy, epsilon=0.0 (greedy)",
+    ),
+    (
+        "optimal",
+        1.0,
+        "optimal evaluation policy, epsilon=1.0 (random)",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "evaluation_policy_type, epsilon, description",
+    valid_input_of_generate_evaluation_policy_pscore,
+)
+def test_generate_evaluation_policy_pscore_using_valid_input_data(
+    evaluation_policy_type,
+    epsilon,
+    description,
+) -> None:
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    n_rounds = 100
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        base_reward_function=logistic_reward_function,
+    )
+    # obtain feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds, return_pscore_item_position=True
+    )
+    # generate pscores
+    (
+        pscore,
+        pscore_item_position,
+        pscore_cascade,
+    ) = dataset.generate_evaluation_policy_pscore(
+        evaluation_policy_type=evaluation_policy_type,
+        context=bandit_feedback["context"],
+        random_state=random_state,
+        epsilon=epsilon,
+        action=bandit_feedback["action"],
+    )
+    if evaluation_policy_type == "random" or epsilon == 1.0:
+        # pscores of random evaluation policy must be the same as those of bandit feedback using random behavior policy
+        assert np.allclose(pscore, bandit_feedback["pscore"])
+        assert np.allclose(
+            pscore_item_position, bandit_feedback["pscore_item_position"]
+        )
+        assert np.allclose(pscore_cascade, bandit_feedback["pscore_cascade"])
+    if epsilon == 0.0:
+        # pscore element of greedy evaluation policy must be either 0 or 1
+        assert len(set(np.unique(pscore)) - set([0.0, 1.0])) == 0
+        assert len(set(np.unique(pscore_item_position)) - set([0.0, 1.0])) == 0
+        assert len(set(np.unique(pscore_cascade)) - set([0.0, 1.0])) == 0
+
+
+# n_unique_action, len_list, epsilon, action_2d, sorted_actions, random_pscore, random_pscore_item_position, random_pscore_cascade, true_pscore, true_pscore_item_position, true_pscore_cascade, description
+valid_input_of_calc_epsilon_greedy_pscore = [
+    (
+        5,
+        3,
+        0.1,
+        np.tile(np.arange(3), 4).reshape((4, 3)),
+        np.array([[0, 1, 2], [0, 1, 3], [1, 0, 2], [1, 0, 4]]),
+        np.ones(12) / 60,  # 1 / 5P3
+        np.ones(12) / 5,  # 1/ 5
+        np.tile([1 / 5, 1 / 20, 1 / 60], 4),
+        np.array(
+            [[0.9 + 0.1 / 60] * 3, [0.1 / 60] * 3, [0.1 / 60] * 3, [0.1 / 60] * 3]
+        ).flatten(),
+        np.array(
+            [
+                [0.9 + 0.1 / 5] * 3,
+                [0.9 + 0.1 / 5, 0.9 + 0.1 / 5, 0.1 / 5],
+                [0.1 / 5, 0.1 / 5, 0.9 + 0.1 / 5],
+                [0.1 / 5] * 3,
+            ]
+        ).flatten(),
+        np.array(
+            [
+                [0.9 + 0.1 / 5, 0.9 + 0.1 / 20, 0.9 + 0.1 / 60],
+                [0.9 + 0.1 / 5, 0.9 + 0.1 / 20, 0.1 / 60],
+                [0.1 / 5, 0.1 / 20, 0.1 / 60],
+                [0.1 / 5, 0.1 / 20, 0.1 / 60],
+            ]
+        ).flatten(),
+        "epsolon is 0.1",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_unique_action, len_list, epsilon, action_2d, sorted_actions, random_pscore, random_pscore_item_position, random_pscore_cascade, true_pscore, true_pscore_item_position, true_pscore_cascade, description",
+    valid_input_of_calc_epsilon_greedy_pscore,
+)
+def test_calc_epsilon_greedy_pscore_using_valid_input_data(
+    n_unique_action,
+    len_list,
+    epsilon,
+    action_2d,
+    sorted_actions,
+    random_pscore,
+    random_pscore_item_position,
+    random_pscore_cascade,
+    true_pscore,
+    true_pscore_item_position,
+    true_pscore_cascade,
+    description,
+) -> None:
+    # set parameters
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        base_reward_function=logistic_reward_function,
+    )
+    (
+        pscore,
+        pscore_item_position,
+        pscore_cascade,
+    ) = dataset._calc_epsilon_greedy_pscore(
+        epsilon=epsilon,
+        action_2d=action_2d,
+        sorted_actions=sorted_actions,
+        random_pscore=random_pscore,
+        random_pscore_item_position=random_pscore_item_position,
+        random_pscore_cascade=random_pscore_cascade,
+    )
+    assert np.allclose(true_pscore, pscore)
+    assert np.allclose(true_pscore_item_position, pscore_item_position)
+    assert np.allclose(true_pscore_cascade, pscore_cascade)
