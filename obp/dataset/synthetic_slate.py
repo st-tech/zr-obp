@@ -580,7 +580,7 @@ def generate_symmetric_matrix(n_unique_action: int, random_state: int) -> np.nda
     symmetric_matrix: array-like, shape (n_unique_action, n_unique_action)
     """
     random_ = check_random_state(random_state)
-    base_matrix = random_.normal(size=(n_unique_action, n_unique_action))
+    base_matrix = random_.normal(scale=5, size=(n_unique_action, n_unique_action))
     symmetric_matrix = (
         np.tril(base_matrix) + np.tril(base_matrix).T - np.diag(base_matrix.diagonal())
     )
@@ -687,7 +687,7 @@ def action_interaction_additive_reward_function(
         tmp_fixed_reward = expected_reward[
             np.arange(context.shape[0]), action_2d[:, position_]
         ]
-        for position2_ in np.arange(len_list):
+        for position2_ in np.arange(len_list)[::-1]:
             if is_cascade:
                 if position_ >= position2_:
                     break
