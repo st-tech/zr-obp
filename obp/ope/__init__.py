@@ -9,7 +9,7 @@ from obp.ope.estimators import SwitchDoublyRobust
 from obp.ope.estimators import DoublyRobustWithShrinkage
 from obp.ope.estimators_slate import SlateStandardIPS
 from obp.ope.estimators_slate import SlateIndependentIPS
-from obp.ope.estimators_slate import SlateRecursiveIPS
+from obp.ope.estimators_slate import SlateRewardInteractionIPS
 from obp.ope.meta import OffPolicyEvaluation
 from obp.ope.meta_slate import SlateOffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
@@ -29,7 +29,7 @@ __all__ = [
     "RegressionModel",
     "SlateStandardIPS",
     "SlateIndependentIPS",
-    "SlateRecursiveIPS",
+    "SlateRewardInteractionIPS",
 ]
 
 __all_estimators__ = [

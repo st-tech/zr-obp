@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Class for Generating Synthetic SLate Logged Bandit Feedback."""
+"""Class for Generating Synthetic Slate Logged Bandit Feedback."""
 from dataclasses import dataclass
 from typing import Optional, Callable, Tuple, Union, List
 from itertools import permutations

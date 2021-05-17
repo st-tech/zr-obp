@@ -98,7 +98,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         estimated_rewards: array-like, shape (<= n_rounds * len_list,)
-            Rewards estimated by IPW given round (slate_id) and slot (position)).
+            Rewards estimated by IPW given round (slate_id) and slot (position).
 
         alpha: float, default=0.05
             Significant level of confidence intervals.
@@ -236,7 +236,7 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -377,7 +377,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -519,7 +519,7 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
-            P-value.
+            Significant level of confidence intervals.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.

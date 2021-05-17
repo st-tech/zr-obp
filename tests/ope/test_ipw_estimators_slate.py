@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from obp.ope import SlateStandardIPS, SlateIndependentIPS, SlateRecursiveIPS
+from obp.ope import SlateStandardIPS, SlateIndependentIPS, SlateRewardInteractionIPS
 from obp.dataset import (
     logistic_reward_function,
     linear_behavior_policy_logit,
@@ -12,7 +12,7 @@ from obp.dataset import (
 len_list = 3
 sips = SlateStandardIPS(len_list=len_list)
 iips = SlateIndependentIPS(len_list=len_list)
-rips = SlateRecursiveIPS(len_list=len_list)
+rips = SlateRewardInteractionIPS(len_list=len_list)
 n_rounds = 5
 
 
@@ -299,7 +299,7 @@ invalid_input_of_sips = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
-        np.ones(n_rounds * len_list) - 1,  #
+        np.ones(n_rounds * len_list) - 1.1,  #
         "evaluation_policy_pscore must be in the range of",
     ),
     (
@@ -408,7 +408,7 @@ invalid_input_of_iips = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
-        np.ones(n_rounds * len_list) - 1,  #
+        np.ones(n_rounds * len_list) - 1.1,  #
         "evaluation_policy_pscore_item_position must be in the range of",
     ),
 ]
@@ -522,7 +522,7 @@ invalid_input_of_rips = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
-        np.ones(n_rounds * len_list) - 1,  #
+        np.ones(n_rounds * len_list) - 1.1,  #
         "evaluation_policy_pscore_cascade must be in the range of",
     ),
     (
@@ -732,7 +732,7 @@ def test_slate_ope_performance_using_cascade_additive_log():
 
     # obtain random behavior feedback
     random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
+        n_rounds=n_rounds
     )
 
     sips_estimated_policy_value = sips.estimate_policy_value(
@@ -830,7 +830,7 @@ def test_slate_ope_performance_using_independent_log():
 
     # obtain random behavior feedback
     random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
+        n_rounds=n_rounds
     )
 
     sips_estimated_policy_value = sips.estimate_policy_value(
@@ -928,7 +928,7 @@ def test_slate_ope_performance_using_standard_additive_log():
 
     # obtain random behavior feedback
     random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds, return_exact_uniform_pscore_item_position=True
+        n_rounds=n_rounds
     )
 
     sips_estimated_policy_value = sips.estimate_policy_value(
