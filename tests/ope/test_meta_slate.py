@@ -14,7 +14,7 @@ from obp.ope import (
     SlateOffPolicyEvaluation,
     SlateStandardIPS,
     SlateIndependentIPS,
-    SlateRecursiveIPS,
+    SlateRewardInteractionIPS,
 )
 from obp.utils import check_confidence_interval_arguments
 
@@ -133,7 +133,7 @@ class SlateIndependentIPSMock(SlateIndependentIPS):
 
 
 @dataclass
-class SlateRecursiveIPSMock(SlateRecursiveIPS):
+class SlateRewardInteractionIPSMock(SlateRewardInteractionIPS):
     """Slate Recursive Inverse Propensity Scoring (RIPS) Mock."""
 
     estimator_name: str = "rips"
@@ -189,7 +189,7 @@ sips = SlateStandardIPSMock(len_list=3)
 sips2 = SlateStandardIPSMock(len_list=3, eps=0.02)
 sips3 = SlateStandardIPSMock(len_list=3, estimator_name="sips3")
 iips = SlateIndependentIPSMock(len_list=3)
-rips = SlateRecursiveIPSMock(len_list=3)
+rips = SlateRewardInteractionIPSMock(len_list=3)
 
 
 def test_meta_post_init(synthetic_slate_bandit_feedback: BanditFeedback) -> None:
