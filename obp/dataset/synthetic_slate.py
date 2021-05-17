@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import softmax, sigmoid, exponential_decay_function
+from ..utils import softmax, sigmoid, exponential_decay_function, inverse_decay_function
 
 
 @dataclass
@@ -60,13 +60,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         When reward_type is 'continuous', transform function is the identity function.
         When reward_type is 'binary', transform function is the logit function.
 
-    decay_function: Callable[[np.ndarray], np.ndarray], default=exponential_decay_function
+    decay_function: str, default='exponential'
+        Type of decay function, which must be one of 'exponential' or 'inverse'.
         Decay function used for 'cascade_decay' and 'standard_decay' reward structures.
-        For example, we have following decay_function implementations (k and j are positions of two slots).
-            exponential_decay_function: :math:`h(|k-j|) = \\exp(-|k-j|)`.
-            inverse_decay_function: :math:`h(|k-j|) = \\frac{1}{|k-j|+1})`.
-            inverse_square_root_decay_function: :math:`h(|k-j|) = \\frac{1}{(|k-j|+1)^(1/2)})`.
-        Users can also define their own decay_function.
+        Discount rate is calculated as follows (:math:`k` and :math:`j` are positions of the two slots).
+            'exponential': :math:`h(|k-j|) = \\exp(-|k-j|)`.
+            'inverse': :math:`h(|k-j|) = \\frac{1}{|k-j|+1})`.
 
     click_model: str, default=None
         Type of click model, which must be one of None, 'pbm', or 'cascade'.
@@ -170,7 +169,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     dim_context: int = 1
     reward_type: str = "binary"
     reward_structure: str = "cascade_additive"
-    decay_function: Callable[[np.ndarray], np.ndarray] = exponential_decay_function
+    decay_function: str = "exponential"
     click_model: Optional[str] = None
     eta: float = 1.0
     base_reward_function: Optional[
@@ -222,6 +221,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"reward_structure must be one of 'cascade_additive', 'cascade_decay', 'independent', 'standard_additive', or 'standard_decay', but {self.reward_structure} is given."
             )
+        if self.decay_function not in ["exponential", "inverse"]:
+            raise ValueError(
+                f"decay_function must be either 'exponential' or 'inverse', but {self.decay_function} is given"
+            )
         if self.click_model not in ["cascade", "pbm", None]:
             raise ValueError(
                 f"click_model must be one of 'cascade', 'pbm', or None, but {self.click_model} is given."
@@ -253,6 +256,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         else:
             if self.base_reward_function is not None:
                 self.reward_function = action_interaction_decay_reward_function
+            # set decay function
+            if self.decay_function == "exponential":
+                self.decay_function = exponential_decay_function
+            else:  # "inverse"
+                self.decay_function = inverse_decay_function
             # generate decay action interaction weight matrix of (len_list, len_list)
             if self.reward_structure == "standard_decay":
                 self.action_interaction_weight_matrix = (
@@ -286,7 +294,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         """Obtain action interaction weight matrix for standard decay reward structure (symmetric matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
-            action_interaction_weight_matrix[:, position_] = self.decay_function(
+            action_interaction_weight_matrix[:, position_] = -self.decay_function(
                 np.abs(np.arange(len_list) - position_)
             )
             action_interaction_weight_matrix[position_, position_] = 1
@@ -299,7 +307,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         """Obtain action interaction weight matrix for cascade decay reward structure (upper triangular matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
-            action_interaction_weight_matrix[:, position_] = self.decay_function(
+            action_interaction_weight_matrix[:, position_] = -self.decay_function(
                 np.abs(np.arange(len_list) - position_)
             )
             for position_2 in np.arange(len_list):
@@ -565,6 +573,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 len_list=self.len_list,
                 random_state=self.random_state,
             )
+        expected_reward_factual = np.clip(expected_reward_factual, 0, None)
         # check the shape of expected_reward_factual
         if not (
             isinstance(expected_reward_factual, np.ndarray)
