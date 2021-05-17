@@ -7,7 +7,7 @@ from obp.dataset.synthetic import (
 )
 from obp.dataset.synthetic_slate import (
     linear_behavior_policy_logit,
-    action_interaction_exponential_reward_function,
+    action_interaction_decay_reward_function,
     action_interaction_additive_reward_function,
     generate_symmetric_matrix,
 )
@@ -93,7 +93,7 @@ def test_linear_behavior_policy_logit_using_valid_input(
 
 
 # context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, err, description
-invalid_input_of_action_interaction_exponential_reward_function = [
+invalid_input_of_action_interaction_decay_reward_function = [
     (
         np.array([5, 2]),
         np.ones([4, 2]),
@@ -154,9 +154,9 @@ invalid_input_of_action_interaction_exponential_reward_function = [
 
 @pytest.mark.parametrize(
     "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, err, description",
-    invalid_input_of_action_interaction_exponential_reward_function,
+    invalid_input_of_action_interaction_decay_reward_function,
 )
-def test_action_interaction_exponential_reward_function_using_invalid_input(
+def test_action_interaction_decay_reward_function_using_invalid_input(
     context,
     action_context,
     action,
@@ -168,7 +168,7 @@ def test_action_interaction_exponential_reward_function_using_invalid_input(
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = action_interaction_exponential_reward_function(
+        _ = action_interaction_decay_reward_function(
             context=context,
             action_context=action_context,
             action=action,
@@ -180,7 +180,7 @@ def test_action_interaction_exponential_reward_function_using_invalid_input(
 
 
 # context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, description
-valid_input_of_action_interaction_exponential_reward_function = [
+valid_input_of_action_interaction_decay_reward_function = [
     (
         np.ones([5, 2]),
         np.ones([4, 2]),
@@ -206,9 +206,9 @@ valid_input_of_action_interaction_exponential_reward_function = [
 
 @pytest.mark.parametrize(
     "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, description",
-    valid_input_of_action_interaction_exponential_reward_function,
+    valid_input_of_action_interaction_decay_reward_function,
 )
-def test_action_interaction_exponential_reward_function_using_valid_input(
+def test_action_interaction_decay_reward_function_using_valid_input(
     context,
     action_context,
     action,
@@ -218,7 +218,7 @@ def test_action_interaction_exponential_reward_function_using_valid_input(
     random_state,
     description,
 ):
-    expected_reward_factual = action_interaction_exponential_reward_function(
+    expected_reward_factual = action_interaction_decay_reward_function(
         context=context,
         action_context=action_context,
         action=action,
