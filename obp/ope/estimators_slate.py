@@ -56,7 +56,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         evaluation_policy_pscore: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate rewards given round (slate_id) and slot (position)).
+        """Estimate rewards given round (slate_id) and slot (position).
 
         Parameters
         ----------
@@ -75,7 +75,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         Returns
         ----------
         estimated_rewards: array-like, shape (<= n_rounds * len_list,)
-            Rewards estimated by IPW given round (slate_id) and slot (position)).
+            Rewards estimated by IPW given round (slate_id) and slot (position).
 
         """
         iw = evaluation_policy_pscore / behavior_policy_pscore
