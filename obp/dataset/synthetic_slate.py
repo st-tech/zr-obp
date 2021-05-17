@@ -69,11 +69,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     eta: float, default=1.0
         A hyperparameter to define the click models.
-        When click_model='pbm', then eta defines examination probabilities of the position-based model.
+        When click_model='pbm', then eta defines the examination probabilities of the position-based model.
         For example, when eta=0.5, then the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
         When click_model='cascade', then eta defines the position-dependent attractiveness parameters of the dependent click model
         (an extension of the cascade model).
-        For example, when eta=0.5, the position-dependent attractiveness parameters at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
+        For example, when eta=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
+        When eta is very large, the click model induced by eta is close to the original cascade model.
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
@@ -434,9 +435,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         expected_reward_factual *= self.exam_weight
         if self.reward_type == "binary":
             sampled_reward_list = list()
-            sampled_rewards_at_position = np.ones(expected_reward_factual.shape[0])
+            discount_factors = np.ones(expected_reward_factual.shape[0])
+            sampled_rewards_at_position = np.zeros(expected_reward_factual.shape[0])
             for position_ in np.arange(self.len_list):
-                discount_factors = sampled_rewards_at_position * self.attractiveness[
+                discount_factors *= sampled_rewards_at_position * self.attractiveness[
                     position_
                 ] + (1 - sampled_rewards_at_position)
                 expected_reward_factual_at_position = (
