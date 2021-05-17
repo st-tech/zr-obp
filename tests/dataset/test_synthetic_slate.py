@@ -13,7 +13,7 @@ from obp.dataset import (
 
 from obp.types import BanditFeedback
 
-# n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, random_state, description
+# n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, eta, random_state, err, description
 invalid_input_of_init = [
     (
         "4",
@@ -22,7 +22,9 @@ invalid_input_of_init = [
         "binary",
         "independent",
         "pbm",
+        1.0,
         1,
+        ValueError,
         "n_unique_action must be an integer larger than 1",
     ),
     (
@@ -32,7 +34,9 @@ invalid_input_of_init = [
         "binary",
         "independent",
         "pbm",
+        1.0,
         1,
+        ValueError,
         "n_unique_action must be an integer larger than 1",
     ),
     (
@@ -42,7 +46,9 @@ invalid_input_of_init = [
         "binary",
         "independent",
         "pbm",
+        1.0,
         1,
+        ValueError,
         "len_list must be an integer such that",
     ),
     (
@@ -52,7 +58,9 @@ invalid_input_of_init = [
         "binary",
         "independent",
         "pbm",
+        1.0,
         1,
+        ValueError,
         "len_list must be an integer such that",
     ),
     (
@@ -62,7 +70,9 @@ invalid_input_of_init = [
         "binary",
         "independent",
         "pbm",
+        1.0,
         1,
+        ValueError,
         "len_list must be an integer such that",
     ),
     (
@@ -72,7 +82,9 @@ invalid_input_of_init = [
         "binary",
         "independent",
         "pbm",
+        1.0,
         1,
+        ValueError,
         "dim_context must be a positive integer",
     ),
     (
@@ -82,19 +94,100 @@ invalid_input_of_init = [
         "binary",
         "independent",
         "pbm",
+        1.0,
         1,
+        ValueError,
         "dim_context must be a positive integer",
     ),
-    (5, 3, 2, "aaa", "independent", "pbm", 1, "reward_type must be either"),
-    (5, 3, 2, "binary", "aaa", "pbm", 1, "reward_structure must be one of"),
-    (5, 3, 2, "binary", "independent", "aaa", 1, "click_model must be one of"),
-    (5, 3, 2, "binary", "independent", "pbm", "x", "random_state must be an integer"),
-    (5, 3, 2, "binary", "independent", "pbm", None, "random_state must be an integer"),
+    (
+        5,
+        3,
+        2,
+        "aaa",
+        "independent",
+        "pbm",
+        1.0,
+        1,
+        ValueError,
+        "reward_type must be either",
+    ),
+    (
+        5,
+        3,
+        2,
+        "binary",
+        "aaa",
+        "pbm",
+        1.0,
+        1,
+        ValueError,
+        "reward_structure must be one of",
+    ),
+    (
+        5,
+        3,
+        2,
+        "binary",
+        "independent",
+        "aaa",
+        1.0,
+        1,
+        ValueError,
+        "click_model must be one of",
+    ),
+    (
+        5,
+        3,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        "aaa",
+        1,
+        TypeError,
+        "`eta` must be an instance of <class 'float'>, not <class 'str'>.",
+    ),
+    (
+        5,
+        3,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        -1.0,
+        1,
+        ValueError,
+        "`eta`= -1.0, must be >= 0.0.",
+    ),
+    (
+        5,
+        3,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        1.0,
+        "x",
+        ValueError,
+        "random_state must be an integer",
+    ),
+    (
+        5,
+        3,
+        2,
+        "binary",
+        "independent",
+        "pbm",
+        1.0,
+        None,
+        ValueError,
+        "random_state must be an integer",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, random_state, description",
+    "n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, eta, random_state, err, description",
     invalid_input_of_init,
 )
 def test_synthetic_slate_init_using_invalid_inputs(
@@ -104,10 +197,12 @@ def test_synthetic_slate_init_using_invalid_inputs(
     reward_type,
     reward_structure,
     click_model,
+    eta,
     random_state,
+    err,
     description,
 ):
-    with pytest.raises(ValueError, match=f"{description}*"):
+    with pytest.raises(err, match=f"{description}*"):
         _ = SyntheticSlateBanditDataset(
             n_unique_action=n_unique_action,
             len_list=len_list,
@@ -115,6 +210,7 @@ def test_synthetic_slate_init_using_invalid_inputs(
             reward_type=reward_type,
             reward_structure=reward_structure,
             click_model=click_model,
+            eta=eta,
             random_state=random_state,
         )
 
@@ -359,7 +455,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
         assert set(np.unique(bandit_feedback["reward"])) == set([0, 1])
 
 
-# n_unique_action, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, behavior_policy_function, reward_function, return_pscore_item_position, description
+# n_unique_action, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, eta, behavior_policy_function, reward_function, return_pscore_item_position, description
 valid_input_of_obtain_batch_bandit_feedback = [
     (
         10,
@@ -370,6 +466,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_additive",
         None,
+        1.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -384,6 +481,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "independent",
         None,
+        1.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -398,6 +496,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_additive",
         None,
+        1.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -412,6 +511,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_additive",
         None,
+        1.0,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -426,6 +526,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "independent",
         None,
+        1.0,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -440,6 +541,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_additive",
         None,
+        1.0,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -454,6 +556,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_additive",
         None,
+        0.0,
         None,
         None,
         False,
@@ -468,6 +571,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_exponential",
         None,
+        0.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -482,6 +586,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_exponential",
         None,
+        0.0,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -496,6 +601,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_exponential",
         None,
+        0.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -510,6 +616,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_exponential",
         None,
+        0.0,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
@@ -524,6 +631,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_additive",
         "cascade",
+        0.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -538,6 +646,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_exponential",
         "cascade",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -552,6 +661,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_additive",
         "cascade",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -566,6 +676,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_exponential",
         "cascade",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -580,6 +691,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "independent",
         "cascade",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -594,6 +706,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_additive",
         "pbm",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -608,6 +721,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "cascade_exponential",
         "pbm",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -622,6 +736,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_additive",
         "pbm",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -636,6 +751,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "standard_exponential",
         "pbm",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -650,6 +766,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
         1000,
         "independent",
         "pbm",
+        0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
@@ -659,7 +776,7 @@ valid_input_of_obtain_batch_bandit_feedback = [
 
 
 @pytest.mark.parametrize(
-    "n_unique_action, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, behavior_policy_function, reward_function, return_pscore_item_position, description",
+    "n_unique_action, len_list, dim_context, reward_type, random_state, n_rounds, reward_structure, click_model, eta, behavior_policy_function, reward_function, return_pscore_item_position, description",
     valid_input_of_obtain_batch_bandit_feedback,
 )
 def test_synthetic_slate_using_valid_inputs(
@@ -671,6 +788,7 @@ def test_synthetic_slate_using_valid_inputs(
     n_rounds,
     reward_structure,
     click_model,
+    eta,
     behavior_policy_function,
     reward_function,
     return_pscore_item_position,
@@ -683,6 +801,7 @@ def test_synthetic_slate_using_valid_inputs(
         reward_type=reward_type,
         reward_structure=reward_structure,
         click_model=click_model,
+        eta=eta,
         random_state=random_state,
         behavior_policy_function=behavior_policy_function,
         base_reward_function=reward_function,
@@ -812,14 +931,13 @@ def test_calc_on_policy_policy_value_using_valid_input_data(
     )
 
 
-# evaluation_policy_type, epsilon, context, action, random_state, err, description
+# evaluation_policy_type, epsilon, context, action, err, description
 invalid_input_of_generate_evaluation_policy_pscore = [
     (
         "awesome",  #
         1.0,
         np.ones([5, 2]),
         np.tile(np.arange(3), 5),
-        1.0,
         ValueError,
         "evaluation_policy_type must be",
     ),
@@ -828,7 +946,6 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         1.0,
         np.array([5, 2]),  #
         np.tile(np.arange(3), 5),
-        1.0,
         ValueError,
         "context must be 2-dimensional ndarray",
     ),
@@ -837,7 +954,6 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         1.0,
         np.ones([5, 2]),
         np.ones([5, 2]),  #
-        1,
         ValueError,
         "action must be 1-dimensional ndarray",
     ),
@@ -846,7 +962,6 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         1.0,
         np.ones([5, 2]),
         np.random.choice(5),  #
-        1,
         ValueError,
         "action must be 1-dimensional ndarray",
     ),
@@ -855,33 +970,38 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         1.0,
         np.ones([5, 2]),
         np.ones(5),  #
-        1,
         ValueError,
         "action must be 1-dimensional ndarray, shape (n_rounds * len_list)",
     ),
     (
         "optimal",
-        1.0,
+        "aaa",  #
         np.ones([5, 2]),
-        np.ones(15),  #
-        1,
-        ValueError,
-        "actions of each slate must not be duplicated",
+        np.tile(np.arange(3), 5),
+        TypeError,
+        "`epsilon` must be an instance of <class 'float'>, not <class 'str'>.",
     ),
     (
         "optimal",
         -1.0,  #
         np.ones([5, 2]),
         np.tile(np.arange(3), 5),
-        1,
         ValueError,
-        "",
+        "`epsilon`= -1.0, must be >= 0.0.",
+    ),
+    (
+        "optimal",
+        2.0,  #
+        np.ones([5, 2]),
+        np.tile(np.arange(3), 5),
+        ValueError,
+        "`epsilon`= 2.0, must be <= 1.0.",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_type, epsilon, context, action, random_state, err, description",
+    "evaluation_policy_type, epsilon, context, action, err, description",
     invalid_input_of_generate_evaluation_policy_pscore,
 )
 def test_generate_evaluation_policy_pscore_using_invalid_input_data(
@@ -889,7 +1009,6 @@ def test_generate_evaluation_policy_pscore_using_invalid_input_data(
     epsilon,
     context,
     action,
-    random_state,
     err,
     description,
 ) -> None:
@@ -907,24 +1026,13 @@ def test_generate_evaluation_policy_pscore_using_invalid_input_data(
         random_state=random_state,
         base_reward_function=logistic_reward_function,
     )
-    if description == "":
-        with pytest.raises(err):
-            _ = dataset.generate_evaluation_policy_pscore(
-                evaluation_policy_type=evaluation_policy_type,
-                epsilon=epsilon,
-                context=context,
-                action=action,
-                random_state=random_state,
-            )
-    else:
-        with pytest.raises(err, match=f"{description}*"):
-            _ = dataset.generate_evaluation_policy_pscore(
-                evaluation_policy_type=evaluation_policy_type,
-                epsilon=epsilon,
-                context=context,
-                action=action,
-                random_state=random_state,
-            )
+    with pytest.raises(err, match=f"{description}*"):
+        _ = dataset.generate_evaluation_policy_pscore(
+            evaluation_policy_type=evaluation_policy_type,
+            epsilon=epsilon,
+            context=context,
+            action=action,
+        )
 
 
 # evaluation_policy_type, epsilon, description
@@ -993,7 +1101,6 @@ def test_generate_evaluation_policy_pscore_using_valid_input_data(
     ) = dataset.generate_evaluation_policy_pscore(
         evaluation_policy_type=evaluation_policy_type,
         context=bandit_feedback["context"],
-        random_state=random_state,
         epsilon=epsilon,
         action=bandit_feedback["action"],
     )
@@ -1009,6 +1116,45 @@ def test_generate_evaluation_policy_pscore_using_valid_input_data(
         assert len(set(np.unique(pscore)) - set([0.0, 1.0])) == 0
         assert len(set(np.unique(pscore_item_position)) - set([0.0, 1.0])) == 0
         assert len(set(np.unique(pscore_cascade)) - set([0.0, 1.0])) == 0
+    # check pscores
+    assert (
+        pscore_cascade < pscore
+    ).sum() == 0, "pscore must be smaller than or equal to pscore_cascade"
+    assert (
+        pscore_item_position < pscore
+    ).sum() == 0, "pscore must be smaller than or equal to pscore_item_position"
+    assert (
+        pscore_item_position < pscore_cascade
+    ).sum() == 0, "pscore_cascade must be smaller than or equal to pscore_item_position"
+
+    # check slate bandit feedback (common test)
+    check_slate_bandit_feedback(bandit_feedback=bandit_feedback)
+    bandit_feedback_df = pd.DataFrame()
+    for column in ["slate_id", "position", "action"]:
+        bandit_feedback_df[column] = bandit_feedback[column]
+    bandit_feedback_df["pscore"] = pscore
+    bandit_feedback_df["pscore_cascade"] = pscore_cascade
+    bandit_feedback_df["pscore_item_position"] = pscore_item_position
+
+    previous_minimum_pscore_cascade = (
+        bandit_feedback_df.groupby("slate_id")["pscore_cascade"]
+        .expanding()
+        .min()
+        .values
+    )
+    assert (
+        previous_minimum_pscore_cascade < pscore_cascade
+    ).sum() == 0, "pscore_cascade must be non-decresing sequence in each slate"
+    count_pscore_in_expression = bandit_feedback_df.groupby("slate_id").apply(
+        lambda x: x["pscore"].unique().shape[0]
+    )
+    assert (
+        count_pscore_in_expression != 1
+    ).sum() == 0, "pscore must be unique in each slate"
+    last_slot_feedback_df = bandit_feedback_df.drop_duplicates("slate_id", keep="last")
+    assert (
+        last_slot_feedback_df["pscore"] != last_slot_feedback_df["pscore_cascade"]
+    ).sum() == 0, "pscore must be the same as pscore_cascade in the last slot"
 
 
 # n_unique_action, len_list, epsilon, action_2d, sorted_actions, random_pscore, random_pscore_item_position, random_pscore_cascade, true_pscore, true_pscore_item_position, true_pscore_cascade, description
@@ -1041,7 +1187,7 @@ valid_input_of_calc_epsilon_greedy_pscore = [
                 [0.1 / 5, 0.1 / 20, 0.1 / 60],
             ]
         ).flatten(),
-        "epsolon is 0.1",
+        "epsilon is 0.1",
     ),
 ]
 

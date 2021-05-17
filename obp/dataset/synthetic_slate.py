@@ -5,10 +5,10 @@
 from dataclasses import dataclass
 from typing import Optional, Callable, Tuple, Union, List
 from itertools import permutations
-from math import factorial
 
 import numpy as np
 from scipy.stats import truncnorm
+from scipy.special import perm
 from sklearn.utils import check_random_state, check_scalar
 from tqdm import tqdm
 
@@ -62,10 +62,19 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     click_model: str, default=None
         Type of click model, which must be one of None, 'pbm', or 'cascade'.
-        When None is given, reward of each slot is sampled based on the expected reward of the slot.
-        When 'pbm' is given, reward of each slot is sampled based on the position-based model.
-        When 'cascade' is given, reward of each slot is sampled based on the cascade model.
+        When None is given, reward at each slot is sampled based on the original expected rewards.
+        When 'pbm' is given, reward at each slot is sampled based on the position-based model.
+        When 'cascade' is given, reward at each slot is sampled based on the cascade model.
         When using some click model, 'continuous' reward type is unavailable.
+
+    eta: float, default=1.0
+        A hyperparameter to define the click models.
+        When click_model='pbm', then eta defines the examination probabilities of the position-based model.
+        For example, when eta=0.5, then the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
+        When click_model='cascade', then eta defines the position-dependent attractiveness parameters of the dependent click model
+        (an extension of the cascade model).
+        For example, when eta=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
+        When eta is very large, the click model induced by eta is close to the original cascade model.
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
@@ -154,6 +163,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     reward_type: str = "binary"
     reward_structure: str = "cascade_additive"
     click_model: Optional[str] = None
+    eta: float = 1.0
     base_reward_function: Optional[
         Callable[
             [np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray
@@ -208,14 +218,21 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 f"click_model must be one of 'cascade', 'pbm', or None, but {self.click_model} is given."
             )
         # set exam_weight (slot-level examination probability).
-        # When click_model is 'pbm', exam_weight is :math:`1 / k`, where :math:`k` is the position.
+        # When click_model is 'pbm', exam_weight is :math:`(1 / k)^{\\eta}`, where :math:`k` is the position.
         if self.click_model == "pbm":
-            self.exam_weight = 1.0 / np.arange(1, self.len_list + 1)
+            check_scalar(self.eta, name="eta", target_type=float, min_val=0.0)
+            self.exam_weight = (1.0 / np.arange(1, self.len_list + 1)) ** self.eta
+            self.attractiveness = np.ones(self.len_list, dtype=float)
+        elif self.click_model == "cascade":
+            check_scalar(self.eta, name="eta", target_type=float, min_val=0.0)
+            self.attractiveness = (1.0 / np.arange(1, self.len_list + 1)) ** self.eta
+            self.exam_weight = np.ones(self.len_list, dtype=float)
         else:
+            self.attractiveness = np.ones(self.len_list, dtype=float)
             self.exam_weight = np.ones(self.len_list, dtype=float)
         if self.click_model is not None and self.reward_type == "continuous":
             raise ValueError(
-                "continuous reward type is unavailable when click model is given"
+                "continuous outcome cannot be generated when click_model is given"
             )
         if self.reward_structure in ["cascade_additive", "standard_additive"]:
             # generate additive action interaction weight matrix of (n_unique_action, n_unique_action)
@@ -303,12 +320,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds: int,
         return_pscore_item_position: bool = True,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
-        """Sample action and obtain pscores.
+        """Sample action and obtain the three variants of the propensity scores.
 
         Parameters
         ------------
-        behavior_policy_logit_: array-like, shape (n_rounds, n_actiions)
-            Logit given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+        behavior_policy_logit_: array-like, shape (n_rounds, n_actions)
+            Logit values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
         n_rounds: int
             Number of rounds for synthetic bandit feedback data.
@@ -417,12 +434,22 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         """
         expected_reward_factual *= self.exam_weight
         if self.reward_type == "binary":
-            reward = np.array(
-                [
-                    self.random_.binomial(n=1, p=expected_reward_factual[:, position_])
-                    for position_ in np.arange(self.len_list)
-                ]
-            ).T
+            sampled_reward_list = list()
+            discount_factors = np.ones(expected_reward_factual.shape[0])
+            sampled_rewards_at_position = np.zeros(expected_reward_factual.shape[0])
+            for position_ in np.arange(self.len_list):
+                discount_factors *= sampled_rewards_at_position * self.attractiveness[
+                    position_
+                ] + (1 - sampled_rewards_at_position)
+                expected_reward_factual_at_position = (
+                    discount_factors * expected_reward_factual[:, position_]
+                )
+                sampled_rewards_at_position = self.random_.binomial(
+                    n=1, p=expected_reward_factual_at_position
+                )
+                sampled_reward_list.append(sampled_rewards_at_position)
+            reward = np.array(sampled_reward_list).T
+
         elif self.reward_type == "continuous":
             reward = np.zeros(expected_reward_factual.shape)
             for position_ in np.arange(self.len_list):
@@ -438,14 +465,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 )
         else:
             raise NotImplementedError
-        if self.click_model == "cascade":
-            argmax_first_slot = np.argmax(reward, axis=1)
-            for i, j in tqdm(
-                enumerate(argmax_first_slot),
-                desc="[sample_reward_of_cascade_model]",
-                total=reward.shape[0],
-            ):
-                reward[i, j + 1 :] = 0
         # return: array-like, shape (n_rounds, len_list)
         return reward
 
@@ -499,7 +518,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             and behavior_policy_logit_.shape == (n_rounds, self.n_unique_action)
         ):
             raise ValueError("behavior_policy_logit_ has an invalid shape")
-        # sample actions and calculate pscores
+        # sample actions and calculate the three variants of the propensity scores
         (
             action,
             pscore_cascade,
@@ -571,15 +590,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Parameters
         -----------
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t, k}`.
+            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         slate_id: array-like, shape (<= n_rounds * len_list,)
-            Slate id observed in each round of the logged bandit feedback.
+            Slate ids of the logged bandit feedback.
 
         Returns
         ----------
         policy_value: float
-            The policy value of the given reward and slate_id.
+            The on-policy policy value estimate of the behavior policy.
 
         """
         if not isinstance(reward, np.ndarray):
@@ -601,38 +620,31 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self,
         evaluation_policy_type: str,
         context: np.ndarray,
-        random_state: int,
-        epsilon: Optional[float] = 1.0,
         action: Optional[np.ndarray] = None,
-        slate_id: Optional[np.ndarray] = None,
-        position: Optional[np.ndarray] = None,
+        epsilon: Optional[float] = 1.0,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Generate pscores of three types of evaluation policies ('random', 'optimal', 'anti-optimal').
+        """Generate the three variants of the propensity scores of synthetic evaluation policies (such as 'random', 'optimal', 'anti-optimal').
 
         Parameters
         -----------
         evaluation_policy_type: str
             Type of evaluation policy, which must be one of 'optimal', 'anti-optimal', or 'random'.
-            When 'optimal' is given, we sort actions by their base expected rewards (outputs of `base_reward_function`) and extract top-L actions (L=`len_list`) for each slate.
-            When 'anti-optimal' is given, we sort actions by their base expected rewards (outputs of `base_reward_function`) and extract bottom-L actions (L=`len_list`) for each slate.
-            We calculate three propensity scores of the epsilon-greedy policy.
-            When 'random' is given, we calculate three propensity scores of the random policy.
+            When 'optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract top-L actions (L=`len_list`) for each slate.
+            When 'anti-optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract bottom-L actions (L=`len_list`) for each slate.
+            We calculate the three variants of the propensity scores (pscore, pscore_item_position, and pscore_cascade) of the epsilon-greedy policy when either 'optimal' or 'anti-optimal' is given.
+            When 'random' is given, we calculate the three variants of the propensity scores of the uniform random policy.
 
         context: array-like, shape (n_rounds, dim_context)
             Context vectors characterizing each round (such as user information).
 
-        random_state: int
-            Controls the random seed in sampling synthetic slate bandit dataset.
-
-        epsilon: float, default=1.
-            Exploration hyperparameter that must take value in the range of [0., 1.].
-            When evaluation_policy_type is 'random', this argument is unnecessary.
-
         action: array-like, shape (n_rounds * len_list,), default=None
             Actions sampled by a behavior policy.
             Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
-            When evaluation_policy_type is 'random', this argument is unnecessary.
+            When evaluation_policy_type is 'random', this is unnecessary.
 
+        epsilon: float, default=1.
+            Exploration hyperparameter that must take value in the range of [0., 1.].
+            When evaluation_policy_type is 'random', this is unnecessary.
 
         Returns
         ----------
@@ -657,26 +669,32 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError("context must be 2-dimensional ndarray")
 
         # [Caution]: OverflowError raises when integer division result is too large for a float
-        cascade_npr = [
-            factorial(self.n_unique_action) / factorial(self.n_unique_action - x - 1)
-            for x in np.arange(self.len_list)
-        ]
-        random_pscore = np.ones(context.shape[0] * self.len_list) / cascade_npr[-1]
+        random_pscore_cascade = (
+            1.0
+            / np.tile(
+                np.arange(
+                    self.n_unique_action, self.n_unique_action - self.len_list, -1
+                ),
+                (context.shape[0], 1),
+            )
+            .cumprod(axis=1)
+            .flatten()
+        )
+        random_pscore = np.ones(context.shape[0] * self.len_list) / perm(
+            self.n_unique_action, self.len_list
+        )
         random_pscore_item_position = (
             np.ones(context.shape[0] * self.len_list) / self.n_unique_action
         )
-        random_pscore_cascade = 1.0 / np.tile(cascade_npr, context.shape[0])
         if evaluation_policy_type == "random":
-            pscore = random_pscore
-            pscore_item_position = random_pscore_item_position
-            pscore_cascade = random_pscore_cascade
+            return random_pscore, random_pscore_item_position, random_pscore_cascade
 
         else:
             # base_expected_reward: array-like, shape (n_rounds, n_unique_action)
             base_expected_reward = self.base_reward_function(
                 context=context,
                 action_context=self.action_context,
-                random_state=random_state,
+                random_state=self.random_state,
             )
             if (
                 not isinstance(action, np.ndarray)
@@ -691,44 +709,30 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 raise ValueError(
                     "the size of axis 0 of context must be the same as that of action_2d"
                 )
-            if set([np.unique(x).shape[0] for x in action_2d]) != set([self.len_list]):
-                raise ValueError("actions of each slate must not be duplicated")
 
             check_scalar(
                 epsilon, name="epsilon", target_type=(float), min_val=0.0, max_val=1.0
             )
             if evaluation_policy_type == "optimal":
                 sorted_actions = base_expected_reward.argsort(axis=1)[
-                    :, -self.len_list :
-                ]
-                (
-                    pscore,
-                    pscore_item_position,
-                    pscore_cascade,
-                ) = self._calc_epsilon_greedy_pscore(
-                    epsilon=epsilon,
-                    action_2d=action_2d,
-                    sorted_actions=sorted_actions,
-                    random_pscore=random_pscore,
-                    random_pscore_item_position=random_pscore_item_position,
-                    random_pscore_cascade=random_pscore_cascade,
-                )
-            else:
-                sorted_actions = base_expected_reward.argsort(axis=1)[
                     :, : self.len_list
                 ]
-                (
-                    pscore,
-                    pscore_item_position,
-                    pscore_cascade,
-                ) = self._calc_epsilon_greedy_pscore(
-                    epsilon=epsilon,
-                    action_2d=action_2d,
-                    sorted_actions=sorted_actions,
-                    random_pscore=random_pscore,
-                    random_pscore_item_position=random_pscore_item_position,
-                    random_pscore_cascade=random_pscore_cascade,
-                )
+            else:
+                sorted_actions = base_expected_reward.argsort(axis=1)[
+                    :, -self.len_list :
+                ]
+            (
+                pscore,
+                pscore_item_position,
+                pscore_cascade,
+            ) = self._calc_epsilon_greedy_pscore(
+                epsilon=epsilon,
+                action_2d=action_2d,
+                sorted_actions=sorted_actions,
+                random_pscore=random_pscore,
+                random_pscore_item_position=random_pscore_item_position,
+                random_pscore_cascade=random_pscore_cascade,
+            )
         return pscore, pscore_item_position, pscore_cascade
 
     def _calc_epsilon_greedy_pscore(
@@ -740,7 +744,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         random_pscore_item_position: np.ndarray,
         random_pscore_cascade: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Calculate pscores given action_2d, sorted_actions, and random pscores.
+        """Calculate the three variants of the propensity scores of synthetic evaluation policies based on the epsilon-greedy rule.
 
         Parameters
         -----------
@@ -786,11 +790,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError("action_2d must be 2-dimensional ndarray")
         if set([np.unique(x).shape[0] for x in action_2d]) != set([self.len_list]):
             raise ValueError("actions of each slate must not be duplicated")
-        match_action_flg = sorted_actions == action_2d
-        pscore_flg = np.repeat(match_action_flg.all(axis=1), self.len_list)
-        pscore_item_position_flg = match_action_flg.flatten()
-        pscore_cascade_flg = match_action_flg.cumprod(axis=1).flatten()
-        # calculate pscores
+        action_match_flag = sorted_actions == action_2d
+        pscore_flg = np.repeat(action_match_flag.all(axis=1), self.len_list)
+        pscore_item_position_flg = action_match_flag.flatten()
+        pscore_cascade_flg = action_match_flag.cumprod(axis=1).flatten()
+        # calculate the three variants of the propensity scores based on the given epsilon value
         pscore = pscore_flg * (1 - epsilon) + epsilon * random_pscore
         pscore_item_position = (
             pscore_item_position_flg * (1 - epsilon)
