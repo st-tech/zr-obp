@@ -19,6 +19,7 @@ from obp.utils import sigmoid
 # resolve ImportMismatchError when using virtual environment
 os.environ["PY_IGNORE_IMPORTMISMATCH"] = "1"
 
+
 # generate synthetic dataset using SyntheticBanditDataset
 @pytest.fixture(scope="session")
 def synthetic_bandit_feedback() -> BanditFeedback:
