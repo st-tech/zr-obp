@@ -339,14 +339,14 @@ def check_ope_inputs(
             raise ValueError("pscore must be positive")
 
 
-def check_sips_ope_inputs(
+def check_sips_inputs(
     slate_id: np.ndarray,
     reward: np.ndarray,
     position: np.ndarray,
     pscore: np.ndarray,
     evaluation_policy_pscore: np.ndarray,
 ) -> Optional[ValueError]:
-    """Check inputs for sips ope.
+    """Check inputs of SlateStandardIPS.
 
     Parameters
     -----------
@@ -393,8 +393,8 @@ def check_sips_ope_inputs(
         raise ValueError("evaluation_policy_pscore must be ndarray")
     if evaluation_policy_pscore.ndim != 1:
         raise ValueError("evaluation_policy_pscore must be 1-dimensional")
-    if np.any(evaluation_policy_pscore <= 0) or np.any(evaluation_policy_pscore > 1):
-        raise ValueError("evaluation_policy_pscore must be in the range of (0, 1]")
+    if np.any(evaluation_policy_pscore < 0) or np.any(evaluation_policy_pscore > 1):
+        raise ValueError("evaluation_policy_pscore must be in the range of [0, 1]")
 
     # slate id
     if not isinstance(slate_id, np.ndarray):
@@ -437,14 +437,14 @@ def check_sips_ope_inputs(
         raise ValueError("evaluation_policy_pscore must be unique in each slate")
 
 
-def check_iips_ope_inputs(
+def check_iips_inputs(
     slate_id: np.ndarray,
     reward: np.ndarray,
     position: np.ndarray,
     pscore_item_position: np.ndarray,
     evaluation_policy_pscore_item_position: np.ndarray,
 ) -> Optional[ValueError]:
-    """Check inputs for sips ope.
+    """Check inputs of SlateIndependentIPS.
 
     Parameters
     -----------
@@ -491,11 +491,11 @@ def check_iips_ope_inputs(
         raise ValueError("evaluation_policy_pscore_item_position must be ndarray")
     if evaluation_policy_pscore_item_position.ndim != 1:
         raise ValueError("evaluation_policy_pscore_item_position must be 1-dimensional")
-    if np.any(evaluation_policy_pscore_item_position <= 0) or np.any(
+    if np.any(evaluation_policy_pscore_item_position < 0) or np.any(
         evaluation_policy_pscore_item_position > 1
     ):
         raise ValueError(
-            "evaluation_policy_pscore_item_position must be in the range of (0, 1]"
+            "evaluation_policy_pscore_item_position must be in the range of [0, 1]"
         )
 
     # slate id
@@ -524,14 +524,14 @@ def check_iips_ope_inputs(
         raise ValueError("position must not be duplicated in each slate")
 
 
-def check_rips_ope_inputs(
+def check_rips_inputs(
     slate_id: np.ndarray,
     reward: np.ndarray,
     position: np.ndarray,
     pscore_cascade: np.ndarray,
     evaluation_policy_pscore_cascade: np.ndarray,
 ) -> Optional[ValueError]:
-    """Check inputs for sips ope.
+    """Check inputs of SlateRewardInteractionIPS.
 
     Parameters
     -----------
@@ -578,11 +578,11 @@ def check_rips_ope_inputs(
         raise ValueError("evaluation_policy_pscore_cascade must be ndarray")
     if evaluation_policy_pscore_cascade.ndim != 1:
         raise ValueError("evaluation_policy_pscore_cascade must be 1-dimensional")
-    if np.any(evaluation_policy_pscore_cascade <= 0) or np.any(
+    if np.any(evaluation_policy_pscore_cascade < 0) or np.any(
         evaluation_policy_pscore_cascade > 1
     ):
         raise ValueError(
-            "evaluation_policy_pscore_cascade must be in the range of (0, 1]"
+            "evaluation_policy_pscore_cascade must be in the range of [0, 1]"
         )
 
     # slate id

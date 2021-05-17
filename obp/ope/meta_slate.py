@@ -26,7 +26,7 @@ class SlateOffPolicyEvaluation:
     Parameters
     -----------
     bandit_feedback: BanditFeedback
-        Logged bandit feedback data used for off-policy evaluation.
+        Logged bandit feedback data used for off-policy evaluation for the slate recommendation setting.
 
     ope_estimators: List[BaseSlateOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
