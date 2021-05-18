@@ -1238,6 +1238,7 @@ def test_calc_epsilon_greedy_pscore_using_valid_input_data(
     assert np.allclose(true_pscore_item_position, pscore_item_position)
     assert np.allclose(true_pscore_cascade, pscore_cascade)
 
+
 # n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, description
 valid_input_of_calc_ground_truth_policy_value = [
     (
@@ -1248,7 +1249,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "independent",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
     (
@@ -1259,7 +1260,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "independent",
         None,
-        np.array([[1,2], [3,4], [5,6]]),
+        np.array([[1, 2], [3, 4], [5, 6]]),
         None
     ),
     (
@@ -1270,7 +1271,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "cascade_decay",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
     (
@@ -1281,7 +1282,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "cascade_additive",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
     (
@@ -1292,7 +1293,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "standard_decay",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
     (
@@ -1303,7 +1304,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "standard_additive",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
     (
@@ -1314,7 +1315,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "continuous",
         "cascade_decay",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
     (
@@ -1325,7 +1326,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "cascade_decay",
         "pbm",
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
     (
@@ -1336,10 +1337,12 @@ valid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "cascade_decay",
         "cascade",
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None
     ),
 ]
+
+
 @pytest.mark.parametrize("n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, description", valid_input_of_calc_ground_truth_policy_value)
 def test_calc_ground_truth_policy_value_using_valid_input_data(n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, description):
     dataset = SyntheticSlateBanditDataset(
@@ -1360,6 +1363,7 @@ def test_calc_ground_truth_policy_value_using_valid_input_data(n_rounds, n_uniqu
     )
     assert isinstance(policy_value, float) and 0 <= policy_value
 
+
 def test_calc_ground_truth_policy_value_value_check():
     n_rounds = 3
     n_unique_action = 4
@@ -1367,7 +1371,7 @@ def test_calc_ground_truth_policy_value_value_check():
     dim_context = 3
     reward_type = "binary"
     reward_structure = "cascade_additive"
-    evaluation_policy_logit = np.array([[1,2,3,4], [5,6,7,8], [3,4,5,6]])
+    evaluation_policy_logit = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [3, 4, 5, 6]])
 
     dataset_none = SyntheticSlateBanditDataset(
         n_unique_action=n_unique_action,
@@ -1437,8 +1441,8 @@ invalid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "independent",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
-        np.ones((3,2)),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
         None
     ),
     (
@@ -1449,8 +1453,8 @@ invalid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "independent",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
-        np.ones((3,2)),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
         None
     ),
     (
@@ -1461,8 +1465,8 @@ invalid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "independent",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
-        np.ones((3,2)),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
         None
     ),
     (
@@ -1473,11 +1477,13 @@ invalid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "independent",
         None,
-        np.array([[1,2,3], [4,5,6], [7,8,9], [1,2,3]]),
-        np.ones((3,2)),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
         None
     ),
 ]
+
+
 @pytest.mark.parametrize("n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description", invalid_input_of_calc_ground_truth_policy_value)
 def test_calc_ground_truth_policy_value_using_invalid_input_data(n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description):
     dataset = SyntheticSlateBanditDataset(
