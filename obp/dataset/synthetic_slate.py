@@ -1262,5 +1262,5 @@ def inverse_decay_function(distance: np.ndarray) -> np.ndarray:
 
     """
     if not isinstance(distance, np.ndarray) or distance.ndim != 1:
-        raise ValueError("distance must be 2-dimensional ndarray")
+        raise ValueError("distance must be 1-dimensional ndarray")
     return 1 / (distance + 1)
