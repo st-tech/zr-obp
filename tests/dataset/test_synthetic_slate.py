@@ -1250,7 +1250,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "independent",
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
     (
         3,
@@ -1261,7 +1261,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "independent",
         None,
         np.array([[1, 2], [3, 4], [5, 6]]),
-        None
+        None,
     ),
     (
         4,
@@ -1272,7 +1272,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "cascade_decay",
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
     (
         4,
@@ -1283,7 +1283,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "cascade_additive",
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
     (
         4,
@@ -1294,7 +1294,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "standard_decay",
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
     (
         4,
@@ -1305,7 +1305,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "standard_additive",
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
     (
         4,
@@ -1316,7 +1316,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "cascade_decay",
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
     (
         4,
@@ -1327,7 +1327,7 @@ valid_input_of_calc_ground_truth_policy_value = [
         "cascade_decay",
         "pbm",
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
     (
         4,
@@ -1338,13 +1338,26 @@ valid_input_of_calc_ground_truth_policy_value = [
         "cascade_decay",
         "cascade",
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        None
+        None,
     ),
 ]
 
 
-@pytest.mark.parametrize("n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, description", valid_input_of_calc_ground_truth_policy_value)
-def test_calc_ground_truth_policy_value_using_valid_input_data(n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, description):
+@pytest.mark.parametrize(
+    "n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, description",
+    valid_input_of_calc_ground_truth_policy_value,
+)
+def test_calc_ground_truth_policy_value_using_valid_input_data(
+    n_rounds,
+    n_unique_action,
+    len_list,
+    dim_context,
+    reward_type,
+    reward_structure,
+    click_model,
+    evaluation_policy_logit,
+    description,
+):
     dataset = SyntheticSlateBanditDataset(
         n_unique_action=n_unique_action,
         len_list=len_list,
@@ -1354,9 +1367,7 @@ def test_calc_ground_truth_policy_value_using_valid_input_data(n_rounds, n_uniqu
         click_model=click_model,
         base_reward_function=logistic_reward_function,
     )
-    logged_bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds
-    )
+    logged_bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     policy_value = dataset.calc_ground_truth_policy_value(
         evaluation_policy_logit=evaluation_policy_logit,
         context=logged_bandit_feedback["context"],
@@ -1443,7 +1454,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
-        None
+        None,
     ),
     (
         4,
@@ -1455,7 +1466,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
-        None
+        None,
     ),
     (
         3,
@@ -1467,7 +1478,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
-        None
+        None,
     ),
     (
         3,
@@ -1479,13 +1490,27 @@ invalid_input_of_calc_ground_truth_policy_value = [
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
-        None
+        None,
     ),
 ]
 
 
-@pytest.mark.parametrize("n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description", invalid_input_of_calc_ground_truth_policy_value)
-def test_calc_ground_truth_policy_value_using_invalid_input_data(n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description):
+@pytest.mark.parametrize(
+    "n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description",
+    invalid_input_of_calc_ground_truth_policy_value,
+)
+def test_calc_ground_truth_policy_value_using_invalid_input_data(
+    n_rounds,
+    n_unique_action,
+    len_list,
+    dim_context,
+    reward_type,
+    reward_structure,
+    click_model,
+    evaluation_policy_logit,
+    context,
+    description,
+):
     dataset = SyntheticSlateBanditDataset(
         n_unique_action=n_unique_action,
         len_list=len_list,
@@ -1495,9 +1520,7 @@ def test_calc_ground_truth_policy_value_using_invalid_input_data(n_rounds, n_uni
         click_model=click_model,
         base_reward_function=logistic_reward_function,
     )
-    _ = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds
-    )
+    _ = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     with pytest.raises(ValueError):
         dataset.calc_ground_truth_policy_value(
             evaluation_policy_logit=evaluation_policy_logit,

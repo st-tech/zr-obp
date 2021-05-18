@@ -666,7 +666,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Context vectors characterizing each round (such as user information).
 
         """
-        if not isinstance(evaluation_policy_logit, np.ndarray) or evaluation_policy_logit.ndim != 2:
+        if (
+            not isinstance(evaluation_policy_logit, np.ndarray)
+            or evaluation_policy_logit.ndim != 2
+        ):
             raise ValueError("evaluation_policy_logit must be 2-dimensional ndarray")
         if evaluation_policy_logit.shape[1] != self.n_unique_action:
             raise ValueError(
