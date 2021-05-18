@@ -319,7 +319,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def calc_pscore_given_action_list(
         self, action_list: List[int], policy_logit_i_: np.ndarray
     ) -> float:
-        """Calculate the propensity score given combinatorial set of actions."""
+        """Calculate the propensity score given combinatorial set of actions.
+
+        Parameters
+        ------------
+        action_list: List[int], len=len_list
+            List of combinatorial set of slate actions.
+
+        policy_logit_i_: array-like, (n_unique_action, )
+            Logit values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        """
         unique_action_set = np.arange(self.n_unique_action)
         pscore_ = 1.0
         for action in action_list:
@@ -648,7 +658,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return reward.sum() / np.unique(slate_id).shape[0]
 
     def calc_ground_truth_policy_value(
-        self, evaluation_policy_logit: np.ndarray, context: np.adarray
+        self, evaluation_policy_logit: np.ndarray, context: np.ndarray
     ):
         """Calculate the ground-truth policy value of given evaluation policy logit and context
 
@@ -1238,14 +1248,12 @@ def exponential_decay_function(distance: np.ndarray) -> np.ndarray:
 
     Parameters
     -----------
-    distance: array-like, shape (len_list, len_list)
+    distance: array-like, shape (len_list, )
         Distance between two slots.
 
     """
-    if not isinstance(distance, np.ndarray) or distance.ndim != 2:
-        raise ValueError("distance must be 2-dimensional ndarray")
-    if not distance.shape[0] != distance.shape[1]:
-        raise ValueError("the size in axis 0 and axis 1 of distance must be same")
+    if not isinstance(distance, np.ndarray) or distance.ndim != 1:
+        raise ValueError("distance must be 1-dimensional ndarray")
     return np.exp(-distance)
 
 
@@ -1254,12 +1262,10 @@ def inverse_decay_function(distance: np.ndarray) -> np.ndarray:
 
     Parameters
     -----------
-    distance: array-like, shape (len_list, len_list)
+    distance: array-like, shape (len_list, )
         Distance between two slots.
 
     """
-    if not isinstance(distance, np.ndarray) or distance.ndim != 2:
+    if not isinstance(distance, np.ndarray) or distance.ndim != 1:
         raise ValueError("distance must be 2-dimensional ndarray")
-    if not distance.shape[0] != distance.shape[1]:
-        raise ValueError("the size in axis 0 and axis 1 of distance must be same")
     return 1 / (distance + 1)
