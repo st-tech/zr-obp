@@ -720,13 +720,3 @@ def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     numerator = np.exp(x - b)
     denominator = np.sum(numerator, axis=1)[:, np.newaxis]
     return numerator / denominator
-
-
-def exponential_decay_function(distance: np.ndarray) -> np.ndarray:
-    """Calculate exponential discount factor."""
-    return np.exp(-distance)
-
-
-def inverse_decay_function(distance: np.ndarray) -> np.ndarray:
-    """Calculate inverse discount factor."""
-    return 1 / (distance + 1)
