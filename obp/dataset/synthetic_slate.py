@@ -316,7 +316,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             action_interaction_weight_matrix[position_, position_] = 1
         return action_interaction_weight_matrix
 
-    def calc_pscore_given_action_list(
+    def _calc_pscore_given_action_list(
         self, action_list: List[int], policy_logit_i_: np.ndarray
     ) -> float:
         """Calculate the propensity score given combinatorial set of actions.
@@ -425,7 +425,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                             if sampled_action != action_list[position_]:
                                 continue
                             pscore_item_position_i_l += (
-                                self.calc_pscore_given_action_list(
+                                self._calc_pscore_given_action_list(
                                     action_list=action_list,
                                     policy_logit_i_=behavior_policy_logit_[i : i + 1],
                                 )
@@ -509,7 +509,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def obtain_batch_bandit_feedback(
         self,
         n_rounds: int,
-        tau: Union[int, float] = 1.0,
         return_pscore_item_position: bool = True,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
@@ -518,10 +517,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         ----------
         n_rounds: int
             Number of rounds for synthetic bandit feedback data.
-
-        tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
-            As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
@@ -671,13 +666,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Context vectors characterizing each round (such as user information).
 
         """
-        if not isinstance(evaluation_policy_logit) or evaluation_policy_logit.ndim != 2:
+        if not isinstance(evaluation_policy_logit, np.ndarray) or evaluation_policy_logit.ndim != 2:
             raise ValueError("evaluation_policy_logit must be 2-dimensional ndarray")
         if evaluation_policy_logit.shape[1] != self.n_unique_action:
             raise ValueError(
                 "the size of axis 1 of evaluation_policy_logit must be the same as n_unique_action"
             )
-        if not isinstance(context) or context.ndim != 2:
+        if not isinstance(context, np.ndarray) or context.ndim != 2:
             raise ValueError("context must be 2-dimensional ndarray")
         if context.shape[1] != self.dim_context:
             raise ValueError(
@@ -691,7 +686,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds = len(evaluation_policy_logit)
         policy_value = 0
 
-        for i in n_rounds:
+        for i in range(n_rounds):
             enumerated_slate_actions = [
                 _ for _ in permutations(np.arange(self.n_unique_action), self.len_list)
             ]
@@ -730,7 +725,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 expected_slate_rewards = self.reward_function(
                     context=np.tile(context[i], (n_slate_actions, 1)),
                     action_context=self.action_context,
-                    action=n_slate_actions,
+                    action=np.array(enumerated_slate_actions).flatten(),
                     action_interaction_weight_matrix=self.action_interaction_weight_matrix,
                     base_reward_function=self.base_reward_function,
                     is_cascade="cascade" in self.reward_structure,
@@ -759,7 +754,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     )
                     previous_slot_expected_reward = expected_slate_rewards[:, position_]
 
-            policy_value += pscores * expected_slate_rewards.sum(axis=1)
+            policy_value += (pscores * expected_slate_rewards.sum(axis=1)).sum()
 
         return policy_value / n_rounds
 
