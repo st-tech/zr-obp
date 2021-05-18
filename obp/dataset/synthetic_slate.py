@@ -316,10 +316,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             action_interaction_weight_matrix[position_, position_] = 1
         return action_interaction_weight_matrix
 
-    def calc_item_position_pscore(
+    def calc_pscore_given_action_list(
         self, action_list: List[int], behavior_policy_logit_i_: np.ndarray
     ) -> float:
-        """Calculate the marginal propensity score, i.e., the probability that an action (specified by action_list) is presented at a position."""
+        """Calculate the propensity score given combinatorial set of actions."""
         unique_action_set = np.arange(self.n_unique_action)
         pscore_ = 1.0
         for action in action_list:
@@ -414,11 +414,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         ):
                             if sampled_action != action_list[position_]:
                                 continue
-                            pscore_item_position_i_l += self.calc_item_position_pscore(
-                                action_list=action_list,
-                                behavior_policy_logit_i_=behavior_policy_logit_[
-                                    i : i + 1
-                                ],
+                            pscore_item_position_i_l += (
+                                self.calc_pscore_given_action_list(
+                                    action_list=action_list,
+                                    behavior_policy_logit_i_=behavior_policy_logit_[
+                                        i : i + 1
+                                    ],
+                                )
                             )
                     pscore_item_position[
                         i * self.len_list + position_
@@ -430,9 +432,20 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return action, pscore_cascade, pscore, pscore_item_position
 
-    def sample_contextfree_expected_reward(self) -> np.ndarray:
-        """Sample expected reward for each action and slot from the uniform distribution"""
-        return self.random_.uniform(size=(self.n_unique_action, self.len_list))
+    def sample_contextfree_expected_reward(
+        self, random_state: Optional[int] = None
+    ) -> np.ndarray:
+        """Sample expected reward for each action and slot from the uniform distribution
+
+        Parameters
+        -----------
+
+        random_state: int, default=None
+            Controls the random seed in sampling dataset.
+
+        """
+        random_ = check_random_state(random_state)
+        return random_.uniform(size=(self.n_unique_action, self.len_list))
 
     def sample_reward_given_expected_reward(
         self, expected_reward_factual: np.ndarray
@@ -548,7 +561,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         )
         # sample expected reward factual
         if self.base_reward_function is None:
-            expected_reward = self.sample_contextfree_expected_reward()
+            expected_reward = self.sample_contextfree_expected_reward(
+                random_state=self.random_state
+            )
             expected_reward_tile = np.tile(expected_reward, (n_rounds, 1, 1))
             # action_2d: array-like, shape (n_rounds, len_list)
             action_2d = action.reshape((n_rounds, self.len_list))
@@ -633,6 +648,100 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
 
         return reward.sum() / np.unique(slate_id).shape[0]
+
+    def calc_ground_truth_policy_value(
+        self, evaluation_policy_logit: np.ndarray, context: np.adarray
+    ):
+        """Calculate the ground-truth policy value of given evaluation policy logit and context
+
+        Parameters
+        -----------
+        evaluation_policy_logit: array-like, shape (n_rounds, n_actions)
+            Evaluation policy function generating logit value of each action in action space.
+
+        context: array-like, shape (n_rounds, dim_context)
+            Context vectors characterizing each round (such as user information).
+
+        """
+        n_rounds = len(evaluation_policy_logit)
+        policy_value = 0
+
+        for i in n_rounds:
+            enumerated_slate_actions = np.array(
+                [
+                    _
+                    for _ in permutations(
+                        np.arange(self.n_unique_action), self.len_list
+                    )
+                ]
+            )
+            n_slate_actions = len(enumerated_slate_actions)
+
+            # calculate pscore for each combinatorial set of items (i.e., slate actions)
+            pscores = []
+            for action_list in enumerated_slate_actions:
+                pscores.append(
+                    self._calc_pscore_given_action_list(
+                        action_list=action_list,
+                        policy_logit_i_=evaluation_policy_logit[i : i + 1],
+                    )
+                )
+            pscores = np.array(pscores)
+
+            # calculate expected slate-level reward for each combinatorial set of items (i.e., slate actions)
+            if self.base_reward_function is None:
+                expected_slot_reward = self.sample_contextfree_expected_reward(
+                    random_state=self.random_state
+                )
+                expected_slot_reward_tile = np.tile(
+                    expected_slot_reward, (n_slate_actions, 1, 1)
+                )
+                expected_slate_rewards = np.array(
+                    [
+                        expected_slot_reward_tile[
+                            np.arange(n_slate_actions),
+                            enumerated_slate_actions[:, position_],
+                            position_,
+                        ]
+                        for position_ in np.arange(self.len_list)
+                    ]
+                ).T
+            else:
+                expected_slate_rewards = self.reward_function(
+                    context=np.tile(context[i], (n_slate_actions, 1)),
+                    action_context=self.action_context,
+                    action=n_slate_actions,
+                    action_interaction_weight_matrix=self.action_interaction_weight_matrix,
+                    base_reward_function=self.base_reward_function,
+                    is_cascade="cascade" in self.reward_structure,
+                    reward_type=self.reward_type,
+                    len_list=self.len_list,
+                    random_state=self.random_state,
+                )
+            expected_slate_rewards = np.clip(
+                expected_slate_rewards, 0, None
+            )  # (n_slate_actions, self.len_list)
+
+            # click models based on expected reward
+            expected_slate_rewards *= self.exam_weight
+            if self.reward_type == "binary":
+                discount_factors = np.ones(expected_slate_rewards.shape[0])
+                previous_slot_expected_reward = np.zeros(
+                    expected_slate_rewards.shape[0]
+                )
+                for position_ in np.arange(self.len_list):
+                    discount_factors *= (
+                        previous_slot_expected_reward * self.attractiveness[position_]
+                        + (1 - previous_slot_expected_reward)
+                    )
+                    expected_slate_rewards[:, position_] = (
+                        discount_factors * expected_slate_rewards[:, position_]
+                    )
+                    previous_slot_expected_reward = expected_slate_rewards[:, position_]
+
+            policy_value += pscores * expected_slate_rewards.sum(axis=1)
+
+        return policy_value / n_rounds
 
     def generate_evaluation_policy_pscore(
         self,
@@ -1112,3 +1221,17 @@ def linear_behavior_policy_logit(
         logits[:, d] = context @ coef_ + action_context[d] @ action_coef_
 
     return logits / tau
+
+
+def exponential_decay_function(distance: np.ndarray) -> np.ndarray:
+    """Calculate exponential discount factor.
+    TODO
+    """
+    return np.exp(-distance)
+
+
+def inverse_decay_function(distance: np.ndarray) -> np.ndarray:
+    """Calculate inverse discount factor.
+    TODO
+    """
+    return 1 / (distance + 1)
