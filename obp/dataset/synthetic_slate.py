@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import softmax, sigmoid, exponential_decay_function, inverse_decay_function
+from ..utils import softmax, sigmoid
 
 
 @dataclass
@@ -317,13 +317,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return action_interaction_weight_matrix
 
     def calc_pscore_given_action_list(
-        self, action_list: List[int], behavior_policy_logit_i_: np.ndarray
+        self, action_list: List[int], policy_logit_i_: np.ndarray
     ) -> float:
         """Calculate the propensity score given combinatorial set of actions."""
         unique_action_set = np.arange(self.n_unique_action)
         pscore_ = 1.0
         for action in action_list:
-            score_ = softmax(behavior_policy_logit_i_[:, unique_action_set])[0]
+            score_ = softmax(policy_logit_i_[:, unique_action_set])[0]
             action_index = np.where(unique_action_set == action)[0][0]
             pscore_ *= score_[action_index]
             unique_action_set = np.delete(
@@ -417,9 +417,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                             pscore_item_position_i_l += (
                                 self.calc_pscore_given_action_list(
                                     action_list=action_list,
-                                    behavior_policy_logit_i_=behavior_policy_logit_[
-                                        i : i + 1
-                                    ],
+                                    policy_logit_i_=behavior_policy_logit_[i : i + 1],
                                 )
                             )
                     pscore_item_position[
@@ -656,25 +654,37 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Parameters
         -----------
-        evaluation_policy_logit: array-like, shape (n_rounds, n_actions)
+        evaluation_policy_logit: array-like, shape (n_rounds, n_unique_action)
             Evaluation policy function generating logit value of each action in action space.
 
         context: array-like, shape (n_rounds, dim_context)
             Context vectors characterizing each round (such as user information).
 
         """
+        if not isinstance(evaluation_policy_logit) or evaluation_policy_logit.ndim != 2:
+            raise ValueError("evaluation_policy_logit must be 2-dimensional ndarray")
+        if evaluation_policy_logit.shape[1] != self.n_unique_action:
+            raise ValueError(
+                "the size of axis 1 of evaluation_policy_logit must be the same as n_unique_action"
+            )
+        if not isinstance(context) or context.ndim != 2:
+            raise ValueError("context must be 2-dimensional ndarray")
+        if context.shape[1] != self.dim_context:
+            raise ValueError(
+                "the size of axis 1 of context must be the same as dim_context"
+            )
+        if evaluation_policy_logit.shape[0] != context.shape[0]:
+            raise ValueError(
+                "the length of evaluation_policy_logit and context must be same"
+            )
+
         n_rounds = len(evaluation_policy_logit)
         policy_value = 0
 
         for i in n_rounds:
-            enumerated_slate_actions = np.array(
-                [
-                    _
-                    for _ in permutations(
-                        np.arange(self.n_unique_action), self.len_list
-                    )
-                ]
-            )
+            enumerated_slate_actions = [
+                _ for _ in permutations(np.arange(self.n_unique_action), self.len_list)
+            ]
             n_slate_actions = len(enumerated_slate_actions)
 
             # calculate pscore for each combinatorial set of items (i.e., slate actions)
@@ -1224,14 +1234,32 @@ def linear_behavior_policy_logit(
 
 
 def exponential_decay_function(distance: np.ndarray) -> np.ndarray:
-    """Calculate exponential discount factor.
-    TODO
+    """Calculate exponential discount factor for action interaction weight matrix.
+
+    Parameters
+    -----------
+    distance: array-like, shape (len_list, len_list)
+        Distance between two slots.
+
     """
+    if not isinstance(distance, np.ndarray) or distance.ndim != 2:
+        raise ValueError("distance must be 2-dimensional ndarray")
+    if not distance.shape[0] != distance.shape[1]:
+        raise ValueError("the size in axis 0 and axis 1 of distance must be same")
     return np.exp(-distance)
 
 
 def inverse_decay_function(distance: np.ndarray) -> np.ndarray:
-    """Calculate inverse discount factor.
-    TODO
+    """Calculate inverse discount factor for action interaction weight matrix.
+
+    Parameters
+    -----------
+    distance: array-like, shape (len_list, len_list)
+        Distance between two slots.
+
     """
+    if not isinstance(distance, np.ndarray) or distance.ndim != 2:
+        raise ValueError("distance must be 2-dimensional ndarray")
+    if not distance.shape[0] != distance.shape[1]:
+        raise ValueError("the size in axis 0 and axis 1 of distance must be same")
     return 1 / (distance + 1)
