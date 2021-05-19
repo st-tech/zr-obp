@@ -569,13 +569,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "binary",
         123,
         1000,
-        "cascade_exponential",
+        "cascade_decay",
         None,
         0.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
-        "cascade_exponential (binary reward)",
+        "cascade_decay (binary reward)",
     ),
     (
         10,
@@ -584,13 +584,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "continuous",
         123,
         1000,
-        "cascade_exponential",
+        "cascade_decay",
         None,
         0.0,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
-        "cascade_exponential (continuous reward)",
+        "cascade_decay (continuous reward)",
     ),
     (
         10,
@@ -599,13 +599,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "binary",
         123,
         1000,
-        "standard_exponential",
+        "standard_decay",
         None,
         0.0,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
-        "standard_exponential (binary reward)",
+        "standard_decay (binary reward)",
     ),
     (
         10,
@@ -614,13 +614,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "continuous",
         123,
         1000,
-        "standard_exponential",
+        "standard_decay",
         None,
         0.0,
         linear_behavior_policy_logit,
         linear_reward_function,
         False,
-        "standard_exponential (continuous reward)",
+        "standard_decay (continuous reward)",
     ),
     (
         10,
@@ -644,13 +644,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "binary",
         123,
         1000,
-        "cascade_exponential",
+        "cascade_decay",
         "cascade",
         0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
-        "cascade_exponential, cascade click model (binary reward)",
+        "cascade_decay, cascade click model (binary reward)",
     ),
     (
         10,
@@ -674,13 +674,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "binary",
         123,
         1000,
-        "standard_exponential",
+        "standard_decay",
         "cascade",
         0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
-        "standard_exponential, cascade click model (binary reward)",
+        "standard_decay, cascade click model (binary reward)",
     ),
     (
         10,
@@ -719,13 +719,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "binary",
         123,
         1000,
-        "cascade_exponential",
+        "cascade_decay",
         "pbm",
         0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
-        "cascade_exponential, pbm click model (binary reward)",
+        "cascade_decay, pbm click model (binary reward)",
     ),
     (
         10,
@@ -749,13 +749,13 @@ valid_input_of_obtain_batch_bandit_feedback = [
         "binary",
         123,
         1000,
-        "standard_exponential",
+        "standard_decay",
         "pbm",
         0.5,
         linear_behavior_policy_logit,
         logistic_reward_function,
         False,
-        "standard_exponential, pbm click model (binary reward)",
+        "standard_decay, pbm click model (binary reward)",
     ),
     (
         10,
@@ -1237,3 +1237,380 @@ def test_calc_epsilon_greedy_pscore_using_valid_input_data(
     assert np.allclose(true_pscore, pscore)
     assert np.allclose(true_pscore_item_position, pscore_item_position)
     assert np.allclose(true_pscore_cascade, pscore_cascade)
+
+
+# n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, base_reward_function, evaluation_policy_logit, description
+valid_input_of_calc_ground_truth_policy_value = [
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "independent",
+        None,
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        3,
+        2,
+        2,
+        1,
+        "binary",
+        "independent",
+        None,
+        logistic_reward_function,
+        np.array([[1, 2], [3, 4], [5, 6]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "independent",
+        None,
+        None,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "cascade_decay",
+        None,
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "cascade_additive",
+        None,
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "standard_decay",
+        None,
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "standard_additive",
+        None,
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "continuous",
+        "cascade_decay",
+        None,
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "cascade_decay",
+        "pbm",
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "cascade_decay",
+        "cascade",
+        logistic_reward_function,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, base_reward_function, evaluation_policy_logit, description",
+    valid_input_of_calc_ground_truth_policy_value,
+)
+def test_calc_ground_truth_policy_value_using_valid_input_data(
+    n_rounds,
+    n_unique_action,
+    len_list,
+    dim_context,
+    reward_type,
+    reward_structure,
+    click_model,
+    base_reward_function,
+    evaluation_policy_logit,
+    description,
+):
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        base_reward_function=base_reward_function,
+    )
+    logged_bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    policy_value = dataset.calc_ground_truth_policy_value(
+        evaluation_policy_logit=evaluation_policy_logit,
+        context=logged_bandit_feedback["context"],
+    )
+    assert isinstance(policy_value, float) and 0 <= policy_value
+
+
+def test_calc_ground_truth_policy_value_value_check_with_click_model():
+    n_rounds = 3
+    n_unique_action = 4
+    len_list = 3
+    dim_context = 3
+    reward_type = "binary"
+    reward_structure = "cascade_additive"
+    evaluation_policy_logit = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [3, 4, 5, 6]])
+
+    dataset_none = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=None,
+        random_state=12345,
+        base_reward_function=logistic_reward_function,
+    )
+    logged_bandit_feedback_none = dataset_none.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds
+    )
+    policy_value_none = dataset_none.calc_ground_truth_policy_value(
+        evaluation_policy_logit=evaluation_policy_logit,
+        context=logged_bandit_feedback_none["context"],
+    )
+
+    dataset_pbm = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model="pbm",
+        random_state=12345,
+        base_reward_function=logistic_reward_function,
+    )
+    logged_bandit_feedback_pbm = dataset_pbm.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds
+    )
+    policy_value_pbm = dataset_pbm.calc_ground_truth_policy_value(
+        evaluation_policy_logit=evaluation_policy_logit,
+        context=logged_bandit_feedback_pbm["context"],
+    )
+
+    dataset_cascade = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model="cascade",
+        random_state=12345,
+        base_reward_function=logistic_reward_function,
+    )
+    logged_bandit_feedback_cascade = dataset_cascade.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds
+    )
+    policy_value_cascade = dataset_cascade.calc_ground_truth_policy_value(
+        evaluation_policy_logit=evaluation_policy_logit,
+        context=logged_bandit_feedback_cascade["context"],
+    )
+
+    assert policy_value_pbm < policy_value_none
+    assert policy_value_cascade < policy_value_none
+
+
+@pytest.mark.parametrize("click_model", ("pbm", "cascade"))
+def test_calc_ground_truth_policy_value_value_check_with_eta(click_model):
+    n_rounds = 3
+    n_unique_action = 4
+    len_list = 3
+    dim_context = 3
+    reward_type = "binary"
+    reward_structure = "cascade_additive"
+    evaluation_policy_logit = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [3, 4, 5, 6]])
+
+    dataset_05 = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        eta=0.5,
+        random_state=12345,
+        base_reward_function=logistic_reward_function,
+    )
+    logged_bandit_feedback_05 = dataset_05.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds
+    )
+    policy_value_05 = dataset_05.calc_ground_truth_policy_value(
+        evaluation_policy_logit=evaluation_policy_logit,
+        context=logged_bandit_feedback_05["context"],
+    )
+
+    dataset_1 = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        eta=1.0,
+        random_state=12345,
+        base_reward_function=logistic_reward_function,
+    )
+    logged_bandit_feedback_1 = dataset_1.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    policy_value_1 = dataset_1.calc_ground_truth_policy_value(
+        evaluation_policy_logit=evaluation_policy_logit,
+        context=logged_bandit_feedback_1["context"],
+    )
+
+    dataset_2 = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        eta=2.0,
+        random_state=12345,
+        base_reward_function=logistic_reward_function,
+    )
+    logged_bandit_feedback_2 = dataset_2.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    policy_value_2 = dataset_2.calc_ground_truth_policy_value(
+        evaluation_policy_logit=evaluation_policy_logit,
+        context=logged_bandit_feedback_2["context"],
+    )
+
+    assert policy_value_2 < policy_value_1 < policy_value_05
+
+
+# n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description
+invalid_input_of_calc_ground_truth_policy_value = [
+    (
+        3,
+        3,
+        2,
+        2,
+        "binary",
+        "independent",
+        None,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
+        None,
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "independent",
+        None,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
+        None,
+    ),
+    (
+        3,
+        2,
+        2,
+        2,
+        "binary",
+        "independent",
+        None,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
+        None,
+    ),
+    (
+        3,
+        3,
+        2,
+        1,
+        "binary",
+        "independent",
+        None,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
+        None,
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description",
+    invalid_input_of_calc_ground_truth_policy_value,
+)
+def test_calc_ground_truth_policy_value_using_invalid_input_data(
+    n_rounds,
+    n_unique_action,
+    len_list,
+    dim_context,
+    reward_type,
+    reward_structure,
+    click_model,
+    evaluation_policy_logit,
+    context,
+    description,
+):
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        base_reward_function=logistic_reward_function,
+    )
+    _ = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    with pytest.raises(ValueError):
+        dataset.calc_ground_truth_policy_value(
+            evaluation_policy_logit=evaluation_policy_logit,
+            context=context,
+        )
