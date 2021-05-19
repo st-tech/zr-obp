@@ -686,15 +686,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 "the length of evaluation_policy_logit and context must be same"
             )
 
+        enumerated_slate_actions = [
+            _ for _ in permutations(np.arange(self.n_unique_action), self.len_list)
+        ]
+        n_slate_actions = len(enumerated_slate_actions)
         n_rounds = len(evaluation_policy_logit)
         policy_value = 0
 
         for i in range(n_rounds):
-            enumerated_slate_actions = [
-                _ for _ in permutations(np.arange(self.n_unique_action), self.len_list)
-            ]
-            n_slate_actions = len(enumerated_slate_actions)
-
             # calculate pscore for each combinatorial set of items (i.e., slate actions)
             pscores = []
             for action_list in enumerated_slate_actions:
@@ -718,7 +717,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     [
                         expected_slot_reward_tile[
                             np.arange(n_slate_actions),
-                            enumerated_slate_actions[:, position_],
+                            np.array(enumerated_slate_actions)[:, position_],
                             position_,
                         ]
                         for position_ in np.arange(self.len_list)
