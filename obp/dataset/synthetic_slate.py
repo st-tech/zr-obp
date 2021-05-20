@@ -378,15 +378,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, ) and (n_rounds, n_unique_action, respectively"
             )
         n_rounds = action.reshape((-1, self.len_list)).shape[0]
-        pscore_cascade = np.zeros_like(action)
-        pscore = np.zeros_like(action)
+        pscore_cascade = np.zeros(n_rounds * self.len_list)
+        pscore = np.zeros(n_rounds * self.len_list)
         if return_pscore_item_position:
-            pscore_item_position = np.zeros_like(action)
+            pscore_item_position = np.zeros(n_rounds * self.len_list)
         else:
             pscore_item_position = None
         for i in tqdm(
             np.arange(n_rounds),
-            desc="[obtain_pscore_by_evaluation_policy]",
+            desc="[obtain_pscore_given_evaluation_policy_logit]",
             total=n_rounds,
         ):
             unique_action_set = np.arange(self.n_unique_action)
@@ -782,7 +782,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds = len(evaluation_policy_logit)
         policy_value = 0
 
-        for i in range(n_rounds):
+        for i in tqdm(
+            np.arange(n_rounds),
+            desc="[calc_ground_truth_policy_value]",
+            total=n_rounds,
+        ):
             # calculate pscore for each combinatorial set of items (i.e., slate actions)
             pscores = []
             for action_list in enumerated_slate_actions:
