@@ -83,7 +83,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         For example, when eta=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
         When eta is very large, the click model induced by eta is close to the original cascade model.
 
-    base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
+    base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None is set, context **independent** expected reward for each action will be
