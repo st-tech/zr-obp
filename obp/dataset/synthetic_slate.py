@@ -347,6 +347,21 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         evaluation_policy_logit_: np.ndarray,
         return_pscore_item_position: bool = True,
     ):
+        """Calculate the propensity score given evaluation policy logit.
+
+        Parameters
+        ------------
+        action: array-like, (n_rounds * len_list, )
+            Action chosen by behavior policy.
+
+        evaluation_policy_logit_: array-like, (n_rounds, n_unique_action, )
+            Evaluation policy logit values by given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        return_pscore_item_position: bool, default=True
+            A boolean parameter whether `pscore_item_position` is returned or not.
+            When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
+
+        """
         n_rounds = action.reshape((-1, self.len_list)).shape[0]
         pscore_cascade = np.zeros_like(action)
         pscore = np.zeros_like(action)
