@@ -341,6 +341,65 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
         return pscore_
 
+    def obtain_pscore_given_evaluation_policy_logit(
+        self,
+        action: np.ndarray,
+        evaluation_policy_logit_: np.ndarray,
+        return_pscore_item_position: bool = True,
+    ):
+        n_rounds = action.reshape((-1, self.len_list)).shape[0]
+        pscore_cascade = np.zeros_like(action)
+        pscore = np.zeros_like(action)
+        if return_pscore_item_position:
+            pscore_item_position = np.zeros_like(action)
+        else:
+            pscore_item_position = None
+        for i in tqdm(
+            np.arange(n_rounds),
+            desc="[obtain_pscore_by_evaluation_policy]",
+            total=n_rounds,
+        ):
+            unique_action_set = np.arange(self.n_unique_action)
+            pscore_i = 1.0
+            for position_ in np.arange(self.len_list):
+                action_ = action[i * self.len_list + position_]
+                action_index_ = np.where(unique_action_set == action_)[0][0]
+                score_ = softmax(
+                    evaluation_policy_logit_[i : i + 1, unique_action_set]
+                )[0][action_index_]
+                # calculate joint pscore
+                pscore_i *= score_
+                pscore_cascade[i * self.len_list + position_] = pscore_i
+                unique_action_set = np.delete(
+                    unique_action_set, unique_action_set == action_
+                )
+                # calculate marginal pscore
+                if return_pscore_item_position:
+                    if position_ == 0:
+                        pscore_item_position_i_l = pscore_i
+                    else:
+                        pscore_item_position_i_l = 0.0
+                        for action_list in permutations(
+                            np.arange(self.n_unique_action), self.len_list
+                        ):
+                            if action_ != action_list[position_]:
+                                continue
+                            pscore_item_position_i_l += (
+                                self._calc_pscore_given_action_list(
+                                    action_list=action_list,
+                                    policy_logit_i_=evaluation_policy_logit_[i : i + 1],
+                                )
+                            )
+                    pscore_item_position[
+                        i * self.len_list + position_
+                    ] = pscore_item_position_i_l
+            # impute joint pscore
+            start_idx = i * self.len_list
+            end_idx = start_idx + self.len_list
+            pscore[start_idx:end_idx] = pscore_i
+
+        return pscore, pscore_item_position, pscore_cascade
+
     def sample_action_and_obtain_pscore(
         self,
         behavior_policy_logit_: np.ndarray,
