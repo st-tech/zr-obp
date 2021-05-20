@@ -362,6 +362,21 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
 
         """
+        if not isinstance(action, np.ndarray) or action.ndim != 1:
+            raise ValueError("action must be 1-dimensional np.ndarray")
+        if (
+            not isinstance(evaluation_policy_logit_, np.ndarray)
+            or evaluation_policy_logit_.ndim != 2
+        ):
+            raise ValueError("evaluation_policy_logit_ must be 2-dimensional array")
+        if (
+            action.reshape((-1, self.len_list)).shape[0]
+            != len(evaluation_policy_logit_)
+            or evaluation_policy_logit_.shape[1] != self.n_unique_action
+        ):
+            raise ValueError(
+                "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, ) and (n_rounds, n_unique_action, respectively"
+            )
         n_rounds = action.reshape((-1, self.len_list)).shape[0]
         pscore_cascade = np.zeros_like(action)
         pscore = np.zeros_like(action)
