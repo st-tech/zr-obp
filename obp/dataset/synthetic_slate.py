@@ -363,19 +363,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         """
         if not isinstance(action, np.ndarray) or action.ndim != 1:
-            raise ValueError("action must be 1-dimensional np.ndarray")
+            raise ValueError("action must be 1-dimensional ndarray")
         if (
             not isinstance(evaluation_policy_logit_, np.ndarray)
             or evaluation_policy_logit_.ndim != 2
         ):
-            raise ValueError("evaluation_policy_logit_ must be 2-dimensional array")
+            raise ValueError("evaluation_policy_logit_ must be 2-dimensional ndarray")
         if (
-            action.reshape((-1, self.len_list)).shape[0]
-            != len(evaluation_policy_logit_)
+            len(action) / self.len_list != len(evaluation_policy_logit_)
             or evaluation_policy_logit_.shape[1] != self.n_unique_action
         ):
             raise ValueError(
-                "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, ) and (n_rounds, n_unique_action, respectively"
+                "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, ) and (n_rounds, n_unique_action) respectively"
             )
         n_rounds = action.reshape((-1, self.len_list)).shape[0]
         pscore_cascade = np.zeros(n_rounds * self.len_list)

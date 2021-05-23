@@ -1355,7 +1355,7 @@ def test_calc_epsilon_greedy_pscore_using_valid_input_data(
     assert np.allclose(true_pscore_cascade, pscore_cascade)
 
 
-# n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description
+# n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, err, description
 invalid_input_of_calc_ground_truth_policy_value = [
     (
         3,
@@ -1365,21 +1365,10 @@ invalid_input_of_calc_ground_truth_policy_value = [
         "binary",
         "independent",
         None,
-        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]).flatten(),
         np.ones((3, 2)),
-        None,
-    ),
-    (
-        4,
-        3,
-        2,
-        2,
-        "binary",
-        "independent",
-        None,
-        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
-        np.ones((3, 2)),
-        None,
+        ValueError,
+        "evaluation_policy_logit must be 2-dimensional",
     ),
     (
         3,
@@ -1391,7 +1380,8 @@ invalid_input_of_calc_ground_truth_policy_value = [
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
-        None,
+        ValueError,
+        "the size of axis 1 of evaluation_policy_logit must be",
     ),
     (
         3,
@@ -1403,13 +1393,40 @@ invalid_input_of_calc_ground_truth_policy_value = [
         None,
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
+        ValueError,
+        "the size of axis 1 of context must be",
+    ),
+    (
+        4,
+        3,
+        2,
+        2,
+        "binary",
+        "independent",
         None,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
+        ValueError,
+        "the length of evaluation_policy_logit and context",
+    ),
+    (
+        3,
+        3,
+        2,
+        2,
+        "binary",
+        "independent",
+        None,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        np.ones((3, 2)),
+        ValueError,
+        "the length of evaluation_policy_logit and context",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, description",
+    "n_rounds, n_unique_action, len_list, dim_context, reward_type, reward_structure, click_model, evaluation_policy_logit, context, err, description",
     invalid_input_of_calc_ground_truth_policy_value,
 )
 def test_calc_ground_truth_policy_value_using_invalid_input_data(
@@ -1422,6 +1439,7 @@ def test_calc_ground_truth_policy_value_using_invalid_input_data(
     click_model,
     evaluation_policy_logit,
     context,
+    err,
     description,
 ):
     dataset = SyntheticSlateBanditDataset(
@@ -1434,7 +1452,7 @@ def test_calc_ground_truth_policy_value_using_invalid_input_data(
         base_reward_function=logistic_reward_function,
     )
     _ = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    with pytest.raises(ValueError):
+    with pytest.raises(err, match=f"{description}*"):
         dataset.calc_ground_truth_policy_value(
             evaluation_policy_logit=evaluation_policy_logit,
             context=context,
@@ -1735,26 +1753,53 @@ def test_calc_ground_truth_policy_value_value_check_with_eta(click_model):
 n_rounds = 10
 n_unique_action = 5
 len_list = 3
-# action, evaluation_policy_logit_
+# action, evaluation_policy_logit_, err, description
 invalid_input_of_obtain_pscore_given_evaluation_policy_logit = [
-    (np.ones((n_rounds, len_list)), np.ones((n_rounds, n_unique_action))),
-    (np.ones((n_rounds * len_list)), np.ones((n_rounds * n_unique_action))),
-    (np.ones((n_rounds * len_list + 1)), np.ones((n_rounds, n_unique_action))),
-    (np.ones((n_rounds * len_list)), np.ones((n_rounds, n_unique_action + 1))),
-    (np.ones((n_rounds * len_list)), np.ones((n_rounds + 1, n_unique_action))),
+    (
+        np.ones((n_rounds, len_list)),
+        np.ones((n_rounds, n_unique_action)),
+        ValueError,
+        "action must be 1-dimensional",
+    ),
+    (
+        np.ones((n_rounds * len_list)),
+        np.ones((n_rounds * n_unique_action)),
+        ValueError,
+        "evaluation_policy_logit_ must be 2-dimensional",
+    ),
+    (
+        np.ones((n_rounds * len_list + 1)),
+        np.ones((n_rounds, n_unique_action)),
+        ValueError,
+        "the shape of action and evaluation_policy_logit_ must be",
+    ),
+    (
+        np.ones((n_rounds * len_list)),
+        np.ones((n_rounds, n_unique_action + 1)),
+        ValueError,
+        "the shape of action and evaluation_policy_logit_ must be",
+    ),
+    (
+        np.ones((n_rounds * len_list)),
+        np.ones((n_rounds + 1, n_unique_action)),
+        ValueError,
+        "the shape of action and evaluation_policy_logit_ must be",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "action, evaluation_policy_logit_",
+    "action, evaluation_policy_logit_, err, description",
     invalid_input_of_obtain_pscore_given_evaluation_policy_logit,
 )
-def test_obtain_pscore_given_evaluation_policy_logit(action, evaluation_policy_logit_):
+def test_obtain_pscore_given_evaluation_policy_logit(
+    action, evaluation_policy_logit_, err, description
+):
     dataset = SyntheticSlateBanditDataset(
         n_unique_action=n_unique_action,
         len_list=len_list,
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(err, match=f"{description}*"):
         dataset.obtain_pscore_given_evaluation_policy_logit(
             action=action,
             evaluation_policy_logit_=evaluation_policy_logit_,
