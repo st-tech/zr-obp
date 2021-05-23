@@ -83,7 +83,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         For example, when eta=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
         When eta is very large, the click model induced by eta is close to the original cascade model.
 
-    base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
+    base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None is set, context **independent** expected reward for each action will be
@@ -340,6 +340,94 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 unique_action_set, unique_action_set == action
             )
         return pscore_
+
+    def obtain_pscore_given_evaluation_policy_logit(
+        self,
+        action: np.ndarray,
+        evaluation_policy_logit_: np.ndarray,
+        return_pscore_item_position: bool = True,
+    ):
+        """Calculate the propensity score given evaluation policy logit.
+
+        Parameters
+        ------------
+        action: array-like, (n_rounds * len_list, )
+            Action chosen by behavior policy.
+
+        evaluation_policy_logit_: array-like, (n_rounds, n_unique_action)
+            Evaluation policy logit values by given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        return_pscore_item_position: bool, default=True
+            A boolean parameter whether `pscore_item_position` is returned or not.
+            When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
+
+        """
+        if not isinstance(action, np.ndarray) or action.ndim != 1:
+            raise ValueError("action must be 1-dimensional ndarray")
+        if (
+            not isinstance(evaluation_policy_logit_, np.ndarray)
+            or evaluation_policy_logit_.ndim != 2
+        ):
+            raise ValueError("evaluation_policy_logit_ must be 2-dimensional ndarray")
+        if (
+            len(action) / self.len_list != len(evaluation_policy_logit_)
+            or evaluation_policy_logit_.shape[1] != self.n_unique_action
+        ):
+            raise ValueError(
+                "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, ) and (n_rounds, n_unique_action) respectively"
+            )
+        n_rounds = action.reshape((-1, self.len_list)).shape[0]
+        pscore_cascade = np.zeros(n_rounds * self.len_list)
+        pscore = np.zeros(n_rounds * self.len_list)
+        if return_pscore_item_position:
+            pscore_item_position = np.zeros(n_rounds * self.len_list)
+        else:
+            pscore_item_position = None
+        for i in tqdm(
+            np.arange(n_rounds),
+            desc="[obtain_pscore_given_evaluation_policy_logit]",
+            total=n_rounds,
+        ):
+            unique_action_set = np.arange(self.n_unique_action)
+            pscore_i = 1.0
+            for position_ in np.arange(self.len_list):
+                action_ = action[i * self.len_list + position_]
+                action_index_ = np.where(unique_action_set == action_)[0][0]
+                score_ = softmax(
+                    evaluation_policy_logit_[i : i + 1, unique_action_set]
+                )[0][action_index_]
+                # calculate joint pscore
+                pscore_i *= score_
+                pscore_cascade[i * self.len_list + position_] = pscore_i
+                unique_action_set = np.delete(
+                    unique_action_set, unique_action_set == action_
+                )
+                # calculate marginal pscore
+                if return_pscore_item_position:
+                    if position_ == 0:
+                        pscore_item_position_i_l = pscore_i
+                    else:
+                        pscore_item_position_i_l = 0.0
+                        for action_list in permutations(
+                            np.arange(self.n_unique_action), self.len_list
+                        ):
+                            if action_ != action_list[position_]:
+                                continue
+                            pscore_item_position_i_l += (
+                                self._calc_pscore_given_action_list(
+                                    action_list=action_list,
+                                    policy_logit_i_=evaluation_policy_logit_[i : i + 1],
+                                )
+                            )
+                    pscore_item_position[
+                        i * self.len_list + position_
+                    ] = pscore_item_position_i_l
+            # impute joint pscore
+            start_idx = i * self.len_list
+            end_idx = start_idx + self.len_list
+            pscore[start_idx:end_idx] = pscore_i
+
+        return pscore, pscore_item_position, pscore_cascade
 
     def sample_action_and_obtain_pscore(
         self,
@@ -693,7 +781,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds = len(evaluation_policy_logit)
         policy_value = 0
 
-        for i in range(n_rounds):
+        for i in tqdm(
+            np.arange(n_rounds),
+            desc="[calc_ground_truth_policy_value]",
+            total=n_rounds,
+        ):
             # calculate pscore for each combinatorial set of items (i.e., slate actions)
             pscores = []
             for action_list in enumerated_slate_actions:

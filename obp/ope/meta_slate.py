@@ -47,7 +47,7 @@ class SlateOffPolicyEvaluation:
             )
 
         # (1) Synthetic Data Generation
-        >>> dataset = dataset = SyntheticSlateBanditDataset(
+        >>> dataset = SyntheticSlateBanditDataset(
                 n_unique_action=10,
                 len_list=3,
                 dim_context=2,
@@ -444,7 +444,7 @@ class SlateOffPolicyEvaluation:
 
         Parameters
         ----------
-        ground_truth policy value: float
+        ground_truth_policy_value: float
             Ground_truth policy value of an evaluation policy, i.e., :math:`V(\\pi)`.
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as its ground-truth.
 
@@ -510,7 +510,7 @@ class SlateOffPolicyEvaluation:
 
         Parameters
         ----------
-        ground_truth policy value: float
+        ground_truth_policy_value: float
             Ground_truth policy value of an evaluation policy, i.e., :math:`V(\\pi)`.
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
 
