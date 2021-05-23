@@ -354,7 +354,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         action: array-like, (n_rounds * len_list, )
             Action chosen by behavior policy.
 
-        evaluation_policy_logit_: array-like, (n_rounds, n_unique_action, )
+        evaluation_policy_logit_: array-like, (n_rounds, n_unique_action)
             Evaluation policy logit values by given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
         return_pscore_item_position: bool, default=True
