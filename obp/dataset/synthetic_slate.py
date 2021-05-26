@@ -94,6 +94,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
         If None is set, context **independent** uniform distribution will be used (uniform behavior policy).
 
+    is_factorizable: bool
+        A boolean parameter whether to use factorizable evaluation policy (which choose slot actions independently) or not.
+        When `n_unique_action` and `len_list` are large, this parameter should be set to True because of the computational time.
+
     random_state: int, default=12345
         Controls the random seed in sampling synthetic slate bandit dataset.
 
@@ -180,6 +184,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
     ] = None
+    is_factorizable: bool = False
     random_state: int = 12345
     dataset_name: str = "synthetic_slate_bandit_dataset"
 
@@ -346,7 +351,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         action: np.ndarray,
         evaluation_policy_logit_: np.ndarray,
         return_pscore_item_position: bool = True,
-        is_factorizable: bool = False,
     ):
         """Calculate the propensity score given evaluation policy logit.
 
@@ -361,10 +365,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
             When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
-
-        is_factorizable: bool
-            A boolean parameter whether to use factorizable evaluation policy (which choose slot actions independently) or not.
-            When `n_unique_action` and `len_list` are large, this parameter should be set to True because of the computational time.
 
         """
         if not isinstance(action, np.ndarray) or action.ndim != 1:
@@ -402,8 +402,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate joint pscore
                 pscore_i *= score_[action_index_]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
-                # update remaining item for non-factorizable policy
-                if not is_factorizable:
+                # update remaining item for not factorizable policy
+                if not self.is_factorizable:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == action_
                     )
@@ -414,7 +414,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 if return_pscore_item_position:
                     if position_ == 0:
                         pscore_item_position_i_l = pscore_i
-                    elif is_factorizable:
+                    elif self.is_factorizable:
                         pscore_item_position_i_l = score_[action_index_]
                     else:
                         pscore_item_position_i_l = 0.0
@@ -444,7 +444,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         behavior_policy_logit_: np.ndarray,
         n_rounds: int,
         return_pscore_item_position: bool = True,
-        is_factorizable: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
         """Sample action and obtain the three variants of the propensity scores.
 
@@ -459,10 +458,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
             When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
-
-        is_factorizable: bool
-            A boolean parameter whether to use factorizable behavior policy (which choose slot actions independently) or not.
-            When `n_unique_action` and `len_list` are large, this parameter should be set to True because of the computational time.
 
         Returns
         ----------
@@ -509,8 +504,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate joint pscore
                 pscore_i *= score_[sampled_action_index]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
-                # update remaining items for non-factorizable behavior policy
-                if not is_factorizable:
+                # update remaining items for not factorizable behavior policy
+                if not self.is_factorizable:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == sampled_action
                     )
@@ -521,7 +516,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 if return_pscore_item_position:
                     if self.behavior_policy_function is None:  # uniform random
                         pscore_item_position_i_l = 1 / self.n_unique_action
-                    elif is_factorizable:
+                    elif self.is_factorizable:
                         pscore_item_position_i_l = score_[sampled_action_index]
                     elif position_ == 0:
                         pscore_item_position_i_l = pscore_i
@@ -618,7 +613,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self,
         n_rounds: int,
         return_pscore_item_position: bool = True,
-        is_factorizable: bool = False,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
 
@@ -630,10 +624,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
             When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time.
-
-        is_factorizable: bool
-            A boolean parameter whether to use factorizable behavior policy (which choose slot actions independently) or not.
-            When `n_unique_action` and `len_list` are large, this parameter should be set to True because of the computational time.
 
         Returns
         ---------
@@ -674,7 +664,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             behavior_policy_logit_=behavior_policy_logit_,
             n_rounds=n_rounds,
             return_pscore_item_position=return_pscore_item_position,
-            is_factorizable=is_factorizable,
         )
         # sample expected reward factual
         if self.base_reward_function is None:
@@ -770,7 +759,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self,
         context: np.ndarray,
         evaluation_policy_logit_: np.ndarray,
-        is_factorizable: np.ndarray,
     ):
         """Calculate the ground-truth policy value of given evaluation policy logit and context
 
@@ -781,10 +769,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         evaluation_policy_logit: array-like, shape (n_rounds, n_unique_action)
             Evaluation policy function generating logit value of each action in action space.
-
-        is_factorizable: bool
-            A boolean parameter whether to use factorizable evaluation policy (which choose slot actions independently) or not.
-            When `n_unique_action` and `len_list` are large, this parameter should be set to True because of the computational time.
 
         """
         if (
@@ -807,7 +791,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 "the length of evaluation_policy_logit and context must be same"
             )
 
-        if is_factorizable:
+        if self.is_factorizable:
             enumerated_slate_actions = [
                 _
                 for _ in product(np.arange(self.n_unique_action), repeat=self.len_list)
@@ -829,7 +813,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             pscores = []
             factorizable_pscore = softmax(evaluation_policy_logit_[i : i + 1])[0]
             for action_list in enumerated_slate_actions:
-                if is_factorizable:
+                if self.is_factorizable:
                     pscores.append(
                         np.cumprod([factorizable_pscore[a_] for a_ in action_list])[-1]
                     )
