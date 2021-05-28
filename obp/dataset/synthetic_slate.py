@@ -403,7 +403,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 pscore_i *= score_[action_index_]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
                 # update remaining item for not factorizable policy
-                if not self.is_factorizable:
+                if not self.is_factorizable and position_ != self.len_list - 1:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == action_
                     )
@@ -505,7 +505,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 pscore_i *= score_[sampled_action_index]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
                 # update remaining items for not factorizable behavior policy
-                if not self.is_factorizable:
+                if not self.is_factorizable and position_ != self.len_list - 1:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == sampled_action
                     )
@@ -767,7 +767,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         context: array-like, shape (n_rounds, dim_context)
             Context vectors characterizing each round (such as user information).
 
-        evaluation_policy_logit: array-like, shape (n_rounds, n_unique_action)
+        evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
             Evaluation policy function generating logit value of each action in action space.
 
         """
@@ -775,10 +775,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             not isinstance(evaluation_policy_logit_, np.ndarray)
             or evaluation_policy_logit_.ndim != 2
         ):
-            raise ValueError("evaluation_policy_logit must be 2-dimensional ndarray")
+            raise ValueError("evaluation_policy_logit_ must be 2-dimensional ndarray")
         if evaluation_policy_logit_.shape[1] != self.n_unique_action:
             raise ValueError(
-                "the size of axis 1 of evaluation_policy_logit must be the same as n_unique_action"
+                "the size of axis 1 of evaluation_policy_logit_ must be the same as n_unique_action"
             )
         if not isinstance(context, np.ndarray) or context.ndim != 2:
             raise ValueError("context must be 2-dimensional ndarray")
@@ -788,7 +788,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
         if evaluation_policy_logit_.shape[0] != context.shape[0]:
             raise ValueError(
-                "the length of evaluation_policy_logit and context must be same"
+                "the length of evaluation_policy_logit_ and context must be same"
             )
 
         if self.is_factorizable:
@@ -934,20 +934,30 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError("context must be 2-dimensional ndarray")
 
         # [Caution]: OverflowError raises when integer division result is too large for a float
-        random_pscore_cascade = (
-            1.0
-            / np.tile(
-                np.arange(
-                    self.n_unique_action, self.n_unique_action - self.len_list, -1
-                ),
-                (context.shape[0], 1),
+        if self.is_factorizable:
+            random_pscore_cascade = (
+                (np.ones((context.shape[0], self.len_list)) / self.n_unique_action)
+                .cumprod(axis=1)
+                .flatten()
             )
-            .cumprod(axis=1)
-            .flatten()
-        )
-        random_pscore = np.ones(context.shape[0] * self.len_list) / perm(
-            self.n_unique_action, self.len_list
-        )
+            random_pscore = np.ones(context.shape[0] * self.len_list) / (
+                self.n_unique_action ** self.len_list
+            )
+        else:
+            random_pscore_cascade = (
+                1.0
+                / np.tile(
+                    np.arange(
+                        self.n_unique_action, self.n_unique_action - self.len_list, -1
+                    ),
+                    (context.shape[0], 1),
+                )
+                .cumprod(axis=1)
+                .flatten()
+            )
+            random_pscore = np.ones(context.shape[0] * self.len_list) / perm(
+                self.n_unique_action, self.len_list
+            )
         random_pscore_item_position = (
             np.ones(context.shape[0] * self.len_list) / self.n_unique_action
         )
@@ -1023,15 +1033,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             When bandit_feedback is obtained by `obtain_batch_bandit_feedback`, we can obtain action_2d as follows: bandit_feedback["action"].reshape((n_rounds, len_list))
             When evaluation_policy_type is 'random', this argument is unnecessary.
 
-        random_pscore: array-like, shape (n_unique_action * len_list)
+        random_pscore: array-like, shape (n_unique_action * len_list, )
             Joint action choice probabilities of the slate given context (:math:`x`) when the evaluation policy is random.
             i.e., :math:`\\frac{1}{{}_{n} P _r)`, where :math:`n` is `n_unique_actions` and :math:`r` is `len_list`.
 
-        random_pscore_item_position: array-like, shape (n_unique_action * len_list)
+        random_pscore_item_position: array-like, shape (n_unique_action * len_list, )
             Marginal action choice probabilities of each slot given context (:math:`x`) when the evaluation policy is random.
             i.e., :math:`\\frac{1}{n)`, where :math:`n` is `n_unique_actions`.
 
-        random_pscore_cascade: array-like, shape (n_unique_action * len_list)
+        random_pscore_cascade: array-like, shape (n_unique_action * len_list, )
             Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`) when the evaluation policy is random.
             i.e., :math:`\\frac{1}{{}_{n} P _k)`, where :math:`n` is `n_unique_actions`.
 
@@ -1053,8 +1063,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         """
         if not isinstance(action_2d, np.ndarray) or action_2d.ndim != 2:
             raise ValueError("action_2d must be 2-dimensional ndarray")
-        if set([np.unique(x).shape[0] for x in action_2d]) != set([self.len_list]):
-            raise ValueError("actions of each slate must not be duplicated")
+        if not self.is_factorizable and set(
+            [np.unique(x).shape[0] for x in action_2d]
+        ) != set([self.len_list]):
+            raise ValueError(
+                "when is_factorizable=False, actions of each slate must not be duplicated"
+            )
         action_match_flag = sorted_actions == action_2d
         pscore_flg = np.repeat(action_match_flag.all(axis=1), self.len_list)
         pscore_item_position_flg = action_match_flag.flatten()
