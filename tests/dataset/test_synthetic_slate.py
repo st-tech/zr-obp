@@ -367,7 +367,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
         pscore_cascade.append(pscore_above)
     assert np.allclose(
         bandit_feedback_df["pscore_cascade"], np.tile(pscore_cascade, n_rounds)
-    ), f"pscore_cascade must be {pscore_cascade} for all impresessions"
+    ), f"pscore_cascade must be {pscore_cascade} for all slates"
     assert np.allclose(
         bandit_feedback_df["pscore"].unique(), [pscore_above]
     ), f"pscore must be {pscore_above} for all slates"
@@ -414,7 +414,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_facto
         pscore_cascade.append(pscore_above)
     assert np.allclose(
         bandit_feedback_df["pscore_cascade"], np.tile(pscore_cascade, n_rounds)
-    ), f"pscore_cascade must be {pscore_cascade} for all impresessions"
+    ), f"pscore_cascade must be {pscore_cascade} for all slates"
     assert np.allclose(
         bandit_feedback_df["pscore"].unique(), [pscore_above]
     ), f"pscore must be {pscore_above} for all slates"

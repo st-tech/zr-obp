@@ -402,7 +402,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate joint pscore
                 pscore_i *= score_[action_index_]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
-                # update remaining item for not factorizable policy
+                # update the pscore given the remaining items for nonfactorizable policy
                 if not self.is_factorizable and position_ != self.len_list - 1:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == action_
@@ -410,7 +410,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     score_ = softmax(
                         evaluation_policy_logit_[i : i + 1, unique_action_set]
                     )[0]
-                # calculate marginal pscore
+                # calculate pscore_item_position
                 if return_pscore_item_position:
                     if position_ == 0:
                         pscore_item_position_i_l = pscore_i
@@ -504,7 +504,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate joint pscore
                 pscore_i *= score_[sampled_action_index]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
-                # update remaining items for not factorizable behavior policy
+                # update the pscore given the remaining itemss for nonfactorizable behavior policy
                 if not self.is_factorizable and position_ != self.len_list - 1:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == sampled_action
@@ -512,7 +512,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     score_ = softmax(
                         behavior_policy_logit_[i : i + 1, unique_action_set]
                     )[0]
-                # calculate marginal pscore
+                # calculate pscore_item_position
                 if return_pscore_item_position:
                     if self.behavior_policy_function is None:  # uniform random
                         pscore_item_position_i_l = 1 / self.n_unique_action
@@ -811,13 +811,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         ):
             # calculate pscore for each combinatorial set of items (i.e., slate actions)
             pscores = []
-            factorizable_pscore = softmax(evaluation_policy_logit_[i : i + 1])[0]
-            for action_list in enumerated_slate_actions:
-                if self.is_factorizable:
+            if self.is_factorizable:
+                pscore_when_factorizable = softmax(evaluation_policy_logit_[i : i + 1])[
+                    0
+                ]
+                for action_list in enumerated_slate_actions:
                     pscores.append(
-                        np.cumprod([factorizable_pscore[a_] for a_ in action_list])[-1]
+                        np.cumprod(
+                            [pscore_when_factorizable[a_] for a_ in action_list]
+                        )[-1]
                     )
-                else:
+            else:
+                for action_list in enumerated_slate_actions:
                     pscores.append(
                         self._calc_pscore_given_action_list(
                             action_list=action_list,
