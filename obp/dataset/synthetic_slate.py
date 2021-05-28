@@ -4,7 +4,7 @@
 """Class for Generating Synthetic Slate Logged Bandit Feedback."""
 from dataclasses import dataclass
 from typing import Optional, Callable, Tuple, Union, List
-from itertools import permutations
+from itertools import permutations, product
 
 import numpy as np
 from scipy.stats import truncnorm
@@ -94,6 +94,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
         If None is set, context **independent** uniform distribution will be used (uniform behavior policy).
 
+    is_factorizable: bool
+        A boolean parameter whether to use factorizable evaluation policy (which choose slot actions independently) or not.
+        When `n_unique_action` and `len_list` are large, this parameter should be set to True because of the computational time.
+
     random_state: int, default=12345
         Controls the random seed in sampling synthetic slate bandit dataset.
 
@@ -180,6 +184,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
     ] = None
+    is_factorizable: bool = False
     random_state: int = 12345
     dataset_name: str = "synthetic_slate_bandit_dataset"
 
@@ -389,23 +394,28 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             total=n_rounds,
         ):
             unique_action_set = np.arange(self.n_unique_action)
+            score_ = softmax(evaluation_policy_logit_[i : i + 1])[0]
             pscore_i = 1.0
             for position_ in np.arange(self.len_list):
                 action_ = action[i * self.len_list + position_]
                 action_index_ = np.where(unique_action_set == action_)[0][0]
-                score_ = softmax(
-                    evaluation_policy_logit_[i : i + 1, unique_action_set]
-                )[0][action_index_]
                 # calculate joint pscore
-                pscore_i *= score_
+                pscore_i *= score_[action_index_]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
-                unique_action_set = np.delete(
-                    unique_action_set, unique_action_set == action_
-                )
-                # calculate marginal pscore
+                # update the pscore given the remaining items for nonfactorizable policy
+                if not self.is_factorizable and position_ != self.len_list - 1:
+                    unique_action_set = np.delete(
+                        unique_action_set, unique_action_set == action_
+                    )
+                    score_ = softmax(
+                        evaluation_policy_logit_[i : i + 1, unique_action_set]
+                    )[0]
+                # calculate pscore_item_position
                 if return_pscore_item_position:
                     if position_ == 0:
                         pscore_item_position_i_l = pscore_i
+                    elif self.is_factorizable:
+                        pscore_item_position_i_l = score_[action_index_]
                     else:
                         pscore_item_position_i_l = 0.0
                         for action_list in permutations(
@@ -481,11 +491,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             total=n_rounds,
         ):
             unique_action_set = np.arange(self.n_unique_action)
+            score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[0]
             pscore_i = 1.0
             for position_ in np.arange(self.len_list):
-                score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[
-                    0
-                ]
                 sampled_action = self.random_.choice(
                     unique_action_set, p=score_, replace=False
                 )
@@ -496,13 +504,20 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate joint pscore
                 pscore_i *= score_[sampled_action_index]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
-                unique_action_set = np.delete(
-                    unique_action_set, unique_action_set == sampled_action
-                )
-                # calculate marginal pscore
+                # update the pscore given the remaining itemss for nonfactorizable behavior policy
+                if not self.is_factorizable and position_ != self.len_list - 1:
+                    unique_action_set = np.delete(
+                        unique_action_set, unique_action_set == sampled_action
+                    )
+                    score_ = softmax(
+                        behavior_policy_logit_[i : i + 1, unique_action_set]
+                    )[0]
+                # calculate pscore_item_position
                 if return_pscore_item_position:
                     if self.behavior_policy_function is None:  # uniform random
                         pscore_item_position_i_l = 1 / self.n_unique_action
+                    elif self.is_factorizable:
+                        pscore_item_position_i_l = score_[sampled_action_index]
                     elif position_ == 0:
                         pscore_item_position_i_l = pscore_i
                     else:
@@ -741,27 +756,29 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return reward.sum() / np.unique(slate_id).shape[0]
 
     def calc_ground_truth_policy_value(
-        self, evaluation_policy_logit: np.ndarray, context: np.ndarray
+        self,
+        context: np.ndarray,
+        evaluation_policy_logit_: np.ndarray,
     ):
         """Calculate the ground-truth policy value of given evaluation policy logit and context
 
         Parameters
         -----------
-        evaluation_policy_logit: array-like, shape (n_rounds, n_unique_action)
-            Evaluation policy function generating logit value of each action in action space.
-
         context: array-like, shape (n_rounds, dim_context)
             Context vectors characterizing each round (such as user information).
 
+        evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
+            Evaluation policy function generating logit value of each action in action space.
+
         """
         if (
-            not isinstance(evaluation_policy_logit, np.ndarray)
-            or evaluation_policy_logit.ndim != 2
+            not isinstance(evaluation_policy_logit_, np.ndarray)
+            or evaluation_policy_logit_.ndim != 2
         ):
-            raise ValueError("evaluation_policy_logit must be 2-dimensional ndarray")
-        if evaluation_policy_logit.shape[1] != self.n_unique_action:
+            raise ValueError("evaluation_policy_logit_ must be 2-dimensional ndarray")
+        if evaluation_policy_logit_.shape[1] != self.n_unique_action:
             raise ValueError(
-                "the size of axis 1 of evaluation_policy_logit must be the same as n_unique_action"
+                "the size of axis 1 of evaluation_policy_logit_ must be the same as n_unique_action"
             )
         if not isinstance(context, np.ndarray) or context.ndim != 2:
             raise ValueError("context must be 2-dimensional ndarray")
@@ -769,16 +786,22 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 "the size of axis 1 of context must be the same as dim_context"
             )
-        if evaluation_policy_logit.shape[0] != context.shape[0]:
+        if evaluation_policy_logit_.shape[0] != context.shape[0]:
             raise ValueError(
-                "the length of evaluation_policy_logit and context must be same"
+                "the length of evaluation_policy_logit_ and context must be same"
             )
 
-        enumerated_slate_actions = [
-            _ for _ in permutations(np.arange(self.n_unique_action), self.len_list)
-        ]
+        if self.is_factorizable:
+            enumerated_slate_actions = [
+                _
+                for _ in product(np.arange(self.n_unique_action), repeat=self.len_list)
+            ]
+        else:
+            enumerated_slate_actions = [
+                _ for _ in permutations(np.arange(self.n_unique_action), self.len_list)
+            ]
         n_slate_actions = len(enumerated_slate_actions)
-        n_rounds = len(evaluation_policy_logit)
+        n_rounds = len(evaluation_policy_logit_)
         policy_value = 0
 
         for i in tqdm(
@@ -788,13 +811,24 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         ):
             # calculate pscore for each combinatorial set of items (i.e., slate actions)
             pscores = []
-            for action_list in enumerated_slate_actions:
-                pscores.append(
-                    self._calc_pscore_given_action_list(
-                        action_list=action_list,
-                        policy_logit_i_=evaluation_policy_logit[i : i + 1],
+            if self.is_factorizable:
+                pscore_when_factorizable = softmax(evaluation_policy_logit_[i : i + 1])[
+                    0
+                ]
+                for action_list in enumerated_slate_actions:
+                    pscores.append(
+                        np.cumprod(
+                            [pscore_when_factorizable[a_] for a_ in action_list]
+                        )[-1]
                     )
-                )
+            else:
+                for action_list in enumerated_slate_actions:
+                    pscores.append(
+                        self._calc_pscore_given_action_list(
+                            action_list=action_list,
+                            policy_logit_i_=evaluation_policy_logit_[i : i + 1],
+                        )
+                    )
             pscores = np.array(pscores)
 
             # calculate expected slate-level reward for each combinatorial set of items (i.e., slate actions)
@@ -905,20 +939,30 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError("context must be 2-dimensional ndarray")
 
         # [Caution]: OverflowError raises when integer division result is too large for a float
-        random_pscore_cascade = (
-            1.0
-            / np.tile(
-                np.arange(
-                    self.n_unique_action, self.n_unique_action - self.len_list, -1
-                ),
-                (context.shape[0], 1),
+        if self.is_factorizable:
+            random_pscore_cascade = (
+                (np.ones((context.shape[0], self.len_list)) / self.n_unique_action)
+                .cumprod(axis=1)
+                .flatten()
             )
-            .cumprod(axis=1)
-            .flatten()
-        )
-        random_pscore = np.ones(context.shape[0] * self.len_list) / perm(
-            self.n_unique_action, self.len_list
-        )
+            random_pscore = np.ones(context.shape[0] * self.len_list) / (
+                self.n_unique_action ** self.len_list
+            )
+        else:
+            random_pscore_cascade = (
+                1.0
+                / np.tile(
+                    np.arange(
+                        self.n_unique_action, self.n_unique_action - self.len_list, -1
+                    ),
+                    (context.shape[0], 1),
+                )
+                .cumprod(axis=1)
+                .flatten()
+            )
+            random_pscore = np.ones(context.shape[0] * self.len_list) / perm(
+                self.n_unique_action, self.len_list
+            )
         random_pscore_item_position = (
             np.ones(context.shape[0] * self.len_list) / self.n_unique_action
         )
@@ -994,15 +1038,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             When bandit_feedback is obtained by `obtain_batch_bandit_feedback`, we can obtain action_2d as follows: bandit_feedback["action"].reshape((n_rounds, len_list))
             When evaluation_policy_type is 'random', this argument is unnecessary.
 
-        random_pscore: array-like, shape (n_unique_action * len_list)
+        random_pscore: array-like, shape (n_unique_action * len_list, )
             Joint action choice probabilities of the slate given context (:math:`x`) when the evaluation policy is random.
             i.e., :math:`\\frac{1}{{}_{n} P _r)`, where :math:`n` is `n_unique_actions` and :math:`r` is `len_list`.
 
-        random_pscore_item_position: array-like, shape (n_unique_action * len_list)
+        random_pscore_item_position: array-like, shape (n_unique_action * len_list, )
             Marginal action choice probabilities of each slot given context (:math:`x`) when the evaluation policy is random.
             i.e., :math:`\\frac{1}{n)`, where :math:`n` is `n_unique_actions`.
 
-        random_pscore_cascade: array-like, shape (n_unique_action * len_list)
+        random_pscore_cascade: array-like, shape (n_unique_action * len_list, )
             Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`) when the evaluation policy is random.
             i.e., :math:`\\frac{1}{{}_{n} P _k)`, where :math:`n` is `n_unique_actions`.
 
@@ -1024,8 +1068,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         """
         if not isinstance(action_2d, np.ndarray) or action_2d.ndim != 2:
             raise ValueError("action_2d must be 2-dimensional ndarray")
-        if set([np.unique(x).shape[0] for x in action_2d]) != set([self.len_list]):
-            raise ValueError("actions of each slate must not be duplicated")
+        if not self.is_factorizable and set(
+            [np.unique(x).shape[0] for x in action_2d]
+        ) != set([self.len_list]):
+            raise ValueError(
+                "when is_factorizable=False, actions of each slate must not be duplicated"
+            )
         action_match_flag = sorted_actions == action_2d
         pscore_flg = np.repeat(action_match_flag.all(axis=1), self.len_list)
         pscore_item_position_flg = action_match_flag.flatten()
