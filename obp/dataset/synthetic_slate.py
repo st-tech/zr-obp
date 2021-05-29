@@ -500,7 +500,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         pscore = np.zeros(n_rounds * self.len_list)
         if return_pscore_item_position:
             pscore_item_position = np.zeros(n_rounds * self.len_list)
-            if not self.is_factorizable:
+            if not self.is_factorizable and self.behavior_policy_function is not None:
                 enumerated_slate_actions = [
                     _
                     for _ in permutations(
