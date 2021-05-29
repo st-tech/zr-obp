@@ -278,7 +278,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     )
                 )
             else:
-                self.action_interaction_weight_matrix = np.identity(self.len_list)
+                self.action_interaction_weight_matrix = np.zeros(
+                    (self.len_list, self.len_list)
+                )
         if self.behavior_policy_function is None:
             self.uniform_behavior_policy = (
                 np.ones(self.n_unique_action) / self.n_unique_action
