@@ -3,7 +3,7 @@
 
 """Class for Generating Synthetic Slate Logged Bandit Feedback."""
 from dataclasses import dataclass
-from typing import Optional, Callable, Tuple, Union, List
+from typing import Optional, Callable, Tuple, Union
 from itertools import permutations, product
 
 import numpy as np
@@ -321,30 +321,44 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             action_interaction_weight_matrix[position_, position_] = 1
         return action_interaction_weight_matrix
 
-    def _calc_pscore_given_action_list(
-        self, action_list: List[int], policy_logit_i_: np.ndarray
-    ) -> float:
-        """Calculate the propensity score given combinatorial set of actions.
+    def _calc_pscore_given_policy_logit(
+        self, all_slate_actions: np.ndarray, policy_logit_i_: np.ndarray
+    ) -> np.ndarray:
+        """Calculate the propensity score of each of the possible slate actions given policy_logit.
 
         Parameters
         ------------
-        action_list: List[int], len=len_list
-            List of combinatorial set of slate actions.
+        all_slate_actions: array-like, (n_action, len_list)
+            All possible slate actions.
 
         policy_logit_i_: array-like, (n_unique_action, )
             Logit values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
+        Returns
+        ------------
+        pscores: array-like, (n_action, )
+            Propensity scores of all the possible slate actions given policy_logit.
+
         """
-        unique_action_set = np.arange(self.n_unique_action)
-        pscore_ = 1.0
-        for action in action_list:
-            score_ = softmax(policy_logit_i_[:, unique_action_set])[0]
-            action_index = np.where(unique_action_set == action)[0][0]
-            pscore_ *= score_[action_index]
-            unique_action_set = np.delete(
-                unique_action_set, unique_action_set == action
-            )
-        return pscore_
+        n_actions = len(all_slate_actions)
+        unique_action_set_2d = np.tile(np.arange(self.n_unique_action), (n_actions, 1))
+        pscores = np.ones(n_actions)
+        for position_ in np.arange(self.len_list):
+            action_index = np.where(
+                unique_action_set_2d == all_slate_actions[:, position_][:, np.newaxis]
+            )[1]
+            pscores *= softmax(policy_logit_i_[unique_action_set_2d])[
+                np.arange(n_actions), action_index
+            ]
+            # delete actions
+            if position_ + 1 != self.len_list:
+                mask = np.ones((n_actions, self.n_unique_action - position_))
+                mask[np.arange(n_actions), action_index] = 0
+                unique_action_set_2d = unique_action_set_2d[mask.astype(bool)].reshape(
+                    (-1, self.n_unique_action - position_ - 1)
+                )
+
+        return pscores
 
     def obtain_pscore_given_evaluation_policy_logit(
         self,
@@ -386,6 +400,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         pscore = np.zeros(n_rounds * self.len_list)
         if return_pscore_item_position:
             pscore_item_position = np.zeros(n_rounds * self.len_list)
+            if not self.is_factorizable:
+                enumerated_slate_actions = [
+                    _
+                    for _ in permutations(
+                        np.arange(self.n_unique_action), self.len_list
+                    )
+                ]
+                enumerated_slate_actions = np.array(enumerated_slate_actions)
         else:
             pscore_item_position = None
         for i in tqdm(
@@ -417,18 +439,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     elif self.is_factorizable:
                         pscore_item_position_i_l = score_[action_index_]
                     else:
-                        pscore_item_position_i_l = 0.0
-                        for action_list in permutations(
-                            np.arange(self.n_unique_action), self.len_list
-                        ):
-                            if action_ != action_list[position_]:
-                                continue
-                            pscore_item_position_i_l += (
-                                self._calc_pscore_given_action_list(
-                                    action_list=action_list,
-                                    policy_logit_i_=evaluation_policy_logit_[i : i + 1],
-                                )
-                            )
+                        pscores = self._calc_pscore_given_policy_logit(
+                            all_slate_actions=enumerated_slate_actions,
+                            policy_logit_i_=evaluation_policy_logit_[i],
+                        )
+                        pscore_item_position_i_l = pscores[
+                            enumerated_slate_actions[:, position_] == action_
+                        ].sum()
                     pscore_item_position[
                         i * self.len_list + position_
                     ] = pscore_item_position_i_l
@@ -483,6 +500,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         pscore = np.zeros(n_rounds * self.len_list)
         if return_pscore_item_position:
             pscore_item_position = np.zeros(n_rounds * self.len_list)
+            if not self.is_factorizable and self.behavior_policy_function is not None:
+                enumerated_slate_actions = [
+                    _
+                    for _ in permutations(
+                        np.arange(self.n_unique_action), self.len_list
+                    )
+                ]
+                enumerated_slate_actions = np.array(enumerated_slate_actions)
         else:
             pscore_item_position = None
         for i in tqdm(
@@ -504,7 +529,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate joint pscore
                 pscore_i *= score_[sampled_action_index]
                 pscore_cascade[i * self.len_list + position_] = pscore_i
-                # update the pscore given the remaining itemss for nonfactorizable behavior policy
+                # update the pscore given the remaining items for nonfactorizable behavior policy
                 if not self.is_factorizable and position_ != self.len_list - 1:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == sampled_action
@@ -521,18 +546,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     elif position_ == 0:
                         pscore_item_position_i_l = pscore_i
                     else:
-                        pscore_item_position_i_l = 0.0
-                        for action_list in permutations(
-                            np.arange(self.n_unique_action), self.len_list
-                        ):
-                            if sampled_action != action_list[position_]:
-                                continue
-                            pscore_item_position_i_l += (
-                                self._calc_pscore_given_action_list(
-                                    action_list=action_list,
-                                    policy_logit_i_=behavior_policy_logit_[i : i + 1],
-                                )
-                            )
+                        pscores = self._calc_pscore_given_policy_logit(
+                            all_slate_actions=enumerated_slate_actions,
+                            policy_logit_i_=behavior_policy_logit_[i],
+                        )
+                        pscore_item_position_i_l = pscores[
+                            enumerated_slate_actions[:, position_] == sampled_action
+                        ].sum()
                     pscore_item_position[
                         i * self.len_list + position_
                     ] = pscore_item_position_i_l
@@ -822,13 +842,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         )[-1]
                     )
             else:
-                for action_list in enumerated_slate_actions:
-                    pscores.append(
-                        self._calc_pscore_given_action_list(
-                            action_list=action_list,
-                            policy_logit_i_=evaluation_policy_logit_[i : i + 1],
-                        )
-                    )
+                pscores = self._calc_pscore_given_policy_logit(
+                    all_slate_actions=np.array(enumerated_slate_actions),
+                    policy_logit_i_=evaluation_policy_logit_[i],
+                )
             pscores = np.array(pscores)
 
             # calculate expected slate-level reward for each combinatorial set of items (i.e., slate actions)
