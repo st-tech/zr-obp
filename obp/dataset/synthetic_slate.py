@@ -3,7 +3,7 @@
 
 """Class for Generating Synthetic Slate Logged Bandit Feedback."""
 from dataclasses import dataclass
-from typing import Optional, Callable, Tuple, Union, List
+from typing import Optional, Callable, Tuple, Union
 from itertools import permutations, product
 
 import numpy as np
@@ -351,7 +351,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 np.arange(n_actions), action_index
             ]
             # delete actions
-            if position_ != self.len_list:
+            if position_ + 1 != self.len_list:
                 mask = np.ones((n_actions, self.n_unique_action - position_))
                 mask[np.arange(n_actions), action_index] = 0
                 unique_action_set_2d = unique_action_set_2d[mask.astype(bool)].reshape(
