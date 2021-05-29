@@ -818,15 +818,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             enumerated_slate_actions = [
                 _ for _ in permutations(np.arange(self.n_unique_action), self.len_list)
             ]
+        enumerated_slate_actions = np.array(enumerated_slate_actions).astype("int8")
         n_slate_actions = len(enumerated_slate_actions)
         n_rounds = len(evaluation_policy_logit_)
 
         pscores = []
+        n_enumerated_slate_actions = len(enumerated_slate_actions)
         if self.is_factorizable:
             for action_list in tqdm(
                 enumerated_slate_actions,
                 desc="[calc_ground_truth_policy_value (pscore)]",
-                total=len(enumerated_slate_actions),
+                total=n_enumerated_slate_actions,
             ):
                 pscores.append(
                     softmax(evaluation_policy_logit_)[:, action_list].prod(1)
@@ -866,9 +868,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             ).T
             policy_value = (pscores * expected_slate_rewards.sum(axis=1)).sum()
         else:
-            n_rounds = len(context)
-            len_enumerated = len(enumerated_slate_actions)
-            n_batch = (n_rounds * len_enumerated * self.len_list - 1) // 10 ** 8 + 1
+            n_batch = (
+                n_rounds * n_enumerated_slate_actions * self.len_list - 1
+            ) // 10 ** 8 + 1
             batch_size = ((n_rounds - 1) // n_batch) + 1
 
             policy_value = 0.0
@@ -887,7 +889,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 expected_slate_rewards_ = self.reward_function(
                     context=context_,
                     action_context=self.action_context,
-                    action=np.array(enumerated_slate_actions).flatten(),
+                    action=enumerated_slate_actions.flatten(),
                     action_interaction_weight_matrix=self.action_interaction_weight_matrix,
                     base_reward_function=self.base_reward_function,
                     reward_type=self.reward_type,
@@ -1286,7 +1288,7 @@ def action_interaction_reward_function(
         action = np.tile(action, n_rounds)
     # action_2d: array-like, shape (n_rounds (* len(enumerated_action_list)), len_list)
     action_2d = action.reshape((-1, len_list)).astype("int8")
-    len_enumerated = len(action) // n_rounds
+    n_enumerated_slate_actions = len(action) // n_rounds
     # expected_reward: array-like, shape (n_rounds, n_unique_action)
     expected_reward = base_reward_function(
         context=context, action_context=action_context, random_state=random_state
@@ -1298,7 +1300,7 @@ def action_interaction_reward_function(
     expected_reward_factual = np.zeros_like(action_2d, dtype="float16")
     for position_ in np.arange(len_list):
         tmp_fixed_reward = expected_reward[
-            np.arange(len(action_2d)) // len_enumerated,
+            np.arange(len(action_2d)) // n_enumerated_slate_actions,
             action_2d[:, position_],
         ]
         for position2_ in np.arange(len_list)[::-1]:
@@ -1313,7 +1315,7 @@ def action_interaction_reward_function(
                 ]
             else:
                 expected_reward_ = expected_reward[
-                    np.arange(len(action_2d)) // len_enumerated,
+                    np.arange(len(action_2d)) // n_enumerated_slate_actions,
                     action_2d[:, position2_],
                 ]
                 weight_ = action_interaction_weight_matrix[position_, position2_]
