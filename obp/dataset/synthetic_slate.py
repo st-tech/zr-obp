@@ -1227,9 +1227,14 @@ def action_interaction_reward_function(
     if not isinstance(action, np.ndarray) or action.ndim != 1:
         raise ValueError("action must be 1-dimensional ndarray")
 
-    if action.shape[0] // len_list * context.shape[0] == 0:
+    if (action.shape[0] % len_list * context.shape[0]) == 0:
         raise ValueError(
             "the size of axis 0 of context times len_list must be multiple of that of action"
+        )
+
+    if not is_enumerated and action.shape[0] != len_list * context.shape[0]:
+        raise ValueError(
+            "the size of axis 0 of context times len_list must be same with that of action"
         )
 
     if reward_type not in [
@@ -1271,16 +1276,6 @@ def action_interaction_reward_function(
         ):
             raise ValueError(
                 f"the shape of action_interaction_weight_matrix must be (len_list, len_list), but {action_interaction_weight_matrix.shape}"
-            )
-    if is_enumerated:
-        if (action.shape[0] % (len_list * context.shape[0])) != 0:
-            raise ValueError(
-                "the size of axis 0 of len_list multiplied by that of context must be the multiple of that of action"
-            )
-    else:
-        if len_list * context.shape[0] != action.shape[0]:
-            raise ValueError(
-                "the size of axis 0 of len_list multiplied by that of context must be the same as that of action"
             )
 
     n_rounds = context.shape[0]
