@@ -804,24 +804,28 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_rounds = len(evaluation_policy_logit_)
         policy_value = 0
 
+        if self.is_factorizable:
+            pscores_when_factorizable = []
+            for action_list in tqdm(
+                enumerated_slate_actions,
+                desc="[calc_ground_truth_policy_value (pscore)]",
+                total=len(enumerated_slate_actions),
+            ):
+                pscores_when_factorizable.append(
+                    softmax(evaluation_policy_logit_)[:, action_list].prod(1)
+                )
+            pscores_when_factorizable = np.array(pscores_when_factorizable).T
+
         for i in tqdm(
             np.arange(n_rounds),
             desc="[calc_ground_truth_policy_value]",
             total=n_rounds,
         ):
             # calculate pscore for each combinatorial set of items (i.e., slate actions)
-            pscores = []
             if self.is_factorizable:
-                pscore_when_factorizable = softmax(evaluation_policy_logit_[i : i + 1])[
-                    0
-                ]
-                for action_list in enumerated_slate_actions:
-                    pscores.append(
-                        np.cumprod(
-                            [pscore_when_factorizable[a_] for a_ in action_list]
-                        )[-1]
-                    )
+                pscores = pscores_when_factorizable[i]
             else:
+                pscores = []
                 for action_list in enumerated_slate_actions:
                     pscores.append(
                         self._calc_pscore_given_action_list(
@@ -829,7 +833,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                             policy_logit_i_=evaluation_policy_logit_[i : i + 1],
                         )
                     )
-            pscores = np.array(pscores)
+                pscores = np.array(pscores)
 
             # calculate expected slate-level reward for each combinatorial set of items (i.e., slate actions)
             if self.base_reward_function is None:
