@@ -857,7 +857,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             expected_slate_rewards = np.array(
                 [
                     expected_slot_reward_tile[
-                        np.arange(n_rounds * n_slate_actions) % n_slate_actions,
+                        np.arange(n_slate_actions) % n_slate_actions,
                         np.array(enumerated_slate_actions)[:, position_],
                         position_,
                     ]
@@ -924,8 +924,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 policy_value += (
                     pscores_.flatten() * expected_slate_rewards_.sum(axis=1)
                 ).sum()
+            policy_value /= n_rounds
 
-        return policy_value / n_rounds
+        return policy_value
 
     def generate_evaluation_policy_pscore(
         self,
@@ -1178,7 +1179,7 @@ def action_interaction_reward_function(
     action_context: array-like, shape (n_unique_action, dim_action_context)
         Vector representation for each action.
 
-    action: array-like, shape (n_rounds * len_list, ) or (len(enumerated_slate_actions * len_list, )
+    action: array-like, shape (n_rounds * len_list, ) or (len(enumerated_slate_actions) * len_list, )
         Sampled action.
         If not is_enumerated=False, action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
 
@@ -1227,7 +1228,7 @@ def action_interaction_reward_function(
     if not isinstance(action, np.ndarray) or action.ndim != 1:
         raise ValueError("action must be 1-dimensional ndarray")
 
-    if (action.shape[0] % len_list * context.shape[0]) == 0:
+    if is_enumerated and action.shape[0] % len_list != 0:
         raise ValueError(
             "the size of axis 0 of context times len_list must be multiple of that of action"
         )
@@ -1250,6 +1251,7 @@ def action_interaction_reward_function(
         "cascade_additive",
         "standard_decay",
         "cascade_decay",
+        "independent",
     ]:
         raise ValueError(
             f"reward_structure must be either 'standard_additive', 'cascade_additive', 'standard_decay' or 'cascade_decay', but {reward_structure} is given."
