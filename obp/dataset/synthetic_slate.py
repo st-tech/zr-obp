@@ -1247,14 +1247,14 @@ def action_interaction_reward_function(
                 f"the shape of action_interaction_weight_matrix must be (len_list, len_list), but {action_interaction_weight_matrix.shape}"
             )
     if is_enumerated:
-        if (action.shape[0] % (action_interaction_weight_matrix.shape[0] * context.shape[0])) == 0:
+        if (action.shape[0] % (len_list * context.shape[0])) != 0:
             raise ValueError(
-            "the size of axis 0 of action_interaction_weight_matrix multiplied by that of context must be the same as that of action"
+            "the size of axis 0 of len_list multiplied by that of context must be the multiple of that of action"
         )
     else:
-        if action_interaction_weight_matrix.shape[0] * context.shape[0] != action.shape[0]:
+        if len_list * context.shape[0] != action.shape[0]:
             raise ValueError(
-                "the size of axis 0 of action_interaction_weight_matrix multiplied by that of context must be the same as that of action"
+                "the size of axis 0 of len_list multiplied by that of context must be the same as that of action"
             )
 
     n_rounds = context.shape[0]
@@ -1262,18 +1262,18 @@ def action_interaction_reward_function(
     if is_enumerated:
         action = np.tile(action, n_rounds)
     # action_2d: array-like, shape (n_rounds (* len(enumerated_action_list)), len_list)
-    action_2d = action.reshape((-1, len_list))
+    action_2d = action.reshape((-1, len_list)).astype("int8")
     len_enumerated = len(action) // n_rounds
     # expected_reward: array-like, shape (n_rounds, n_unique_action)
     expected_reward = base_reward_function(
         context=context, action_context=action_context, random_state=random_state
     )
     if reward_type == "binary":
-        expected_reward = np.log(expected_reward / (1 - expected_reward))
-    expected_reward_factual = np.zeros_like(action_2d, dtype=float)
+        expected_reward = np.log(expected_reward / (1 - expected_reward)).astype("float16")
+    expected_reward_factual = np.zeros_like(action_2d, dtype="float16")
     for position_ in np.arange(len_list):
         tmp_fixed_reward = expected_reward[
-            np.arange(len(action_2d)) // len_enumerated, action_2d[:, position_]
+            np.arange(len(action_2d)) // len_enumerated, action_2d[:, position_],
         ]
         for position2_ in np.arange(len_list)[::-1]:
             if is_additive:
