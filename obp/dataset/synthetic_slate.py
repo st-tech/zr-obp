@@ -831,7 +831,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 pscores.append(
                     softmax(evaluation_policy_logit_)[:, action_list].prod(1)
                 )
-            pscores = np.array(pscores).T.flatten()
+            pscores = np.array(pscores).T
         else:
             for i in tqdm(
                 np.arange(n_rounds),
@@ -844,9 +844,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         policy_logit_i_=evaluation_policy_logit_[i],
                     )
                 )
-            pscores = np.array(pscores).flatten()
+            pscores = np.array(pscores)
 
-        print("calculating expected rewards..")
         # calculate expected slate-level reward for each combinatorial set of items (i.e., slate actions)
         if self.base_reward_function is None:
             expected_slot_reward = self.sample_contextfree_expected_reward(
@@ -865,40 +864,68 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     for position_ in np.arange(self.len_list)
                 ]
             ).T
+            policy_value = (pscores * expected_slate_rewards.sum(axis=1)).sum()
         else:
-            expected_slate_rewards = self.reward_function(
-                context=context,
-                action_context=self.action_context,
-                action=np.array(enumerated_slate_actions).flatten(),
-                action_interaction_weight_matrix=self.action_interaction_weight_matrix,
-                base_reward_function=self.base_reward_function,
-                reward_type=self.reward_type,
-                reward_structure=self.reward_structure,
-                len_list=self.len_list,
-                is_enumerated=True,
-                random_state=self.random_state,
-            )
-        expected_slate_rewards = np.clip(
-            expected_slate_rewards, 0, None
-        )  # (n_slate_actions, self.len_list)
+            n_rounds = len(context)
+            len_enumerated = len(enumerated_slate_actions)
+            n_batch = (n_rounds * len_enumerated * self.len_list - 1) // 10 ** 8 + 1
+            batch_size = ((n_rounds - 1) // n_batch) + 1
 
-        # click models based on expected reward
-        expected_slate_rewards *= self.exam_weight
-        if self.reward_type == "binary":
-            discount_factors = np.ones(expected_slate_rewards.shape[0])
-            previous_slot_expected_reward = np.zeros(expected_slate_rewards.shape[0])
-            for position_ in np.arange(self.len_list):
-                discount_factors *= previous_slot_expected_reward * self.attractiveness[
-                    position_
-                ] + (1 - previous_slot_expected_reward)
-                expected_slate_rewards[:, position_] = (
-                    discount_factors * expected_slate_rewards[:, position_]
+            policy_value = 0.0
+            for batch_idx in tqdm(
+                np.arange(n_batch),
+                desc=f"[calc_ground_truth_policy_value (expected reward), batch_size={batch_size}]",
+                total=n_batch,
+            ):
+                context_ = context[
+                    batch_idx * batch_size : (batch_idx + 1) * batch_size
+                ]
+                pscores_ = pscores[
+                    batch_idx * batch_size : (batch_idx + 1) * batch_size
+                ]
+
+                expected_slate_rewards_ = self.reward_function(
+                    context=context_,
+                    action_context=self.action_context,
+                    action=np.array(enumerated_slate_actions).flatten(),
+                    action_interaction_weight_matrix=self.action_interaction_weight_matrix,
+                    base_reward_function=self.base_reward_function,
+                    reward_type=self.reward_type,
+                    reward_structure=self.reward_structure,
+                    len_list=self.len_list,
+                    is_enumerated=True,
+                    random_state=self.random_state,
                 )
-                previous_slot_expected_reward = expected_slate_rewards[:, position_]
 
-        policy_value = (pscores * expected_slate_rewards.sum(axis=1)).sum() / n_rounds
+                expected_slate_rewards_ = np.clip(
+                    expected_slate_rewards_, 0, None
+                )  # (n_slate_actions, self.len_list)
 
-        return policy_value
+                # click models based on expected reward
+                expected_slate_rewards_ *= self.exam_weight
+                if self.reward_type == "binary":
+                    discount_factors = np.ones(expected_slate_rewards_.shape[0])
+                    previous_slot_expected_reward = np.zeros(
+                        expected_slate_rewards_.shape[0]
+                    )
+                    for position_ in np.arange(self.len_list):
+                        discount_factors *= (
+                            previous_slot_expected_reward
+                            * self.attractiveness[position_]
+                            + (1 - previous_slot_expected_reward)
+                        )
+                        expected_slate_rewards_[:, position_] = (
+                            discount_factors * expected_slate_rewards_[:, position_]
+                        )
+                        previous_slot_expected_reward = expected_slate_rewards_[
+                            :, position_
+                        ]
+
+                policy_value += (
+                    pscores_.flatten() * expected_slate_rewards_.sum(axis=1)
+                ).sum()
+
+        return policy_value / n_rounds
 
     def generate_evaluation_policy_pscore(
         self,
