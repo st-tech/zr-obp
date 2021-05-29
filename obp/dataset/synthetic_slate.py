@@ -300,7 +300,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             action_interaction_weight_matrix[:, position_] = -self.decay_function(
                 np.abs(np.arange(len_list) - position_)
             )
-            action_interaction_weight_matrix[position_, position_] = 1
+            action_interaction_weight_matrix[position_, position_] = 0
         return action_interaction_weight_matrix
 
     def obtain_cascade_decay_action_interaction_weight_matrix(
@@ -314,9 +314,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 np.abs(np.arange(len_list) - position_)
             )
             for position_2 in np.arange(len_list):
-                if position_ < position_2:
+                if position_ <= position_2:
                     action_interaction_weight_matrix[position_2, position_] = 0
-            action_interaction_weight_matrix[position_, position_] = 1
         return action_interaction_weight_matrix
 
     def _calc_pscore_given_policy_logit(
@@ -1303,8 +1302,10 @@ def action_interaction_reward_function(
             np.arange(len(action_2d)) // n_enumerated_slate_actions,
             action_2d[:, position_],
         ]
-        for position2_ in np.arange(len_list)[::-1]:
-            if is_additive:
+        if reward_structure == "independent":
+            continue
+        elif is_additive:
+            for position2_ in np.arange(len_list)[::-1]:
                 if is_cascade:
                     if position_ >= position2_:
                         break
@@ -1313,7 +1314,13 @@ def action_interaction_reward_function(
                 tmp_fixed_reward += action_interaction_weight_matrix[
                     action_2d[:, position_], action_2d[:, position2_]
                 ]
-            else:
+        else:
+            for position2_ in np.arange(len_list)[::-1]:
+                if is_cascade:
+                    if position_ >= position2_:
+                        break
+                elif position_ == position2_:
+                    continue
                 expected_reward_ = expected_reward[
                     np.arange(len(action_2d)) // n_enumerated_slate_actions,
                     action_2d[:, position2_],
