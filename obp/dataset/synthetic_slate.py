@@ -838,10 +838,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 desc="[calc_ground_truth_policy_value (pscore)]",
                 total=n_rounds,
             ):
-                pscores.append(self._calc_pscore_given_policy_logit(
-                    all_slate_actions=np.array(enumerated_slate_actions),
-                    policy_logit_i_=evaluation_policy_logit_[i],
-                ))
+                pscores.append(
+                    self._calc_pscore_given_policy_logit(
+                        all_slate_actions=np.array(enumerated_slate_actions),
+                        policy_logit_i_=evaluation_policy_logit_[i],
+                    )
+                )
             pscores = np.array(pscores).flatten()
 
         print("calculating expected rewards..")
@@ -884,14 +886,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         expected_slate_rewards *= self.exam_weight
         if self.reward_type == "binary":
             discount_factors = np.ones(expected_slate_rewards.shape[0])
-            previous_slot_expected_reward = np.zeros(
-                expected_slate_rewards.shape[0]
-            )
+            previous_slot_expected_reward = np.zeros(expected_slate_rewards.shape[0])
             for position_ in np.arange(self.len_list):
-                discount_factors *= (
-                    previous_slot_expected_reward * self.attractiveness[position_]
-                    + (1 - previous_slot_expected_reward)
-                )
+                discount_factors *= previous_slot_expected_reward * self.attractiveness[
+                    position_
+                ] + (1 - previous_slot_expected_reward)
                 expected_slate_rewards[:, position_] = (
                     discount_factors * expected_slate_rewards[:, position_]
                 )
@@ -1249,8 +1248,8 @@ def action_interaction_reward_function(
     if is_enumerated:
         if (action.shape[0] % (len_list * context.shape[0])) != 0:
             raise ValueError(
-            "the size of axis 0 of len_list multiplied by that of context must be the multiple of that of action"
-        )
+                "the size of axis 0 of len_list multiplied by that of context must be the multiple of that of action"
+            )
     else:
         if len_list * context.shape[0] != action.shape[0]:
             raise ValueError(
@@ -1269,11 +1268,14 @@ def action_interaction_reward_function(
         context=context, action_context=action_context, random_state=random_state
     )
     if reward_type == "binary":
-        expected_reward = np.log(expected_reward / (1 - expected_reward)).astype("float16")
+        expected_reward = np.log(expected_reward / (1 - expected_reward)).astype(
+            "float16"
+        )
     expected_reward_factual = np.zeros_like(action_2d, dtype="float16")
     for position_ in np.arange(len_list):
         tmp_fixed_reward = expected_reward[
-            np.arange(len(action_2d)) // len_enumerated, action_2d[:, position_],
+            np.arange(len(action_2d)) // len_enumerated,
+            action_2d[:, position_],
         ]
         for position2_ in np.arange(len_list)[::-1]:
             if is_additive:
@@ -1287,7 +1289,8 @@ def action_interaction_reward_function(
                 ]
             else:
                 expected_reward_ = expected_reward[
-                    np.arange(len(action_2d)) // len_enumerated, action_2d[:, position2_]
+                    np.arange(len(action_2d)) // len_enumerated,
+                    action_2d[:, position2_],
                 ]
                 weight_ = action_interaction_weight_matrix[position_, position2_]
                 tmp_fixed_reward += expected_reward_ * weight_
