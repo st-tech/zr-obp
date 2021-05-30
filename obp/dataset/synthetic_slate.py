@@ -1172,7 +1172,7 @@ def action_interaction_reward_function(
     random_state: Optional[int] = None,
     **kwargs,
 ) -> np.ndarray:
-    """Reward function incorporating additive interactions among combinatorial action
+    """Reward function incorporating interactions among combinatorial action
 
     Parameters
     -----------
@@ -1183,8 +1183,9 @@ def action_interaction_reward_function(
         Vector representation for each action.
 
     action: array-like, shape (n_rounds * len_list, ) or (len(enumerated_slate_actions) * len_list, )
-        Sampled action.
-        If not is_enumerated=False, action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
+        When is_enumerated=False, action corresponds to sampled action.
+        In this case, action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
+        When is_enumerated=True, action corresponds to the enumerated all possible set of combinatorial action in a slate.
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
@@ -1260,11 +1261,8 @@ def action_interaction_reward_function(
             f"reward_structure must be either 'standard_additive', 'cascade_additive', 'standard_decay' or 'cascade_decay', but {reward_structure} is given."
         )
 
-    is_additive, is_cascade = False, False
-    if reward_structure in ["standard_additive", "cascade_additive"]:
-        is_additive = True
-    if reward_structure in ["cascade_additive", "cascade_decay"]:
-        is_cascade = True
+    is_additive = reward_structure in ["standard_additive", "cascade_additive"]
+    is_cascade = reward_structure in ["cascade_additive", "cascade_decay"]
 
     if is_additive:
         if action_interaction_weight_matrix.shape != (
