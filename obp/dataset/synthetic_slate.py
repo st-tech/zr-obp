@@ -194,13 +194,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"n_unique_action must be an integer larger than 1, but {self.n_unique_action} is given"
             )
-        if (
-            not isinstance(self.len_list, int)
-            or self.len_list <= 1
-            or self.len_list > self.n_unique_action
-        ):
+        if not isinstance(self.len_list, int) or self.len_list <= 1:
             raise ValueError(
-                f"len_list must be an integer such that 1 < len_list <= n_unique_action, but {self.len_list} is given"
+                f"len_list must be an integer larger than 1, but {self.len_list} is given"
+            )
+        if not self.is_factorizable and self.len_list > self.n_unique_action:
+            raise ValueError(
+                f"len_list must be equal to or smaller than n_unique_action, but {self.len_list} is given"
             )
         if not isinstance(self.dim_context, int) or self.dim_context <= 0:
             raise ValueError(
@@ -1119,10 +1119,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             raise ValueError(
                 "when is_factorizable=False, actions of each slate must not be duplicated"
             )
-        action_match_flag = sorted_actions == action_2d
-        pscore_flg = np.repeat(action_match_flag.all(axis=1), self.len_list)
-        pscore_item_position_flg = action_match_flag.flatten()
-        pscore_cascade_flg = action_match_flag.cumprod(axis=1).flatten()
+        if self.is_factorizable:
+            action_match_flg = (
+                np.tile(sorted_actions[:, 0], (action_2d.shape[1], 1)).T == action_2d
+            )
+        else:
+            action_match_flg = sorted_actions == action_2d
+        pscore_flg = np.repeat(action_match_flg.all(axis=1), self.len_list)
+        pscore_item_position_flg = action_match_flg.flatten()
+        pscore_cascade_flg = action_match_flg.cumprod(axis=1).flatten()
         # calculate the three variants of the propensity scores based on the given epsilon value
         pscore = pscore_flg * (1 - epsilon) + epsilon * random_pscore
         pscore_item_position = (
@@ -1183,9 +1188,9 @@ def action_interaction_reward_function(
         Vector representation for each action.
 
     action: array-like, shape (n_rounds * len_list, ) or (len(enumerated_slate_actions) * len_list, )
-        When is_enumerated=False, action corresponds to sampled action.
+        When is_enumerated=False, action corresponds to actions sampled by a (often behavior) policy.
         In this case, action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
-        When is_enumerated=True, action corresponds to the enumerated all possible set of combinatorial action in a slate.
+        When is_enumerated=True, action corresponds to the enumerated all possible combinatorial actions.
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,

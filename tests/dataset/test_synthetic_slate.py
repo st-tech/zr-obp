@@ -52,7 +52,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "len_list must be an integer such that",
+        "len_list must be an integer larger than",
     ),
     (
         5,
@@ -65,7 +65,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "len_list must be an integer such that",
+        "len_list must be an integer larger than",
     ),
     (
         5,
@@ -78,7 +78,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "len_list must be an integer such that",
+        "len_list must be equal to or smaller than",
     ),
     (
         5,
@@ -1013,6 +1013,23 @@ valid_input_of_obtain_batch_bandit_feedback = [
         False,
         "independent, pbm click model (binary reward)",
     ),
+    (
+        3,
+        5,
+        2,
+        "binary",
+        123,
+        1000,
+        "independent",
+        "exponential",
+        "pbm",
+        0.5,
+        None,
+        True,
+        logistic_reward_function,
+        False,
+        "independent, pbm click model (binary reward)",
+    ),
 ]
 
 
@@ -1282,39 +1299,52 @@ def test_generate_evaluation_policy_pscore_using_invalid_input_data(
         )
 
 
-# is_factorizable, evaluation_policy_type, epsilon, description
+# n_unique_action, is_factorizable, evaluation_policy_type, epsilon, description
 valid_input_of_generate_evaluation_policy_pscore = [
     (
+        10,
         False,
         "optimal",
         0.1,
         "optimal evaluation policy",
     ),
     (
+        10,
         True,
         "optimal",
         0.1,
         "optimal evaluation policy",
     ),
     (
+        10,
         False,
         "anti-optimal",
         0.1,
         "anti-optimal evaluation policy",
     ),
     (
+        10,
         True,
         "random",
         None,
         "random evaluation policy",
     ),
     (
+        10,
         False,
         "optimal",
         0.0,
         "optimal evaluation policy, epsilon=0.0 (greedy)",
     ),
     (
+        10,
+        True,
+        "optimal",
+        1.0,
+        "optimal evaluation policy, epsilon=1.0 (random)",
+    ),
+    (
+        2,
         True,
         "optimal",
         1.0,
@@ -1324,17 +1354,17 @@ valid_input_of_generate_evaluation_policy_pscore = [
 
 
 @pytest.mark.parametrize(
-    "is_factorizable, evaluation_policy_type, epsilon, description",
+    "n_unique_action, is_factorizable, evaluation_policy_type, epsilon, description",
     valid_input_of_generate_evaluation_policy_pscore,
 )
 def test_generate_evaluation_policy_pscore_using_valid_input_data(
+    n_unique_action,
     is_factorizable,
     evaluation_policy_type,
     epsilon,
     description,
 ) -> None:
     # set parameters
-    n_unique_action = 10
     len_list = 3
     dim_context = 2
     reward_type = "binary"
@@ -1750,6 +1780,19 @@ valid_input_of_calc_ground_truth_policy_value = [
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         None,
     ),
+    (
+        4,
+        3,
+        5,
+        2,
+        "binary",
+        "cascade_decay",
+        "cascade",
+        logistic_reward_function,
+        True,
+        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
+        None,
+    ),
 ]
 
 
@@ -1859,16 +1902,25 @@ def test_calc_ground_truth_policy_value_value_check_with_click_model(is_factoriz
     assert policy_value_cascade < policy_value_none
 
 
+# "len_list, click_model, is_factorizable"
+valid_input_of_calc_ground_truth_policy_value = [
+    (3, "pbm", False),
+    (3, "pbm", True),
+    (3, "cascade", False),
+    (3, "cascade", True),
+    (5, "cascade", True),
+]
+
+
 @pytest.mark.parametrize(
-    "click_model, is_factorizable",
-    [("pbm", False), ("pbm", True), ("cascade", False), ("cascade", True)],
+    "len_list, click_model, is_factorizable",
+    valid_input_of_calc_ground_truth_policy_value,
 )
 def test_calc_ground_truth_policy_value_value_check_with_eta(
-    click_model, is_factorizable
+    len_list, click_model, is_factorizable
 ):
     n_rounds = 3
     n_unique_action = 4
-    len_list = 3
     dim_context = 3
     reward_type = "binary"
     reward_structure = "cascade_additive"
@@ -1904,6 +1956,7 @@ def test_calc_ground_truth_policy_value_value_check_with_eta(
         eta=1.0,
         random_state=12345,
         base_reward_function=logistic_reward_function,
+        is_factorizable=is_factorizable,
     )
     logged_bandit_feedback_1 = dataset_1.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     policy_value_1 = dataset_1.calc_ground_truth_policy_value(
@@ -1921,6 +1974,7 @@ def test_calc_ground_truth_policy_value_value_check_with_eta(
         eta=2.0,
         random_state=12345,
         base_reward_function=logistic_reward_function,
+        is_factorizable=is_factorizable,
     )
     logged_bandit_feedback_2 = dataset_2.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     policy_value_2 = dataset_2.calc_ground_truth_policy_value(
@@ -1987,16 +2041,27 @@ def test_obtain_pscore_given_evaluation_policy_logit(
         )
 
 
+# n_unique_action, return_pscore_item_position, is_factorizable
+valid_input_of_obtain_pscore_given_evaluation_policy_logit = [
+    (10, True, True),
+    (10, True, False),
+    (10, False, True),
+    (10, False, False),
+    (3, False, True),
+]
+
+
 @pytest.mark.parametrize(
-    "return_pscore_item_position, is_factorizable",
-    [(True, True), (True, False), (False, True), (False, False)],
+    "n_unique_action, return_pscore_item_position, is_factorizable",
+    valid_input_of_obtain_pscore_given_evaluation_policy_logit,
 )
 def test_obtain_pscore_given_evaluation_policy_logit_value_check(
+    n_unique_action,
     return_pscore_item_position,
     is_factorizable,
 ):
     dataset = SyntheticSlateBanditDataset(
-        n_unique_action=10,
+        n_unique_action=n_unique_action,
         len_list=5,
         behavior_policy_function=linear_behavior_policy_logit,
         is_factorizable=is_factorizable,
