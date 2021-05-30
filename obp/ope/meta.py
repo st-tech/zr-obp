@@ -623,7 +623,7 @@ class OffPolicyEvaluation:
                 n_boot=n_bootstrap_samples,
                 seed=random_state,
             )
-            ax.set_title(estimator_name)
+            ax.set_title(estimator_name.upper(), fontsize=20)
             ax.set_ylabel(
                 f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20
             )
