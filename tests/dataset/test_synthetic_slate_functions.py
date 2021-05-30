@@ -1,14 +1,10 @@
 import numpy as np
 import pytest
 
-from obp.dataset.synthetic import (
-    linear_reward_function,
-    logistic_reward_function,
-)
+from obp.dataset.synthetic import logistic_reward_function
 from obp.dataset.synthetic_slate import (
     linear_behavior_policy_logit,
-    action_interaction_decay_reward_function,
-    action_interaction_additive_reward_function,
+    action_interaction_reward_function,
     generate_symmetric_matrix,
 )
 
@@ -92,8 +88,8 @@ def test_linear_behavior_policy_logit_using_valid_input(
     assert logit_value.shape == (context.shape[0], action_context.shape[0])
 
 
-# context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, err, description
-invalid_input_of_action_interaction_decay_reward_function = [
+# context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, reward_structure, len_list, is_enumerated, random_state, err, description
+invalid_input_of_action_interaction_reward_function = [
     (
         np.array([5, 2]),
         np.ones([4, 2]),
@@ -101,6 +97,9 @@ invalid_input_of_action_interaction_decay_reward_function = [
         logistic_reward_function,
         np.identity(3),
         "binary",
+        "standard_additive",
+        3,
+        False,
         1,
         ValueError,
         "context must be 2-dimensional ndarray",
@@ -112,6 +111,9 @@ invalid_input_of_action_interaction_decay_reward_function = [
         logistic_reward_function,
         np.identity(3),
         "binary",
+        "standard_additive",
+        3,
+        False,
         1,
         ValueError,
         "action_context must be 2-dimensional ndarray",
@@ -123,17 +125,9 @@ invalid_input_of_action_interaction_decay_reward_function = [
         logistic_reward_function,
         np.identity(3),
         "binary",
-        1,
-        ValueError,
-        "action must be 1-dimensional ndarray",
-    ),
-    (
-        np.ones([5, 2]),
-        np.ones([4, 2]),
-        np.random.choice(5),
-        logistic_reward_function,
-        np.identity(3),
-        "binary",
+        "standard_additive",
+        3,
+        False,
         1,
         ValueError,
         "action must be 1-dimensional ndarray",
@@ -145,174 +139,107 @@ invalid_input_of_action_interaction_decay_reward_function = [
         logistic_reward_function,
         np.identity(3),
         "binary",
+        "standard_additive",
+        3,
+        True,
         1,
         ValueError,
-        "the size of axis 0",
+        "the size of axis 0 of context times len_list must be multiple of that of action",
     ),
-]
-
-
-@pytest.mark.parametrize(
-    "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, err, description",
-    invalid_input_of_action_interaction_decay_reward_function,
-)
-def test_action_interaction_decay_reward_function_using_invalid_input(
-    context,
-    action_context,
-    action,
-    base_reward_function,
-    action_interaction_weight_matrix,
-    reward_type,
-    random_state,
-    err,
-    description,
-):
-    with pytest.raises(err, match=f"{description}*"):
-        _ = action_interaction_decay_reward_function(
-            context=context,
-            action_context=action_context,
-            action=action,
-            action_interaction_weight_matrix=action_interaction_weight_matrix,
-            base_reward_function=base_reward_function,
-            reward_type=reward_type,
-            random_state=random_state,
-        )
-
-
-# context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, description
-valid_input_of_action_interaction_decay_reward_function = [
     (
         np.ones([5, 2]),
         np.ones([4, 2]),
-        np.tile(np.arange(3), 5),
+        np.ones(30),
         logistic_reward_function,
         np.identity(3),
         "binary",
+        "standard_additive",
+        3,
+        False,
         1,
-        "binary reward",
+        ValueError,
+        "the size of axis 0 of context times len_list must be same with that of action",
     ),
     (
         np.ones([5, 2]),
         np.ones([4, 2]),
-        np.tile(np.arange(3), 5),
-        linear_reward_function,
+        np.ones(15),
+        logistic_reward_function,
         np.identity(3),
-        "continuous",
-        1,
-        "continuous reward",
-    ),
-]
-
-
-@pytest.mark.parametrize(
-    "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, random_state, description",
-    valid_input_of_action_interaction_decay_reward_function,
-)
-def test_action_interaction_decay_reward_function_using_valid_input(
-    context,
-    action_context,
-    action,
-    base_reward_function,
-    action_interaction_weight_matrix,
-    reward_type,
-    random_state,
-    description,
-):
-    expected_reward_factual = action_interaction_decay_reward_function(
-        context=context,
-        action_context=action_context,
-        action=action,
-        action_interaction_weight_matrix=action_interaction_weight_matrix,
-        base_reward_function=base_reward_function,
-        reward_type=reward_type,
-        random_state=random_state,
-    )
-    assert expected_reward_factual.shape == (
-        context.shape[0],
-        action_interaction_weight_matrix.shape[0],
-    )
-    if reward_type == "binary":
-        assert np.all(0 <= expected_reward_factual) and np.all(
-            expected_reward_factual <= 1
-        )
-
-
-# context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, is_cascade, len_list, random_state, err, description
-invalid_input_of_action_interaction_reward_function = [
-    (
-        np.array([5, 2]),
-        np.ones([4, 2]),
-        np.tile(np.arange(3), 5),
-        logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
-        "binary",
-        True,
+        "aaa",
+        "standard_additive",
         3,
+        False,
         1,
         ValueError,
-        "context must be 2-dimensional ndarray",
-    ),
-    (
-        np.ones([5, 2]),
-        np.array([4, 2]),
-        np.tile(np.arange(3), 5),
-        logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
-        "binary",
-        True,
-        3,
-        1,
-        ValueError,
-        "action_context must be 2-dimensional ndarray",
+        "reward_type must be either",
     ),
     (
         np.ones([5, 2]),
         np.ones([4, 2]),
-        np.ones([5, 2]),
+        np.ones(15),
         logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
+        np.identity(3),
         "binary",
-        True,
+        "aaa",
         3,
+        False,
         1,
         ValueError,
-        "action must be 1-dimensional ndarray",
+        "reward_structure must be either",
     ),
     (
         np.ones([5, 2]),
         np.ones([4, 2]),
-        np.random.choice(5),
+        np.ones(15),
         logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
+        np.identity(3),
         "binary",
-        True,
+        "standard_additive",
         3,
+        False,
         1,
         ValueError,
-        "action must be 1-dimensional ndarray",
+        "the shape of action_interaction_weight_matrix must be",
     ),
     (
         np.ones([5, 2]),
         np.ones([4, 2]),
-        np.ones(10),
+        np.ones(15),
         logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
+        np.identity(3),
         "binary",
-        True,
+        "cascade_additive",
         3,
+        False,
         1,
         ValueError,
-        "the size of axis 0",
+        "the shape of action_interaction_weight_matrix must be",
     ),
     (
         np.ones([5, 2]),
         np.ones([4, 2]),
-        np.tile(np.arange(3), 5),
+        np.ones(15),
         logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=3, random_state=1),
+        np.identity(4),
         "binary",
-        True,
+        "standard_decay",
         3,
+        False,
+        1,
+        ValueError,
+        "the shape of action_interaction_weight_matrix must be",
+    ),
+    (
+        np.ones([5, 2]),
+        np.ones([4, 2]),
+        np.ones(15),
+        logistic_reward_function,
+        np.identity(4),
+        "binary",
+        "cascade_decay",
+        3,
+        False,
         1,
         ValueError,
         "the shape of action_interaction_weight_matrix must be",
@@ -321,7 +248,7 @@ invalid_input_of_action_interaction_reward_function = [
 
 
 @pytest.mark.parametrize(
-    "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, is_cascade, len_list, random_state, err, description",
+    "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, reward_structure, len_list, is_enumerated, random_state, err, description",
     invalid_input_of_action_interaction_reward_function,
 )
 def test_action_interaction_reward_function_using_invalid_input(
@@ -331,110 +258,174 @@ def test_action_interaction_reward_function_using_invalid_input(
     base_reward_function,
     action_interaction_weight_matrix,
     reward_type,
-    is_cascade,
+    reward_structure,
     len_list,
+    is_enumerated,
     random_state,
     err,
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = action_interaction_additive_reward_function(
+        _ = action_interaction_reward_function(
             context=context,
             action_context=action_context,
             action=action,
             action_interaction_weight_matrix=action_interaction_weight_matrix,
             base_reward_function=base_reward_function,
             reward_type=reward_type,
-            random_state=random_state,
+            reward_structure=reward_structure,
             len_list=len_list,
-            is_cascade=is_cascade,
+            is_enumerated=is_enumerated,
+            random_state=random_state,
         )
 
 
-# context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, is_cascade, len_list, random_state, err, description
+# context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, reward_structure, len_list, is_enumerated, random_state, description
 valid_input_of_action_interaction_reward_function = [
     (
         np.ones([5, 2]),
-        np.ones([4, 2]),
+        np.eye(4),
         np.tile(np.arange(3), 5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
+        np.identity(4),
         "binary",
-        True,
+        "standard_additive",
         3,
+        False,
         1,
-        "binary reward, cascade",
+        "binary reward standard additive",
     ),
     (
         np.ones([5, 2]),
-        np.ones([4, 2]),
-        np.tile(np.arange(3), 5),
-        linear_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
-        "continuous",
-        True,
-        3,
-        1,
-        "continuous reward, cascade",
-    ),
-    (
-        np.ones([5, 2]),
-        np.ones([4, 2]),
+        np.eye(4),
         np.tile(np.arange(3), 5),
         logistic_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
+        np.identity(4),
         "binary",
-        False,
+        "cascade_additive",
         3,
+        False,
         1,
-        "binary reward, non_cascade",
+        "binary reward cascade additive",
     ),
     (
         np.ones([5, 2]),
-        np.ones([4, 2]),
-        np.tile(np.arange(3), 5),
-        linear_reward_function,
-        generate_symmetric_matrix(n_unique_action=4, random_state=1),
-        "continuous",
-        False,
+        np.eye(4),
+        np.tile(np.arange(3), 10),
+        logistic_reward_function,
+        np.identity(4),
+        "binary",
+        "standard_additive",
         3,
+        True,
         1,
-        "continuous reward, non_cascade",
+        "binary reward standard additive enumerated",
+    ),
+    (
+        np.ones([5, 2]),
+        np.eye(4),
+        np.tile(np.arange(3), 5),
+        logistic_reward_function,
+        np.identity(3),
+        "binary",
+        "standard_decay",
+        3,
+        False,
+        1,
+        "binary reward standard decay",
+    ),
+    (
+        np.ones([5, 2]),
+        np.eye(4),
+        np.tile(np.arange(3), 5),
+        logistic_reward_function,
+        np.identity(3),
+        "binary",
+        "cascade_decay",
+        3,
+        False,
+        1,
+        "binary reward cascade decay",
+    ),
+    (
+        np.ones([5, 2]),
+        np.eye(4),
+        np.tile(np.arange(3), 5),
+        logistic_reward_function,
+        np.identity(3),
+        "binary",
+        "independent",
+        3,
+        False,
+        1,
+        "binary reward independent",
+    ),
+    (
+        np.ones([5, 2]),
+        np.eye(4),
+        np.tile(np.arange(3), 10),
+        logistic_reward_function,
+        np.identity(3),
+        "binary",
+        "standard_decay",
+        3,
+        True,
+        1,
+        "binary reward standard decay enumerated",
+    ),
+    (
+        np.ones([5, 2]),
+        np.eye(4),
+        np.tile(np.arange(3), 5),
+        logistic_reward_function,
+        np.identity(3),
+        "continuous",
+        "standard_decay",
+        3,
+        False,
+        1,
+        "continuous reward",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, is_cascade, len_list, random_state, description",
+    "context, action_context, action, base_reward_function, action_interaction_weight_matrix, reward_type, reward_structure, len_list, is_enumerated, random_state, description",
     valid_input_of_action_interaction_reward_function,
 )
-def test_action_interaction_reward_function_using_valid_input(
+def test_action_interaction_decay_reward_function_using_valid_input(
     context,
     action_context,
     action,
     base_reward_function,
     action_interaction_weight_matrix,
     reward_type,
-    is_cascade,
+    reward_structure,
     len_list,
+    is_enumerated,
     random_state,
     description,
 ):
-    expected_reward_factual = action_interaction_additive_reward_function(
+    expected_reward_factual = action_interaction_reward_function(
         context=context,
         action_context=action_context,
         action=action,
         action_interaction_weight_matrix=action_interaction_weight_matrix,
         base_reward_function=base_reward_function,
         reward_type=reward_type,
-        random_state=random_state,
+        reward_structure=reward_structure,
         len_list=len_list,
-        is_cascade=is_cascade,
+        is_enumerated=is_enumerated,
+        random_state=random_state,
     )
-    assert expected_reward_factual.shape == (
-        context.shape[0],
-        len_list,
-    )
+    if not is_enumerated:
+        assert expected_reward_factual.shape == (
+            context.shape[0],
+            len_list,
+        )
+    else:
+        assert expected_reward_factual.shape[0] % context.shape[0] == 0
+        assert expected_reward_factual.shape[1] == len_list
     if reward_type == "binary":
         assert np.all(0 <= expected_reward_factual) and np.all(
             expected_reward_factual <= 1
