@@ -608,10 +608,6 @@ class OffPolicyEvaluation:
             estimated_round_rewards_df = DataFrame(
                 estimated_round_rewards_dict[estimator_name]
             )
-            estimated_round_rewards_df.rename(
-                columns={key: key.upper() for key in policy_name_list},
-                inplace=True,
-            )
             if is_relative:
                 estimated_round_rewards_df /= self.bandit_feedback["reward"].mean()
 
