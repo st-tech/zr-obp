@@ -843,7 +843,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             ):
                 pscores.append(
                     self._calc_pscore_given_policy_logit(
-                        all_slate_actions=np.array(enumerated_slate_actions),
+                        all_slate_actions=enumerated_slate_actions,
                         policy_logit_i_=evaluation_policy_logit_[i],
                     )
                 )
