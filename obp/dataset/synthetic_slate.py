@@ -871,8 +871,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         else:
             n_batch = (
                 n_rounds * n_enumerated_slate_actions * self.len_list - 1
-            ) // 10 ** 8 + 1
-            batch_size = ((n_rounds - 1) // n_batch) + 1
+            ) // 10 ** 7 + 1
+            batch_size = (n_rounds - 1) // n_batch + 1
+            n_batch = (n_rounds - 1) // batch_size + 1
 
             policy_value = 0.0
             for batch_idx in tqdm(
