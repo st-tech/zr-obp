@@ -86,9 +86,7 @@ def test_egreedy_update_params():
     reward = 1.0
     policy.update_params(action, reward)
     assert np.array_equal(policy.action_counts, np.array([5, 3]))
-    # in epsilon greedy, reward_counts is defined as the mean of observed rewards for each action
-    next_reward = (2.0 * (5 - 1) / 5) + (reward / 5)
-    assert np.allclose(policy.reward_counts, np.array([next_reward, 0.0]))
+    assert np.allclose(policy.reward_counts, np.array([2.0 + reward, 0.0]))
 
 
 def test_random_compute_batch_action_dist():
