@@ -301,8 +301,6 @@ def check_ope_inputs(
 
     # estimated_rewards_by_reg_model
     if estimated_rewards_by_reg_model is not None:
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
         if estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
                 "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
@@ -310,12 +308,8 @@ def check_ope_inputs(
 
     # action, reward
     if action is not None or reward is not None:
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
         if action.ndim != 1:
             raise ValueError("action must be 1-dimensional")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
         if reward.ndim != 1:
             raise ValueError("reward must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0]):
@@ -329,8 +323,6 @@ def check_ope_inputs(
 
     # pscore
     if pscore is not None:
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
         if pscore.ndim != 1:
             raise ValueError("pscore must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
@@ -671,8 +663,6 @@ def check_ope_inputs_tensor(
 
     # estimated_rewards_by_reg_model
     if estimated_rewards_by_reg_model is not None:
-        if not isinstance(estimated_rewards_by_reg_model, torch.Tensor):
-            raise ValueError("estimated_rewards_by_reg_model must be Tensor")
         if estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
                 "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
@@ -680,12 +670,8 @@ def check_ope_inputs_tensor(
 
     # action, reward
     if action is not None or reward is not None:
-        if not isinstance(action, torch.Tensor):
-            raise ValueError("action must be Tensor")
         if action.ndim != 1:
             raise ValueError("action must be 1-dimensional")
-        if not isinstance(reward, torch.Tensor):
-            raise ValueError("reward must be Tensor")
         if reward.ndim != 1:
             raise ValueError("reward must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0]):
@@ -699,8 +685,6 @@ def check_ope_inputs_tensor(
 
     # pscore
     if pscore is not None:
-        if not isinstance(pscore, torch.Tensor):
-            raise ValueError("pscore must be Tensor")
         if pscore.ndim != 1:
             raise ValueError("pscore must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
