@@ -89,8 +89,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
         """
         self.n_trial += 1
         self.action_counts_temp[action] += 1
-        n, old_reward = self.action_counts_temp[action], self.reward_counts_temp[action]
-        self.reward_counts_temp[action] = (old_reward * (n - 1) / n) + (reward / n)
+        self.reward_counts_temp[action] += reward
         if self.n_trial % self.batch_size == 0:
             self.action_counts = np.copy(self.action_counts_temp)
             self.reward_counts = np.copy(self.reward_counts_temp)
