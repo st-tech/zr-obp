@@ -713,7 +713,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 len_list=self.len_list,
                 random_state=self.random_state,
             )
-        expected_reward_factual = np.clip(expected_reward_factual, 0, None)
+        expected_reward_factual = np.clip(expected_reward_factual, 0, 1)
         # check the shape of expected_reward_factual
         if not (
             isinstance(expected_reward_factual, np.ndarray)
@@ -902,7 +902,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 )
 
                 expected_slate_rewards_ = np.clip(
-                    expected_slate_rewards_, 0, None
+                    expected_slate_rewards_, 0, 1
                 )  # (n_slate_actions, self.len_list)
 
                 # click models based on expected reward
