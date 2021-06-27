@@ -787,7 +787,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 len_list=self.len_list,
                 random_state=self.random_state,
             )
-        expected_reward_factual = np.clip(expected_reward_factual, 0, None)
         # check the shape of expected_reward_factual
         if not (
             isinstance(expected_reward_factual, np.ndarray)
@@ -974,10 +973,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     is_enumerated=True,
                     random_state=self.random_state,
                 )
-
-                expected_slate_rewards_ = np.clip(
-                    expected_slate_rewards_, 0, None
-                )  # (n_slate_actions, self.len_list)
 
                 # click models based on expected reward
                 expected_slate_rewards_ *= self.exam_weight
@@ -1385,9 +1380,9 @@ def action_interaction_reward_function(
         if reward_structure == "independent":
             continue
         elif is_additive:
-            for position2_ in np.arange(len_list)[::-1]:
+            for position2_ in np.arange(len_list):
                 if is_cascade:
-                    if position_ >= position2_:
+                    if position_ <= position2_:
                         break
                 elif position_ == position2_:
                     continue
@@ -1395,9 +1390,9 @@ def action_interaction_reward_function(
                     action_2d[:, position_], action_2d[:, position2_]
                 ]
         else:
-            for position2_ in np.arange(len_list)[::-1]:
+            for position2_ in np.arange(len_list):
                 if is_cascade:
-                    if position_ >= position2_:
+                    if position_ <= position2_:
                         break
                 elif position_ == position2_:
                     continue
@@ -1408,8 +1403,12 @@ def action_interaction_reward_function(
                 weight_ = action_interaction_weight_matrix[position_, position2_]
                 tmp_fixed_reward += expected_reward_ * weight_
         expected_reward_factual[:, position_] = tmp_fixed_reward
+
     if reward_type == "binary":
         expected_reward_factual = sigmoid(expected_reward_factual)
+    else:
+        expected_reward_factual = np.clip(expected_reward_factual, 0, None)
+
     assert expected_reward_factual.shape == (
         action_2d.shape[0],
         len_list,

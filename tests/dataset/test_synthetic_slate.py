@@ -2101,3 +2101,184 @@ def test_obtain_pscore_given_evaluation_policy_logit_value_check(
         else bandit_feedback["pscore_item_position"]
         == evaluation_policy_pscore_item_position
     )
+
+
+# n_unique_action, len_list, all_slate_actions, policy_logit_i_, true_pscores, description
+valid_input_of_calc_pscore_given_policy_logit = [
+    (
+        5,
+        3,
+        np.array([[0, 1, 2], [3, 1, 0]]),
+        np.arange(5),
+        np.array(
+            [
+                [
+                    np.exp(0) / np.exp([0, 1, 2, 3, 4]).sum(),
+                    np.exp(1) / np.exp([1, 2, 3, 4]).sum(),
+                    np.exp(2) / np.exp([2, 3, 4]).sum(),
+                ],
+                [
+                    np.exp(3) / np.exp([0, 1, 2, 3, 4]).sum(),
+                    np.exp(1) / np.exp([0, 1, 2, 4]).sum(),
+                    np.exp(0) / np.exp([0, 2, 4]).sum(),
+                ],
+            ]
+        ).prod(axis=1),
+        "calc pscores of several slate actions",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_unique_action, len_list, all_slate_actions, policy_logit_i_, true_pscores, description",
+    valid_input_of_calc_pscore_given_policy_logit,
+)
+def test_calc_pscore_given_policy_logit_using_valid_input_data(
+    n_unique_action,
+    len_list,
+    all_slate_actions,
+    policy_logit_i_,
+    true_pscores,
+    description,
+) -> None:
+    # set parameters
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        base_reward_function=logistic_reward_function,
+    )
+    pscores = dataset._calc_pscore_given_policy_logit(
+        all_slate_actions, policy_logit_i_
+    )
+    assert np.allclose(true_pscores, pscores)
+
+
+# n_unique_action, len_list, evaluation_policy_logit_, action, true_pscores, true_pscores_cascade, true_pscores_item_position,description
+mock_input_of_obtain_pscore_given_evaluation_policy_logit = [
+    (
+        3,
+        2,
+        np.array([[0, 1, 2], [2, 1, 0]]),
+        np.array([2, 1, 2, 0]),
+        np.repeat(
+            np.array(
+                [
+                    [
+                        np.exp(2) / np.exp([0, 1, 2]).sum(),
+                        np.exp(1) / np.exp([0, 1]).sum(),
+                    ],
+                    [
+                        np.exp(0) / np.exp([0, 1, 2]).sum(),
+                        np.exp(2) / np.exp([1, 2]).sum(),
+                    ],
+                ]
+            ).prod(axis=1),
+            2,
+        ),
+        np.array(
+            [
+                [
+                    np.exp(2) / np.exp([0, 1, 2]).sum(),
+                    np.exp(1) / np.exp([0, 1]).sum(),
+                ],
+                [
+                    np.exp(0) / np.exp([0, 1, 2]).sum(),
+                    np.exp(2) / np.exp([1, 2]).sum(),
+                ],
+            ]
+        )
+        .cumprod(axis=1)
+        .flatten(),
+        np.array(
+            [
+                [
+                    np.exp(2)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(1)
+                    / np.exp([0, 1]).sum(),
+                    np.exp(2)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(0)
+                    / np.exp([0, 1]).sum(),
+                ],
+                [
+                    np.exp(2)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(1)
+                    / np.exp([0, 1]).sum(),
+                    np.exp(0)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(1)
+                    / np.exp([1, 2]).sum(),
+                ],
+                [
+                    np.exp(0)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(1)
+                    / np.exp([1, 2]).sum(),
+                    np.exp(0)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(2)
+                    / np.exp([1, 2]).sum(),
+                ],
+                [
+                    np.exp(1)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(2)
+                    / np.exp([0, 2]).sum(),
+                    np.exp(0)
+                    / np.exp([0, 1, 2]).sum()
+                    * np.exp(2)
+                    / np.exp([1, 2]).sum(),
+                ],
+            ]
+        ).sum(axis=1),
+        "calc three pscores using mock data",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_unique_action, len_list, evaluation_policy_logit_, action, true_pscores, true_pscores_cascade, true_pscores_item_position,description",
+    mock_input_of_obtain_pscore_given_evaluation_policy_logit,
+)
+def test_obtain_pscore_given_evaluation_policy_logit_using_mock_input_data(
+    n_unique_action,
+    len_list,
+    evaluation_policy_logit_,
+    action,
+    true_pscores,
+    true_pscores_cascade,
+    true_pscores_item_position,
+    description,
+) -> None:
+    # set parameters
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        base_reward_function=logistic_reward_function,
+    )
+    (
+        evaluation_policy_pscore,
+        evaluation_policy_pscore_item_position,
+        evaluation_policy_pscore_cascade,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
+        action, evaluation_policy_logit_, return_pscore_item_position=True
+    )
+    assert np.allclose(true_pscores, evaluation_policy_pscore)
+    assert np.allclose(true_pscores_cascade, evaluation_policy_pscore_cascade)
+    assert np.allclose(
+        true_pscores_item_position, evaluation_policy_pscore_item_position
+    )
