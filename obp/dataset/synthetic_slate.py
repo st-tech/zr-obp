@@ -11,6 +11,7 @@ from scipy.stats import truncnorm
 from scipy.special import perm
 from sklearn.utils import check_random_state, check_scalar
 from tqdm import tqdm
+from profilehooks import profile
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
@@ -359,6 +360,46 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return pscores
 
+    def _calc_pscore_given_policy_value(
+        self, all_slate_actions: np.ndarray, policy_value_i_: np.ndarray
+    ) -> np.ndarray:
+        """Calculate the propensity score of each of the possible slate actions given policy_logit.
+
+        Parameters
+        ------------
+        all_slate_actions: array-like, (n_action, len_list)
+            All possible slate actions.
+
+        policy_value_i_: array-like, (n_unique_action, )
+            Policy values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        Returns
+        ------------
+        pscores: array-like, (n_action, )
+            Propensity scores of all the possible slate actions given policy_logit.
+
+        """
+        n_actions = len(all_slate_actions)
+        unique_action_set_2d = np.tile(np.arange(self.n_unique_action), (n_actions, 1))
+        pscores = np.ones(n_actions)
+        for position_ in np.arange(self.len_list):
+            action_index = np.where(
+                unique_action_set_2d == all_slate_actions[:, position_][:, np.newaxis]
+            )[1]
+            score_ = policy_value_i_[unique_action_set_2d]
+            pscores *= np.divide(score_, score_.sum(axis=1, keepdims=True))[
+                np.arange(n_actions), action_index
+            ]
+            # delete actions
+            if position_ + 1 != self.len_list:
+                mask = np.ones((n_actions, self.n_unique_action - position_))
+                mask[np.arange(n_actions), action_index] = 0
+                unique_action_set_2d = unique_action_set_2d[mask.astype(bool)].reshape(
+                    (-1, self.n_unique_action - position_ - 1)
+                )
+
+        return pscores
+
     def obtain_pscore_given_evaluation_policy_logit(
         self,
         action: np.ndarray,
@@ -455,11 +496,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return pscore, pscore_item_position, pscore_cascade
 
+    # TODO: `@profile` will be removed before merging.
+    @profile
     def sample_action_and_obtain_pscore(
         self,
         behavior_policy_logit_: np.ndarray,
         n_rounds: int,
         return_pscore_item_position: bool = True,
+        clip_logit_value: Optional[float] = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
         """Sample action and obtain the three variants of the propensity scores.
 
@@ -474,6 +518,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
             When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
+
+        clip_logit_value: Optional[float], default=None
+            A float parameter to clip logit value (<= `700.`).
+            When None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
+            When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
+            When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
 
         Returns
         ----------
@@ -509,6 +559,16 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 enumerated_slate_actions = np.array(enumerated_slate_actions)
         else:
             pscore_item_position = None
+        if return_pscore_item_position and clip_logit_value is not None:
+            check_scalar(
+                clip_logit_value,
+                name="clip_logit_value",
+                target_type=(float),
+                max_val=700.0,
+            )
+            behavior_policy_value_ = np.exp(
+                np.minimum(behavior_policy_logit_, clip_logit_value)
+            )
         for i in tqdm(
             np.arange(n_rounds),
             desc="[sample_action_and_obtain_pscore]",
@@ -545,10 +605,16 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     elif position_ == 0:
                         pscore_item_position_i_l = pscore_i
                     else:
-                        pscores = self._calc_pscore_given_policy_logit(
-                            all_slate_actions=enumerated_slate_actions,
-                            policy_logit_i_=behavior_policy_logit_[i],
-                        )
+                        if isinstance(clip_logit_value, float):
+                            pscores = self._calc_pscore_given_policy_value(
+                                all_slate_actions=enumerated_slate_actions,
+                                policy_value_i_=behavior_policy_value_[i],
+                            )
+                        else:
+                            pscores = self._calc_pscore_given_policy_logit(
+                                all_slate_actions=enumerated_slate_actions,
+                                policy_logit_i_=behavior_policy_logit_[i],
+                            )
                         pscore_item_position_i_l = pscores[
                             enumerated_slate_actions[:, position_] == sampled_action
                         ].sum()
@@ -632,6 +698,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self,
         n_rounds: int,
         return_pscore_item_position: bool = True,
+        clip_logit_value: Optional[float] = None,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
 
@@ -643,6 +710,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
             When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time.
+
+        clip_softmax_value: Optional[float], default=None
+            A float parameter to clip logit value.
+            When None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
+            When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
+            When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
 
         Returns
         ---------
@@ -683,6 +756,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             behavior_policy_logit_=behavior_policy_logit_,
             n_rounds=n_rounds,
             return_pscore_item_position=return_pscore_item_position,
+            clip_logit_value=clip_logit_value,
         )
         # sample expected reward factual
         if self.base_reward_function is None:
