@@ -405,6 +405,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         action: np.ndarray,
         evaluation_policy_logit_: np.ndarray,
         return_pscore_item_position: bool = True,
+        clip_logit_value: Optional[float] = None,
     ):
         """Calculate the propensity score given evaluation policy logit.
 
@@ -419,6 +420,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
             When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
+
+        clip_logit_value: Optional[float], default=None
+            A float parameter to clip logit value (<= `700.`).
+            When None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
+            When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
+            When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
 
         """
         if not isinstance(action, np.ndarray) or action.ndim != 1:
@@ -450,6 +457,16 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 enumerated_slate_actions = np.array(enumerated_slate_actions)
         else:
             pscore_item_position = None
+        if return_pscore_item_position and clip_logit_value is not None:
+            check_scalar(
+                clip_logit_value,
+                name="clip_logit_value",
+                target_type=(float),
+                max_val=700.0,
+            )
+            evaluation_policy_value_ = np.exp(
+                np.minimum(evaluation_policy_logit_, clip_logit_value)
+            )
         for i in tqdm(
             np.arange(n_rounds),
             desc="[obtain_pscore_given_evaluation_policy_logit]",
@@ -479,10 +496,16 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     elif self.is_factorizable:
                         pscore_item_position_i_l = score_[action_index_]
                     else:
-                        pscores = self._calc_pscore_given_policy_logit(
-                            all_slate_actions=enumerated_slate_actions,
-                            policy_logit_i_=evaluation_policy_logit_[i],
-                        )
+                        if isinstance(clip_logit_value, float):
+                            pscores = self._calc_pscore_given_policy_value(
+                                all_slate_actions=enumerated_slate_actions,
+                                policy_value_i_=evaluation_policy_value_[i],
+                            )
+                        else:
+                            pscores = self._calc_pscore_given_policy_logit(
+                                all_slate_actions=enumerated_slate_actions,
+                                policy_logit_i_=evaluation_policy_logit_[i],
+                            )
                         pscore_item_position_i_l = pscores[
                             enumerated_slate_actions[:, position_] == action_
                         ].sum()
