@@ -11,7 +11,6 @@ from scipy.stats import truncnorm
 from scipy.special import perm
 from sklearn.utils import check_random_state, check_scalar
 from tqdm import tqdm
-from profilehooks import profile
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
@@ -519,8 +518,6 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return pscore, pscore_item_position, pscore_cascade
 
-    # TODO: `@profile` will be removed before merging.
-    @profile
     def sample_action_and_obtain_pscore(
         self,
         behavior_policy_logit_: np.ndarray,
