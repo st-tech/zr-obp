@@ -10,8 +10,18 @@ from obp.ope.estimators import DoublyRobustWithShrinkage
 from obp.ope.estimators_slate import SlateStandardIPS
 from obp.ope.estimators_slate import SlateIndependentIPS
 from obp.ope.estimators_slate import SlateRewardInteractionIPS
+from obp.ope.estimators_continuous import KernelizedInverseProbabilityWeighting
+from obp.ope.estimators_continuous import (
+    KernelizedSelfNormalizedInverseProbabilityWeighting,
+)
+from obp.ope.estimators_continuous import triangular_kernel
+from obp.ope.estimators_continuous import gaussian_kernel
+from obp.ope.estimators_continuous import epanechnikov_kernel
+from obp.ope.estimators_continuous import cosine_kernel
+from obp.ope.estimators_continuous import KernelizedDoublyRobust
 from obp.ope.meta import OffPolicyEvaluation
 from obp.ope.meta_slate import SlateOffPolicyEvaluation
+from obp.ope.meta_continuous import ContinuousOffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
 
 __all__ = [
@@ -26,10 +36,18 @@ __all__ = [
     "DoublyRobustWithShrinkage",
     "OffPolicyEvaluation",
     "SlateOffPolicyEvaluation",
+    "ContinuousOffPolicyEvaluation",
     "RegressionModel",
     "SlateStandardIPS",
     "SlateIndependentIPS",
     "SlateRewardInteractionIPS",
+    "KernelizedInverseProbabilityWeighting",
+    "KernelizedSelfNormalizedInverseProbabilityWeighting",
+    "KernelizedDoublyRobust",
+    "triangular_kernel",
+    "gaussian_kernel",
+    "epanechnikov_kernel",
+    "cosine_kernel",
 ]
 
 __all_estimators__ = [
