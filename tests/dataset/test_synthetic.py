@@ -304,12 +304,12 @@ def test_synthetic_linear_behavior_policy():
         action_context = [1.0, 1.0]
         linear_behavior_policy(context=np.ones([2, 2]), action_context=action_context)
 
-    # expected_reward
+    # pscore (action choice probabilities by behavior policy)
     n_rounds = 10
     dim_context = dim_action_context = 3
     n_actions = 5
     context = np.ones([n_rounds, dim_context])
     action_context = np.ones([n_actions, dim_action_context])
-    action_prob = linear_behavior_policy(context=context, action_context=action_context)
-    assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
-    assert np.all(0 <= action_prob) and np.all(action_prob <= 1)
+    pscore = linear_behavior_policy(context=context, action_context=action_context)
+    assert pscore.shape[0] == n_rounds and pscore.shape[1] == n_actions
+    assert np.all(0 <= pscore) and np.all(pscore <= 1)
