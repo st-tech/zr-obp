@@ -434,9 +434,17 @@ def check_continuous_ope_inputs(
 
     # estimated_rewards_by_reg_model
     if estimated_rewards_by_reg_model is not None:
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray) or estimated_rewards_by_reg_model.ndim != 1:
-            raise ValueError("estimated_rewards_by_reg_model must be 1-dimensional ndarray")
-        if estimated_rewards_by_reg_model.shape[0] != action_by_evaluation_policy.shape[0]:
+        if (
+            not isinstance(estimated_rewards_by_reg_model, np.ndarray)
+            or estimated_rewards_by_reg_model.ndim != 1
+        ):
+            raise ValueError(
+                "estimated_rewards_by_reg_model must be 1-dimensional ndarray"
+            )
+        if (
+            estimated_rewards_by_reg_model.shape[0]
+            != action_by_evaluation_policy.shape[0]
+        ):
             raise ValueError(
                 "estimated_rewards_by_reg_model and action_by_evaluation_policy must be the same size"
             )

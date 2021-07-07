@@ -4,7 +4,7 @@
 """Off-Policy Estimators for Continuous Actions."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -48,7 +48,7 @@ kernel_functions = dict(
 
 
 @dataclass
-class BaseOffPolicyEstimatorForContinuousAction(metaclass=ABCMeta):
+class BaseContinuousOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for OPE estimators for continuous actions."""
 
     @abstractmethod
@@ -68,7 +68,7 @@ class BaseOffPolicyEstimatorForContinuousAction(metaclass=ABCMeta):
 
 
 @dataclass
-class KernelizedInverseProbabilityWeighting(BaseOffPolicyEstimatorForContinuousAction):
+class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
     """Kernelized Inverse Probability Weighting.
 
     Note
@@ -380,7 +380,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
 
 
 @dataclass
-class KernelizedDoublyRobust(BaseOffPolicyEstimatorForContinuousAction):
+class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
     """Kernelized Doubly Robust Estimator.
 
     Note
