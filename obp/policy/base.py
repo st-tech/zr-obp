@@ -240,3 +240,37 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
 
         """
         raise NotImplementedError
+
+
+@dataclass
+class BaseContinuousOfflinePolicyLearner(metaclass=ABCMeta):
+    """Base class for off-policy learners for the continuous action setting."""
+
+    @property
+    def policy_type(self) -> PolicyType:
+        """Type of the bandit policy."""
+        return PolicyType.OFFLINE
+
+    @abstractmethod
+    def fit(
+        self,
+    ) -> None:
+        """Fits an offline bandit policy using the given logged bandit feedback data."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def predict(self, context: np.ndarray) -> np.ndarray:
+        """Predict the best continuous action value for new data.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        Returns
+        -----------
+        action: array-like, shape (n_rounds_of_new_data,)
+            Action choices by a policy trained by calling the `fit` method.
+
+        """
+        raise NotImplementedError
