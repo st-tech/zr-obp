@@ -13,6 +13,7 @@ from obp.dataset import (
     logistic_reward_function,
     linear_behavior_policy,
     SyntheticSlateBanditDataset,
+    SyntheticContinuousBanditDataset,
 )
 from obp.utils import sigmoid
 
@@ -20,7 +21,7 @@ from obp.utils import sigmoid
 os.environ["PY_IGNORE_IMPORTMISMATCH"] = "1"
 
 
-# generate synthetic dataset using SyntheticBanditDataset
+# generate synthetic bandit dataset using SyntheticBanditDataset
 @pytest.fixture(scope="session")
 def synthetic_bandit_feedback() -> BanditFeedback:
     n_actions = 10
@@ -38,7 +39,7 @@ def synthetic_bandit_feedback() -> BanditFeedback:
     return bandit_feedback
 
 
-# generate synthetic slate dataset using SyntheticBanditDataset
+# generate synthetic slate bandit dataset using SyntheticSlateBanditDataset
 @pytest.fixture(scope="session")
 def synthetic_slate_bandit_feedback() -> BanditFeedback:
     # set parameters
@@ -57,6 +58,28 @@ def synthetic_slate_bandit_feedback() -> BanditFeedback:
     )
     # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    return bandit_feedback
+
+
+# generate synthetic continuous bandit dataset using SyntheticContinuousBanditDataset
+@pytest.fixture(scope="session")
+def synthetic_continuous_bandit_feedback() -> BanditFeedback:
+    # set parameters
+    dim_context = 2
+    random_state = 12345
+    n_rounds = 100
+    min_action_value = -10
+    max_action_value = 10
+    dataset = SyntheticContinuousBanditDataset(
+        dim_context=dim_context,
+        random_state=random_state,
+    )
+    # obtain feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds,
+        min_action_value=min_action_value,
+        max_action_value=max_action_value,
+    )
     return bandit_feedback
 
 
