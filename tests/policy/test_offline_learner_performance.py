@@ -1,3 +1,6 @@
+from typing import Optional
+from typing import Tuple
+
 import numpy as np
 from joblib import Parallel, delayed
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
@@ -7,9 +10,6 @@ import pytest
 from dataclasses import dataclass
 from obp.policy.base import BaseOfflinePolicyLearner
 from sklearn.base import clone, ClassifierMixin, is_classifier
-
-from typing import Optional
-from typing import Tuple
 
 from obp.dataset import (
     SyntheticBanditDataset,
@@ -48,6 +48,7 @@ base_model_dict = dict(
     random_forest=RandomForestClassifier,
 )
 
+# n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model
 offline_experiment_configurations = [
     (
         600,
