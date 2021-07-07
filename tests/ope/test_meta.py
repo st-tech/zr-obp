@@ -140,7 +140,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
     """Inverse Probability Weighting (IPW) Mock."""
 
     estimator_name: str = "ipw"
-    eps: int = 0.1
+    eps: float = 0.1
 
     def _estimate_round_rewards(
         self,
