@@ -14,8 +14,9 @@ from ..utils import (
     check_continuous_ope_inputs,
 )
 
-# kernel functions
-# reference: https://en.wikipedia.org/wiki/Kernel_(statistics)
+# kernel functions, reference: https://en.wikipedia.org/wiki/Kernel_(statistics)
+
+
 def triangular_kernel(u: np.ndarray) -> np.ndarray:
     """Calculate triangular kernel function."""
     clipped_u = np.clip(u, -1.0, 1.0)
