@@ -37,6 +37,50 @@ class ContinuousOffPolicyEvaluation:
 
     .. code-block:: python
 
+        # a case of implementing OPE (with continuous actions) of an synthetic evaluation policy
+        >>> from obp.dataset import (
+                SyntheticContinuousBanditDataset,
+                linear_reward_funcion_continuous,
+                linear_behavior_policy_continuous,
+                linear_synthetic_policy_continuous
+            )
+        >>> from obp.ope import (
+                ContinuousOffPolicyEvaluation,
+                KernelizedInverseProbabilityWeighting as KernelizedIPW
+            )
+
+        # (1) Synthetic Data Generation
+        >>> dataset = SyntheticContinuousBanditDataset(
+                dim_context=5,
+                reward_function=linear_reward_funcion_continuous,
+                behavior_policy_function=linear_behavior_policy_continuous,
+                random_state=12345,
+            )
+        >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(
+                n_rounds=10000, min_action_value=-10, max_action_value=10,
+            )
+
+        # (2) Synthetic Evaluation Policy
+        >>> action_by_evaluation_policy = linear_synthetic_policy_continuous(
+                context=bandit_feedback["context"]
+            )
+
+        # (3) Off-Policy Evaluation
+        >>> ope = ContinuousOffPolicyEvaluation(
+                bandit_feedback=bandit_feedback,
+                ope_estimators=[KernelizedIPW(kernel="epanechnikov", bandwidth=0.02)]
+            )
+        >>> estimated_policy_value = ope.estimate_policy_values(
+                action_by_evaluation_policy=action_by_evaluation_policy,
+            )
+        >>> estimated_policy_value
+        {'kernelized_ipw': 2.2858905015106723}
+
+        # (4) Ground-truth Policy Value of the Synthetic Evaluation Policy
+        >>> dataset.calc_ground_truth_policy_value(
+                context=bandit_feedback["context"], action=action_by_evaluation_policy
+            )
+        2.2893029243895215
 
     """
 
