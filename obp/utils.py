@@ -331,6 +331,158 @@ def check_ope_inputs(
             raise ValueError("pscore must be positive")
 
 
+def check_continuous_bandit_feedback_inputs(
+    context: np.ndarray,
+    action_by_behavior_policy: np.ndarray,
+    reward: np.ndarray,
+    expected_reward: Optional[np.ndarray] = None,
+    pscore: Optional[np.ndarray] = None,
+) -> Optional[ValueError]:
+    """Check inputs for bandit learning or simulation with continuous actions.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors in each round, i.e., :math:`x_t`.
+
+    action_by_behavior_policy: array-like, shape (n_rounds,)
+        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+    reward: array-like, shape (n_rounds,)
+        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+
+    expected_reward: array-like, shape (n_rounds, n_actions), default=None
+        Expected rewards (or outcome) in each round, i.e., :math:`\\mathbb{E}[r_t]`.
+
+    pscore: array-like, shape (n_rounds,), default=None
+        Probability densities of the continuous action values sampled by a behavior policy
+        (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+    """
+    if not isinstance(context, np.ndarray) or context.ndim != 2:
+        raise ValueError("context must be 2-dimensional ndarray")
+    if (
+        not isinstance(action_by_behavior_policy, np.ndarray)
+        or action_by_behavior_policy.ndim != 1
+    ):
+        raise ValueError("action_by_behavior_policy must be 1-dimensional ndarray")
+    if not isinstance(reward, np.ndarray) or reward.ndim != 1:
+        raise ValueError("reward must be 1-dimensional ndarray")
+
+    if expected_reward is not None:
+        if not isinstance(expected_reward, np.ndarray) or expected_reward.ndim != 1:
+            raise ValueError("expected_reward must be 1-dimensional ndarray")
+        if not (
+            context.shape[0]
+            == action_by_behavior_policy.shape[0]
+            == reward.shape[0]
+            == expected_reward.shape[0]
+        ):
+            raise ValueError(
+                "context, action_by_behavior_policy, reward, and expected_reward must be the same size."
+            )
+    if pscore is not None:
+        if not isinstance(pscore, np.ndarray) or pscore.ndim != 1:
+            raise ValueError("pscore must be 1-dimensional ndarray")
+        if not (
+            context.shape[0]
+            == action_by_behavior_policy.shape[0]
+            == reward.shape[0]
+            == pscore.shape[0]
+        ):
+            raise ValueError(
+                "context, action_by_behavior_policy, reward, and pscore must be the same size."
+            )
+        if np.any(pscore <= 0):
+            raise ValueError("pscore must be positive")
+
+
+def check_continuous_ope_inputs(
+    action_by_evaluation_policy: np.ndarray,
+    action_by_behavior_policy: Optional[np.ndarray] = None,
+    reward: Optional[np.ndarray] = None,
+    pscore: Optional[np.ndarray] = None,
+    estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+) -> Optional[ValueError]:
+    """Check inputs for OPE with continuous actions.
+
+    Parameters
+    -----------
+    action_by_behavior_policy: array-like, shape (n_rounds,)
+        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+    action_by_evaluation_policy: array-like, shape (n_rounds,), default=None
+        Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+
+    reward: array-like, shape (n_rounds,), default=None
+        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+
+    pscore: array-like, shape (n_rounds,), default=None
+        Probability densities of the continuous action values sampled by a behavior policy
+        (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+    estimated_rewards_by_reg_model: array-like, shape (n_rounds,), default=None
+            Expected rewards given context and action estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+    """
+    # action_by_evaluation_policy
+    if (
+        not isinstance(action_by_evaluation_policy, np.ndarray)
+        or action_by_evaluation_policy.ndim != 1
+    ):
+        raise ValueError("action_by_evaluation_policy must be 1-dimensional ndarray")
+
+    # estimated_rewards_by_reg_model
+    if estimated_rewards_by_reg_model is not None:
+        if (
+            not isinstance(estimated_rewards_by_reg_model, np.ndarray)
+            or estimated_rewards_by_reg_model.ndim != 1
+        ):
+            raise ValueError(
+                "estimated_rewards_by_reg_model must be 1-dimensional ndarray"
+            )
+        if (
+            estimated_rewards_by_reg_model.shape[0]
+            != action_by_evaluation_policy.shape[0]
+        ):
+            raise ValueError(
+                "estimated_rewards_by_reg_model and action_by_evaluation_policy must be the same size"
+            )
+
+    # action, reward
+    if action_by_behavior_policy is not None or reward is not None:
+        if (
+            not isinstance(action_by_behavior_policy, np.ndarray)
+            or action_by_behavior_policy.ndim != 1
+        ):
+            raise ValueError("action_by_behavior_policy must be 1-dimensional ndarray")
+        if not isinstance(reward, np.ndarray) or reward.ndim != 1:
+            raise ValueError("reward must be 1-dimensional ndarray")
+        if not (action_by_behavior_policy.shape[0] == reward.shape[0]):
+            raise ValueError(
+                "action_by_behavior_policy and reward must be the same size"
+            )
+        if not (
+            action_by_behavior_policy.shape[0] == action_by_evaluation_policy.shape[0]
+        ):
+            raise ValueError(
+                "action_by_behavior_policy and action_by_evaluation_policy must be the same size"
+            )
+
+    # pscore
+    if pscore is not None:
+        if not isinstance(pscore, np.ndarray) or pscore.ndim != 1:
+            raise ValueError("pscore must be 1-dimensional ndarray")
+        if not (
+            action_by_behavior_policy.shape[0] == reward.shape[0] == pscore.shape[0]
+        ):
+            raise ValueError(
+                "action_by_behavior_policy, reward, and pscore must be the same size"
+            )
+        if np.any(pscore <= 0):
+            raise ValueError("pscore must be positive")
+
+
 def _check_slate_ope_inputs(
     slate_id: np.ndarray,
     reward: np.ndarray,
