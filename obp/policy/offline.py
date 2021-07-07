@@ -506,7 +506,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.alpha, float) or self.alpha < 0.0:
             raise ValueError(
-                f"alpha must be a nonnegative float, but {self.alpha} is given"
+                f"alpha must be a non-negative float, but {self.alpha} is given"
             )
 
         if self.batch_size != "auto" and (
@@ -580,7 +580,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
             raise ValueError(
-                f"epsilon must be a nonnegative float, but {self.epsilon} is given"
+                f"epsilon must be a non-negative float, but {self.epsilon} is given"
             )
 
         if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
