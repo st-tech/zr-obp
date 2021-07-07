@@ -566,7 +566,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "nestrovs_momentum must be a bool",
+        "nesterovs_momentum must be a bool",
     ),
     (
         10,
