@@ -356,7 +356,7 @@ def test_ipw_using_random_evaluation_policy(
         if k in ["reward", "action", "pscore", "position"]
     }
     input_dict["action_dist"] = action_dist
-    # ipw estimtors can be used without estimated_rewards_by_reg_model
+    # ipw estimators can be used without estimated_rewards_by_reg_model
     for estimator in [ipw, snipw]:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
         assert isinstance(

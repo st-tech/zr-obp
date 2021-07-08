@@ -8,6 +8,7 @@ from typing import Dict, Optional, Union
 
 import numpy as np
 import torch
+from sklearn.utils import check_scalar
 
 from ..utils import (
     estimate_confidence_interval_by_bootstrap,
@@ -169,7 +170,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
     ) -> torch.Tensor:
         """Estimate policy value of an evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
-        This is not implemnted for RM because it is indifferentiable.
+        This is not implemented for RM because it is indifferentiable.
         """
         raise NotImplementedError(
             "This is not implemented because RM is indifferentiable"
@@ -257,6 +258,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
     a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \lambda, w(x,a) \\}`
+    where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
 
     IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy (importance weight).
     When the behavior policy is known, IPW is unbiased and consistent for the true policy value.
@@ -264,6 +267,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     Parameters
     ------------
+    lambda_: float, default=np.inf
+        A maximum possible value of the importance weight.
+        When a positive finite value is given, then an importance weight larger than `lambda_` will be clipped.
+
     estimator_name: str, default='ipw'.
         Name of off-policy estimator.
 
@@ -277,7 +284,17 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     """
 
+    lambda_: float = np.inf
     estimator_name: str = "ipw"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        check_scalar(
+            self.lambda_,
+            name="lambda_",
+            target_type=(int, float),
+            min_val=0.0,
+        )
 
     def _estimate_round_rewards(
         self,
@@ -854,6 +871,8 @@ class DoublyRobust(BaseOffPolicyEstimator):
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
+    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \lambda, w(x,a) \\}`
+    where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
 
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
@@ -866,6 +885,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
     Parameters
     ----------
+    lambda_: float, default=np.inf
+        A maximum possible value of the importance weight.
+        When a positive finite value is given, then an importance weight larger than `lambda_` will be clipped.
+
     estimator_name: str, default='dr'.
         Name of off-policy estimator.
 
@@ -879,7 +902,17 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
     """
 
+    lambda_: float = np.inf
     estimator_name: str = "dr"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        check_scalar(
+            self.lambda_,
+            name="lambda_",
+            target_type=(int, float),
+            min_val=0.0,
+        )
 
     def _estimate_round_rewards(
         self,
@@ -1314,16 +1347,12 @@ class SwitchDoublyRobust(DoublyRobust):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.tau, (float, int)):
-            raise ValueError(
-                f"switching hyperparameter must be float or integer, but {self.tau} is given"
-            )
-        if self.tau != self.tau:
-            raise ValueError("switching hyperparameter must not be nan")
-        if self.tau < 0.0:
-            raise ValueError(
-                f"switching hyperparameter must be larger than or equal to zero, but {self.tau} is given"
-            )
+        check_scalar(
+            self.tau,
+            name="tau",
+            target_type=(float, int),
+            min_val=0.0,
+        )
 
     def _estimate_round_rewards(
         self,
@@ -1387,10 +1416,10 @@ class SwitchDoublyRobust(DoublyRobust):
     ) -> torch.Tensor:
         """Estimate policy value of an evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
-        This is not implemnted because swithing is indifferentiable.
+        This is not implemented because switching is indifferentiable.
         """
         raise NotImplementedError(
-            "This is not implemented for Swtich-DR because it is indifferentiable."
+            "This is not implemented for Switch-DR because it is indifferentiable."
         )
 
 
@@ -1451,16 +1480,12 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.lambda_, (float, int)):
-            raise ValueError(
-                f"shrinkage hyperparameter must be float or integer, but {self.lambda_} is given"
-            )
-        if self.lambda_ != self.lambda_:
-            raise ValueError("shrinkage hyperparameter must not be nan")
-        if self.lambda_ < 0.0:
-            raise ValueError(
-                f"shrinkage hyperparameter must be larger than or equal to zero, but {self.lambda_} is given"
-            )
+        check_scalar(
+            self.lambda_,
+            name="lambda_",
+            target_type=(float, int),
+            min_val=0.0,
+        )
 
     def _estimate_round_rewards(
         self,

@@ -496,7 +496,7 @@ valid_input_of_dr_variants = [
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
         0.5,
-        "all argumnents are given and len_list > 1",
+        "all arguments are given and len_list > 1",
     )
 ]
 
@@ -540,7 +540,7 @@ valid_input_tensor_of_dr_variants = [
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
         0.5,
-        "all argumnents are given and len_list > 1",
+        "all arguments are given and len_list > 1",
     )
 ]
 

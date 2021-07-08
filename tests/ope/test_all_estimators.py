@@ -112,7 +112,7 @@ valid_input_of_estimation = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "all argumnents are given and len_list > 1",
+        "all arguments are given and len_list > 1",
     ),
     (
         generate_action_dist(5, 4, 1),
@@ -121,7 +121,7 @@ valid_input_of_estimation = [
         np.ones(5),
         np.zeros(5, dtype=int),
         np.zeros((5, 4, 1)),
-        "all argumnents are given and len_list == 1",
+        "all arguments are given and len_list == 1",
     ),
     (
         generate_action_dist(5, 4, 1),
@@ -130,7 +130,7 @@ valid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 1)),
-        "position argumnent is None",
+        "position argument is None",
     ),
 ]
 
@@ -314,7 +314,7 @@ valid_input_of_estimation_tensor = [
         torch.from_numpy(np.ones(5)),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.from_numpy(np.zeros((5, 4, 3))),
-        "all argumnents are given and len_list > 1",
+        "all arguments are given and len_list > 1",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 1)),
@@ -323,7 +323,7 @@ valid_input_of_estimation_tensor = [
         torch.from_numpy(np.ones(5)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros((5, 4, 1))),
-        "all argumnents are given and len_list == 1",
+        "all arguments are given and len_list == 1",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 1)),
@@ -332,7 +332,7 @@ valid_input_of_estimation_tensor = [
         torch.from_numpy(np.ones(5)),
         None,
         torch.from_numpy(np.zeros((5, 4, 1))),
-        "position argumnent is None",
+        "position argument is None",
     ),
 ]
 
