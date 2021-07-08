@@ -28,6 +28,18 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
     dim_context: int, default=1
         Number of dimensions of context vectors.
 
+    action_noise: float, default=1.0
+            Standard deviation of the Gaussian noise on the continuous action value.
+
+    reward_noise: float, default=1.0
+        Standard deviation of the Gaussian noise on the reward.
+
+    min_action_value: float, default=-np.inf
+        A minimum possible continuous action value.
+
+    max_action_value: float, default=np.inf
+        A maximum possible continuous action value.
+
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
@@ -58,13 +70,13 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
 
         >>> dataset = SyntheticContinuousBanditDataset(
                 dim_context=5,
+                min_action_value=1,
+                max_action_value=10,
                 reward_function=linear_reward_funcion_continuous,
                 behavior_policy_function=linear_behavior_policy_continuous,
                 random_state=12345,
             )
-        >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(
-            n_rounds=10000, min_action_value=1, max_action_value=10,
-        )
+        >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=10000)
 
         >>> bandit_feedback
 
@@ -91,6 +103,10 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
     """
 
     dim_context: int = 1
+    action_noise: float = 1.0
+    reward_noise: float = 1.0
+    min_action_value: float = -np.inf
+    max_action_value: float = np.inf
     reward_function: Optional[
         Callable[
             [np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray
@@ -105,6 +121,22 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
     def __post_init__(self) -> None:
         """Initialize Class."""
         check_scalar(self.dim_context, name="dim_context", target_type=int, min_val=1)
+        check_scalar(
+            self.action_noise, name="action_noise", target_type=(int, float), min_val=0
+        )
+        check_scalar(
+            self.reward_noise, name="reward_noise", target_type=(int, float), min_val=0
+        )
+        check_scalar(
+            self.min_action_value, name="min_action_value", target_type=(int, float)
+        )
+        check_scalar(
+            self.max_action_value, name="max_action_value", target_type=(int, float)
+        )
+        if self.max_action_value <= self.min_action_value:
+            raise ValueError(
+                "`max_action_value` must be larger than `min_action_value`"
+            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -116,10 +148,6 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
     def obtain_batch_bandit_feedback(
         self,
         n_rounds: int,
-        action_noise: float = 1.0,
-        reward_noise: float = 1.0,
-        min_action_value: float = -np.inf,
-        max_action_value: float = np.inf,
     ) -> BanditFeedback:
         """Obtain batch logged bandit feedback.
 
@@ -128,18 +156,6 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         n_rounds: int
             Number of rounds for synthetic bandit feedback data.
 
-        action_noise: float, default=1.0
-            Standard deviation of the Gaussian noise on the continuous action value.
-
-        reward_noise: float, default=1.0
-            Standard deviation of the Gaussian noise on the reward.
-
-        min_action_value: float, default=-np.inf
-            A minimum possible continuous action value.
-
-        max_action_value: float, default=np.inf
-            A maximum possible continuous action value.
-
         Returns
         ---------
         bandit_feedback: BanditFeedback
@@ -147,22 +163,6 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
 
         """
         check_scalar(n_rounds, name="n_rounds", target_type=int, min_val=1)
-        check_scalar(
-            action_noise, name="action_noise", target_type=(int, float), min_val=0
-        )
-        check_scalar(
-            reward_noise, name="reward_noise", target_type=(int, float), min_val=0
-        )
-        check_scalar(
-            min_action_value, name="min_action_value", target_type=(int, float)
-        )
-        check_scalar(
-            max_action_value, name="max_action_value", target_type=(int, float)
-        )
-        if max_action_value <= min_action_value:
-            raise ValueError(
-                "`max_action_value` must be larger than `min_action_value`"
-            )
 
         context = self.random_.normal(size=(n_rounds, self.dim_context))
         # sample actions for each round based on the behavior policy
@@ -171,29 +171,29 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
                 context=context,
                 random_state=self.random_state,
             )
-            a = (min_action_value - expected_action_values) / action_noise
-            b = (max_action_value - expected_action_values) / action_noise
+            a = (self.min_action_value - expected_action_values) / self.action_noise
+            b = (self.max_action_value - expected_action_values) / self.action_noise
             action = truncnorm.rvs(
                 a,
                 b,
                 loc=expected_action_values,
-                scale=action_noise,
+                scale=self.action_noise,
                 random_state=self.random_state,
             )
             pscore = truncnorm.pdf(
-                action, a, b, loc=expected_action_values, scale=action_noise
+                action, a, b, loc=expected_action_values, scale=self.action_noise
             )
         else:
             action = uniform.rvs(
-                loc=min_action_value,
-                scale=(max_action_value - min_action_value),
+                loc=self.min_action_value,
+                scale=(self.max_action_value - self.min_action_value),
                 size=n_rounds,
                 random_state=self.random_state,
             )
             pscore = uniform.pdf(
                 action,
-                loc=min_action_value,
-                scale=(max_action_value - min_action_value),
+                loc=self.min_action_value,
+                scale=(self.max_action_value - self.min_action_value),
             )
 
         if self.reward_function is None:
@@ -203,7 +203,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
                 context=context, action=action, random_state=self.random_state
             )
         reward = expected_reward_ + self.random_.normal(
-            scale=reward_noise, size=n_rounds
+            scale=self.reward_noise, size=n_rounds
         )
 
         return dict(
