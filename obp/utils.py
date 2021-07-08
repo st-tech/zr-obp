@@ -408,11 +408,11 @@ def check_continuous_ope_inputs(
 
     Parameters
     -----------
-    action_by_behavior_policy: array-like, shape (n_rounds,)
-        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
-
-    action_by_evaluation_policy: array-like, shape (n_rounds,), default=None
+    action_by_evaluation_policy: array-like, shape (n_rounds,)
         Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+
+    action_by_behavior_policy: array-like, shape (n_rounds,), default=None
+        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
     reward: array-like, shape (n_rounds,), default=None
         Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
