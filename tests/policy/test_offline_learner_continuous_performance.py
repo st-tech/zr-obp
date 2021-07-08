@@ -71,6 +71,10 @@ def test_offline_nn_policy_learner_performance(
         # synthetic data generator
         dataset = SyntheticContinuousBanditDataset(
             dim_context=dim_context,
+            action_noise=action_noise,
+            reward_noise=reward_noise,
+            min_action_value=min_action_value,
+            max_action_value=max_action_value,
             reward_function=linear_reward_funcion_continuous,
             behavior_policy_function=linear_behavior_policy_continuous,
             random_state=i,
@@ -90,17 +94,9 @@ def test_offline_nn_policy_learner_performance(
         # sample new training and test sets of synthetic logged bandit feedback
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(
             n_rounds=n_rounds,
-            action_noise=action_noise,
-            reward_noise=reward_noise,
-            min_action_value=min_action_value,
-            max_action_value=max_action_value,
         )
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(
             n_rounds=n_rounds,
-            action_noise=action_noise,
-            reward_noise=reward_noise,
-            min_action_value=min_action_value,
-            max_action_value=max_action_value,
         )
         # train the evaluation policy on the training set of the synthetic logged bandit feedback
         nn_policy.fit(
