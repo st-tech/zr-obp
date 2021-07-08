@@ -91,7 +91,6 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
 
     Parameters
     ------------
-
     kernel: str
         Choice of kernel function.
         Must be one of "gaussian", "epanechnikov", "triangular", or "cosine".
@@ -118,7 +117,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
     def __post_init__(self) -> None:
         if self.kernel not in ["gaussian", "epanechnikov", "triangular", "cosine"]:
             raise ValueError(
-                f"kernel must be one of 'gaussian', 'epanechnikov', 'triangular', and 'cosine' but {self.kernel} is given"
+                f"kernel must be one of 'gaussian', 'epanechnikov', 'triangular', or 'cosine' but {self.kernel} is given"
             )
         check_scalar(
             self.bandwidth, name="bandwidth", target_type=(int, float), min_val=0
@@ -313,7 +312,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
     ------------
     kernel: str
         Choice of kernel function.
-        Must be one of "gaussian", "epanechnikov", and "triangular".
+        Must be one of "gaussian", "epanechnikov", "triangular", or "cosine".
 
      bandwidth: float
         A bandwidth hyperparameter.
@@ -376,7 +375,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         u = action_by_evaluation_policy - action_by_behavior_policy
         u /= self.bandwidth
         estimated_rewards = kernel_func(u) * reward / pscore
-        estimated_rewards /= (kernel_func(u) / pscore).sum() / reward.shape[0]
+        estimated_rewards /= (kernel_func(u) / pscore).mean()
         return estimated_rewards
 
 
@@ -405,7 +404,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
     ------------
     kernel: str
         Choice of kernel function.
-        Must be one of "gaussian", "epanechnikov", and "triangular".
+        Must be one of "gaussian", "epanechnikov", "triangular", or "cosine".
 
      bandwidth: float
         A bandwidth hyperparameter.
@@ -429,7 +428,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
     def __post_init__(self) -> None:
         if self.kernel not in ["gaussian", "epanechnikov", "triangular", "cosine"]:
             raise ValueError(
-                f"kernel must be one of 'gaussian', 'epanechnikov', 'triangular', and 'cosine' but {self.kernel} is given"
+                f"kernel must be one of 'gaussian', 'epanechnikov', 'triangular', or 'cosine' but {self.kernel} is given"
             )
         check_scalar(
             self.bandwidth, name="bandwidth", target_type=(int, float), min_val=0
