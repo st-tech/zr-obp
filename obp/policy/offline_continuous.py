@@ -347,7 +347,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
     def _create_train_data_for_opl(
         self,
         context: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
     ) -> Tuple[torch.utils.data.DataLoader, Optional[torch.utils.data.DataLoader]]:
@@ -358,7 +358,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action_by_behavior_policy: array-like or Tensor, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
@@ -382,7 +382,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
         dataset = NNPolicyDatasetForContinuousAction(
             torch.from_numpy(context).float(),
-            torch.from_numpy(action_by_behavior_policy).float(),
+            torch.from_numpy(action).float(),
             torch.from_numpy(reward).float(),
             torch.from_numpy(pscore).float(),
         )
@@ -422,7 +422,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
     def fit(
         self,
         context: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
         pscore: Optional[np.ndarray] = None,
     ) -> None:
@@ -442,19 +442,19 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action_by_behavior_policy: array-like or Tensor, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         """
         check_continuous_bandit_feedback_inputs(
             context=context,
-            action_by_behavior_policy=action_by_behavior_policy,
+            action_by_behavior_policy=action,
             reward=reward,
             pscore=pscore,
         )
@@ -465,13 +465,13 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             )
 
         if pscore is None:
-            pscore = np.ones_like(action_by_behavior_policy)
+            pscore = np.ones_like(action)
 
         # train q function estimator when it is needed to train NNPolicy
         if self.pg_method != "ipw":
             self.q_func_estimator.fit(
                 context=context,
-                action_by_behavior_policy=action_by_behavior_policy,
+                action=action,
                 reward=reward,
             )
 
@@ -503,7 +503,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
         training_data_loader, validation_data_loader = self._create_train_data_for_opl(
             context,
-            action_by_behavior_policy,
+            action,
             reward,
             pscore,
         )
@@ -517,7 +517,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                     loss = -1.0 * self._policy_loss(
                         context=x,
                         reward=r,
-                        action_by_behavior_policy=a,
+                        action=a,
                         pscore=p,
                         action_by_current_policy=action_by_current_policy,
                     )
@@ -539,7 +539,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                     loss = -1.0 * self._policy_loss(
                         context=x,
                         reward=r,
-                        action_by_behavior_policy=a,
+                        action=a,
                         pscore=p,
                         action_by_current_policy=action_by_current_policy,
                     )
@@ -563,7 +563,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                         loss = -1.0 * self._policy_loss(
                             context=x,
                             reward=r,
-                            action_by_behavior_policy=a,
+                            action=a,
                             pscore=p,
                             action_by_current_policy=action_by_current_policy,
                         )
@@ -581,7 +581,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
     def _policy_loss(
         self,
         context: torch.Tensor,
-        action_by_behavior_policy: torch.Tensor,
+        action: torch.Tensor,
         reward: torch.Tensor,
         pscore: torch.Tensor,
         action_by_current_policy: torch.Tensor,
@@ -593,7 +593,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         context: Tensor, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action_by_behavior_policy: Tensor, shape (n_rounds,)
+        action: Tensor, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: Tensor, shape (n_rounds,)
@@ -624,13 +624,13 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             )
 
         elif self.pg_method == "ipw":
-            u = action_by_current_policy - action_by_behavior_policy
+            u = action_by_current_policy - action
             u /= self.bandwidth
             policy_loss = gaussian_kernel(u) * reward / pscore
             policy_loss /= self.bandwidth
 
         elif self.pg_method == "dr-d":
-            u = action_by_current_policy - action_by_behavior_policy
+            u = action_by_current_policy - action
             u /= self.bandwidth
             q_hat = self.q_func_estimator.predict(
                 context=context,
@@ -949,7 +949,7 @@ class QFuncEstimatorForContinuousAction:
     def _create_train_data_for_q_func_estimation(
         self,
         context: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
         **kwargs,
     ) -> Tuple[torch.utils.data.DataLoader, Optional[torch.utils.data.DataLoader]]:
@@ -960,7 +960,7 @@ class QFuncEstimatorForContinuousAction:
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action_by_behavior_policy: array-like or Tensor, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
@@ -979,7 +979,7 @@ class QFuncEstimatorForContinuousAction:
         else:
             raise ValueError("batch_size must be a positive integer or 'auto'")
 
-        feature = np.c_[context, action_by_behavior_policy[:, np.newaxis]]
+        feature = np.c_[context, action[:, np.newaxis]]
         dataset = QFuncEstimatorDatasetForContinuousAction(
             torch.from_numpy(feature).float(),
             torch.from_numpy(reward).float(),
@@ -1020,7 +1020,7 @@ class QFuncEstimatorForContinuousAction:
     def fit(
         self,
         context: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
     ) -> None:
         """Fits an offline bandit policy using the given logged bandit feedback data.
@@ -1030,7 +1030,7 @@ class QFuncEstimatorForContinuousAction:
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action_by_behavior_policy: array-like or Tensor, shape (n_rounds,)
+        action: array-like or Tensor, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
@@ -1039,7 +1039,7 @@ class QFuncEstimatorForContinuousAction:
         """
         check_continuous_bandit_feedback_inputs(
             context=context,
-            action_by_behavior_policy=action_by_behavior_policy,
+            action_by_behavior_policy=action,
             reward=reward,
         )
 
@@ -1079,7 +1079,7 @@ class QFuncEstimatorForContinuousAction:
             validation_data_loader,
         ) = self._create_train_data_for_q_func_estimation(
             context,
-            action_by_behavior_policy,
+            action,
             reward,
         )
 
@@ -1145,7 +1145,7 @@ class QFuncEstimatorForContinuousAction:
         context: Tensor, shape (n_rounds_of_new_data, dim_context)
             Context vectors for new data.
 
-        action_by_behavior_policy: Tensor, shape (n_rounds,)
+        action: Tensor, shape (n_rounds,)
             Continuous action values for new data.
 
         Returns
@@ -1177,7 +1177,7 @@ class NNPolicyDatasetForContinuousAction(torch.utils.data.Dataset):
     """PyTorch dataset for NNPolicyLearnerForContinuousAction"""
 
     context: np.ndarray
-    action_by_behavior_policy: np.ndarray
+    action: np.ndarray
     reward: np.ndarray
     pscore: np.ndarray
 
@@ -1185,7 +1185,7 @@ class NNPolicyDatasetForContinuousAction(torch.utils.data.Dataset):
         """initialize class"""
         assert (
             self.context.shape[0]
-            == self.action_by_behavior_policy.shape[0]
+            == self.action.shape[0]
             == self.reward.shape[0]
             == self.pscore.shape[0]
         )
@@ -1193,7 +1193,7 @@ class NNPolicyDatasetForContinuousAction(torch.utils.data.Dataset):
     def __getitem__(self, index):
         return (
             self.context[index],
-            self.action_by_behavior_policy[index],
+            self.action[index],
             self.reward[index],
             self.pscore[index],
         )

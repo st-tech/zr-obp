@@ -893,14 +893,14 @@ def test_nn_policy_learner_init_using_valid_inputs(
 
 def test_nn_policy_learner_create_train_data_for_opl():
     context = np.ones((100, 2), dtype=np.int32)
-    action_by_behavior_policy = np.zeros(100, dtype=np.int32)
+    action = np.zeros(100, dtype=np.int32)
     reward = np.ones((100,), dtype=np.float32)
     pscore = np.array([0.5] * 100, dtype=np.float32)
 
     learner1 = ContinuousNNPolicyLearner(dim_context=2, pg_method="dpg")
     training_loader, validation_loader = learner1._create_train_data_for_opl(
         context=context,
-        action_by_behavior_policy=action_by_behavior_policy,
+        action=action,
         reward=reward,
         pscore=pscore,
     )
@@ -916,7 +916,7 @@ def test_nn_policy_learner_create_train_data_for_opl():
 
     training_loader, validation_loader = learner2._create_train_data_for_opl(
         context=context,
-        action_by_behavior_policy=action_by_behavior_policy,
+        action=action,
         reward=reward,
         pscore=pscore,
     )
@@ -925,7 +925,7 @@ def test_nn_policy_learner_create_train_data_for_opl():
     assert isinstance(validation_loader, torch.utils.data.DataLoader)
 
 
-# context, action_by_behavior_policy, reward, pscore, description
+# context, action, reward, pscore, description
 invalid_input_of_nn_policy_learner_fit = [
     (
         5,  #
@@ -1039,12 +1039,12 @@ valid_input_of_nn_policy_learner_fit = [
 
 
 @pytest.mark.parametrize(
-    "context, action_by_behavior_policy, reward, pscore, description",
+    "context, action, reward, pscore, description",
     invalid_input_of_nn_policy_learner_fit,
 )
 def test_nn_policy_learner_fit_using_invalid_inputs(
     context,
-    action_by_behavior_policy,
+    action,
     reward,
     pscore,
     description,
@@ -1058,19 +1058,19 @@ def test_nn_policy_learner_fit_using_invalid_inputs(
         )
         learner.fit(
             context=context,
-            action_by_behavior_policy=action_by_behavior_policy,
+            action=action,
             reward=reward,
             pscore=pscore,
         )
 
 
 @pytest.mark.parametrize(
-    "context, action_by_behavior_policy, reward, pscore, description",
+    "context, action, reward, pscore, description",
     valid_input_of_nn_policy_learner_fit,
 )
 def test_nn_policy_learner_fit_using_valid_inputs(
     context,
-    action_by_behavior_policy,
+    action,
     reward,
     pscore,
     description,
@@ -1081,7 +1081,7 @@ def test_nn_policy_learner_fit_using_valid_inputs(
     learner = ContinuousNNPolicyLearner(dim_context=dim_context, pg_method=pg_method)
     learner.fit(
         context=context,
-        action_by_behavior_policy=action_by_behavior_policy,
+        action=action,
         reward=reward,
         pscore=pscore,
     )
@@ -1090,7 +1090,7 @@ def test_nn_policy_learner_fit_using_valid_inputs(
 def test_nn_policy_learner_predict():
     # synthetic data
     context = np.ones((5, 2))
-    action_by_behavior_policy = np.ones(5)
+    action = np.ones(5)
     reward = np.ones(5)
 
     # set parameters
@@ -1102,7 +1102,7 @@ def test_nn_policy_learner_predict():
     )
     learner.fit(
         context=context,
-        action_by_behavior_policy=action_by_behavior_policy,
+        action=action,
         reward=reward,
     )
 

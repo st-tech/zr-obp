@@ -105,7 +105,7 @@ def test_offline_nn_policy_learner_performance(
         # train the evaluation policy on the training set of the synthetic logged bandit feedback
         nn_policy.fit(
             context=bandit_feedback_train["context"],
-            action_by_behavior_policy=bandit_feedback_train["action"],
+            action=bandit_feedback_train["action"],
             reward=bandit_feedback_train["reward"],
             pscore=bandit_feedback_train["pscore"],
         )
