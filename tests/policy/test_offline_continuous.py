@@ -61,7 +61,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         15000,
         None,
-        "pg_method must be one of 'dgp', 'ipw', or 'dr-d'",
+        "pg_method must be one of 'dgp', 'ipw', or 'dr'",
     ),
     (
         10,

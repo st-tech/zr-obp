@@ -32,14 +32,17 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
     pg_method: str
         A policy gradient method to train a neural network policy.
-        Must be one of "dpg", "ipw", "dr-d".
+        Must be one of "dpg", "ipw", or "dr".
         See Kallus and Uehara.(2020) for the detailed description of these methods.
+        "dpg" stands for Deterministic Policy Gradient.
+        "ipw" corresponds to Importance Sampling Policy Gradient (ISPG) of Kallus and Uehara.(2020).
+        "dr" corresponds to Eq.(7) of Kallus and Uehara.(2020).
 
     bandwidth: float, default=None
         A bandwidth hyperparameter used to kernelize the deterministic policy.
         A larger value increases bias instead of reducing variance.
         A smaller value increases variance instead of reducing bias.
-        When pg_method is either "ipw" or "dr-k", a float value must be given.
+        When pg_method is either "ipw" or "dr", a float value must be given.
 
     output_space: Tuple[Union[int, float], Uniton[int, float]], default=None
         Output space of the neural network policy.
@@ -172,9 +175,9 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 f"dim_context must be a positive integer, but {self.dim_context} is given"
             )
 
-        if self.pg_method not in ["dpg", "ipw", "dr-d"]:
+        if self.pg_method not in ["dpg", "ipw", "dr"]:
             raise ValueError(
-                f"pg_method must be one of 'dgp', 'ipw', or 'dr-d', but {self.pg_method} is given"
+                f"pg_method must be one of 'dgp', 'ipw', or 'dr', but {self.pg_method} is given"
             )
 
         if self.pg_method != "dpg":
@@ -600,7 +603,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_current_policy: array-like or Tensor, shape (n_rounds,)
             Continuous action values given by the current policy.
@@ -629,7 +632,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             policy_loss = gaussian_kernel(u) * reward / pscore
             policy_loss /= self.bandwidth
 
-        elif self.pg_method == "dr-d":
+        elif self.pg_method == "dr":
             u = action_by_current_policy - action
             u /= self.bandwidth
             q_hat = self.q_func_estimator.predict(
