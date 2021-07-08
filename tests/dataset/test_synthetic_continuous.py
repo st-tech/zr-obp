@@ -12,35 +12,17 @@ from obp.dataset.synthetic_continuous import (
 )
 
 
-def test_synthetic_continuous_init():
-    # dim_context
-    with pytest.raises(ValueError):
-        SyntheticContinuousBanditDataset(dim_context=0)
-
-    with pytest.raises(TypeError):
-        SyntheticContinuousBanditDataset(dim_context="2")
-
-    with pytest.raises(TypeError):
-        SyntheticContinuousBanditDataset(dim_context=None)
-
-    # random_state
-    with pytest.raises(ValueError):
-        SyntheticContinuousBanditDataset(random_state=None)
-
-    with pytest.raises(ValueError):
-        SyntheticContinuousBanditDataset(random_state="3")
-
-
-# n_rounds, action_noise, reward_noise, min_action_value, max_action_value, err, description
-invalid_input_of_obtain_batch_bandit_feedback = [
+# dim_context, action_noise, reward_noise, min_action_value, max_action_value, random_state, err, description
+invalid_input_of_init = [
     (
         0,  #
         1.0,
         1.0,
         -1.0,
         1.0,
+        12345,
         ValueError,
-        "`n_rounds`= 0, must be >= 1.",
+        "`dim_context`= 0, must be >= 1.",
     ),
     (
         1.0,  #
@@ -48,8 +30,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         -1.0,
         1.0,
+        12345,
         TypeError,
-        "`n_rounds` must be an instance of <class 'int'>, not <class 'float'>.",
+        "`dim_context` must be an instance of <class 'int'>, not <class 'float'>.",
     ),
     (
         "3",  #
@@ -57,8 +40,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         -1.0,
         1.0,
+        12345,
         TypeError,
-        "`n_rounds` must be an instance of <class 'int'>, not <class 'str'>.",
+        "`dim_context` must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         None,  #
@@ -66,8 +50,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         -1.0,
         1.0,
+        12345,
         TypeError,
-        "`n_rounds` must be an instance of <class 'int'>, not <class 'NoneType'>.",
+        "`dim_context` must be an instance of <class 'int'>, not <class 'NoneType'>.",
     ),
     (
         3,
@@ -75,6 +60,7 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         -1.0,
         1.0,
+        12345,
         ValueError,
         "`action_noise`= -1.0, must be >= 0.",
     ),
@@ -84,8 +70,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         -1.0,
         1.0,
+        12345,
         TypeError,
-        "`action_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"`action_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -93,8 +80,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         -1.0,
         1.0,
+        12345,
         TypeError,
-        "`action_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"`action_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -102,6 +90,7 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         -1.0,  #
         -1.0,
         1.0,
+        12345,
         ValueError,
         "`reward_noise`= -1.0, must be >= 0.",
     ),
@@ -111,8 +100,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         "3",  #
         -1.0,
         1.0,
+        12345,
         TypeError,
-        "`reward_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"`reward_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -120,8 +110,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         None,  #
         -1.0,
         1.0,
+        12345,
         TypeError,
-        "`reward_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"`reward_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -129,8 +120,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         "3",  #
         1.0,
+        12345,
         TypeError,
-        "`min_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"`min_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -138,8 +130,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         None,  #
         1.0,
+        12345,
         TypeError,
-        "`min_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"`min_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -147,8 +140,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         1.0,
         "3",  #
+        12345,
         TypeError,
-        "`max_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"`max_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -156,8 +150,9 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         1.0,
         None,  #
+        12345,
         TypeError,
-        "`max_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"`max_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -165,35 +160,96 @@ invalid_input_of_obtain_batch_bandit_feedback = [
         1.0,
         1.0,  #
         -1.0,  #
+        12345,
         ValueError,
         "`max_action_value` must be larger than `min_action_value`",
+    ),
+    (
+        3,
+        1.0,
+        1.0,
+        -1.0,
+        1.0,
+        None,
+        ValueError,
+        "random_state must be given",
+    ),
+    (
+        3,
+        1.0,
+        1.0,
+        -1.0,
+        1.0,
+        "",
+        ValueError,
+        "'' cannot be used to seed a numpy.random.RandomState instance",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "n_rounds, action_noise, reward_noise, min_action_value, max_action_value, err, description",
-    invalid_input_of_obtain_batch_bandit_feedback,
+    "dim_context, action_noise, reward_noise, min_action_value, max_action_value, random_state, err, description",
+    invalid_input_of_init,
 )
-def test_synthetic_continuous_obtain_batch_bandit_feedback_using_invalid_inputs(
-    n_rounds,
+def test_synthetic_continuous_init_using_invalid_inputs(
+    dim_context,
     action_noise,
     reward_noise,
     min_action_value,
     max_action_value,
+    random_state,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        _ = SyntheticContinuousBanditDataset(
+            dim_context=dim_context,
+            action_noise=action_noise,
+            reward_noise=reward_noise,
+            min_action_value=min_action_value,
+            max_action_value=max_action_value,
+            random_state=random_state,
+        )
+
+
+# n_rounds, err, description
+invalid_input_of_obtain_batch_bandit_feedback = [
+    (
+        0,  #
+        ValueError,
+        "`n_rounds`= 0, must be >= 1.",
+    ),
+    (
+        1.0,  #
+        TypeError,
+        "`n_rounds` must be an instance of <class 'int'>, not <class 'float'>.",
+    ),
+    (
+        "3",  #
+        TypeError,
+        "`n_rounds` must be an instance of <class 'int'>, not <class 'str'>.",
+    ),
+    (
+        None,  #
+        TypeError,
+        "`n_rounds` must be an instance of <class 'int'>, not <class 'NoneType'>.",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_rounds, err, description",
+    invalid_input_of_obtain_batch_bandit_feedback,
+)
+def test_synthetic_continuous_obtain_batch_bandit_feedback_using_invalid_inputs(
+    n_rounds,
     err,
     description,
 ):
     dataset = SyntheticContinuousBanditDataset()
 
     with pytest.raises(err, match=f"{description}*"):
-        _ = dataset.obtain_batch_bandit_feedback(
-            n_rounds=n_rounds,
-            action_noise=action_noise,
-            reward_noise=reward_noise,
-            min_action_value=min_action_value,
-            max_action_value=max_action_value,
-        )
+        _ = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
 
 
 def test_synthetic_continuous_obtain_batch_bandit_feedback():
@@ -201,11 +257,12 @@ def test_synthetic_continuous_obtain_batch_bandit_feedback():
     n_rounds = 10
     min_action_value = -1.0
     max_action_value = 1.0
-    dataset = SyntheticContinuousBanditDataset()
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds,
+    dataset = SyntheticContinuousBanditDataset(
         min_action_value=min_action_value,
         max_action_value=max_action_value,
+    )
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds,
     )
     assert bandit_feedback["n_rounds"] == n_rounds
     assert (
@@ -279,11 +336,13 @@ def test_synthetic_continuous_calc_policy_value_using_invalid_inputs(
 def test_synthetic_continuous_calc_policy_value():
     n_rounds = 10
     dim_context = 3
-    dataset = SyntheticContinuousBanditDataset(dim_context=dim_context)
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds,
+    dataset = SyntheticContinuousBanditDataset(
+        dim_context=dim_context,
         min_action_value=1,
         max_action_value=10,
+    )
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds,
     )
 
     policy_value = dataset.calc_ground_truth_policy_value(
