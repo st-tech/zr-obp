@@ -333,7 +333,9 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
         iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
-        iw = np.minimum(iw, self.lambda_)  # weight clipping
+        # weight clipping
+        if isinstance(iw, np.ndarray):
+            iw = np.minimum(iw, self.lambda_)
         return reward * iw
 
     def estimate_policy_value(
@@ -961,7 +963,9 @@ class DoublyRobust(BaseOffPolicyEstimator):
             position = np.zeros(action_dist.shape[0], dtype=int)
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw = np.minimum(iw, self.lambda_)  # weight clipping
+        # weight clipping
+        if isinstance(iw, np.ndarray):
+            iw = np.minimum(iw, self.lambda_)
         q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
@@ -979,7 +983,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be nd-array or Tensor")
+            raise ValueError("reward must be ndarray or Tensor")
 
         estimated_rewards += iw * (reward - q_hat_factual)
         return estimated_rewards
@@ -1298,7 +1302,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be nd-array or Tensor")
+            raise ValueError("reward must be ndarray or Tensor")
 
         q_hat_factual = estimated_rewards_by_reg_model[
             np.arange(n_rounds), action, position
@@ -1551,7 +1555,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be nd-array or Tensor")
+            raise ValueError("reward must be ndarray or Tensor")
 
         estimated_rewards += shrinkage_weight * (reward - q_hat_factual)
         return estimated_rewards
