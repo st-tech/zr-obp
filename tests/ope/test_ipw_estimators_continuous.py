@@ -355,6 +355,9 @@ def test_continuous_ope_performance(kernel):
     reward_function = linear_reward_funcion_continuous
     dataset = SyntheticContinuousBanditDataset(
         dim_context=dim_context,
+        reward_noise=reward_noise,
+        min_action_value=min_action_value,
+        max_action_value=max_action_value,
         reward_function=reward_function,
         behavior_policy_function=behavior_policy_function,
         random_state=random_state,
@@ -362,9 +365,6 @@ def test_continuous_ope_performance(kernel):
     # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(
         n_rounds=n_rounds,
-        reward_noise=reward_noise,
-        min_action_value=min_action_value,
-        max_action_value=max_action_value,
     )
     context = bandit_feedback["context"]
     action_by_evaluation_policy = linear_synthetic_policy_continuous(context)

@@ -72,14 +72,12 @@ def synthetic_continuous_bandit_feedback() -> BanditFeedback:
     max_action_value = 10
     dataset = SyntheticContinuousBanditDataset(
         dim_context=dim_context,
+        min_action_value=min_action_value,
+        max_action_value=max_action_value,
         random_state=random_state,
     )
     # obtain feedback
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds,
-        min_action_value=min_action_value,
-        max_action_value=max_action_value,
-    )
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     return bandit_feedback
 
 
