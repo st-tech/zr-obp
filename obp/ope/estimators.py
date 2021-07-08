@@ -333,6 +333,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
         iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
+        iw = np.minimum(iw, self.lambda_)  # weight clipping
         return reward * iw
 
     def estimate_policy_value(
@@ -888,6 +889,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
     lambda_: float, default=np.inf
         A maximum possible value of the importance weight.
         When a positive finite value is given, then an importance weight larger than `lambda_` will be clipped.
+        DoublyRobust with a finite positive `lambda_` corresponds to the Doubly Robust with pessimistic shrinkage stated in Su et al.(2020).
 
     estimator_name: str, default='dr'.
         Name of off-policy estimator.
@@ -899,6 +901,9 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
     Mehrdad Farajtabar, Yinlam Chow, and Mohammad Ghavamzadeh.
     "More Robust Doubly Robust Off-policy Evaluation.", 2018.
+
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík.
+    "Doubly robust off-policy evaluation with shrinkage.", 2020.
 
     """
 
@@ -956,6 +961,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
             position = np.zeros(action_dist.shape[0], dtype=int)
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = np.minimum(iw, self.lambda_)  # weight clipping
         q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
@@ -1350,7 +1356,7 @@ class SwitchDoublyRobust(DoublyRobust):
         check_scalar(
             self.tau,
             name="tau",
-            target_type=(float, int),
+            target_type=(int, float),
             min_val=0.0,
         )
 
@@ -1483,7 +1489,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         check_scalar(
             self.lambda_,
             name="lambda_",
-            target_type=(float, int),
+            target_type=(int, float),
             min_val=0.0,
         )
 
