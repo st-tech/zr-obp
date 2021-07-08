@@ -11,6 +11,25 @@ from obp.ope import (
 )
 from conftest import generate_action_dist
 
+
+def test_ipw_init():
+    # lambda_
+    with pytest.raises(
+        TypeError,
+        match=r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ):
+        InverseProbabilityWeighting(lambda_=None)
+
+    with pytest.raises(
+        TypeError,
+        match=r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ):
+        InverseProbabilityWeighting(lambda_="")
+
+    with pytest.raises(ValueError, match=r"`lambda_`= -1.0, must be >= 0.0."):
+        InverseProbabilityWeighting(lambda_=-1.0)
+
+
 # prepare ipw instances
 ipw = InverseProbabilityWeighting()
 snipw = SelfNormalizedInverseProbabilityWeighting()
@@ -20,7 +39,7 @@ snipw = SelfNormalizedInverseProbabilityWeighting()
 invalid_input_of_ipw = [
     (
         generate_action_dist(5, 4, 3),
-        None,
+        None,  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -29,7 +48,7 @@ invalid_input_of_ipw = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        None,
+        None,  #
         np.ones(5),
         np.random.choice(3, size=5),
         "reward must be ndarray",
@@ -38,13 +57,13 @@ invalid_input_of_ipw = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        None,
+        None,  #
         np.random.choice(3, size=5),
         "pscore must be ndarray",
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros(5, dtype=float),
+        np.zeros(5, dtype=float),  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -52,7 +71,7 @@ invalid_input_of_ipw = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros(5, dtype=int) - 1,
+        np.zeros(5, dtype=int) - 1,  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -60,7 +79,7 @@ invalid_input_of_ipw = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        "4",
+        "4",  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -68,7 +87,7 @@ invalid_input_of_ipw = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros((3, 2), dtype=int),
+        np.zeros((3, 2), dtype=int),  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -76,7 +95,7 @@ invalid_input_of_ipw = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros(5, dtype=int) + 8,
+        np.zeros(5, dtype=int) + 8,  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -85,7 +104,7 @@ invalid_input_of_ipw = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        "4",
+        "4",  #
         np.ones(5),
         np.random.choice(3, size=5),
         "reward must be ndarray",
@@ -93,7 +112,7 @@ invalid_input_of_ipw = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        np.zeros((3, 2), dtype=int),
+        np.zeros((3, 2), dtype=int),  #
         np.ones(5),
         np.random.choice(3, size=5),
         "reward must be 1-dimensional",
@@ -101,7 +120,7 @@ invalid_input_of_ipw = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        np.zeros(4, dtype=int),
+        np.zeros(4, dtype=int),  #
         np.ones(5),
         np.random.choice(3, size=5),
         "action and reward must be the same size.",
@@ -110,7 +129,7 @@ invalid_input_of_ipw = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        "4",
+        "4",  #
         np.random.choice(3, size=5),
         "pscore must be ndarray",
     ),
@@ -118,7 +137,7 @@ invalid_input_of_ipw = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        np.ones((5, 3)),
+        np.ones((5, 3)),  #
         np.random.choice(3, size=5),
         "pscore must be 1-dimensional",
     ),
@@ -126,7 +145,7 @@ invalid_input_of_ipw = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        np.ones(4),
+        np.ones(4),  #
         np.random.choice(3, size=5),
         "action, reward, and pscore must be the same size.",
     ),
@@ -134,7 +153,7 @@ invalid_input_of_ipw = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        np.arange(5),
+        np.arange(5),  #
         np.random.choice(3, size=5),
         "pscore must be positive",
     ),
@@ -191,7 +210,7 @@ def test_ipw_using_invalid_input_data(
 invalid_input_tensor_of_ipw = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        None,
+        None,  #
         torch.zeros(5, dtype=torch.float32),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -200,7 +219,7 @@ invalid_input_tensor_of_ipw = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        None,
+        None,  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         "reward must be Tensor",
@@ -209,13 +228,13 @@ invalid_input_tensor_of_ipw = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.float32),
-        None,
+        None,  #
         torch.from_numpy(np.random.choice(3, size=5)),
         "pscore must be Tensor",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros(5, dtype=torch.float64),
+        torch.zeros(5, dtype=torch.float64),  #
         torch.zeros(5, dtype=torch.float32),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -223,7 +242,7 @@ invalid_input_tensor_of_ipw = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros(5, dtype=torch.float64) - 1,
+        torch.zeros(5, dtype=torch.float64) - 1,  #
         torch.zeros(5, dtype=torch.float32),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -231,7 +250,7 @@ invalid_input_tensor_of_ipw = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        "4",
+        "4",  #
         torch.zeros(5, dtype=torch.float32),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -239,7 +258,7 @@ invalid_input_tensor_of_ipw = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros((3, 2), dtype=torch.int64),
+        torch.zeros((3, 2), dtype=torch.int64),  #
         torch.zeros(5, dtype=torch.float32),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -247,7 +266,7 @@ invalid_input_tensor_of_ipw = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros(5, dtype=torch.int64) + 8,
+        torch.zeros(5, dtype=torch.int64) + 8,  #
         torch.zeros(5, dtype=torch.float32),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -256,7 +275,7 @@ invalid_input_tensor_of_ipw = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        "4",
+        "4",  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         "reward must be Tensor",
@@ -264,7 +283,7 @@ invalid_input_tensor_of_ipw = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        torch.zeros((3, 2), dtype=torch.float32),
+        torch.zeros((3, 2), dtype=torch.float32),  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         "reward must be 1-dimensional",
@@ -272,7 +291,7 @@ invalid_input_tensor_of_ipw = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        torch.zeros(4, dtype=torch.float32),
+        torch.zeros(4, dtype=torch.float32),  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         "action and reward must be the same size.",
@@ -281,7 +300,7 @@ invalid_input_tensor_of_ipw = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.float32),
-        "4",
+        "4",  #
         torch.from_numpy(np.random.choice(3, size=5)),
         "pscore must be Tensor",
     ),
@@ -289,7 +308,7 @@ invalid_input_tensor_of_ipw = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.float32),
-        torch.ones((5, 3)),
+        torch.ones((5, 3)),  #
         torch.from_numpy(np.random.choice(3, size=5)),
         "pscore must be 1-dimensional",
     ),
@@ -297,7 +316,7 @@ invalid_input_tensor_of_ipw = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.float32),
-        torch.ones(4),
+        torch.ones(4),  #
         torch.from_numpy(np.random.choice(3, size=5)),
         "action, reward, and pscore must be the same size.",
     ),
@@ -305,7 +324,7 @@ invalid_input_tensor_of_ipw = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.float32),
-        torch.from_numpy(np.arange(5)),
+        torch.from_numpy(np.arange(5)),  #
         torch.from_numpy(np.random.choice(3, size=5)),
         "pscore must be positive",
     ),

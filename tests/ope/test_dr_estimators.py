@@ -14,6 +14,82 @@ from obp.ope import (
 )
 from conftest import generate_action_dist
 
+
+invalid_input_of_dr_init = [
+    (
+        "",
+        TypeError,
+        r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        None,
+        TypeError,
+        r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ),
+    (-1.0, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
+]
+
+
+@pytest.mark.parametrize(
+    "lambda_, err, description",
+    invalid_input_of_dr_init,
+)
+def test_dr_init_using_invalid_inputs(
+    lambda_,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        _ = DoublyRobust(lambda_=lambda_)
+
+    with pytest.raises(err, match=f"{description}*"):
+        _ = DoublyRobustWithShrinkage(lambda_=lambda_)
+
+
+invalid_input_of_switch_dr_init = [
+    (
+        "",
+        TypeError,
+        r"`tau` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        None,
+        TypeError,
+        r"`tau` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ),
+    (-1.0, ValueError, "`tau`= -1.0, must be >= 0.0."),
+]
+
+
+@pytest.mark.parametrize(
+    "tau, err, description",
+    invalid_input_of_switch_dr_init,
+)
+def test_switch_dr_init_using_invalid_inputs(
+    tau,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        _ = SwitchDoublyRobust(tau=tau)
+
+
+valid_input_of_dr_init = [
+    (3.0, "float lambda_tau"),
+    (2, "integer lambda_tau"),
+]
+
+
+@pytest.mark.parametrize(
+    "lambda_tau, description",
+    valid_input_of_dr_init,
+)
+def test_shrinkage_using_valid_input_data(lambda_tau: float, description: str) -> None:
+    _ = DoublyRobust(lambda_=lambda_tau)
+    _ = DoublyRobustWithShrinkage(lambda_=lambda_tau)
+    _ = SwitchDoublyRobust(lambda_=lambda_tau)
+
+
 # prepare instances
 dm = DirectMethod()
 dr = DoublyRobust()
@@ -31,7 +107,7 @@ dr_estimators = [dr, dr_shrink_0, sndr, switch_dr_0]
 invalid_input_of_dr = [
     (
         generate_action_dist(5, 4, 3),
-        None,
+        None,  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -41,7 +117,7 @@ invalid_input_of_dr = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        None,
+        None,  #
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
@@ -51,7 +127,7 @@ invalid_input_of_dr = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        None,
+        None,  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
         "pscore must be ndarray",
@@ -62,12 +138,12 @@ invalid_input_of_dr = [
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
-        None,
+        None,  #
         "estimated_rewards_by_reg_model must be ndarray",
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros(5, dtype=float),
+        np.zeros(5, dtype=float),  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -76,7 +152,7 @@ invalid_input_of_dr = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros(5, dtype=int) - 1,
+        np.zeros(5, dtype=int) - 1,  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -85,7 +161,7 @@ invalid_input_of_dr = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        "4",
+        "4",  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -94,7 +170,7 @@ invalid_input_of_dr = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros((3, 2), dtype=int),
+        np.zeros((3, 2), dtype=int),  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -103,7 +179,7 @@ invalid_input_of_dr = [
     ),
     (
         generate_action_dist(5, 4, 3),
-        np.zeros(5, dtype=int) + 8,
+        np.zeros(5, dtype=int) + 8,  #
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
@@ -113,7 +189,7 @@ invalid_input_of_dr = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        "4",
+        "4",  #
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
@@ -122,7 +198,7 @@ invalid_input_of_dr = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        np.zeros((3, 2), dtype=int),
+        np.zeros((3, 2), dtype=int),  #
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
@@ -131,7 +207,7 @@ invalid_input_of_dr = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        np.zeros(4, dtype=int),
+        np.zeros(4, dtype=int),  #
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
@@ -141,7 +217,7 @@ invalid_input_of_dr = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        "4",
+        "4",  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
         "pscore must be ndarray",
@@ -150,7 +226,7 @@ invalid_input_of_dr = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        np.ones((5, 3)),
+        np.ones((5, 3)),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
         "pscore must be 1-dimensional",
@@ -159,7 +235,7 @@ invalid_input_of_dr = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        np.ones(4),
+        np.ones(4),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
         "action, reward, and pscore must be the same size.",
@@ -168,7 +244,7 @@ invalid_input_of_dr = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
-        np.arange(5),
+        np.arange(5),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
         "pscore must be positive",
@@ -179,7 +255,7 @@ invalid_input_of_dr = [
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
-        np.zeros((5, 4, 2)),
+        np.zeros((5, 4, 2)),  #
         "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
     ),
     (
@@ -188,7 +264,7 @@ invalid_input_of_dr = [
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
-        "4",
+        "4",  #
         "estimated_rewards_by_reg_model must be ndarray",
     ),
 ]
@@ -234,7 +310,7 @@ def test_dr_using_invalid_input_data(
 invalid_input_tensor_of_dr = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        None,
+        None,  #
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -244,7 +320,7 @@ invalid_input_tensor_of_dr = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        None,
+        None,  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
@@ -254,7 +330,7 @@ invalid_input_tensor_of_dr = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.int64),
-        None,
+        None,  #
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
         "pscore must be Tensor",
@@ -265,12 +341,12 @@ invalid_input_tensor_of_dr = [
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
-        None,
+        None,  #
         "estimated_rewards_by_reg_model must be Tensor",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros(5, dtype=torch.float32),
+        torch.zeros(5, dtype=torch.float32),  #
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -279,7 +355,7 @@ invalid_input_tensor_of_dr = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros(5, dtype=torch.int64) - 1,
+        torch.zeros(5, dtype=torch.int64) - 1,  #
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -288,7 +364,7 @@ invalid_input_tensor_of_dr = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        "4",
+        "4",  #
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -297,7 +373,7 @@ invalid_input_tensor_of_dr = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros((3, 2), dtype=torch.int64),
+        torch.zeros((3, 2), dtype=torch.int64),  #
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -306,7 +382,7 @@ invalid_input_tensor_of_dr = [
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.zeros(5, dtype=torch.int64) + 8,
+        torch.zeros(5, dtype=torch.int64) + 8,  #
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
@@ -316,7 +392,7 @@ invalid_input_tensor_of_dr = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        "4",
+        "4",  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
@@ -325,7 +401,7 @@ invalid_input_tensor_of_dr = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        torch.zeros((3, 2), dtype=torch.int64),
+        torch.zeros((3, 2), dtype=torch.int64),  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
@@ -334,7 +410,7 @@ invalid_input_tensor_of_dr = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        torch.zeros(4, dtype=torch.int64),
+        torch.zeros(4, dtype=torch.int64),  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
@@ -344,7 +420,7 @@ invalid_input_tensor_of_dr = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.int64),
-        "4",
+        "4",  #
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
         "pscore must be Tensor",
@@ -353,7 +429,7 @@ invalid_input_tensor_of_dr = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.int64),
-        torch.ones((5, 3)),
+        torch.ones((5, 3)),  #
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
         "pscore must be 1-dimensional",
@@ -362,7 +438,7 @@ invalid_input_tensor_of_dr = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.int64),
-        torch.ones(4),
+        torch.ones(4),  #
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
         "action, reward, and pscore must be the same size.",
@@ -371,7 +447,7 @@ invalid_input_tensor_of_dr = [
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
         torch.zeros(5, dtype=torch.int64),
-        torch.from_numpy(np.arange(5)),
+        torch.from_numpy(np.arange(5)),  #
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
         "pscore must be positive",
@@ -382,7 +458,7 @@ invalid_input_tensor_of_dr = [
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
-        torch.zeros((5, 4, 2)),
+        torch.zeros((5, 4, 2)),  #
         "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
     ),
     (
@@ -391,7 +467,7 @@ invalid_input_tensor_of_dr = [
         torch.zeros(5, dtype=torch.int64),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
-        "4",
+        "4",  #
         "estimated_rewards_by_reg_model must be Tensor",
     ),
 ]
@@ -421,69 +497,6 @@ def test_dr_using_invalid_input_tensor_data(
                 position=position,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             )
-
-
-# switch-dr
-
-invalid_input_of_switch = [
-    ("a", "switching hyperparameter must be float or integer"),
-    (-1.0, "switching hyperparameter must be larger than or equal to zero"),
-    (np.nan, "switching hyperparameter must not be nan"),
-]
-
-
-@pytest.mark.parametrize(
-    "tau, description",
-    invalid_input_of_switch,
-)
-def test_switch_using_invalid_input_data(tau: float, description: str) -> None:
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = SwitchDoublyRobust(tau=tau)
-
-
-valid_input_of_switch = [
-    (3.0, "float tau"),
-    (2, "integer tau"),
-]
-
-
-@pytest.mark.parametrize(
-    "tau, description",
-    valid_input_of_switch,
-)
-def test_switch_using_valid_input_data(tau: float, description: str) -> None:
-    _ = SwitchDoublyRobust(tau=tau)
-
-
-# dr-os
-invalid_input_of_shrinkage = [
-    ("a", "shrinkage hyperparameter must be float or integer"),
-    (-1.0, "shrinkage hyperparameter must be larger than or equal to zero"),
-    (np.nan, "shrinkage hyperparameter must not be nan"),
-]
-
-
-@pytest.mark.parametrize(
-    "lambda_, description",
-    invalid_input_of_shrinkage,
-)
-def test_shrinkage_using_invalid_input_data(lambda_: float, description: str) -> None:
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = DoublyRobustWithShrinkage(lambda_=lambda_)
-
-
-valid_input_of_shrinkage = [
-    (3.0, "float lambda_"),
-    (2, "integer lambda_"),
-]
-
-
-@pytest.mark.parametrize(
-    "lambda_, description",
-    valid_input_of_shrinkage,
-)
-def test_shrinkage_using_valid_input_data(lambda_: float, description: str) -> None:
-    _ = DoublyRobustWithShrinkage(lambda_=lambda_)
 
 
 # dr variants
@@ -589,7 +602,7 @@ def test_dr_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
-    # dr estimtors require all arguments
+    # dr estimators require all arguments
     for estimator in dr_estimators:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
         assert isinstance(
@@ -619,13 +632,13 @@ def test_dr_using_random_evaluation_policy(
     input_tensor_dict["estimated_rewards_by_reg_model"] = torch.from_numpy(
         expected_reward
     )
-    # dr estimtors require all arguments
+    # dr estimators require all arguments
     for estimator in dr_estimators:
         if estimator.estimator_name == "switch-dr":
             with pytest.raises(
                 NotImplementedError,
                 match=re.escape(
-                    "This is not implemented for Swtich-DR because it is indifferentiable."
+                    "This is not implemented for Switch-DR because it is indifferentiable."
                 ),
             ):
                 _ = estimator.estimate_policy_value_tensor(**input_tensor_dict)
@@ -646,7 +659,7 @@ def test_dr_using_random_evaluation_policy(
             with pytest.raises(
                 NotImplementedError,
                 match=re.escape(
-                    "This is not implemented for Swtich-DR because it is indifferentiable."
+                    "This is not implemented for Switch-DR because it is indifferentiable."
                 ),
             ):
                 _ = estimator.estimate_policy_value_tensor(**input_tensor_dict)
