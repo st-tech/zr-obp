@@ -258,7 +258,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
     a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
-    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \lambda, w(x,a) \\}`
+    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
     where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
 
     IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy (importance weight).
@@ -269,7 +269,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     ------------
     lambda_: float, default=np.inf
         A maximum possible value of the importance weight.
-        When a positive finite value is given, then an importance weight larger than `lambda_` will be clipped.
+        When a positive finite value is given, then importance weights larger than `lambda_` will be clipped.
 
     estimator_name: str, default='ipw'.
         Name of off-policy estimator.
@@ -295,6 +295,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             target_type=(int, float),
             min_val=0.0,
         )
+        if self.lambda_ != self.lambda_:
+            raise ValueError("lambda_ must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -874,7 +876,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
-    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \lambda, w(x,a) \\}`
+    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
     where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
 
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
@@ -890,7 +892,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
     ----------
     lambda_: float, default=np.inf
         A maximum possible value of the importance weight.
-        When a positive finite value is given, then an importance weight larger than `lambda_` will be clipped.
+        When a positive finite value is given, then importance weights larger than `lambda_` will be clipped.
         DoublyRobust with a finite positive `lambda_` corresponds to the Doubly Robust with pessimistic shrinkage stated in Su et al.(2020).
 
     estimator_name: str, default='dr'.
@@ -920,6 +922,8 @@ class DoublyRobust(BaseOffPolicyEstimator):
             target_type=(int, float),
             min_val=0.0,
         )
+        if self.lambda_ != self.lambda_:
+            raise ValueError("lambda_ must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -1363,6 +1367,8 @@ class SwitchDoublyRobust(DoublyRobust):
             target_type=(int, float),
             min_val=0.0,
         )
+        if self.tau != self.tau:
+            raise ValueError("tau must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -1496,6 +1502,8 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             target_type=(int, float),
             min_val=0.0,
         )
+        if self.lambda_ != self.lambda_:
+            raise ValueError("lambda_ must not be nan")
 
     def _estimate_round_rewards(
         self,

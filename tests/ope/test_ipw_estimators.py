@@ -29,6 +29,9 @@ def test_ipw_init():
     with pytest.raises(ValueError, match=r"`lambda_`= -1.0, must be >= 0.0."):
         InverseProbabilityWeighting(lambda_=-1.0)
 
+    with pytest.raises(ValueError, match=r"lambda_ must not be nan"):
+        InverseProbabilityWeighting(lambda_=np.nan)
+
 
 # prepare ipw instances
 ipw = InverseProbabilityWeighting()

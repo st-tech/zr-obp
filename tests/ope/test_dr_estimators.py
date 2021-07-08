@@ -27,6 +27,7 @@ invalid_input_of_dr_init = [
         r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (-1.0, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
+    (np.nan, ValueError, "lambda_ must not be nan"),
 ]
 
 
@@ -58,6 +59,7 @@ invalid_input_of_switch_dr_init = [
         r"`tau` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (-1.0, ValueError, "`tau`= -1.0, must be >= 0.0."),
+    (np.nan, ValueError, "tau must not be nan"),
 ]
 
 
