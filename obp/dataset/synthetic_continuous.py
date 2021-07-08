@@ -29,10 +29,10 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         Number of dimensions of context vectors.
 
     action_noise: float, default=1.0
-            Standard deviation of the Gaussian noise on the continuous action value.
+            Standard deviation of the Gaussian noise on the continuous action variable.
 
     reward_noise: float, default=1.0
-        Standard deviation of the Gaussian noise on the reward.
+        Standard deviation of the Gaussian noise on the reward variable.
 
     min_action_value: float, default=-np.inf
         A minimum possible continuous action value.
@@ -67,7 +67,6 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
             linear_reward_funcion_continuous,
             linear_behavior_policy_continuous,
         )
-
         >>> dataset = SyntheticContinuousBanditDataset(
                 dim_context=5,
                 min_action_value=1,
@@ -77,7 +76,6 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
                 random_state=12345,
             )
         >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=10000)
-
         >>> bandit_feedback
 
         {
