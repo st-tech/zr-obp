@@ -47,21 +47,28 @@ def test_ipw_init():
         InverseProbabilityWeightingTuning(lambdas=[""])
 
     with pytest.raises(
-        ValueError, match=r"`an element of lambdas`= -1.0, must be >= 0.0."
+        ValueError, match="`an element of lambdas`= -1.0, must be >= 0.0."
     ):
         InverseProbabilityWeightingTuning(lambdas=[-1.0])
 
-    with pytest.raises(ValueError, match=r"an element of lambdas must not be nan"):
+    with pytest.raises(ValueError, match="an element of lambdas must not be nan"):
         InverseProbabilityWeightingTuning(lambdas=[np.nan])
 
-    with pytest.raises(ValueError, match=r"lambdas must not be empty"):
+    with pytest.raises(ValueError, match="lambdas must not be empty"):
         InverseProbabilityWeightingTuning(lambdas=[])
 
-    with pytest.raises(TypeError, match=r"lambdas must be a list"):
+    with pytest.raises(TypeError, match="lambdas must be a list"):
         InverseProbabilityWeightingTuning(lambdas="")
 
-    with pytest.raises(TypeError, match=r"lambdas must be a list"):
+    with pytest.raises(TypeError, match="lambdas must be a list"):
         InverseProbabilityWeightingTuning(lambdas=None)
+
+    # max_reward_value
+    with pytest.raises(
+        TypeError,
+        match=r"`max_reward_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ):
+        InverseProbabilityWeightingTuning(lambdas=[1, 100], max_reward_value="")
 
 
 # prepare ipw instances
@@ -404,14 +411,6 @@ def test_ipw_using_invalid_input_tensor_data(
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = snipw.estimate_policy_value_tensor(
-            action_dist=action_dist,
-            action=action,
-            reward=reward,
-            pscore=pscore,
-            position=position,
-        )
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = ipw_tuning.estimate_policy_value_tensor(
             action_dist=action_dist,
             action=action,
             reward=reward,
