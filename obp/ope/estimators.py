@@ -282,6 +282,9 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
     """
 
     lambda_: float = np.inf
@@ -574,7 +577,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         estimated_mse_upper_bound: float
             Estimated upper bound of MSE with a given clipping hyperparameter `lambda_`.
             This is estimated using the automatic hyperparameter tuning procedure
-            based on Section 4.2 of Wang et al.(2017).
+            based on Section 5 of Su et al.(2020).
 
         """
         if max_reward_value is None:
@@ -1317,7 +1320,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         estimated_mse_upper_bound: float
             Estimated upper bound of MSE with a given clipping hyperparameter `lambda_`.
             This is estimated using the automatic hyperparameter tuning procedure
-            based on Section 4.2 of Wang et al.(2017).
+            based on Section 5 of Su et al.(2020).
 
         """
         if max_reward_value is None:
@@ -1489,6 +1492,9 @@ class SwitchDoublyRobust(DoublyRobust):
     Yu-Xiang Wang, Alekh Agarwal, and Miroslav Dudík.
     "Optimal and Adaptive Off-policy Evaluation in Contextual Bandits", 2016.
 
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
     """
 
     tau: float = np.inf
@@ -1615,7 +1621,7 @@ class SwitchDoublyRobust(DoublyRobust):
         estimated_mse_upper_bound: float
             Estimated upper bound of MSE with a given switching hyperparameter `tau`.
             This is estimated using the automatic hyperparameter tuning procedure
-            based on Section 4.2 of Wang et al.(2017).
+            based on Section 5 of Su et al.(2020).
 
         """
         if max_reward_value is None:
@@ -1751,7 +1757,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         """
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        shrinkage_weight = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        if self.lambda_ < np.inf:
+            iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        else:
+            iw_hat = iw
         q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
@@ -1771,7 +1780,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         else:
             raise ValueError("reward must be ndarray or Tensor")
 
-        estimated_rewards += shrinkage_weight * (reward - q_hat_factual)
+        estimated_rewards += iw_hat * (reward - q_hat_factual)
         return estimated_rewards
 
     def _estimate_mse_upper_bound(
@@ -1815,7 +1824,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         estimated_mse_upper_bound: float
             Estimated upper bound of MSE with a given shrinkage hyperparameter `lambda_`.
             This is estimated using the automatic hyperparameter tuning procedure
-            based on Section 4.2 of Wang et al.(2017).
+            based on Section 5 of Su et al.(2020).
 
         """
         if max_reward_value is None:
@@ -1837,7 +1846,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
         # estimate the upper bound of the bias of DRos
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        if self.lambda_ < np.inf:
+            iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        else:
+            iw_hat = iw
         bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
         bias_upper_bound = bias_upper_bound_arr.mean()
 
