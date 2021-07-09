@@ -207,9 +207,9 @@ def test_dr_tuning_init_using_valid_input_data(lambdas_taus, description):
 dm = DirectMethod()
 dr = DoublyRobust()
 dr_tuning = DoublyRobustTuning(lambdas=[1, 100])
-dr_shrink_0 = DoublyRobustWithShrinkage(lambda_=0.0)
-dr_shrink_tuning = DoublyRobustWithShrinkageTuning(lambdas=[1, 100])
-dr_shrink_max = DoublyRobustWithShrinkage(lambda_=1e10)
+dr_os_0 = DoublyRobustWithShrinkage(lambda_=0.0)
+dr_os_tuning = DoublyRobustWithShrinkageTuning(lambdas=[1, 100])
+dr_os_max = DoublyRobustWithShrinkage(lambda_=1e10)
 sndr = SelfNormalizedDoublyRobust()
 switch_dr_0 = SwitchDoublyRobust(tau=0.0)
 switch_dr_tuning = SwitchDoublyRobustTuning(taus=[1, 100])
@@ -218,8 +218,8 @@ switch_dr_max = SwitchDoublyRobust(tau=1e10)
 dr_estimators = [
     dr,
     dr_tuning,
-    dr_shrink_0,
-    dr_shrink_tuning,
+    dr_os_0,
+    dr_os_tuning,
     sndr,
     switch_dr_0,
     switch_dr_tuning,
@@ -654,8 +654,10 @@ def test_dr_variants_using_valid_input_data(
 ) -> None:
     # check dr variants
     switch_dr = SwitchDoublyRobust(tau=hyperparameter)
+    switch_dr_tuning = SwitchDoublyRobustTuning(taus=[hyperparameter, hyperparameter * 10])
     dr_os = DoublyRobustWithShrinkage(lambda_=hyperparameter)
-    for estimator in [switch_dr, dr_os]:
+    dr_os_tuning = DoublyRobustWithShrinkageTuning(lambdas=[hyperparameter, hyperparameter * 10])
+    for estimator in [switch_dr, switch_dr_tuning, dr_os, dr_os_tuning]:
         est = estimator.estimate_policy_value(
             action_dist=action_dist,
             action=action,
@@ -838,7 +840,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     ), f"estimated policy value of sndr should be smaller than or equal to 2 (because of its 2-boundedness), but the value is: {estimated_policy_value.item()}"
 
 
-def test_dr_shrinkage_using_random_evaluation_policy(
+def test_dr_osage_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
@@ -856,13 +858,13 @@ def test_dr_shrinkage_using_random_evaluation_policy(
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
     dm_value = dm.estimate_policy_value(**input_dict)
     dr_value = dr.estimate_policy_value(**input_dict)
-    dr_shrink_0_value = dr_shrink_0.estimate_policy_value(**input_dict)
-    dr_shrink_max_value = dr_shrink_max.estimate_policy_value(**input_dict)
+    dr_os_0_value = dr_os_0.estimate_policy_value(**input_dict)
+    dr_os_max_value = dr_os_max.estimate_policy_value(**input_dict)
     assert (
-        dm_value == dr_shrink_0_value
+        dm_value == dr_os_0_value
     ), "DoublyRobustWithShrinkage (lambda=0) should be the same as DirectMethod"
     assert (
-        np.abs(dr_value - dr_shrink_max_value) < 1e-5
+        np.abs(dr_value - dr_os_max_value) < 1e-5
     ), "DoublyRobustWithShrinkage (lambda=inf) should be almost the same as DoublyRobust"
 
     # prepare input dict
@@ -877,15 +879,15 @@ def test_dr_shrinkage_using_random_evaluation_policy(
     )
     dm_value = dm.estimate_policy_value_tensor(**input_tensor_dict)
     dr_value = dr.estimate_policy_value_tensor(**input_tensor_dict)
-    dr_shrink_0_value = dr_shrink_0.estimate_policy_value_tensor(**input_tensor_dict)
-    dr_shrink_max_value = dr_shrink_max.estimate_policy_value_tensor(
+    dr_os_0_value = dr_os_0.estimate_policy_value_tensor(**input_tensor_dict)
+    dr_os_max_value = dr_os_max.estimate_policy_value_tensor(
         **input_tensor_dict
     )
     assert (
-        dm_value.item() == dr_shrink_0_value.item()
+        dm_value.item() == dr_os_0_value.item()
     ), "DoublyRobustWithShrinkage (lambda=0) should be the same as DirectMethod"
     assert (
-        np.abs(dr_value.item() - dr_shrink_max_value.item()) < 1e-5
+        np.abs(dr_value.item() - dr_os_max_value.item()) < 1e-5
     ), "DoublyRobustWithShrinkage (lambda=inf) should be almost the same as DoublyRobust"
 
 
