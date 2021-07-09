@@ -21,12 +21,16 @@ from obp.ope import (
     RegressionModel,
     OffPolicyEvaluation,
     InverseProbabilityWeighting,
+    InverseProbabilityWeightingTuning,
     SelfNormalizedInverseProbabilityWeighting,
     DirectMethod,
     DoublyRobust,
+    DoublyRobustTuning,
     SelfNormalizedDoublyRobust,
     SwitchDoublyRobust,
+    SwitchDoublyRobustTuning,
     DoublyRobustWithShrinkage,
+    DoublyRobustWithShrinkageTuning,
 )
 
 
@@ -131,13 +135,17 @@ ope_estimators = [
     RandomOffPolicyEstimator(),
     DirectMethod(),
     InverseProbabilityWeighting(),
+    InverseProbabilityWeightingTuning(lambdas=[1, 100], estimator_name="ipw (tuning)"),
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
+    DoublyRobustTuning(lambdas=[1, 100], estimator_name="dr (tuning)"),
     SelfNormalizedDoublyRobust(),
     SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr (tau=1)"),
     SwitchDoublyRobust(tau=100.0, estimator_name="switch-dr (tau=100)"),
+    SwitchDoublyRobustTuning(taus=[1, 100], estimator_name="switch-dr (tuning)"),
     DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
     DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
+    DoublyRobustWithShrinkageTuning(lambdas=[1, 100], estimator_name="dr-os (tuning)"),
 ]
 
 
