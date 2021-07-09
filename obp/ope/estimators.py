@@ -537,6 +537,71 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             random_state=random_state,
         )
 
+    def _estimate_mse_upper_bound(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        max_reward_value: Optional[Union[int, float]] = None,
+    ) -> float:
+        """Estimate the upper bound of the mean-squared-error of IPW with a given clipping hyperparameter.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given logged bandit feedback.
+
+        max_reward_value: int or float, default=None
+            A maximum possible reward, which is necessary for the hyperparameter tuning.
+            If None is given, `reward.max()` is used.
+
+        Returns
+        ----------
+        estimated_mse_upper_bound: float
+            Estimated upper bound of MSE with a given clipping hyperparameter `lambda_`.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 4.2 of Wang et al.(2017).
+
+        """
+        if max_reward_value is None:
+            max_reward_value = reward.max()
+
+        n_rounds = reward.shape[0]
+        # estimate the variance of IPW with clipping
+        var_hat = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                position=position,
+            )
+        )
+        var_hat /= n_rounds
+
+        # estimate the upper bound of the bias of IPW with clipping
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw_hat = np.minimum(iw, self.lambda_)
+        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        bias_upper_bound = bias_upper_bound_arr.mean()
+
+        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
+        return estimated_mse_upper_bound
+
 
 @dataclass
 class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
@@ -1211,6 +1276,76 @@ class DoublyRobust(BaseOffPolicyEstimator):
             random_state=random_state,
         )
 
+    def _estimate_mse_upper_bound(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        max_reward_value: Optional[Union[int, float]] = None,
+    ) -> float:
+        """Estimate the upper bound of the mean-squared-error of DR with a given clipping hyperparameter.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given logged bandit feedback.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        max_reward_value: int or float, default=None
+            A maximum possible reward, which is necessary for the hyperparameter tuning.
+            If None is given, `reward.max()` is used.
+
+        Returns
+        ----------
+        estimated_mse_upper_bound: float
+            Estimated upper bound of MSE with a given clipping hyperparameter `lambda_`.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 4.2 of Wang et al.(2017).
+
+        """
+        if max_reward_value is None:
+            max_reward_value = reward.max()
+
+        n_rounds = reward.shape[0]
+        # estimate the variance of DR with clipping
+        var_hat = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+        )
+        var_hat /= n_rounds
+
+        # estimate the upper bound of the bias of DR with clipping
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw_hat = np.minimum(iw, self.lambda_)
+        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        bias_upper_bound = bias_upper_bound_arr.mean()
+
+        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
+        return estimated_mse_upper_bound
+
 
 @dataclass
 class SelfNormalizedDoublyRobust(DoublyRobust):
@@ -1339,7 +1474,7 @@ class SwitchDoublyRobust(DoublyRobust):
 
     Parameters
     ----------
-    tau: float, default=1
+    tau: float, default=np.inf
         Switching hyperparameter. When importance weight is larger than this parameter, the DM estimator is applied, otherwise the DR estimator is applied.
         This hyperparameter should be larger than or equal to 0., otherwise it is meaningless.
 
@@ -1356,7 +1491,7 @@ class SwitchDoublyRobust(DoublyRobust):
 
     """
 
-    tau: float = 1.0
+    tau: float = np.inf
     estimator_name: str = "switch-dr"
 
     def __post_init__(self) -> None:
@@ -1379,7 +1514,7 @@ class SwitchDoublyRobust(DoublyRobust):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
         **kwargs,
-    ) -> float:
+    ) -> np.ndarray:
         """Estimate rewards for each round.
 
         Parameters
@@ -1430,13 +1565,84 @@ class SwitchDoublyRobust(DoublyRobust):
         self,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """
+        Estimate policy value of an evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
         This is not implemented because switching is indifferentiable.
         """
         raise NotImplementedError(
             "This is not implemented for Switch-DR because it is indifferentiable."
         )
+
+    def _estimate_mse_upper_bound(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        max_reward_value: Optional[Union[int, float]] = None,
+    ) -> float:
+        """Estimate the upper bound of the mean-squared-error of Switch-DR with a given hyperparameter.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given logged bandit feedback.
+
+        max_reward_value: int or float, default=None
+            A maximum possible reward, which is necessary for the hyperparameter tuning.
+            If None is given, `reward.max()` is used.
+
+        Returns
+        ----------
+        estimated_mse_upper_bound: float
+            Estimated upper bound of MSE with a given switching hyperparameter `tau`.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 4.2 of Wang et al.(2017).
+
+        """
+        if max_reward_value is None:
+            max_reward_value = reward.max()
+
+        n_rounds = reward.shape[0]
+        # estimate the variance of Switch-DR (Eq.(8) of Wang et al.(2017))
+        var_hat = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+        )
+        var_hat /= n_rounds
+
+        # estimate the upper bound of the bias of Switch-DR
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw_hat = iw * np.array(iw <= self.tau, dtype=int)
+        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        bias_upper_bound = bias_upper_bound_arr.mean()
+
+        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
+        return estimated_mse_upper_bound
 
 
 @dataclass
@@ -1567,3 +1773,73 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
         estimated_rewards += shrinkage_weight * (reward - q_hat_factual)
         return estimated_rewards
+
+    def _estimate_mse_upper_bound(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        max_reward_value: Optional[Union[int, float]] = None,
+    ) -> float:
+        """Estimate the upper bound of the mean-squared-error of DR with a given hyperparameter.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given logged bandit feedback.
+
+        max_reward_value: int or float, default=None
+            A maximum possible reward, which is necessary for the hyperparameter tuning.
+            If None is given, `reward.max()` is used.
+
+        Returns
+        ----------
+        estimated_mse_upper_bound: float
+            Estimated upper bound of MSE with a given shrinkage hyperparameter `lambda_`.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 4.2 of Wang et al.(2017).
+
+        """
+        if max_reward_value is None:
+            max_reward_value = reward.max()
+
+        n_rounds = reward.shape[0]
+        # estimate the variance of DRos
+        var_hat = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+        )
+        var_hat /= n_rounds
+
+        # estimate the upper bound of the bias of DRos
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        bias_upper_bound = bias_upper_bound_arr.mean()
+
+        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
+        return estimated_mse_upper_bound
