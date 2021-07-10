@@ -50,65 +50,53 @@ def test_dr_init_using_invalid_inputs(
         _ = DoublyRobustWithShrinkage(lambda_=lambda_)
 
 
-# lambdas, max_reward_value, err, description
+# lambdas, err, description
 invalid_input_of_dr_tuning_init = [
     (
-        "",  #
-        10,
+        "",
         TypeError,
         "lambdas must be a list",
     ),
     (
-        None,  #
-        10,
+        None,
         TypeError,
         "lambdas must be a list",
     ),
     (
-        [""],  #
-        10,
+        [""],
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
-        [None],  #
-        10,
+        [None],
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
-        [],  #
-        10,
+        [],
         ValueError,
         "lambdas must not be empty",
     ),
-    ([-1.0], 10, ValueError, "`an element of lambdas`= -1.0, must be >= 0.0."),  #
-    ([np.nan], 10, ValueError, "an element of lambdas must not be nan"),  #
-    (
-        [1, 100],
-        "",  #
-        TypeError,
-        r"`max_reward_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
-    ),
+    ([-1.0], ValueError, "`an element of lambdas`= -1.0, must be >= 0.0."),
+    ([np.nan], ValueError, "an element of lambdas must not be nan"),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas, max_reward_value, err, description",
+    "lambdas, err, description",
     invalid_input_of_dr_tuning_init,
 )
 def test_dr_tuning_init_using_invalid_inputs(
     lambdas,
-    max_reward_value,
     err,
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = DoublyRobustTuning(lambdas=lambdas, max_reward_value=max_reward_value)
+        _ = DoublyRobustTuning(lambdas=lambdas)
 
     with pytest.raises(err, match=f"{description}*"):
         _ = DoublyRobustWithShrinkageTuning(
-            lambdas=lambdas, max_reward_value=max_reward_value
+            lambdas=lambdas,
         )
 
 
@@ -142,61 +130,49 @@ def test_switch_dr_init_using_invalid_inputs(
         _ = SwitchDoublyRobust(tau=tau)
 
 
-# taus, max_reward_value, err, description
+# taus, err, description
 invalid_input_of_switch_dr_tuning_init = [
     (
-        "",  #
-        10,
+        "",
         TypeError,
         "taus must be a list",
     ),
     (
-        None,  #
-        10,
+        None,
         TypeError,
         "taus must be a list",
     ),
     (
-        [""],  #
-        10,
+        [""],
         TypeError,
         r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
-        [None],  #
-        10,
+        [None],
         TypeError,
         r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
-        [],  #
-        10,
+        [],
         ValueError,
         "taus must not be empty",
     ),
-    ([-1.0], 10, ValueError, "`an element of taus`= -1.0, must be >= 0.0."),  #
-    ([np.nan], 10, ValueError, "an element of taus must not be nan"),  #
-    (
-        [1, 100],
-        "",  #
-        TypeError,
-        r"`max_reward_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
-    ),
+    ([-1.0], ValueError, "`an element of taus`= -1.0, must be >= 0.0."),
+    ([np.nan], ValueError, "an element of taus must not be nan"),
 ]
 
 
 @pytest.mark.parametrize(
-    "taus, max_reward_value, err, description",
+    "taus, err, description",
     invalid_input_of_switch_dr_tuning_init,
 )
 def test_switch_dr_tuning_init_using_invalid_inputs(
     taus,
-    max_reward_value,
     err,
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = SwitchDoublyRobustTuning(taus=taus, max_reward_value=max_reward_value)
+        _ = SwitchDoublyRobustTuning(taus=taus)
 
 
 valid_input_of_dr_init = [
@@ -217,23 +193,23 @@ def test_dr_init_using_valid_input_data(lambda_tau: float, description: str) -> 
 
 
 valid_input_of_dr_tuning_init = [
-    ([3.0, np.inf, 100.0], 10.0, "float lambda_tau"),
-    ([2], 10, "integer lambda_tau"),
+    ([3.0, np.inf, 100.0], "float lambda_tau"),
+    ([2], "integer lambda_tau"),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas_taus, max_reward_value, description",
+    "lambdas_taus, description",
     valid_input_of_dr_tuning_init,
 )
-def test_dr_tuning_init_using_valid_input_data(
-    lambdas_taus, max_reward_value, description
-):
-    _ = DoublyRobustTuning(lambdas=lambdas_taus, max_reward_value=max_reward_value)
+def test_dr_tuning_init_using_valid_input_data(lambdas_taus, description):
+    _ = DoublyRobustTuning(lambdas=lambdas_taus)
     _ = DoublyRobustWithShrinkageTuning(
-        lambdas=lambdas_taus, max_reward_value=max_reward_value
+        lambdas=lambdas_taus,
     )
-    _ = SwitchDoublyRobustTuning(taus=lambdas_taus, max_reward_value=max_reward_value)
+    _ = SwitchDoublyRobustTuning(
+        taus=lambdas_taus,
+    )
 
 
 # prepare instances

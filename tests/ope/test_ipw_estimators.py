@@ -63,13 +63,6 @@ def test_ipw_init():
     with pytest.raises(TypeError, match="lambdas must be a list"):
         InverseProbabilityWeightingTuning(lambdas=None)
 
-    # max_reward_value
-    with pytest.raises(
-        TypeError,
-        match=r"`max_reward_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
-    ):
-        InverseProbabilityWeightingTuning(lambdas=[1, 100], max_reward_value="")
-
 
 # prepare ipw instances
 ipw = InverseProbabilityWeighting()
