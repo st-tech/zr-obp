@@ -125,7 +125,7 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for lambda_ in self.lambdas:
             estimated_mse_upper_bound = InverseProbabilityWeighting(
                 lambda_=lambda_
@@ -137,8 +137,10 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
                 action_dist=action_dist,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_lambda_ = self.lambdas[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+        self.best_lambda_ = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         return (
             InverseProbabilityWeighting(lambda_=self.best_lambda_)
@@ -217,7 +219,7 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for lambda_ in self.lambdas:
             estimated_mse_upper_bound = InverseProbabilityWeighting(
                 lambda_=lambda_
@@ -229,8 +231,10 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
                 action_dist=action_dist,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_lambda_ = self.lambdas[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+        self.best_lambda_ = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         estimated_round_rewards = InverseProbabilityWeighting(
             lambda_=self.best_lambda_
@@ -360,7 +364,7 @@ class DoublyRobustTuning(DoublyRobust):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for lambda_ in self.lambdas:
             estimated_mse_upper_bound = DoublyRobust(
                 lambda_=lambda_
@@ -373,8 +377,10 @@ class DoublyRobustTuning(DoublyRobust):
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_lambda_ = self.lambdas[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+        self.best_lambda_ = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         return (
             DoublyRobust(lambda_=self.best_lambda_)
@@ -460,7 +466,7 @@ class DoublyRobustTuning(DoublyRobust):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for lambda_ in self.lambdas:
             estimated_mse_upper_bound = DoublyRobust(
                 lambda_=lambda_
@@ -473,8 +479,10 @@ class DoublyRobustTuning(DoublyRobust):
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_lambda_ = self.lambdas[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+        self.best_lambda_ = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         estimated_round_rewards = DoublyRobust(
             lambda_=self.best_lambda_
@@ -606,7 +614,7 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the switching hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for tau_ in self.taus:
             estimated_mse_upper_bound = SwitchDoublyRobust(
                 tau=tau_
@@ -619,8 +627,10 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_tau = self.taus[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[tau_] = estimated_mse_upper_bound
+        self.best_tau = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         return (
             SwitchDoublyRobust(tau=self.best_tau)
@@ -706,7 +716,7 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the switching hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for tau_ in self.taus:
             estimated_mse_upper_bound = SwitchDoublyRobust(
                 tau=tau_
@@ -719,8 +729,10 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_tau = self.taus[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[tau_] = estimated_mse_upper_bound
+        self.best_tau = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         estimated_round_rewards = SwitchDoublyRobust(
             tau=self.best_tau
@@ -851,7 +863,7 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the shrinkage hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for lambda_ in self.lambdas:
             estimated_mse_upper_bound = DoublyRobustWithShrinkage(
                 lambda_=lambda_
@@ -864,8 +876,10 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_lambda_ = self.lambdas[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+        self.best_lambda_ = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         return (
             DoublyRobustWithShrinkage(lambda_=self.best_lambda_)
@@ -951,7 +965,7 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the shrinkage hyperparameter
-        self.estimated_mse_upper_bound_list = []
+        self.estimated_mse_upper_bound_dict = dict()
         for lambda_ in self.lambdas:
             estimated_mse_upper_bound = DoublyRobustWithShrinkage(
                 lambda_=lambda_
@@ -964,8 +978,10 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 max_reward_value=self.max_reward_value,
             )
-            self.estimated_mse_upper_bound_list.append(estimated_mse_upper_bound)
-        self.best_lambda_ = self.lambdas[np.argmin(self.estimated_mse_upper_bound_list)]
+            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+        self.best_lambda_ = min(
+            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+        )[0]
 
         estimated_round_rewards = DoublyRobustWithShrinkage(
             lambda_=self.best_lambda_
