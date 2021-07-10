@@ -8,7 +8,7 @@ from obp.dataset.synthetic_continuous import (
     linear_behavior_policy_continuous,
     linear_synthetic_policy_continuous,
     threshold_synthetic_policy_continuous,
-    sin_synthetic_policy_continuous,
+    sign_synthetic_policy_continuous,
 )
 
 
@@ -476,19 +476,19 @@ def test_threshold_synthetic_policy_continuous():
     assert continuous_actions.shape[0] == n_rounds and continuous_actions.ndim == 1
 
 
-def test_sin_synthetic_policy_continuous():
+def test_sign_synthetic_policy_continuous():
     # context
     with pytest.raises(ValueError):
         context = np.array([1.0, 1.0])
-        sin_synthetic_policy_continuous(context=context)
+        sign_synthetic_policy_continuous(context=context)
 
     with pytest.raises(ValueError):
         context = [1.0, 1.0]
-        sin_synthetic_policy_continuous(context=context)
+        sign_synthetic_policy_continuous(context=context)
 
     # continuous action values given by a synthetic policy
     n_rounds = 10
     dim_context = 3
     context = np.ones([n_rounds, dim_context])
-    continuous_actions = sin_synthetic_policy_continuous(context=context)
+    continuous_actions = sign_synthetic_policy_continuous(context=context)
     assert continuous_actions.shape[0] == n_rounds and continuous_actions.ndim == 1
