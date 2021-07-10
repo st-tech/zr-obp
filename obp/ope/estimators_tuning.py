@@ -3,7 +3,7 @@
 
 """Off-Policy Estimators with built-in hyperparameter tuning."""
 from dataclasses import dataclass
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional, List
 
 import numpy as np
 from sklearn.utils import check_scalar
