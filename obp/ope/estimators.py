@@ -593,7 +593,11 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
         iw_hat = np.minimum(iw, self.lambda_)
         bias_upper_bound_arr = (iw - iw_hat) * reward
-        bias_upper_bound = bias_upper_bound_arr.mean()
+        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
+        bias_upper_bound += np.sqrt(
+            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
+        )  # \delta=0.05
+        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
         return estimated_mse_upper_bound
@@ -1328,11 +1332,13 @@ class DoublyRobust(BaseOffPolicyEstimator):
         # estimate the upper bound of the bias of DR with clipping
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
         iw_hat = np.minimum(iw, self.lambda_)
-        q_hat = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
+        q_hat = estimated_rewards_by_reg_model[np.arange(n_rounds), action, position]
         bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
-        bias_upper_bound = bias_upper_bound_arr.mean()
+        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
+        bias_upper_bound += np.sqrt(
+            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
+        )  # \delta=0.05
+        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
         return estimated_mse_upper_bound
@@ -1624,11 +1630,13 @@ class SwitchDoublyRobust(DoublyRobust):
         # estimate the upper bound of the bias of Switch-DR
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
         iw_hat = iw * np.array(iw <= self.tau, dtype=int)
-        q_hat = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
+        q_hat = estimated_rewards_by_reg_model[np.arange(n_rounds), action, position]
         bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
-        bias_upper_bound = bias_upper_bound_arr.mean()
+        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
+        bias_upper_bound += np.sqrt(
+            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
+        )  # \delta=0.05
+        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
         return estimated_mse_upper_bound
@@ -1825,11 +1833,13 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
         else:
             iw_hat = iw
-        q_hat = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
+        q_hat = estimated_rewards_by_reg_model[np.arange(n_rounds), action, position]
         bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
-        bias_upper_bound = bias_upper_bound_arr.mean()
+        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
+        bias_upper_bound += np.sqrt(
+            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
+        )  # \delta=0.05
+        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
         return estimated_mse_upper_bound
