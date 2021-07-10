@@ -568,10 +568,6 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
-        max_reward_value: int or float, default=None
-            A maximum possible reward, which is necessary for the hyperparameter tuning.
-            If None is given, `reward.max()` is used.
-
         Returns
         ----------
         estimated_mse_upper_bound: float
@@ -580,9 +576,6 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             based on Section 5 of Su et al.(2020).
 
         """
-        if max_reward_value is None:
-            max_reward_value = reward.max()
-
         n_rounds = reward.shape[0]
         # estimate the variance of IPW with clipping
         var_hat = np.var(
@@ -599,7 +592,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         # estimate the upper bound of the bias of IPW with clipping
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
         iw_hat = np.minimum(iw, self.lambda_)
-        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        bias_upper_bound_arr = (iw - iw_hat) * reward
         bias_upper_bound = bias_upper_bound_arr.mean()
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
@@ -1287,7 +1280,6 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
-        max_reward_value: Optional[Union[int, float]] = None,
     ) -> float:
         """Estimate the upper bound of the mean-squared-error of DR with a given clipping hyperparameter.
 
@@ -1311,10 +1303,6 @@ class DoublyRobust(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-        max_reward_value: int or float, default=None
-            A maximum possible reward, which is necessary for the hyperparameter tuning.
-            If None is given, `reward.max()` is used.
-
         Returns
         ----------
         estimated_mse_upper_bound: float
@@ -1323,9 +1311,6 @@ class DoublyRobust(BaseOffPolicyEstimator):
             based on Section 5 of Su et al.(2020).
 
         """
-        if max_reward_value is None:
-            max_reward_value = reward.max()
-
         n_rounds = reward.shape[0]
         # estimate the variance of DR with clipping
         var_hat = np.var(
@@ -1343,7 +1328,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
         # estimate the upper bound of the bias of DR with clipping
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
         iw_hat = np.minimum(iw, self.lambda_)
-        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        q_hat = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), action, position
+        ]
+        bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
         bias_upper_bound = bias_upper_bound_arr.mean()
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
@@ -1588,7 +1576,6 @@ class SwitchDoublyRobust(DoublyRobust):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
-        max_reward_value: Optional[Union[int, float]] = None,
     ) -> float:
         """Estimate the upper bound of the mean-squared-error of Switch-DR with a given hyperparameter.
 
@@ -1612,10 +1599,6 @@ class SwitchDoublyRobust(DoublyRobust):
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
-        max_reward_value: int or float, default=None
-            A maximum possible reward, which is necessary for the hyperparameter tuning.
-            If None is given, `reward.max()` is used.
-
         Returns
         ----------
         estimated_mse_upper_bound: float
@@ -1624,9 +1607,6 @@ class SwitchDoublyRobust(DoublyRobust):
             based on Section 5 of Su et al.(2020).
 
         """
-        if max_reward_value is None:
-            max_reward_value = reward.max()
-
         n_rounds = reward.shape[0]
         # estimate the variance of Switch-DR (Eq.(8) of Wang et al.(2017))
         var_hat = np.var(
@@ -1644,7 +1624,10 @@ class SwitchDoublyRobust(DoublyRobust):
         # estimate the upper bound of the bias of Switch-DR
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
         iw_hat = iw * np.array(iw <= self.tau, dtype=int)
-        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        q_hat = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), action, position
+        ]
+        bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
         bias_upper_bound = bias_upper_bound_arr.mean()
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
@@ -1791,7 +1774,6 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
-        max_reward_value: Optional[Union[int, float]] = None,
     ) -> float:
         """Estimate the upper bound of the mean-squared-error of DR with a given hyperparameter.
 
@@ -1815,10 +1797,6 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         position: array-like, shape (n_rounds,), default=None
             Positions of each round in the given logged bandit feedback.
 
-        max_reward_value: int or float, default=None
-            A maximum possible reward, which is necessary for the hyperparameter tuning.
-            If None is given, `reward.max()` is used.
-
         Returns
         ----------
         estimated_mse_upper_bound: float
@@ -1827,9 +1805,6 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             based on Section 5 of Su et al.(2020).
 
         """
-        if max_reward_value is None:
-            max_reward_value = reward.max()
-
         n_rounds = reward.shape[0]
         # estimate the variance of DRos
         var_hat = np.var(
@@ -1850,7 +1825,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
         else:
             iw_hat = iw
-        bias_upper_bound_arr = (iw - iw_hat) * max_reward_value
+        q_hat = estimated_rewards_by_reg_model[
+            np.arange(n_rounds), action, position
+        ]
+        bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
         bias_upper_bound = bias_upper_bound_arr.mean()
 
         estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)

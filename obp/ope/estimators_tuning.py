@@ -28,10 +28,8 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
     ----------
     lambdas: List[float]
         A list of candidate clipping hyperparameters.
-        The automatic hyperparameter tuning proposed by Wang et al.(2017) will choose the best hyperparameter value from the data.
-
-    max_reward_value: int or float, default=None
-        A maximum possible reward, which is necessary for the hyperparameter tuning.
+        The automatic hyperparameter tuning proposed by Su et al.(2020)
+        will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='ipw'.
         Name of off-policy estimator.
@@ -47,7 +45,6 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
     """
 
     lambdas: List[float] = None
-    max_reward_value: Optional[Union[int, float]] = None
     estimator_name = "ipw"
 
     def __post_init__(self) -> None:
@@ -66,12 +63,6 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
                     raise ValueError("an element of lambdas must not be nan")
         else:
             raise TypeError("lambdas must be a list")
-        if self.max_reward_value is not None:
-            check_scalar(
-                self.max_reward_value,
-                name="max_reward_value",
-                target_type=(int, float),
-            )
 
     def estimate_policy_value(
         self,
@@ -135,7 +126,6 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
                 position=position,
                 pscore=pscore,
                 action_dist=action_dist,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
         self.best_lambda_ = min(
@@ -229,7 +219,6 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
                 position=position,
                 pscore=pscore,
                 action_dist=action_dist,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
         self.best_lambda_ = min(
@@ -261,10 +250,8 @@ class DoublyRobustTuning(DoublyRobust):
     ----------
     lambdas: List[float]
         A list of candidate clipping hyperparameters.
-        The automatic hyperparameter tuning proposed by Wang et al.(2017) will choose the best hyperparameter value from the data.
-
-    max_reward_value: int or float, default=None
-            A maximum possible reward, which is necessary for the hyperparameter tuning.
+        The automatic hyperparameter tuning proposed by Su et al.(2020)
+        will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='dr'.
         Name of off-policy estimator.
@@ -280,7 +267,6 @@ class DoublyRobustTuning(DoublyRobust):
     """
 
     lambdas: List[float] = None
-    max_reward_value: Optional[Union[int, float]] = None
     estimator_name = "dr"
 
     def __post_init__(self) -> None:
@@ -299,12 +285,6 @@ class DoublyRobustTuning(DoublyRobust):
                     raise ValueError("an element of lambdas must not be nan")
         else:
             raise TypeError("lambdas must be a list")
-        if self.max_reward_value is not None:
-            check_scalar(
-                self.max_reward_value,
-                name="max_reward_value",
-                target_type=(int, float),
-            )
 
     def estimate_policy_value(
         self,
@@ -375,7 +355,6 @@ class DoublyRobustTuning(DoublyRobust):
                 pscore=pscore,
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
         self.best_lambda_ = min(
@@ -477,7 +456,6 @@ class DoublyRobustTuning(DoublyRobust):
                 pscore=pscore,
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
         self.best_lambda_ = min(
@@ -510,11 +488,8 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
     ----------
     taus: List[float]
         A list of candidate switching hyperparameters.
-        The automatic hyperparameter tuning proposed by Wang et al.(2017) will choose the best hyperparameter value from the data.
-
-    max_reward_value: int or float, default=None
-            A maximum possible reward, which is necessary for the hyperparameter tuning.
-            If None is given, `reward.max()` is used.
+        The automatic hyperparameter tuning proposed by Su et al.(2020)
+        will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='switch-dr'.
         Name of off-policy estimator.
@@ -530,7 +505,6 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
     """
 
     taus: List[float] = None
-    max_reward_value: Optional[float] = None
     estimator_name: str = "switch-dr"
 
     def __post_init__(self) -> None:
@@ -549,12 +523,6 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
                     raise ValueError("an element of taus must not be nan")
         else:
             raise TypeError("taus must be a list")
-        if self.max_reward_value is not None:
-            check_scalar(
-                self.max_reward_value,
-                name="max_reward_value",
-                target_type=(int, float),
-            )
 
     def estimate_policy_value(
         self,
@@ -625,7 +593,6 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
                 pscore=pscore,
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[tau_] = estimated_mse_upper_bound
         self.best_tau = min(
@@ -727,7 +694,6 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
                 pscore=pscore,
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[tau_] = estimated_mse_upper_bound
         self.best_tau = min(
@@ -760,10 +726,8 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
     ----------
     lambdas: List[float]
         A list of candidate shrinkage hyperparameters.
-        The automatic hyperparameter tuning proposed by Wang et al.(2017) will choose the best hyperparameter value from the data.
-
-    max_reward_value: int or float, default=None
-            A maximum possible reward, which is necessary for the hyperparameter tuning.
+        The automatic hyperparameter tuning proposed by Su et al.(2020)
+        will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='dr-os'.
         Name of off-policy estimator.
@@ -779,7 +743,6 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
     """
 
     lambdas: List[float] = None
-    max_reward_value: Optional[Union[int, float]] = None
     estimator_name = "dr-os"
 
     def __post_init__(self) -> None:
@@ -798,12 +761,6 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
                     raise ValueError("an element of lambdas must not be nan")
         else:
             raise TypeError("lambdas must be a list")
-        if self.max_reward_value is not None:
-            check_scalar(
-                self.max_reward_value,
-                name="max_reward_value",
-                target_type=(int, float),
-            )
 
     def estimate_policy_value(
         self,
@@ -874,7 +831,6 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
                 pscore=pscore,
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
         self.best_lambda_ = min(
@@ -976,7 +932,6 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
                 pscore=pscore,
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                max_reward_value=self.max_reward_value,
             )
             self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
         self.best_lambda_ = min(
