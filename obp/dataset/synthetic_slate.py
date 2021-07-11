@@ -359,8 +359,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         return pscores
 
-    def _calc_pscore_given_policy_value(
-        self, all_slate_actions: np.ndarray, policy_value_i_: np.ndarray
+    def _calc_pscore_given_policy_softmax(
+        self, all_slate_actions: np.ndarray, policy_softmax_i_: np.ndarray
     ) -> np.ndarray:
         """Calculate the propensity score of each of the possible slate actions given policy_logit.
 
@@ -369,7 +369,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         all_slate_actions: array-like, (n_action, len_list)
             All possible slate actions.
 
-        policy_value_i_: array-like, (n_unique_action, )
+        policy_softmax_i_: array-like, (n_unique_action, )
             Policy values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
         Returns
@@ -385,7 +385,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             action_index = np.where(
                 unique_action_set_2d == all_slate_actions[:, position_][:, np.newaxis]
             )[1]
-            score_ = policy_value_i_[unique_action_set_2d]
+            score_ = policy_softmax_i_[unique_action_set_2d]
             pscores *= np.divide(score_, score_.sum(axis=1, keepdims=True))[
                 np.arange(n_actions), action_index
             ]
@@ -463,7 +463,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 target_type=(float),
                 max_val=700.0,
             )
-            evaluation_policy_value_ = np.exp(
+            evaluation_policy_softmax_ = np.exp(
                 np.minimum(evaluation_policy_logit_, clip_logit_value)
             )
         for i in tqdm(
@@ -496,9 +496,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         pscore_item_position_i_l = score_[action_index_]
                     else:
                         if isinstance(clip_logit_value, float):
-                            pscores = self._calc_pscore_given_policy_value(
+                            pscores = self._calc_pscore_given_policy_softmax(
                                 all_slate_actions=enumerated_slate_actions,
-                                policy_value_i_=evaluation_policy_value_[i],
+                                policy_softmax_i_=evaluation_policy_softmax_[i],
                             )
                         else:
                             pscores = self._calc_pscore_given_policy_logit(
@@ -586,7 +586,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 target_type=(float),
                 max_val=700.0,
             )
-            behavior_policy_value_ = np.exp(
+            behavior_policy_softmax_ = np.exp(
                 np.minimum(behavior_policy_logit_, clip_logit_value)
             )
         for i in tqdm(
@@ -626,9 +626,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                         pscore_item_position_i_l = pscore_i
                     else:
                         if isinstance(clip_logit_value, float):
-                            pscores = self._calc_pscore_given_policy_value(
+                            pscores = self._calc_pscore_given_policy_softmax(
                                 all_slate_actions=enumerated_slate_actions,
-                                policy_value_i_=behavior_policy_value_[i],
+                                policy_softmax_i_=behavior_policy_softmax_[i],
                             )
                         else:
                             pscores = self._calc_pscore_given_policy_logit(
@@ -731,7 +731,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             A boolean parameter whether `pscore_item_position` is returned or not.
             When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time.
 
-        clip_softmax_value: Optional[float], default=None
+        clip_logit_value: Optional[float], default=None
             A float parameter to clip logit value.
             When None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
             When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
