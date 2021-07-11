@@ -2157,7 +2157,7 @@ def test_calc_pscore_given_policy_logit_using_valid_input_data(
         all_slate_actions, policy_logit_i_
     )
     assert np.allclose(true_pscores, pscores)
-    pscores = dataset._calc_pscore_given_policy_value(
+    pscores = dataset._calc_pscore_given_policy_softmax(
         all_slate_actions, np.exp(policy_logit_i_)
     )
     assert np.allclose(true_pscores, pscores)
