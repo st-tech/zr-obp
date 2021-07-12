@@ -56,7 +56,7 @@ def estimate_high_probability_upper_bound_bias(
 
     n_rounds = reward.shape[0]
     if q_hat is None:
-        q_hat = np.zeros_like(n_rounds)
+        q_hat = np.zeros(n_rounds)
     bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
     bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
     bias_upper_bound += np.sqrt((2 * (iw ** 2).mean() * np.log(2 / delta)) / n_rounds)

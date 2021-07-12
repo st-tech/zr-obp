@@ -572,7 +572,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Returns
         ----------
         estimated_mse_score: float
-            Estimated MSE score with a given clipping hyperparameter `lambda_`.
+            Estimated MSE score of a given clipping hyperparameter `lambda_`.
             MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
@@ -1310,7 +1310,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         Returns
         ----------
         estimated_mse_score: float
-            Estimated MSE score with a given clipping hyperparameter `lambda_`.
+            Estimated MSE score of a given clipping hyperparameter `lambda_`.
             MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
@@ -1607,7 +1607,7 @@ class SwitchDoublyRobust(DoublyRobust):
         Returns
         ----------
         estimated_mse_score: float
-            Estimated MSE score with a given switching hyperparameter `tau`.
+            Estimated MSE score of a given switching hyperparameter `tau`.
             MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
@@ -1806,7 +1806,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         Returns
         ----------
         estimated_mse_score: float
-            Estimated MSE score with a given shrinkage hyperparameter `lambda_`.
+            Estimated MSE score of a given shrinkage hyperparameter `lambda_`.
             MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).

@@ -22,6 +22,12 @@ from ..utils import check_ope_inputs
 class BaseOffPolicyEstimatorTuning:
     """Base Class for Off-Policy Estimator with built-in hyperparameter tuning
 
+    base_ope_estimator: BaseOffPolicyEstimator
+        An OPE estimator with a hyperparameter
+        (such as IPW/DR with clipping, Switch-DR, and DR with Shrinkage).
+
+    candidate_hyperparameter_list: List[float]
+        A list of candidate hyperparameter values.
 
     References
     ----------
@@ -122,7 +128,7 @@ class BaseOffPolicyEstimatorTuning:
 
         """
         # tune hyperparameter if necessary
-        if not hasattr(self, "best_hyperparam_"):
+        if not hasattr(self, "best_hyperparam"):
             self._tune_hyperparam(
                 reward=reward,
                 action=action,
@@ -147,7 +153,7 @@ class BaseOffPolicyEstimatorTuning:
         action: np.ndarray,
         pscore: np.ndarray,
         action_dist: np.ndarray,
-        estimated_rewards_by_reg_model: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
@@ -192,7 +198,7 @@ class BaseOffPolicyEstimatorTuning:
 
         """
         # tune hyperparameter if necessary
-        if not hasattr(self, "best_hyperparam_"):
+        if not hasattr(self, "best_hyperparam"):
             self._tune_hyperparam(
                 reward=reward,
                 action=action,
