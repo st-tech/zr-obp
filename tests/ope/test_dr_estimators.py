@@ -215,13 +215,17 @@ def test_dr_tuning_init_using_valid_input_data(lambdas_taus, description):
 # prepare instances
 dm = DirectMethod()
 dr = DoublyRobust()
-dr_tuning = DoublyRobustTuning(lambdas=[1, 100])
+dr_tuning = DoublyRobustTuning(lambdas=[1, 100], estimator_name="dr_tuning")
 dr_os_0 = DoublyRobustWithShrinkage(lambda_=0.0)
-dr_os_tuning = DoublyRobustWithShrinkageTuning(lambdas=[1, 100])
+dr_os_tuning = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100], estimator_name="dr_os_tuning"
+)
 dr_os_max = DoublyRobustWithShrinkage(lambda_=np.inf)
 sndr = SelfNormalizedDoublyRobust()
 switch_dr_0 = SwitchDoublyRobust(tau=0.0)
-switch_dr_tuning = SwitchDoublyRobustTuning(taus=[1, 100])
+switch_dr_tuning = SwitchDoublyRobustTuning(
+    taus=[1, 100], estimator_name="switch_dr_tuning"
+)
 switch_dr_max = SwitchDoublyRobust(tau=np.inf)
 
 dr_estimators = [
@@ -781,7 +785,7 @@ def test_dr_using_random_evaluation_policy(
                 ),
             ):
                 _ = estimator.estimate_policy_value_tensor(**input_tensor_dict)
-        else:
+        elif "tuning" not in estimator.estimator_name:
             estimated_policy_value = estimator.estimate_policy_value_tensor(
                 **input_tensor_dict
             )
@@ -802,7 +806,7 @@ def test_dr_using_random_evaluation_policy(
                 ),
             ):
                 _ = estimator.estimate_policy_value_tensor(**input_tensor_dict)
-        else:
+        elif "tuning" not in estimator.estimator_name:
             with pytest.raises(
                 TypeError,
                 match=re.escape(
