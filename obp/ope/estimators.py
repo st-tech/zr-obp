@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from sklearn.utils import check_scalar
 
+from .helper import estimate_high_probability_upper_bound_bias
 from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     check_ope_inputs,
@@ -540,16 +541,16 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             random_state=random_state,
         )
 
-    def _estimate_mse_upper_bound(
+    def _estimate_mse_score(
         self,
         reward: np.ndarray,
         action: np.ndarray,
         pscore: np.ndarray,
         action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
-        max_reward_value: Optional[Union[int, float]] = None,
+        **kwargs,
     ) -> float:
-        """Estimate the upper bound of the mean-squared-error of IPW with a given clipping hyperparameter.
+        """Estimate the MSE score of a given clipping hyperparameter to conduct hyperparameter tuning.
 
         Parameters
         ----------
@@ -570,15 +571,16 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         Returns
         ----------
-        estimated_mse_upper_bound: float
-            Estimated upper bound of MSE with a given clipping hyperparameter `lambda_`.
+        estimated_mse_score: float
+            Estimated MSE score with a given clipping hyperparameter `lambda_`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
 
         """
         n_rounds = reward.shape[0]
-        # estimate the variance of IPW with clipping
-        var_hat = np.var(
+        # estimate the sample variance of IPW with clipping
+        sample_variance = np.var(
             self._estimate_round_rewards(
                 reward=reward,
                 action=action,
@@ -587,20 +589,18 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
                 position=position,
             )
         )
-        var_hat /= n_rounds
+        sample_variance /= n_rounds
 
-        # estimate the upper bound of the bias of IPW with clipping
+        # estimate the (high probability) upper bound of the bias of IPW with clipping
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = np.minimum(iw, self.lambda_)
-        bias_upper_bound_arr = (iw - iw_hat) * reward
-        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
-        bias_upper_bound += np.sqrt(
-            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
-        )  # \delta=0.05
-        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=np.minimum(iw, self.lambda_),
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
 
-        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
-        return estimated_mse_upper_bound
+        return estimated_mse_score
 
 
 @dataclass
@@ -1276,7 +1276,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
             random_state=random_state,
         )
 
-    def _estimate_mse_upper_bound(
+    def _estimate_mse_score(
         self,
         reward: np.ndarray,
         action: np.ndarray,
@@ -1285,7 +1285,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate the upper bound of the mean-squared-error of DR with a given clipping hyperparameter.
+        """Estimate the MSE score of a given clipping hyperparameter to conduct hyperparameter tuning.
 
         Parameters
         ----------
@@ -1309,15 +1309,16 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         Returns
         ----------
-        estimated_mse_upper_bound: float
-            Estimated upper bound of MSE with a given clipping hyperparameter `lambda_`.
+        estimated_mse_score: float
+            Estimated MSE score with a given clipping hyperparameter `lambda_`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
 
         """
         n_rounds = reward.shape[0]
-        # estimate the variance of DR with clipping
-        var_hat = np.var(
+        # estimate the sample variance of DR with clipping
+        sample_variance = np.var(
             self._estimate_round_rewards(
                 reward=reward,
                 action=action,
@@ -1327,21 +1328,19 @@ class DoublyRobust(BaseOffPolicyEstimator):
                 position=position,
             )
         )
-        var_hat /= n_rounds
+        sample_variance /= n_rounds
 
-        # estimate the upper bound of the bias of DR with clipping
+        # estimate the (high probability) upper bound of the bias of DR with clipping
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = np.minimum(iw, self.lambda_)
-        q_hat = estimated_rewards_by_reg_model[np.arange(n_rounds), action, position]
-        bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
-        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
-        bias_upper_bound += np.sqrt(
-            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
-        )  # \delta=0.05
-        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=np.minimum(iw, self.lambda_),
+            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
 
-        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
-        return estimated_mse_upper_bound
+        return estimated_mse_score
 
 
 @dataclass
@@ -1574,7 +1573,7 @@ class SwitchDoublyRobust(DoublyRobust):
             "This is not implemented for Switch-DR because it is indifferentiable."
         )
 
-    def _estimate_mse_upper_bound(
+    def _estimate_mse_score(
         self,
         reward: np.ndarray,
         action: np.ndarray,
@@ -1583,7 +1582,7 @@ class SwitchDoublyRobust(DoublyRobust):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate the upper bound of the mean-squared-error of Switch-DR with a given hyperparameter.
+        """Estimate the MSE score of a given switching hyperparameter to conduct hyperparameter tuning.
 
         Parameters
         ----------
@@ -1607,15 +1606,16 @@ class SwitchDoublyRobust(DoublyRobust):
 
         Returns
         ----------
-        estimated_mse_upper_bound: float
-            Estimated upper bound of MSE with a given switching hyperparameter `tau`.
+        estimated_mse_score: float
+            Estimated MSE score with a given switching hyperparameter `tau`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
 
         """
         n_rounds = reward.shape[0]
-        # estimate the variance of Switch-DR (Eq.(8) of Wang et al.(2017))
-        var_hat = np.var(
+        # estimate the sample variance of Switch-DR (Eq.(8) of Wang et al.(2017))
+        sample_variance = np.var(
             self._estimate_round_rewards(
                 reward=reward,
                 action=action,
@@ -1625,21 +1625,19 @@ class SwitchDoublyRobust(DoublyRobust):
                 position=position,
             )
         )
-        var_hat /= n_rounds
+        sample_variance /= n_rounds
 
-        # estimate the upper bound of the bias of Switch-DR
+        # estimate the (high probability) upper bound of the bias of Switch-DR
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = iw * np.array(iw <= self.tau, dtype=int)
-        q_hat = estimated_rewards_by_reg_model[np.arange(n_rounds), action, position]
-        bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
-        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
-        bias_upper_bound += np.sqrt(
-            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
-        )  # \delta=0.05
-        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=iw * np.array(iw <= self.tau, dtype=int),
+            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
 
-        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
-        return estimated_mse_upper_bound
+        return estimated_mse_score
 
 
 @dataclass
@@ -1774,7 +1772,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         estimated_rewards += iw_hat * (reward - q_hat_factual)
         return estimated_rewards
 
-    def _estimate_mse_upper_bound(
+    def _estimate_mse_score(
         self,
         reward: np.ndarray,
         action: np.ndarray,
@@ -1783,7 +1781,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate the upper bound of the mean-squared-error of DR with a given hyperparameter.
+        """Estimate the MSE score of a given shrinkage hyperparameter to conduct hyperparameter tuning.
 
         Parameters
         ----------
@@ -1807,15 +1805,16 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
         Returns
         ----------
-        estimated_mse_upper_bound: float
-            Estimated upper bound of MSE with a given shrinkage hyperparameter `lambda_`.
+        estimated_mse_score: float
+            Estimated MSE score with a given shrinkage hyperparameter `lambda_`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
 
         """
         n_rounds = reward.shape[0]
-        # estimate the variance of DRos
-        var_hat = np.var(
+        # estimate the sample variance of DRos
+        sample_variance = np.var(
             self._estimate_round_rewards(
                 reward=reward,
                 action=action,
@@ -1825,21 +1824,20 @@ class DoublyRobustWithShrinkage(DoublyRobust):
                 position=position,
             )
         )
-        var_hat /= n_rounds
+        sample_variance /= n_rounds
 
-        # estimate the upper bound of the bias of DRos
+        # estimate the (high probability) upper bound of the bias of DRos
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
         if self.lambda_ < np.inf:
             iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
         else:
             iw_hat = iw
-        q_hat = estimated_rewards_by_reg_model[np.arange(n_rounds), action, position]
-        bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
-        bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
-        bias_upper_bound += np.sqrt(
-            (2 * (iw ** 2).mean() * np.log(40)) / n_rounds
-        )  # \delta=0.05
-        bias_upper_bound += (2 * iw.max() * np.log(40)) / (3 * n_rounds)
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=iw_hat,
+            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
 
-        estimated_mse_upper_bound = var_hat + (bias_upper_bound ** 2)
-        return estimated_mse_upper_bound
+        return estimated_mse_score

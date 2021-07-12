@@ -2,26 +2,220 @@
 # Licensed under the Apache 2.0 License.
 
 """Off-Policy Estimators with built-in hyperparameter tuning."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Optional, List
 
 import numpy as np
 from sklearn.utils import check_scalar
 
 from .estimators import (
+    BaseOffPolicyEstimator,
     InverseProbabilityWeighting,
     DoublyRobust,
     SwitchDoublyRobust,
     DoublyRobustWithShrinkage,
 )
-from ..utils import (
-    estimate_confidence_interval_by_bootstrap,
-    check_ope_inputs,
-)
+from ..utils import check_ope_inputs
 
 
 @dataclass
-class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
+class BaseOffPolicyEstimatorTuning:
+    """Base Class for Off-Policy Estimator with built-in hyperparameter tuning
+
+
+    References
+    ----------
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
+    """
+
+    base_ope_estimator: BaseOffPolicyEstimator = field(init=False)
+    candidate_hyperparameter_list: List[float] = field(init=False)
+
+    def __new__(cls, *args, **kwargs):
+        dataclass(cls)
+        return super().__new__(cls)
+
+    def _check_candidate_hyperparameter_list(self, hyperparam_name: str) -> None:
+        """Check type and value of candidate_hyperparameter_list."""
+        if isinstance(self.candidate_hyperparameter_list, list):
+            if len(self.candidate_hyperparameter_list) == 0:
+                raise ValueError(f"{hyperparam_name} must not be empty")
+            for hyperparam_ in self.candidate_hyperparameter_list:
+                check_scalar(
+                    hyperparam_,
+                    name=f"an element of {hyperparam_name}",
+                    target_type=(int, float),
+                    min_val=0.0,
+                )
+                if hyperparam_ != hyperparam_:
+                    raise ValueError(f"an element of {hyperparam_name} must not be nan")
+        else:
+            raise TypeError(f"{hyperparam_name} must be a list")
+
+    def _tune_hyperparam(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+    ) -> None:
+        """Find the best hyperparameter value from the given candidate set."""
+        self.estimated_mse_score_dict = dict()
+        for hyperparam_ in self.candidate_hyperparameter_list:
+            estimated_mse_score = self.base_ope_estimator(
+                hyperparam_
+            )._estimate_mse_score(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+            self.estimated_mse_score_dict[hyperparam_] = estimated_mse_score
+        self.best_hyperparam = min(
+            self.estimated_mse_score_dict.items(), key=lambda x: x[1]
+        )[0]
+
+    def estimate_policy_value_with_tuning(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+    ) -> float:
+        """Estimate policy value of an evaluation policy with a tuned hyperparameter.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given logged bandit feedback.
+
+        Returns
+        ----------
+        V_hat: float
+            Estimated policy value by the DR estimator.
+
+        """
+        # tune hyperparameter if necessary
+        if not hasattr(self, "best_hyperparam_"):
+            self._tune_hyperparam(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+
+        return self.base_ope_estimator(self.best_hyperparam).estimate_policy_value(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+
+    def estimate_interval_with_tuning(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Positions of each round in the given logged bandit feedback.
+
+        alpha: float, default=0.05
+            P-value.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        # tune hyperparameter if necessary
+        if not hasattr(self, "best_hyperparam_"):
+            self._tune_hyperparam(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+
+        return self.base_ope_estimator(self.best_hyperparam).estimate_interval(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+
+class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
     """Inverse Probability Weighting (IPW) with built-in hyperparameter tuning.
 
     Parameters
@@ -45,24 +239,13 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
     """
 
     lambdas: List[float] = None
-    estimator_name = "ipw"
+    estimator_name: str = "ipw"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if isinstance(self.lambdas, list):
-            if len(self.lambdas) == 0:
-                raise ValueError("lambdas must not be empty")
-            for lambda_ in self.lambdas:
-                check_scalar(
-                    lambda_,
-                    name="an element of lambdas",
-                    target_type=(int, float),
-                    min_val=0.0,
-                )
-                if lambda_ != lambda_:
-                    raise ValueError("an element of lambdas must not be nan")
-        else:
-            raise TypeError("lambdas must be a list")
+        self.base_ope_estimator = InverseProbabilityWeighting
+        self.candidate_hyperparameter_list = self.lambdas
+        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
 
     def estimate_policy_value(
         self,
@@ -115,33 +298,12 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
 
-        # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
-        for lambda_ in self.lambdas:
-            estimated_mse_upper_bound = InverseProbabilityWeighting(
-                lambda_=lambda_
-            )._estimate_mse_upper_bound(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-            )
-            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
-        self.best_lambda_ = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
-        )[0]
-
-        return (
-            InverseProbabilityWeighting(lambda_=self.best_lambda_)
-            ._estimate_round_rewards(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-            )
-            .mean()
+        return super().estimate_policy_value_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
         )
 
     def estimate_interval(
@@ -208,34 +370,12 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
 
-        # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
-        for lambda_ in self.lambdas:
-            estimated_mse_upper_bound = InverseProbabilityWeighting(
-                lambda_=lambda_
-            )._estimate_mse_upper_bound(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-            )
-            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
-        self.best_lambda_ = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
-        )[0]
-
-        estimated_round_rewards = InverseProbabilityWeighting(
-            lambda_=self.best_lambda_
-        )._estimate_round_rewards(
+        return super().estimate_interval_with_tuning(
             reward=reward,
             action=action,
             position=position,
             pscore=pscore,
             action_dist=action_dist,
-        )
-        return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -243,7 +383,7 @@ class InverseProbabilityWeightingTuning(InverseProbabilityWeighting):
 
 
 @dataclass
-class DoublyRobustTuning(DoublyRobust):
+class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
     """Doubly Robust (DR) with built-in hyperparameter tuning.
 
     Parameters
@@ -267,24 +407,13 @@ class DoublyRobustTuning(DoublyRobust):
     """
 
     lambdas: List[float] = None
-    estimator_name = "dr"
+    estimator_name: str = "dr"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if isinstance(self.lambdas, list):
-            if len(self.lambdas) == 0:
-                raise ValueError("lambdas must not be empty")
-            for lambda_ in self.lambdas:
-                check_scalar(
-                    lambda_,
-                    name="an element of lambdas",
-                    target_type=(int, float),
-                    min_val=0.0,
-                )
-                if lambda_ != lambda_:
-                    raise ValueError("an element of lambdas must not be nan")
-        else:
-            raise TypeError("lambdas must be a list")
+        self.base_ope_estimator = DoublyRobust
+        self.candidate_hyperparameter_list = self.lambdas
+        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
 
     def estimate_policy_value(
         self,
@@ -343,35 +472,13 @@ class DoublyRobustTuning(DoublyRobust):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
 
-        # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
-        for lambda_ in self.lambdas:
-            estimated_mse_upper_bound = DoublyRobust(
-                lambda_=lambda_
-            )._estimate_mse_upper_bound(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
-        self.best_lambda_ = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
-        )[0]
-
-        return (
-            DoublyRobust(lambda_=self.best_lambda_)
-            ._estimate_round_rewards(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            .mean()
+        return super().estimate_policy_value_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
 
     def estimate_interval(
@@ -444,36 +551,13 @@ class DoublyRobustTuning(DoublyRobust):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
 
-        # tune the clipping hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
-        for lambda_ in self.lambdas:
-            estimated_mse_upper_bound = DoublyRobust(
-                lambda_=lambda_
-            )._estimate_mse_upper_bound(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
-        self.best_lambda_ = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
-        )[0]
-
-        estimated_round_rewards = DoublyRobust(
-            lambda_=self.best_lambda_
-        )._estimate_round_rewards(
+        return super().estimate_interval_with_tuning(
             reward=reward,
             action=action,
             position=position,
             pscore=pscore,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-        )
-        return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -481,7 +565,7 @@ class DoublyRobustTuning(DoublyRobust):
 
 
 @dataclass
-class SwitchDoublyRobustTuning(SwitchDoublyRobust):
+class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
     """Switch Doubly Robust (Switch-DR) with build-in hyperparameter tuning.
 
     Parameters
@@ -509,20 +593,9 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if isinstance(self.taus, list):
-            if len(self.taus) == 0:
-                raise ValueError("taus must not be empty")
-            for tau in self.taus:
-                check_scalar(
-                    tau,
-                    name="an element of taus",
-                    target_type=(int, float),
-                    min_val=0.0,
-                )
-                if tau != tau:
-                    raise ValueError("an element of taus must not be nan")
-        else:
-            raise TypeError("taus must be a list")
+        self.base_ope_estimator = SwitchDoublyRobust
+        self.candidate_hyperparameter_list = self.taus
+        super()._check_candidate_hyperparameter_list(hyperparam_name="taus")
 
     def estimate_policy_value(
         self,
@@ -581,35 +654,13 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
 
-        # tune the switching hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
-        for tau_ in self.taus:
-            estimated_mse_upper_bound = SwitchDoublyRobust(
-                tau=tau_
-            )._estimate_mse_upper_bound(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            self.estimated_mse_upper_bound_dict[tau_] = estimated_mse_upper_bound
-        self.best_tau = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
-        )[0]
-
-        return (
-            SwitchDoublyRobust(tau=self.best_tau)
-            ._estimate_round_rewards(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            .mean()
+        return super().estimate_policy_value_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
 
     def estimate_interval(
@@ -682,36 +733,13 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
 
-        # tune the switching hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
-        for tau_ in self.taus:
-            estimated_mse_upper_bound = SwitchDoublyRobust(
-                tau=tau_
-            )._estimate_mse_upper_bound(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            self.estimated_mse_upper_bound_dict[tau_] = estimated_mse_upper_bound
-        self.best_tau = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
-        )[0]
-
-        estimated_round_rewards = SwitchDoublyRobust(
-            tau=self.best_tau
-        )._estimate_round_rewards(
+        return super().estimate_interval_with_tuning(
             reward=reward,
             action=action,
             position=position,
             pscore=pscore,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-        )
-        return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -719,7 +747,7 @@ class SwitchDoublyRobustTuning(SwitchDoublyRobust):
 
 
 @dataclass
-class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
+class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
     """Doubly Robust with optimistic shrinkage (DRos) with built-in hyperparameter tuning.
 
     Parameters
@@ -743,24 +771,13 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
     """
 
     lambdas: List[float] = None
-    estimator_name = "dr-os"
+    estimator_name: str = "dr-os"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if isinstance(self.lambdas, list):
-            if len(self.lambdas) == 0:
-                raise ValueError("lambdas must not be empty")
-            for lambda_ in self.lambdas:
-                check_scalar(
-                    lambda_,
-                    name="an element of lambdas",
-                    target_type=(int, float),
-                    min_val=0.0,
-                )
-                if lambda_ != lambda_:
-                    raise ValueError("an element of lambdas must not be nan")
-        else:
-            raise TypeError("lambdas must be a list")
+        self.base_ope_estimator = DoublyRobustWithShrinkage
+        self.candidate_hyperparameter_list = self.lambdas
+        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
 
     def estimate_policy_value(
         self,
@@ -820,11 +837,11 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the shrinkage hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
+        self.estimated_mse_score_dict = dict()
         for lambda_ in self.lambdas:
-            estimated_mse_upper_bound = DoublyRobustWithShrinkage(
+            estimated_mse_score = DoublyRobustWithShrinkage(
                 lambda_=lambda_
-            )._estimate_mse_upper_bound(
+            )._estimate_mse_score(
                 reward=reward,
                 action=action,
                 position=position,
@@ -832,22 +849,18 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             )
-            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+            self.estimated_mse_score_dict[lambda_] = estimated_mse_score
         self.best_lambda_ = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+            self.estimated_mse_score_dict.items(), key=lambda x: x[1]
         )[0]
 
-        return (
-            DoublyRobustWithShrinkage(lambda_=self.best_lambda_)
-            ._estimate_round_rewards(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            .mean()
+        return super().estimate_policy_value_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
 
     def estimate_interval(
@@ -921,11 +934,11 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
             position = np.zeros(action_dist.shape[0], dtype=int)
 
         # tune the shrinkage hyperparameter
-        self.estimated_mse_upper_bound_dict = dict()
+        self.estimated_mse_score_dict = dict()
         for lambda_ in self.lambdas:
-            estimated_mse_upper_bound = DoublyRobustWithShrinkage(
+            estimated_mse_score = DoublyRobustWithShrinkage(
                 lambda_=lambda_
-            )._estimate_mse_upper_bound(
+            )._estimate_mse_score(
                 reward=reward,
                 action=action,
                 position=position,
@@ -933,23 +946,18 @@ class DoublyRobustWithShrinkageTuning(DoublyRobustWithShrinkage):
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             )
-            self.estimated_mse_upper_bound_dict[lambda_] = estimated_mse_upper_bound
+            self.estimated_mse_score_dict[lambda_] = estimated_mse_score
         self.best_lambda_ = min(
-            self.estimated_mse_upper_bound_dict.items(), key=lambda x: x[1]
+            self.estimated_mse_score_dict.items(), key=lambda x: x[1]
         )[0]
 
-        estimated_round_rewards = DoublyRobustWithShrinkage(
-            lambda_=self.best_lambda_
-        )._estimate_round_rewards(
+        return super().estimate_interval_with_tuning(
             reward=reward,
             action=action,
             position=position,
             pscore=pscore,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-        )
-        return estimate_confidence_interval_by_bootstrap(
-            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
