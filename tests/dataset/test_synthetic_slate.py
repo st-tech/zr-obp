@@ -2157,6 +2157,10 @@ def test_calc_pscore_given_policy_logit_using_valid_input_data(
         all_slate_actions, policy_logit_i_
     )
     assert np.allclose(true_pscores, pscores)
+    pscores = dataset._calc_pscore_given_policy_softmax(
+        all_slate_actions, np.exp(policy_logit_i_)
+    )
+    assert np.allclose(true_pscores, pscores)
 
 
 # n_unique_action, len_list, evaluation_policy_logit_, action, true_pscores, true_pscores_cascade, true_pscores_item_position,description
@@ -2276,6 +2280,22 @@ def test_obtain_pscore_given_evaluation_policy_logit_using_mock_input_data(
         evaluation_policy_pscore_cascade,
     ) = dataset.obtain_pscore_given_evaluation_policy_logit(
         action, evaluation_policy_logit_, return_pscore_item_position=True
+    )
+    assert np.allclose(true_pscores, evaluation_policy_pscore)
+    assert np.allclose(true_pscores_cascade, evaluation_policy_pscore_cascade)
+    assert np.allclose(
+        true_pscores_item_position, evaluation_policy_pscore_item_position
+    )
+
+    (
+        evaluation_policy_pscore,
+        evaluation_policy_pscore_item_position,
+        evaluation_policy_pscore_cascade,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
+        action,
+        evaluation_policy_logit_,
+        return_pscore_item_position=True,
+        clip_logit_value=100.0,
     )
     assert np.allclose(true_pscores, evaluation_policy_pscore)
     assert np.allclose(true_pscores_cascade, evaluation_policy_pscore_cascade)
