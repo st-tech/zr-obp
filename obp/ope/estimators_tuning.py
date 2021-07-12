@@ -183,7 +183,7 @@ class BaseOffPolicyEstimatorTuning:
             Positions of each round in the given logged bandit feedback.
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -345,7 +345,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Positions of each round in the given logged bandit feedback.
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -523,7 +523,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Positions of each round in the given logged bandit feedback.
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -705,7 +705,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Positions of each round in the given logged bandit feedback.
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -905,7 +905,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Positions of each round in the given logged bandit feedback.
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
