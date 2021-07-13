@@ -99,7 +99,7 @@ class BaseOffPolicyEstimatorTuning:
         estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate policy value of an evaluation policy with a tuned hyperparameter.
+        """Estimate the policy value of evaluation policy with a tuned hyperparameter.
 
         Parameters
         ----------
@@ -107,24 +107,24 @@ class BaseOffPolicyEstimatorTuning:
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         Returns
         ----------
         V_hat: float
-            Estimated policy value by the DR estimator.
+            Policy value estimated by the DR estimator.
 
         """
         # tune hyperparameter if necessary
@@ -168,19 +168,19 @@ class BaseOffPolicyEstimatorTuning:
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         alpha: float, default=0.05
             Significance level.
@@ -232,7 +232,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='ipw'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -262,7 +262,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         position: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
@@ -270,16 +270,16 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         Returns
         ----------
@@ -332,17 +332,17 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         alpha: float, default=0.05
             Significance level.
@@ -400,7 +400,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='dr'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -430,7 +430,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate policy value of an evaluation policy with a tuned hyperparameter.
+        """Estimate the policy value of evaluation policy with a tuned hyperparameter.
 
         Parameters
         ----------
@@ -438,24 +438,24 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         Returns
         ----------
         V_hat: float
-            Estimated policy value by the DR estimator.
+            Policy value estimated by the DR estimator.
 
         """
         if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
@@ -508,19 +508,19 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         alpha: float, default=0.05
             Significance level.
@@ -582,7 +582,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='switch-dr'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -612,7 +612,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate policy value of an evaluation policy with a tuned hyperparameter.
+        """Estimate the policy value of evaluation policy with a tuned hyperparameter.
 
         Parameters
         ----------
@@ -620,24 +620,24 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         Returns
         ----------
         V_hat: float
-            Estimated policy value by the DR estimator.
+            Policy value estimated by the DR estimator.
 
         """
         if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
@@ -690,19 +690,19 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         alpha: float, default=0.05
             Significance level.
@@ -764,7 +764,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         will choose the best hyperparameter value from the data.
 
     estimator_name: str, default='dr-os'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -794,7 +794,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate policy value of an evaluation policy with a tuned hyperparameter.
+        """Estimate the policy value of evaluation policy with a tuned hyperparameter.
 
         Parameters
         ----------
@@ -802,24 +802,24 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         Returns
         ----------
         V_hat: float
-            Estimated policy value by the DR estimator.
+            Policy value estimated by the DR estimator.
 
         """
         if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
@@ -841,24 +841,6 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-
-        # tune the shrinkage hyperparameter
-        self.estimated_mse_score_dict = dict()
-        for lambda_ in self.lambdas:
-            estimated_mse_score = DoublyRobustWithShrinkage(
-                lambda_=lambda_
-            )._estimate_mse_score(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            self.estimated_mse_score_dict[lambda_] = estimated_mse_score
-        self.best_lambda_ = min(
-            self.estimated_mse_score_dict.items(), key=lambda x: x[1]
-        )[0]
 
         return super().estimate_policy_value_with_tuning(
             reward=reward,
@@ -890,19 +872,19 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         alpha: float, default=0.05
             Significance level.
@@ -938,24 +920,6 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-
-        # tune the shrinkage hyperparameter
-        self.estimated_mse_score_dict = dict()
-        for lambda_ in self.lambdas:
-            estimated_mse_score = DoublyRobustWithShrinkage(
-                lambda_=lambda_
-            )._estimate_mse_score(
-                reward=reward,
-                action=action,
-                position=position,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-            self.estimated_mse_score_dict[lambda_] = estimated_mse_score
-        self.best_lambda_ = min(
-            self.estimated_mse_score_dict.items(), key=lambda x: x[1]
-        )[0]
 
         return super().estimate_interval_with_tuning(
             reward=reward,
