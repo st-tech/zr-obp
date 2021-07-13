@@ -22,12 +22,12 @@ class BaseSlateOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def _estimate_round_rewards(self) -> np.ndarray:
-        """Estimate rewards for each round."""
+        """Estimate round-wise (or sample-wise) rewards."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_policy_value(self) -> float:
-        """Estimate policy value of an evaluation policy."""
+        """Estimate the policy value of evaluation policy."""
         raise NotImplementedError
 
     @abstractmethod
@@ -38,11 +38,11 @@ class BaseSlateOffPolicyEstimator(metaclass=ABCMeta):
 
 @dataclass
 class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
-    """Base Class of Slate Inverse Probability Weighting Estimators.
+    """Base Class of Inverse Probability Weighting Estimators for the slate contextual bandit setting.
 
     len_list: int (> 1)
         Length of a list of actions recommended in each impression.
-        When Open Bandit Dataset is used, 3 should be set.
+        When Open Bandit Dataset is used, `len_list=3`.
 
     """
 
@@ -61,16 +61,16 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slot (i.e., position) in each slate.
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         Returns
         ----------
@@ -90,7 +90,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
     ) -> Dict[str, float]:
-        """Estimate confidence interval by nonparametric bootstrap-like procedure.
+        """Estimate confidence interval of policy value by nonparametric bootstrap-like procedure.
 
         Parameters
         ----------
@@ -101,7 +101,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
             Rewards estimated by IPW given round (slate_id) and slot (position).
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -131,16 +131,18 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
 
 @dataclass
 class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
-    """Estimate the policy value by Slate Standard Inverse Propensity Scoring (SIPS).
+    """Standard Inverse Propensity Scoring (SIPS) Estimator.
 
     Note
     -------
-    Slate Standard Inverse Propensity Scoring (SIPS) estimates the policy value of a given evaluation policy :math:`\\pi_e` without any assumption about user behavior.
+    Slate Standard Inverse Propensity Scoring (SIPS) estimates the policy value of evaluation policy :math:`\\pi_e`
+    without imposing any assumption on the user behavior.
+    Please refer to Eq.(1) in Section 3 of McInerney et al.(2020) for the detail.
 
     Parameters
     ----------
     estimator_name: str, default='sips'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
@@ -160,7 +162,7 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
         evaluation_policy_pscore: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
@@ -168,17 +170,17 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slot (i.e., position) in each slate.
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         Returns
         ----------
@@ -223,20 +225,20 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slot (i.e., position) in each slate.
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -274,21 +276,26 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
 
 @dataclass
 class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
-    """Estimate the policy value by Slate Independent Inverse Propensity Scoring (IIPS).
+    """Independent Inverse Propensity Scoring (IIPS) Estimator.
 
     Note
     -------
-    Slate Independent Inverse Propensity Scoring (IIPS) estimates the policy value of a given evaluation policy :math:`\\pi_e` assuming the item-position click model.
+    Slate Independent Inverse Propensity Scoring (IIPS) estimates the policy value of evaluation policy :math:`\\pi_e`
+    assuming the item-position click model (rewards observed at each position are assumed to be independent of any other positions.).
+    Please refer to Eq.(2) in Section 3 of McInerney et al.(2020) for the detail.
 
     Parameters
     ----------
     estimator_name: str, default='iips'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
     Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S. Muthukrishnan, Vishwa Vinay, Zheng Wen.
     "Offline Evaluation of Ranking Policies with Click Models", 2018.
+
+    James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Ben Carterette.
+    "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions", 2020.
 
     """
 
@@ -303,7 +310,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         evaluation_policy_pscore_item_position: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
@@ -311,16 +318,16 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slot (i.e., position) in each slate.
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities that action :math:`a` is chosen at position (slot) :math:`k` by a behavior policy given context :math:`x`, i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
+            Probabilities that behavior policy selects each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities that action :math:`a` is chosen at position (slot) :math:`k` by a evaluation policy given context :math:`x`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Probabilities that evaluation policy selects each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
         Returns
         ----------
@@ -365,19 +372,19 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slot (i.e., position) in each slate.
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
             Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -415,16 +422,18 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
 
 @dataclass
 class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
-    """Estimate the policy value by Slate Reward Interaction Inverse Propensity Scoring (RIPS).
+    """Reward Interaction Inverse Propensity Scoring (RIPS) Estimator.
 
     Note
     -------
-    Slate Reward Interaction Inverse Propensity Scoring (RIPS) estimates the policy value of a given evaluation policy :math:`\\pi_e` assuming the cascade click model.
+    Slate Reward Interaction Inverse Propensity Scoring (RIPS) estimates the policy value of evaluation policy :math:`\\pi_e`
+    assuming the cascade click model (users interact with actions from the top position to the bottom in a slate).
+    Please refer to Eq.(3)-Eq.(4) in Section 3 of McInerney et al.(2020) for the detail.
 
     Parameters
     ----------
     estimator_name: str, default='rips'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
@@ -444,7 +453,7 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
         evaluation_policy_pscore_cascade: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
@@ -452,16 +461,18 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slot (i.e., position) in each slate.
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities under the cascade behavior model by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
+            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities under the cascade behavior model by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
+            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
 
         Returns
         ----------
@@ -507,19 +518,19 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slot (i.e., position) in each slate.
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.

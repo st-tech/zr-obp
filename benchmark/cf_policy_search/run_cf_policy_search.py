@@ -14,7 +14,7 @@ from custom_dataset import OBDWithInteractionFeatures
 from obp.policy import IPWLearner
 from obp.ope import InverseProbabilityWeighting
 
-# hyperparameter for the regression model used in model dependent OPE estimators
+# hyperparameters of the regression model used in model dependent OPE estimators
 with open("./conf/hyperparams.yaml", "rb") as f:
     hyperparams = yaml.safe_load(f)
 

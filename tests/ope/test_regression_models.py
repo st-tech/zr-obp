@@ -95,7 +95,6 @@ invalid_input_of_initializing_regression_models = [
 
 
 # context, action, reward, pscore, position, action_context, n_actions, len_list, fitting_method, base_model, action_dist, description
-
 invalid_input_of_fitting_regression_models = [
     (
         None,  #

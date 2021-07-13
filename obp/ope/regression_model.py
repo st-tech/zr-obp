@@ -105,7 +105,7 @@ class RegressionModel(BaseEstimator):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -116,12 +116,12 @@ class RegressionModel(BaseEstimator):
             When None is given, the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
             If None is set, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
             When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         """
@@ -249,7 +249,7 @@ class RegressionModel(BaseEstimator):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -260,12 +260,12 @@ class RegressionModel(BaseEstimator):
             When None is given, the the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
             If None is set, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
             When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         n_folds: int, default=1
@@ -374,7 +374,7 @@ class RegressionModel(BaseEstimator):
             Context vectors in the training logged bandit feedback.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing each action, vector representation of each action.
