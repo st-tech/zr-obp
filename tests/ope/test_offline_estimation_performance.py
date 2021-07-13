@@ -21,16 +21,20 @@ from obp.ope import (
     RegressionModel,
     OffPolicyEvaluation,
     InverseProbabilityWeighting,
+    InverseProbabilityWeightingTuning,
     SelfNormalizedInverseProbabilityWeighting,
     DirectMethod,
     DoublyRobust,
+    DoublyRobustTuning,
     SelfNormalizedDoublyRobust,
     SwitchDoublyRobust,
+    SwitchDoublyRobustTuning,
     DoublyRobustWithShrinkage,
+    DoublyRobustWithShrinkageTuning,
 )
 
 
-# hyperparameter for the regression model used in model dependent OPE estimators
+# hyperparameters of the regression model used in model dependent OPE estimators
 hyperparams = {
     "lightgbm": {
         "max_iter": 500,
@@ -116,7 +120,7 @@ class RandomOffPolicyEstimator(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy."""
+        """Estimate the policy value of evaluation policy."""
         return self._estimate_round_rewards(action_dist=action_dist).mean()
 
     def estimate_policy_value_tensor(self, **kwargs) -> torch.Tensor:
@@ -131,13 +135,23 @@ ope_estimators = [
     RandomOffPolicyEstimator(),
     DirectMethod(),
     InverseProbabilityWeighting(),
+    InverseProbabilityWeightingTuning(
+        lambdas=[100, 1000, np.inf], estimator_name="ipw (tuning)"
+    ),
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
+    DoublyRobustTuning(lambdas=[100, 1000, np.inf], estimator_name="dr (tuning)"),
     SelfNormalizedDoublyRobust(),
     SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr (tau=1)"),
     SwitchDoublyRobust(tau=100.0, estimator_name="switch-dr (tau=100)"),
+    SwitchDoublyRobustTuning(
+        taus=[100, 1000, np.inf], estimator_name="switch-dr (tuning)"
+    ),
     DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
     DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
+    DoublyRobustWithShrinkageTuning(
+        lambdas=[100, 1000, np.inf], estimator_name="dr-os (tuning)"
+    ),
 ]
 
 
@@ -230,10 +244,14 @@ def test_offline_estimation_performance(
 
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dm"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["ipw"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["ipw (tuning)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["snipw"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr (tuning)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["sndr"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tau=1)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tau=100)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tuning)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=1)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=100)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (tuning)"]

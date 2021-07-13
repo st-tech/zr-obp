@@ -161,18 +161,18 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
     ) -> Dict[str, float]:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         Returns
         ----------
@@ -202,21 +202,21 @@ class SlateOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of estimated policy values using a nonparametric bootstrap procedure.
+        """Estimate confidence intervals of estimated policy values by nonparametric bootstrap procedure.
 
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -228,7 +228,7 @@ class SlateOffPolicyEvaluation:
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
             Dictionary containing confidence intervals of estimated policy value estimated
-            using a nonparametric bootstrap procedure.
+            by nonparametric bootstrap procedure.
 
         """
         check_confidence_interval_arguments(
@@ -266,16 +266,16 @@ class SlateOffPolicyEvaluation:
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -286,7 +286,7 @@ class SlateOffPolicyEvaluation:
         Returns
         ----------
         (policy_value_df, policy_value_interval_df): Tuple[DataFrame, DataFrame]
-            Estimated policy values and their confidence intervals by OPE estimators.
+            Policy values and their confidence intervals Estimated by OPE estimators.
 
         """
         policy_value_df = DataFrame(
@@ -340,16 +340,16 @@ class SlateOffPolicyEvaluation:
         Parameters
         ----------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -425,11 +425,11 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
-        """Evaluate estimation performances of OPE estimators.
+        """Evaluate estimation performance of OPE estimators.
 
         Note
         ------
-        Evaluate the estimation performances of OPE estimators by relative estimation error (relative-EE) or squared error (SE):
+        Evaluate the estimation performance of OPE estimators by relative estimation error (relative-EE) or squared error (SE):
 
         .. math ::
 
@@ -445,20 +445,20 @@ class SlateOffPolicyEvaluation:
         Parameters
         ----------
         ground_truth_policy_value: float
-            Ground_truth policy value of an evaluation policy, i.e., :math:`V(\\pi)`.
+            Ground_truth policy value of evaluation policy, i.e., :math:`V(\\pi)`.
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as its ground-truth.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         metric: str, default="relative-ee"
-            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
+            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be "relative-ee" or "se".
 
         Returns
@@ -511,20 +511,20 @@ class SlateOffPolicyEvaluation:
         Parameters
         ----------
         ground_truth_policy_value: float
-            Ground_truth policy value of an evaluation policy, i.e., :math:`V(\\pi)`.
+            Ground_truth policy value of evaluation policy, i.e., :math:`V(\\pi)`.
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         metric: str, default="relative-ee"
-            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
+            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be either "relative-ee" or "se".
 
         Returns

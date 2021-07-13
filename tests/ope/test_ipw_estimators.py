@@ -8,6 +8,7 @@ from obp.types import BanditFeedback
 from obp.ope import (
     InverseProbabilityWeighting,
     SelfNormalizedInverseProbabilityWeighting,
+    InverseProbabilityWeightingTuning,
 )
 from conftest import generate_action_dist
 
@@ -32,10 +33,41 @@ def test_ipw_init():
     with pytest.raises(ValueError, match=r"lambda_ must not be nan"):
         InverseProbabilityWeighting(lambda_=np.nan)
 
+    # lambdas
+    with pytest.raises(
+        TypeError,
+        match=r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ):
+        InverseProbabilityWeightingTuning(lambdas=[None])
+
+    with pytest.raises(
+        TypeError,
+        match=r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ):
+        InverseProbabilityWeightingTuning(lambdas=[""])
+
+    with pytest.raises(
+        ValueError, match="`an element of lambdas`= -1.0, must be >= 0.0."
+    ):
+        InverseProbabilityWeightingTuning(lambdas=[-1.0])
+
+    with pytest.raises(ValueError, match="an element of lambdas must not be nan"):
+        InverseProbabilityWeightingTuning(lambdas=[np.nan])
+
+    with pytest.raises(ValueError, match="lambdas must not be empty"):
+        InverseProbabilityWeightingTuning(lambdas=[])
+
+    with pytest.raises(TypeError, match="lambdas must be a list"):
+        InverseProbabilityWeightingTuning(lambdas="")
+
+    with pytest.raises(TypeError, match="lambdas must be a list"):
+        InverseProbabilityWeightingTuning(lambdas=None)
+
 
 # prepare ipw instances
 ipw = InverseProbabilityWeighting()
 snipw = SelfNormalizedInverseProbabilityWeighting()
+ipw_tuning = InverseProbabilityWeightingTuning(lambdas=[10, 1000])
 
 
 # action_dist, action, reward, pscore, position, description
@@ -201,6 +233,22 @@ def test_ipw_using_invalid_input_data(
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = snipw.estimate_interval(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = ipw_tuning.estimate_policy_value(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = ipw_tuning.estimate_interval(
             action_dist=action_dist,
             action=action,
             reward=reward,
@@ -379,7 +427,7 @@ def test_ipw_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     # ipw estimators can be used without estimated_rewards_by_reg_model
-    for estimator in [ipw, snipw]:
+    for estimator in [ipw, snipw, ipw_tuning]:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
         assert isinstance(
             estimated_policy_value, float

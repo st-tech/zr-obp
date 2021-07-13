@@ -15,19 +15,19 @@ invalid_input_of_dm = [
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        np.zeros((5, 4, 2)),
+        np.zeros((5, 4, 2)),  #
         "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
     ),
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        None,
+        None,  #
         "estimated_rewards_by_reg_model must be ndarray",
     ),
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
-        "4",
+        "4",  #
         "estimated_rewards_by_reg_model must be ndarray",
     ),
 ]
@@ -58,23 +58,24 @@ def test_dm_using_invalid_input_data(
         )
 
 
+# action_dist, position, estimated_rewards_by_reg_model, description
 invalid_input_tensor_of_dm = [
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        torch.from_numpy(np.zeros((5, 4, 2))),
+        torch.from_numpy(np.zeros((5, 4, 2))),  #
         "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        None,
+        None,  #
         "estimated_rewards_by_reg_model must be Tensor",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
         torch.zeros(5, dtype=torch.int64),
-        "4",
+        "4",  #
         "estimated_rewards_by_reg_model must be Tensor",
     ),
 ]

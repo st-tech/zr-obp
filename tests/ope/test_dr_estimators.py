@@ -8,13 +8,16 @@ from obp.types import BanditFeedback
 from obp.ope import (
     DirectMethod,
     DoublyRobust,
+    DoublyRobustTuning,
     DoublyRobustWithShrinkage,
+    DoublyRobustWithShrinkageTuning,
     SwitchDoublyRobust,
+    SwitchDoublyRobustTuning,
     SelfNormalizedDoublyRobust,
 )
 from conftest import generate_action_dist
 
-
+# lambda_, err, description
 invalid_input_of_dr_init = [
     (
         "",
@@ -47,6 +50,57 @@ def test_dr_init_using_invalid_inputs(
         _ = DoublyRobustWithShrinkage(lambda_=lambda_)
 
 
+# lambdas, err, description
+invalid_input_of_dr_tuning_init = [
+    (
+        "",
+        TypeError,
+        "lambdas must be a list",
+    ),
+    (
+        None,
+        TypeError,
+        "lambdas must be a list",
+    ),
+    (
+        [""],
+        TypeError,
+        r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        [None],
+        TypeError,
+        r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ),
+    (
+        [],
+        ValueError,
+        "lambdas must not be empty",
+    ),
+    ([-1.0], ValueError, "`an element of lambdas`= -1.0, must be >= 0.0."),
+    ([np.nan], ValueError, "an element of lambdas must not be nan"),
+]
+
+
+@pytest.mark.parametrize(
+    "lambdas, err, description",
+    invalid_input_of_dr_tuning_init,
+)
+def test_dr_tuning_init_using_invalid_inputs(
+    lambdas,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        _ = DoublyRobustTuning(lambdas=lambdas)
+
+    with pytest.raises(err, match=f"{description}*"):
+        _ = DoublyRobustWithShrinkageTuning(
+            lambdas=lambdas,
+        )
+
+
+# tau, err, description
 invalid_input_of_switch_dr_init = [
     (
         "",
@@ -76,7 +130,53 @@ def test_switch_dr_init_using_invalid_inputs(
         _ = SwitchDoublyRobust(tau=tau)
 
 
+# taus, err, description
+invalid_input_of_switch_dr_tuning_init = [
+    (
+        "",
+        TypeError,
+        "taus must be a list",
+    ),
+    (
+        None,
+        TypeError,
+        "taus must be a list",
+    ),
+    (
+        [""],
+        TypeError,
+        r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        [None],
+        TypeError,
+        r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ),
+    (
+        [],
+        ValueError,
+        "taus must not be empty",
+    ),
+    ([-1.0], ValueError, "`an element of taus`= -1.0, must be >= 0.0."),
+    ([np.nan], ValueError, "an element of taus must not be nan"),
+]
+
+
+@pytest.mark.parametrize(
+    "taus, err, description",
+    invalid_input_of_switch_dr_tuning_init,
+)
+def test_switch_dr_tuning_init_using_invalid_inputs(
+    taus,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        _ = SwitchDoublyRobustTuning(taus=taus)
+
+
 valid_input_of_dr_init = [
+    (np.inf, "infinite lambda_tau"),
     (3.0, "float lambda_tau"),
     (2, "integer lambda_tau"),
 ]
@@ -86,22 +186,57 @@ valid_input_of_dr_init = [
     "lambda_tau, description",
     valid_input_of_dr_init,
 )
-def test_shrinkage_using_valid_input_data(lambda_tau: float, description: str) -> None:
+def test_dr_init_using_valid_input_data(lambda_tau: float, description: str) -> None:
     _ = DoublyRobust(lambda_=lambda_tau)
     _ = DoublyRobustWithShrinkage(lambda_=lambda_tau)
-    _ = SwitchDoublyRobust(lambda_=lambda_tau)
+    _ = SwitchDoublyRobust(tau=lambda_tau)
+
+
+valid_input_of_dr_tuning_init = [
+    ([3.0, np.inf, 100.0], "float lambda_tau"),
+    ([2], "integer lambda_tau"),
+]
+
+
+@pytest.mark.parametrize(
+    "lambdas_taus, description",
+    valid_input_of_dr_tuning_init,
+)
+def test_dr_tuning_init_using_valid_input_data(lambdas_taus, description):
+    _ = DoublyRobustTuning(lambdas=lambdas_taus)
+    _ = DoublyRobustWithShrinkageTuning(
+        lambdas=lambdas_taus,
+    )
+    _ = SwitchDoublyRobustTuning(
+        taus=lambdas_taus,
+    )
 
 
 # prepare instances
 dm = DirectMethod()
 dr = DoublyRobust()
-dr_shrink_0 = DoublyRobustWithShrinkage(lambda_=0.0)
-dr_shrink_max = DoublyRobustWithShrinkage(lambda_=1e10)
+dr_tuning = DoublyRobustTuning(lambdas=[1, 100], estimator_name="dr_tuning")
+dr_os_0 = DoublyRobustWithShrinkage(lambda_=0.0)
+dr_os_tuning = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100], estimator_name="dr_os_tuning"
+)
+dr_os_max = DoublyRobustWithShrinkage(lambda_=np.inf)
 sndr = SelfNormalizedDoublyRobust()
 switch_dr_0 = SwitchDoublyRobust(tau=0.0)
-switch_dr_max = SwitchDoublyRobust(tau=1e10)
+switch_dr_tuning = SwitchDoublyRobustTuning(
+    taus=[1, 100], estimator_name="switch_dr_tuning"
+)
+switch_dr_max = SwitchDoublyRobust(tau=np.inf)
 
-dr_estimators = [dr, dr_shrink_0, sndr, switch_dr_0]
+dr_estimators = [
+    dr,
+    dr_tuning,
+    dr_os_0,
+    dr_os_tuning,
+    sndr,
+    switch_dr_0,
+    switch_dr_tuning,
+]
 
 
 # dr and self-normalized dr
@@ -286,7 +421,7 @@ def test_dr_using_invalid_input_data(
     description: str,
 ) -> None:
     # estimate_intervals function raises ValueError of all estimators
-    for estimator in [dr, sndr]:
+    for estimator in [dr, sndr, dr_tuning]:
         with pytest.raises(ValueError, match=f"{description}*"):
             _ = estimator.estimate_policy_value(
                 action_dist=action_dist,
@@ -532,8 +667,14 @@ def test_dr_variants_using_valid_input_data(
 ) -> None:
     # check dr variants
     switch_dr = SwitchDoublyRobust(tau=hyperparameter)
+    switch_dr_tuning = SwitchDoublyRobustTuning(
+        taus=[hyperparameter, hyperparameter * 10]
+    )
     dr_os = DoublyRobustWithShrinkage(lambda_=hyperparameter)
-    for estimator in [switch_dr, dr_os]:
+    dr_os_tuning = DoublyRobustWithShrinkageTuning(
+        lambdas=[hyperparameter, hyperparameter * 10]
+    )
+    for estimator in [switch_dr, switch_dr_tuning, dr_os, dr_os_tuning]:
         est = estimator.estimate_policy_value(
             action_dist=action_dist,
             action=action,
@@ -644,7 +785,7 @@ def test_dr_using_random_evaluation_policy(
                 ),
             ):
                 _ = estimator.estimate_policy_value_tensor(**input_tensor_dict)
-        else:
+        elif "tuning" not in estimator.estimator_name:
             estimated_policy_value = estimator.estimate_policy_value_tensor(
                 **input_tensor_dict
             )
@@ -665,7 +806,7 @@ def test_dr_using_random_evaluation_policy(
                 ),
             ):
                 _ = estimator.estimate_policy_value_tensor(**input_tensor_dict)
-        else:
+        elif "tuning" not in estimator.estimator_name:
             with pytest.raises(
                 TypeError,
                 match=re.escape(
@@ -716,7 +857,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     ), f"estimated policy value of sndr should be smaller than or equal to 2 (because of its 2-boundedness), but the value is: {estimated_policy_value.item()}"
 
 
-def test_dr_shrinkage_using_random_evaluation_policy(
+def test_dr_osage_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
@@ -734,13 +875,13 @@ def test_dr_shrinkage_using_random_evaluation_policy(
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
     dm_value = dm.estimate_policy_value(**input_dict)
     dr_value = dr.estimate_policy_value(**input_dict)
-    dr_shrink_0_value = dr_shrink_0.estimate_policy_value(**input_dict)
-    dr_shrink_max_value = dr_shrink_max.estimate_policy_value(**input_dict)
+    dr_os_0_value = dr_os_0.estimate_policy_value(**input_dict)
+    dr_os_max_value = dr_os_max.estimate_policy_value(**input_dict)
     assert (
-        dm_value == dr_shrink_0_value
+        dm_value == dr_os_0_value
     ), "DoublyRobustWithShrinkage (lambda=0) should be the same as DirectMethod"
     assert (
-        np.abs(dr_value - dr_shrink_max_value) < 1e-5
+        np.abs(dr_value - dr_os_max_value) < 1e-5
     ), "DoublyRobustWithShrinkage (lambda=inf) should be almost the same as DoublyRobust"
 
     # prepare input dict
@@ -755,15 +896,13 @@ def test_dr_shrinkage_using_random_evaluation_policy(
     )
     dm_value = dm.estimate_policy_value_tensor(**input_tensor_dict)
     dr_value = dr.estimate_policy_value_tensor(**input_tensor_dict)
-    dr_shrink_0_value = dr_shrink_0.estimate_policy_value_tensor(**input_tensor_dict)
-    dr_shrink_max_value = dr_shrink_max.estimate_policy_value_tensor(
-        **input_tensor_dict
-    )
+    dr_os_0_value = dr_os_0.estimate_policy_value_tensor(**input_tensor_dict)
+    dr_os_max_value = dr_os_max.estimate_policy_value_tensor(**input_tensor_dict)
     assert (
-        dm_value.item() == dr_shrink_0_value.item()
+        dm_value.item() == dr_os_0_value.item()
     ), "DoublyRobustWithShrinkage (lambda=0) should be the same as DirectMethod"
     assert (
-        np.abs(dr_value.item() - dr_shrink_max_value.item()) < 1e-5
+        np.abs(dr_value.item() - dr_os_max_value.item()) < 1e-5
     ), "DoublyRobustWithShrinkage (lambda=inf) should be almost the same as DoublyRobust"
 
 

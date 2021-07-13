@@ -21,7 +21,7 @@ from obp.ope import (
 
 evaluation_policy_dict = dict(bts=BernoulliTS, random=Random)
 
-# hyperparameter for the regression model used in model dependent OPE estimators
+# hyperparameters of the regression model used in model dependent OPE estimators
 with open("./conf/hyperparams.yaml", "rb") as f:
     hyperparams = yaml.safe_load(f)
 

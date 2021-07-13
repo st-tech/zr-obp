@@ -43,7 +43,7 @@ class SlateStandardIPSMock(SlateStandardIPS):
         evaluation_policy_pscore: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Returns
         ----------
@@ -95,7 +95,7 @@ class SlateIndependentIPSMock(SlateIndependentIPS):
         evaluation_policy_pscore_item_position: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Returns
         ----------
@@ -147,7 +147,7 @@ class SlateRewardInteractionIPSMock(SlateRewardInteractionIPS):
         evaluation_policy_pscore_cascade: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Returns
         ----------

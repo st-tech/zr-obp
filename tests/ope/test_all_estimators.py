@@ -13,7 +13,7 @@ from conftest import generate_action_dist
 # action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description
 invalid_input_of_estimation = [
     (
-        None,
+        None,  #
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
@@ -22,7 +22,7 @@ invalid_input_of_estimation = [
         "action_dist must be ndarray",
     ),
     (
-        generate_action_dist(5, 4, 1)[:, :, 0],
+        generate_action_dist(5, 4, 1)[:, :, 0],  #
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
@@ -31,7 +31,7 @@ invalid_input_of_estimation = [
         "action_dist.ndim must be 3-dimensional",
     ),
     (
-        np.ones((5, 4, 3)),
+        np.ones((5, 4, 3)),  #
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
@@ -44,7 +44,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        "4",
+        "4",  #
         np.zeros((5, 4, 3)),
         "position must be ndarray",
     ),
@@ -53,7 +53,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.zeros((5, 4), dtype=int),
+        np.zeros((5, 4), dtype=int),  #
         np.zeros((5, 4, 3)),
         "position must be 1-dimensional",
     ),
@@ -62,7 +62,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.zeros(5),
+        np.zeros(5),  #
         np.zeros((5, 4, 3)),
         "position elements must be non-negative integers",
     ),
@@ -71,7 +71,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.zeros(5, dtype=int) - 1,
+        np.zeros(5, dtype=int) - 1,  #
         np.zeros((5, 4, 3)),
         "position elements must be non-negative integers",
     ),
@@ -80,7 +80,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.zeros(4, dtype=int),
+        np.zeros(4, dtype=int),  #
         np.zeros((5, 4, 3)),
         "the first dimension of position and the first dimension of action_dist must be the same.",
     ),
@@ -89,7 +89,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        np.ones(5, dtype=int) * 8,
+        np.ones(5, dtype=int) * 8,  #
         np.zeros((5, 4, 3)),
         "position elements must be smaller than the third dimension of action_dist",
     ),
@@ -98,7 +98,7 @@ invalid_input_of_estimation = [
         np.zeros(5, dtype=int),
         np.zeros(5, dtype=int),
         np.ones(5),
-        None,
+        None,  #
         np.zeros((5, 4, 3)),
         "position elements must be given when the third dimension of action_dist is greater than 1",
     ),
@@ -152,6 +152,11 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
     ]
+    all_estimators_tuning = ope.__all_estimators_tuning__
+    estimators_tuning = [
+        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        for estimator_name in all_estimators_tuning
+    ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
         with pytest.raises(ValueError, match=f"{description}*"):
@@ -174,6 +179,39 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             )
 
+    for estimator_tuning in estimators_tuning:
+        with pytest.raises(ValueError, match=f"{description}*"):
+            est = estimator_tuning.estimate_policy_value(
+                action_dist=action_dist,
+                action=action,
+                reward=reward,
+                pscore=pscore,
+                position=position,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            )
+            assert est == 0.0, f"policy value must be 0, but {est}"
+            assert hasattr(
+                estimator_tuning, "best_hyperparam"
+            ), "estimator_tuning should have `best_hyperparam` attr"
+            assert hasattr(
+                estimator_tuning, "estimated_mse_score_dict"
+            ), "estimator_tuning should have `estimated_mse_score_dict` attr"
+        with pytest.raises(ValueError, match=f"{description}*"):
+            _ = estimator_tuning.estimate_interval(
+                action_dist=action_dist,
+                action=action,
+                reward=reward,
+                pscore=pscore,
+                position=position,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            )
+            assert hasattr(
+                estimator_tuning, "best_hyperparam"
+            ), "estimator_tuning should have `best_hyperparam` attr"
+            assert hasattr(
+                estimator_tuning, "estimated_mse_score_dict"
+            ), "estimator_tuning should have `estimated_mse_score_dict` attr"
+
 
 @pytest.mark.parametrize(
     "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description",
@@ -191,6 +229,11 @@ def test_estimation_of_all_estimators_using_valid_input_data(
     all_estimators = ope.__all_estimators__
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
+    ]
+    all_estimators_tuning = ope.__all_estimators_tuning__
+    estimators_tuning = [
+        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        for estimator_name in all_estimators_tuning
     ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
@@ -210,12 +253,29 @@ def test_estimation_of_all_estimators_using_valid_input_data(
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
+    for estimator_tuning in estimators_tuning:
+        _ = estimator_tuning.estimate_policy_value(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+        _ = estimator_tuning.estimate_interval(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
 
 
 # action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description
 invalid_input_of_estimation_tensor = [
     (
-        None,
+        None,  #
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
@@ -224,7 +284,7 @@ invalid_input_of_estimation_tensor = [
         "action_dist must be Tensor",
     ),
     (
-        torch.Tensor(generate_action_dist(5, 4, 1)[:, :, 0]),
+        torch.Tensor(generate_action_dist(5, 4, 1)[:, :, 0]),  #
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
@@ -233,7 +293,7 @@ invalid_input_of_estimation_tensor = [
         "action_dist.ndim must be 3-dimensional",
     ),
     (
-        torch.from_numpy(np.ones((5, 4, 3))),
+        torch.from_numpy(np.ones((5, 4, 3))),  #
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
@@ -246,7 +306,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
-        "4",
+        "4",  #
         torch.from_numpy(np.zeros((5, 4, 3))),
         "position must be Tensor",
     ),
@@ -255,7 +315,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros((5, 4), dtype=int)),
+        torch.from_numpy(np.zeros((5, 4), dtype=int)),  #
         torch.from_numpy(np.zeros((5, 4, 3))),
         "position must be 1-dimensional",
     ),
@@ -264,7 +324,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros(5)),
+        torch.from_numpy(np.zeros(5)),  #
         torch.from_numpy(np.zeros((5, 4, 3))),
         "position elements must be non-negative integers",
     ),
@@ -273,7 +333,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros(5, dtype=int) - 1),
+        torch.from_numpy(np.zeros(5, dtype=int) - 1),  #
         torch.from_numpy(np.zeros((5, 4, 3))),
         "position elements must be non-negative integers",
     ),
@@ -282,7 +342,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros(4, dtype=int)),
+        torch.from_numpy(np.zeros(4, dtype=int)),  #
         torch.from_numpy(np.zeros((5, 4, 3))),
         "the first dimension of position and the first dimension of action_dist must be the same.",
     ),
@@ -291,7 +351,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.ones(5, dtype=int) * 8),
+        torch.from_numpy(np.ones(5, dtype=int) * 8),  #
         torch.from_numpy(np.zeros((5, 4, 3))),
         "position elements must be smaller than the third dimension of action_dist",
     ),
@@ -300,7 +360,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.zeros(5, dtype=int)),
         torch.from_numpy(np.ones(5)),
-        None,
+        None,  #
         torch.from_numpy(np.zeros((5, 4, 3))),
         "position elements must be given when the third dimension of action_dist is greater than 1",
     ),
@@ -458,10 +518,28 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
     ]
+    all_estimators_tuning = ope.__all_estimators_tuning__
+    estimators_tuning = [
+        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        for estimator_name in all_estimators_tuning
+    ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
         with pytest.raises(ValueError, match=f"{description}*"):
             _ = estimator.estimate_interval(
+                reward=bandit_feedback["reward"],
+                action=bandit_feedback["action"],
+                position=bandit_feedback["position"],
+                pscore=bandit_feedback["pscore"],
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=expected_reward,
+                alpha=alpha,
+                n_bootstrap_samples=n_bootstrap_samples,
+                random_state=random_state,
+            )
+    for estimator_tuning in estimators_tuning:
+        with pytest.raises(ValueError, match=f"{description}*"):
+            _ = estimator_tuning.estimate_interval(
                 reward=bandit_feedback["reward"],
                 action=bandit_feedback["action"],
                 position=bandit_feedback["position"],
@@ -497,9 +575,26 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
     estimators = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
     ]
+    all_estimators_tuning = ope.__all_estimators_tuning__
+    estimators_tuning = [
+        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        for estimator_name in all_estimators_tuning
+    ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
         _ = estimator.estimate_interval(
+            reward=bandit_feedback["reward"],
+            action=bandit_feedback["action"],
+            position=bandit_feedback["position"],
+            pscore=bandit_feedback["pscore"],
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=expected_reward,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+    for estimator_tuning in estimators_tuning:
+        _ = estimator_tuning.estimate_interval(
             reward=bandit_feedback["reward"],
             action=bandit_feedback["action"],
             position=bandit_feedback["position"],
@@ -544,11 +639,17 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
     gt_std = q_pi_e.std(ddof=1)
     # test most of the estimators (ReplayMethod is not tested because it is out of scope)
     all_estimators = ope.__all_estimators__
-    estimators = [
+    estimators_standard = [
         getattr(ope.estimators, estimator_name)()
         for estimator_name in all_estimators
         if estimator_name not in ["ReplayMethod"]
     ]
+    all_estimators_tuning = ope.__all_estimators_tuning__
+    estimators_tuning = [
+        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        for estimator_name in all_estimators_tuning
+    ]
+    estimators = estimators_standard + estimators_tuning
     # conduct OPE
     ope_instance = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=estimators
@@ -579,9 +680,15 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
     action_dist = random_action_dist
     # test all estimators
     all_estimators = ope.__all_estimators__
-    estimators = [
+    estimators_standard = [
         getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
     ]
+    all_estimators_tuning = ope.__all_estimators_tuning__
+    estimators_tuning = [
+        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        for estimator_name in all_estimators_tuning
+    ]
+    estimators = estimators_standard + estimators_tuning
     # conduct OPE
     ope_instance = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=estimators
