@@ -50,3 +50,11 @@ __all_estimators__ = [
     "SwitchDoublyRobust",
     "SelfNormalizedDoublyRobust",
 ]
+
+
+__all_estimators_tuning__ = [
+    "InverseProbabilityWeightingTuning",
+    "DoublyRobustTuning",
+    "SwitchDoublyRobustTuning",
+    "DoublyRobustWithShrinkageTuning",
+]
