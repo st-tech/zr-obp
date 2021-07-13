@@ -34,7 +34,7 @@ from obp.ope import (
 )
 
 
-# hyperparameter for the regression model used in model dependent OPE estimators
+# hyperparameters of the regression model used in model dependent OPE estimators
 hyperparams = {
     "lightgbm": {
         "max_iter": 500,
@@ -120,7 +120,7 @@ class RandomOffPolicyEstimator(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy."""
+        """Estimate the policy value of evaluation policy."""
         return self._estimate_round_rewards(action_dist=action_dist).mean()
 
     def estimate_policy_value_tensor(self, **kwargs) -> torch.Tensor:

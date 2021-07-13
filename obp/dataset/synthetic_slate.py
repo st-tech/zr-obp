@@ -747,7 +747,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Parameters
         -----------
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         slate_id: array-like, shape (<= n_rounds * len_list,)
             Slate ids of the logged bandit feedback.
