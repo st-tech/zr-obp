@@ -54,12 +54,12 @@ class BaseContinuousOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def _estimate_round_rewards(self) -> np.ndarray:
-        """Estimate rewards for each round."""
+        """Estimate round-wise (or sample-wise) rewards."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_policy_value(self) -> float:
-        """Estimate policy value of an evaluation policy."""
+        """Estimate policy value of evaluation policy."""
         raise NotImplementedError
 
     @abstractmethod
@@ -82,7 +82,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         \\hat{V}_{\\mathrm{Kernel-IPW}} (\\pi_e; \\mathcal{D})
         := \\mathbb{E}_{\\mathcal{D}} \\left[ \\frac{1}{h} K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t} \\right],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by a behavior policy.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by behavior policy.
     Note that each action :math:`a_t` in the logged bandit data is a continuous variable.
     :math:`q_t` is a generalized propensity score that is defined as the conditional probability density of the behavior policy.
     :math:`K(\cdot)` is a kernel function such as the gaussian kernel, and :math:`h` is a bandwidth hyperparameter.
@@ -101,7 +101,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         A smaller value increases variance instead of reducing bias.
 
     estimator_name: str, default='kernelized_ipw'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
@@ -131,7 +131,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         action_by_evaluation_policy: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -139,19 +139,19 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Probability densities of the continuous action values sampled by a behavior policy
+            Probability densities of the continuous action values sampled by behavior policy
             (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
         Returns
         ----------
         estimated_rewards: array-like, shape (n_rounds,)
-            Rewards estimated by KernelizedIPW for each round.
+            Rewards of each round estimated by KernelizedIPW.
 
         """
         kernel_func = kernel_functions[self.kernel]
@@ -169,7 +169,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         action_by_evaluation_policy: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate policy value of an evaluation policy.
+        """Estimate policy value of evaluation policy.
 
         Parameters
         ----------
@@ -177,14 +177,14 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Probability densities of the continuous action values sampled by a behavior policy
+            Probability densities of the continuous action values sampled by behavior policy
             (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
         Returns
         ----------
@@ -232,17 +232,17 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Probability densities of the continuous action values sampled by a behavior policy
+            Probability densities of the continuous action values sampled by behavior policy
             (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -301,7 +301,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         \\hat{V}_{\\mathrm{Kernel-SNIPW}} (\\pi_e; \\mathcal{D})
         := \\frac{\\mathbb{E}_{\\mathcal{D}} \\left[ K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t} \\right]}{\\mathbb{E}_{\\mathcal{D}} \\left[ K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t}},
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by a behavior policy.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by behavior policy.
     Note that each action :math:`a_t` in the logged bandit data is a continuous variable.
     :math:`q_t` is a generalized propensity score that is defined as the conditional probability density of the behavior policy.
     :math:`K(\cdot)` is a kernel function such as the gaussian kernel, and :math:`h` is a bandwidth hyperparameter.
@@ -320,7 +320,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         A smaller value increases variance instead of reducing bias.
 
     estimator_name: str, default='kernelized_snipw'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
@@ -341,7 +341,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         action_by_evaluation_policy: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -349,19 +349,19 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Probability densities of the continuous action values sampled by a behavior policy
+            Probability densities of the continuous action values sampled by behavior policy
             (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
         Returns
         ----------
         estimated_rewards: array-like, shape (n_rounds,)
-            Rewards estimated by KernelizedSNIPW for each round.
+            Rewards of each round estimated by KernelizedSNIPW.
 
         """
         if not isinstance(reward, np.ndarray):
@@ -392,7 +392,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         \\hat{V}_{\\mathrm{Kernel-DR}} (\\pi_e; \\mathcal{D})
         := \\mathbb{E}_{\\mathcal{D}} \\left[ \\frac{1}{h} K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{(r_t - \\hat{q}(x_t, \\pi_e(x_t)))}{q_t} + \\hat{q}(x_t, \\pi_e(x_t)) \\right],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by a behavior policy.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by behavior policy.
     Note that each action :math:`a_t` in the logged bandit data is a continuous variable.
     :math:`q_t` is a generalized propensity score that is defined as the conditional probability density of the behavior policy.
     :math:`K(\cdot)` is a kernel function such as the gaussian kernel, and :math:`h` is a bandwidth hyperparameter.
@@ -412,7 +412,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         A smaller value increases variance instead of reducing bias.
 
     estimator_name: str, default='kernelized_dr'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
@@ -443,7 +443,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -451,22 +451,22 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Probability densities of the continuous action values sampled by a behavior policy
+            Probability densities of the continuous action values sampled by behavior policy
             (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds,)
-            Expected rewards given context and action estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context and action estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
         estimated_rewards: array-like, shape (n_rounds,)
-            Rewards estimated by KernelizedDR for each round.
+            Rewards of each round estimated by KernelizedDR.
 
         """
         kernel_func = kernel_functions[self.kernel]
@@ -488,7 +488,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate policy value of an evaluation policy.
+        """Estimate policy value of evaluation policy.
 
         Parameters
         ----------
@@ -496,17 +496,17 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Probability densities of the continuous action values sampled by a behavior policy
+            Probability densities of the continuous action values sampled by behavior policy
             (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds,)
-            Expected rewards given context and action estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context and action estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -559,20 +559,20 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Probability densities of the continuous action values sampled by a behavior policy
+            Probability densities of the continuous action values sampled by behavior policy
             (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds,)
-            Expected rewards given context and action estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context and action estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.

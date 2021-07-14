@@ -21,12 +21,12 @@ logger = getLogger(__name__)
 
 @dataclass
 class ContinuousOffPolicyEvaluation:
-    """Class to conduct off-policy evaluation for continuous actions with multiple off-policy estimators simultaneously.
+    """Class to conduct OPE using multiple estimators simultaneously.
 
     Parameters
     -----------
     bandit_feedback: BanditFeedback
-        Logged bandit feedback data with continuous actions used for off-policy evaluation.
+        Logged bandit feedback data with continuous actions used to conduct OPE.
 
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
@@ -167,15 +167,15 @@ class ContinuousOffPolicyEvaluation:
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
     ) -> Dict[str, float]:
-        """Estimate policy value of an evaluation policy.
+        """Estimate policy value of evaluation policy.
 
         Parameters
         ------------
         action_by_evaluation_policy: array-like, shape (n_rounds,)
-            Continuous action values given by the evaluation policy, i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values given by evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds,) or Dict[str, array-like], default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
@@ -208,7 +208,7 @@ class ContinuousOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of estimated policy values using a nonparametric bootstrap procedure.
+        """Estimate confidence intervals of policy values by nonparametric bootstrap procedure.
 
         Parameters
         ------------
@@ -216,13 +216,13 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -234,7 +234,7 @@ class ContinuousOffPolicyEvaluation:
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
             Dictionary containing confidence intervals of estimated policy value estimated
-            using a nonparametric bootstrap procedure.
+            using nonparametric bootstrap procedure.
 
         """
         check_confidence_interval_arguments(
@@ -267,7 +267,7 @@ class ContinuousOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[DataFrame, DataFrame]:
-        """Summarize policy values estimated by OPE estimators and their confidence intervals estimated by a nonparametric bootstrap procedure.
+        """Summarize policy values and their confidence intervals estimated by OPE estimators.
 
         Parameters
         ------------
@@ -275,13 +275,13 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -292,7 +292,7 @@ class ContinuousOffPolicyEvaluation:
         Returns
         ----------
         (policy_value_df, policy_value_interval_df): Tuple[DataFrame, DataFrame]
-            Estimated policy values and their confidence intervals by OPE estimators.
+            Policy values and their confidence intervals estimated by OPE estimators.
 
         """
         policy_value_df = DataFrame(
@@ -345,13 +345,13 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.
@@ -421,11 +421,11 @@ class ContinuousOffPolicyEvaluation:
         ] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
-        """Evaluate estimation performances of OPE estimators.
+        """Evaluate estimation performance of OPE estimators.
 
         Note
         ------
-        Evaluate the estimation performances of OPE estimators by relative estimation error (relative-EE) or squared error (SE):
+        Evaluate the estimation performance of OPE estimators by relative estimation error (relative-EE) or squared error (SE):
 
         .. math ::
             \\text{Relative-EE} (\\hat{V}; \\mathcal{D}) = \\left|  \\frac{\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi)}{V(\\pi)} \\right|,
@@ -439,14 +439,14 @@ class ContinuousOffPolicyEvaluation:
         Parameters
         ----------
         ground_truth policy value: float
-            Ground_truth policy value of an evaluation policy, i.e., :math:`V(\\pi)`.
-            With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as its ground-truth.
+            Ground_truth policy value of evaluation policy, i.e., :math:`V(\\pi)`.
+            With Open Bandit Dataset, we use an on-policy estimate of the policy value as its ground-truth.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
@@ -502,19 +502,19 @@ class ContinuousOffPolicyEvaluation:
         ] = None,
         metric: str = "relative-ee",
     ) -> DataFrame:
-        """Summarize performance comparisons of OPE estimators.
+        """Summarize performance comparison of OPE estimators.
 
         Parameters
         ----------
         ground_truth policy value: float
-            Ground_truth policy value of an evaluation policy, i.e., :math:`V(\\pi)`.
-            With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
+            Ground_truth policy value of evaluation policy, i.e., :math:`V(\\pi)`.
+            With Open Bandit Dataset, we use an on-policy estimate of the policy value as ground-truth.
 
         action_by_evaluation_policy: array-like, shape (n_rounds,)
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         metric: str, default="relative-ee"
@@ -524,7 +524,7 @@ class ContinuousOffPolicyEvaluation:
         Returns
         ----------
         eval_metric_ope_df: DataFrame
-            Evaluation metric for evaluating the estimation performance of OPE estimators.
+            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
 
         """
         eval_metric_ope_df = DataFrame(
@@ -557,19 +557,19 @@ class ContinuousOffPolicyEvaluation:
         Parameters
         ----------
         policy_name_list: List[str]
-            List of the names of policies.
+            List of the names of evaluation policies.
 
         action_by_evaluation_policy_list: List[array-like, shape (n_rounds, n_actions, len_list)]
             List of action values given by the (deterministic) evaluation policies, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of an estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=100
             Number of resampling performed in the bootstrap procedure.

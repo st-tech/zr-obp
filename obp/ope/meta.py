@@ -193,7 +193,7 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of estimated policy values using a nonparametric bootstrap procedure.
+        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure.
 
         Parameters
         ------------
@@ -219,7 +219,7 @@ class OffPolicyEvaluation:
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
             Dictionary containing confidence intervals of estimated policy value estimated
-            using a nonparametric bootstrap procedure.
+            using nonparametric bootstrap procedure.
 
         """
         check_confidence_interval_arguments(
@@ -511,7 +511,7 @@ class OffPolicyEvaluation:
         Returns
         ----------
         eval_metric_ope_df: DataFrame
-            Evaluation metric for evaluating the estimation performance of OPE estimators.
+            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
 
         """
         eval_metric_ope_df = DataFrame(
@@ -544,7 +544,7 @@ class OffPolicyEvaluation:
         Parameters
         ----------
         policy_name_list: List[str]
-            List of the names of policies.
+            List of the names of evaluation policies.
 
         action_dist_list: List[array-like, shape (n_rounds, n_actions, len_list)]
             List of action choice probabilities by the evaluation policies (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
