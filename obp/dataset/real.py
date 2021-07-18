@@ -81,17 +81,16 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 "When `data_path` is not given, this class downloads the example small-sized version of the Open Bandit Dataset."
             )
             self.data_path = (
-                Path(__file__).parent / "obd" / self.behavior_policy / self.campaign
+                Path(__file__).parent / "obd"
             )
         else:
             if isinstance(self.data_path, Path):
-                self.data_path = self.data_path / self.behavior_policy / self.campaign
+                pass
             elif isinstance(self.data_path, str):
-                self.data_path = Path(
-                    f"{self.data_path}/{self.behavior_policy}/{self.campaign}"
-                )
+                self.data_path = Path(self.data_path)
             else:
                 raise ValueError("data_path must be a string or Path")
+        self.data_path = self.data_path / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
 
         self.load_raw_data()
