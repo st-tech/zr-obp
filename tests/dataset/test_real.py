@@ -19,9 +19,7 @@ def test_real_init():
 
     # data_path
     with pytest.raises(ValueError):
-        OpenBanditDataset(
-            behavior_policy="random", campaign="all", data_path="raw_str_path"
-        )
+        OpenBanditDataset(behavior_policy="random", campaign="all", data_path=5)
 
     # load_raw_data
     obd = OpenBanditDataset(behavior_policy="random", campaign="all")
@@ -50,6 +48,14 @@ def test_obtain_batch_bandit_feedback():
     with pytest.raises(ValueError):
         dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
         dataset.obtain_batch_bandit_feedback(is_timeseries_split=True, test_size=-0.5)
+
+    with pytest.raises(TypeError):
+        dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+        dataset.obtain_batch_bandit_feedback(is_timeseries_split=True, test_size="0.5")
+
+    with pytest.raises(TypeError):
+        dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+        dataset.obtain_batch_bandit_feedback(is_timeseries_split="True", test_size=0.5)
 
     # existence of keys
     # is_timeseries_split=False (default)
@@ -95,6 +101,30 @@ def test_calc_on_policy_policy_value_estimate():
 
 
 def test_sample_bootstrap_bandit_feedback():
+    with pytest.raises(ValueError):
+        dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+        dataset.sample_bootstrap_bandit_feedback(
+            is_timeseries_split=True, test_size=1.3
+        )
+
+    with pytest.raises(ValueError):
+        dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+        dataset.sample_bootstrap_bandit_feedback(
+            is_timeseries_split=True, test_size=-0.5
+        )
+
+    with pytest.raises(ValueError):
+        dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+        dataset.sample_bootstrap_bandit_feedback(sample_size=-50)
+
+    with pytest.raises(TypeError):
+        dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+        dataset.sample_bootstrap_bandit_feedback(sample_size=50.0)
+
+    with pytest.raises(ValueError):
+        dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+        dataset.sample_bootstrap_bandit_feedback(sample_size=10000000)
+
     dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
     bandit_feedback = dataset.obtain_batch_bandit_feedback()
     bootstrap_bf = dataset.sample_bootstrap_bandit_feedback()
@@ -111,3 +141,10 @@ def test_sample_bootstrap_bandit_feedback():
     )
     for k in bf_keys:
         assert len(bandit_feedback_timeseries[k]) == len(bootstrap_bf_timeseries[k])
+
+    sample_size = 1000
+    dataset = OpenBanditDataset(behavior_policy="random", campaign="all")
+    bootstrap_bf = dataset.sample_bootstrap_bandit_feedback(sample_size=sample_size)
+    assert bootstrap_bf["n_rounds"] == sample_size
+    for k in bf_keys:
+        assert len(bootstrap_bf[k]) == sample_size
