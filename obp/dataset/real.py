@@ -80,9 +80,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             logger.info(
                 "When `data_path` is not given, this class downloads the example small-sized version of the Open Bandit Dataset."
             )
-            self.data_path = (
-                Path(__file__).parent / "obd"
-            )
+            self.data_path = Path(__file__).parent / "obd"
         else:
             if isinstance(self.data_path, Path):
                 pass
