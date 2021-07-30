@@ -34,10 +34,11 @@
 
 ## Open Bandit Dataset (OBD)
 
-*Open Bandit Dataset* is a public real-world logged bandit feedback data.
-The dataset is provided by [ZOZO, Inc.](https://corp.zozo.com/en/about/profile/), the largest Japanese fashion e-commerce company with over 5 billion USD market capitalization (as of May 2020).
-The company uses multi-armed bandit algorithms to recommend fashion items to users in a large-scale fashion e-commerce platform called [ZOZOTOWN](https://zozo.jp/).
+*Open Bandit Dataset* is a public real-world logged bandit feedback dataset.
+This dataset is provided by [ZOZO, Inc.](https://corp.zozo.com/en/about/profile/), the largest Japanese fashion e-commerce company with over 5 billion USD market capitalization (as of May 2020).
+The company uses some multi-armed bandit algorithms to recommend fashion items to users in a large-scale fashion e-commerce platform called [ZOZOTOWN](https://zozo.jp/).
 The following figure presents examples of displayed fashion items as actions.
+The figure shows that there are three *positions* in the data.
 
 <p align="center">
   <img width="45%" src="./images/recommended_fashion_items.png" />
@@ -48,8 +49,9 @@ The following figure presents examples of displayed fashion items as actions.
   </figcaption>
 </p>
 
-We collected the data in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively. Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection. This dataset is unique in that it
-contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset).
+We collected the dataset in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
+Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection.
+This dataset is unique in that it contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
 
 <p align="center">
   <img width="90%" src="./images/obd_stats.png" />
@@ -78,17 +80,17 @@ Open Bandit Pipeline consists of the following main modules.
 
 - [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit data and transform multi-class classification data to bandit data.
 - [**policy module**](./obp/policy/): This module provides interfaces for implementing new online and offline bandit policies. It also implements several standard policy learning methods.
-- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when we want to implement the ReplayMethod to evaluate the performance of online or adaptive bandit policies with logged bandit data. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/st-tech/zr-obp/blob/master/examples/quickstart/online.ipynb) for the quickstart guide of implementing OPE of online bandit algorithms.
+- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when we want to implement the ReplayMethod to evaluate the performance of online bandit policies with logged bandit data. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/st-tech/zr-obp/blob/master/examples/quickstart/online.ipynb) for the quickstart guide of implementing OPE of online bandit algorithms.
 - [**ope module**](./obp/ope/): This module provides interfaces for implementing OPE estimators. It also implements several standard and advanced OPE estimators.
 
-### Algorithms and OPE Estimators Supported
+### Supported Bandit Algorithms and OPE Estimators
 
 <details>
 <summary><strong>Bandit Algorithms </strong>(click to expand)</summary>
 <br>
 
 - Online
-  - Context-free
+  - Non-Contextual (Context-free)
     - Random
     - Epsilon Greedy
     - Bernoulli Thompson Sampling
@@ -102,6 +104,7 @@ Open Bandit Pipeline consists of the following main modules.
     - [Logistic Upper Confidence Bound](https://dl.acm.org/doi/10.1145/2396761.2396767)
 - Offline (Off-Policy Learning)
   - [Inverse Probability Weighting (IPW) Learner](https://arxiv.org/abs/1503.02834)
+  - Neural Network-based Policy Learner
 
 </details>
 
@@ -109,23 +112,32 @@ Open Bandit Pipeline consists of the following main modules.
 <summary><strong>OPE Estimators </strong>(click to expand)</summary>
 <br>
 
-- [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
-- [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
-- [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
-- [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
-- [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
-- [Switch Estimators](https://arxiv.org/abs/1612.01205)
-- [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
-- [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
-- [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+- OPE of Online Bandit Algorithms
+  - [Replay Method (RM)](https://arxiv.org/abs/1003.5956)
+- OPE of Offline Bandit Algorithms
+  - [Direct Method (DM)](https://arxiv.org/abs/0812.4044)
+  - [Inverse Probability Weighting (IPW)](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs)
+  - [Self-Normalized Inverse Probability Weighting (SNIPW)](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning)
+  - [Doubly Robust (DR)](https://arxiv.org/abs/1503.02834)
+  - [Switch Estimators](https://arxiv.org/abs/1612.01205)
+  - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
+  - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
+  - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
+- OPE of Offline Slate Bandit Algorithms
+  - [Independent Inverse Propensity Scoring (IIPS)](https://arxiv.org/abs/1804.10488)
+  - [Reward Interaction Inverse Propensity Scoring (RIPS)](https://arxiv.org/abs/2007)
+- OPE of Offline Bandit Algorithms with Continuous Actions
+  - [Kernelized Inverse Probability Weighting](https://arxiv.org/abs/1802.06037)
+  - [Kernelized Self-Normalized Inverse Probability Weighting](https://arxiv.org/abs/1802.06037)
+  - [Kernelized Doubly Robust](https://arxiv.org/abs/1802.06037)
 
 </details>
 
-Please refer to to our [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of the estimators implemented.
-Note that, in addition to the above algorithms and estimators, the pipeline also provides flexible interfaces.
+Please refer to to our [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of several OPE estimators.
+Note that, in addition to the above algorithms and estimators, the pipeline provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
 Moreover, the pipeline provides an interface for handling real-world logged bandit feedback data.
-Thus, practitioners can combine their own data with the pipeline and easily evaluate bandit algorithms' performances in their settings with OPE.
+Thus, practitioners can combine their own real-world data with the pipeline and easily evaluate bandit algorithms' performance in their settings with OPE.
 
 
 ## Topics and Tasks
@@ -133,7 +145,7 @@ Currently, Open Bandit Dataset and Pipeline facilitate the following research to
 
 ### Research
 
-Researchers can evaluate the performance of their bandit algorithms (in bandit papers) or the accuracy of their OPE estimators (in OPE papers) in an easy, standardized manner with the Open Bandit Pipeline. One can implement these types of experiments for their research papers using synthetic bandit data, multi-class classification data, or the real-world Open Bandit Dataset.
+Researchers can evaluate the performance of their bandit algorithms (in bandit papers) or the accuracy of their OPE estimators (in OPE papers) in an easy, standardized manner with Open Bandit Pipeline. One can implement these types of experiments for their research papers using synthetic bandit data, multi-class classification data, or the real-world Open Bandit Dataset.
 
 - **Evaluation of Bandit Algorithms with Synthetic/Classification/Open Bandit Data**
 - **Evaluation of OPE with Synthetic/Classification/Open Bandit Data**
@@ -142,7 +154,7 @@ In particular, we prepare some example experiments about the evaluation and comp
 
 ### Practice
 
-Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of online bandit algorithms by combining the simulator module and the ReplayMethod in the ope module. Moreover, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
+Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
 
 - **Implementing Online/Offline(Batch) Bandit Algorithms**
 - **Off-Policy Evaluation of Online Bandit Algorithms**
@@ -157,7 +169,7 @@ You can install OBP using Python's package manager `pip`.
 pip install obp
 ```
 
-You can install OBP from source.
+You can also install OBP from source.
 ```bash
 git clone https://github.com/st-tech/zr-obp
 cd zr-obp
@@ -236,7 +248,7 @@ We also prepare a script to conduct the evaluation of OPE experiment with synthe
 ## Example with Multi-Class Classification Data
 
 Researchers often use multi-class classification data to evaluate the estimation accuracy of OPE estimators.
-Open Bandit Pipeline implements this kind of OPE experiments with multi-class classification data in an easy manner as follows.
+Open Bandit Pipeline facilitates this kind of OPE experiments with multi-class classification data as follows.
 
 ```python
 # a case for implementing an experiment to evaluate the accuracy of OPE using classification data
@@ -254,7 +266,7 @@ dataset.split_train_eval(eval_size=0.7, random_state=12345)
 bandit_feedback = dataset.obtain_batch_bandit_feedback(random_state=12345)
 
 # (2) Evaluation Policy Derivation
-# obtain action choice probabilities by an evaluation policy and its ground-truth policy value
+# obtain action choice probabilities of an evaluation policy
 action_dist = dataset.obtain_action_dist_by_eval_policy(base_classifier_e=RandomForestClassifier(random_state=12345))
 # calculate the ground-truth performance of the evaluation policy
 ground_truth = dataset.calc_ground_truth_policy_value(action_dist=action_dist)
@@ -312,7 +324,7 @@ print(relative_policy_value_of_bernoulli_ts)
 1.198126...
 ```
 
-A formal quickstart example with Open Bandit Dataset is available at [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb). We also prepare a script to conduct the evaluation of OPE using the Open Bandit Dataset in [examples/obd](./examples/obd). Please see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with the Open Bandit Dataset.
+A formal quickstart example with Open Bandit Dataset is available at [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb). We also prepare a script to conduct the evaluation of OPE using Open Bandit Dataset in [examples/obd](./examples/obd). Please see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol based on Open Bandit Dataset.
 
 
 # Citation
@@ -333,7 +345,7 @@ Bibtex:
 ```
 
 # Google Group
-If you are interested in the Open Bandit Project, we can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
+If you are interested in the Open Bandit Project, you can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
 
 # Contribution
 Any contributions to the Open Bandit Pipeline are more than welcome!
@@ -390,9 +402,17 @@ For any question about the paper, data, and pipeline, feel free to contact: sait
 
 13. Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík. [Doubly Robust Off-policy Evaluation with Shrinkage](https://arxiv.org/abs/1907.09623). In *Proceedings of the 37th International Conference on Machine Learning*, 2020.
 
-14.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+14. Nathan Kallus and Angela Zhou. [Policy Evaluation and Optimization with Continuous Treatments](https://arxiv.org/abs/1802.06037). In International Conference on Artificial Intelligence and Statistics, 1243–1251. PMLR, 2018.
 
-15. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
+15. Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S Muthukrishnan, Vishwa Vinay, and Zheng Wen. [Offline Evaluation of Ranking Policies with Click Models](https://arxiv.org/pdf/1804.10488). In Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining, 1685–1694, 2018.
+
+16. James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Benjamin Carterette. [Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions](https://arxiv.org/abs/2007.12986). In Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining, 1779–1788, 2020.
+
+17.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+
+18. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
+
+
 
 </details>
 
