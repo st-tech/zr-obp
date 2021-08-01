@@ -25,7 +25,7 @@
 - [Google Group](#google-group)
 - [ライセンス](#ライセンス)
 - [プロジェクトチーム](#プロジェクトチーム)
-- [Contact](#contact)
+- [連絡先](#連絡先)
 - [参考](#参考)
 
 </details>
@@ -54,7 +54,7 @@
 図2はOpen Bandit Datasetの記述統計を示しています.
 
 <p align="center">
-  <img width="75%" src="./images/statistics_of_obd.png" />
+  <img width="75%" src="./images/obd_stats.png" />
   <figcaption>
     <p align="center">
       図2. Open Bandit Datasetのキャンペーンとデータ収集方策ごとの記述統計
@@ -324,7 +324,7 @@ Open Bandit Pipelineへのどんな貢献も歓迎いたします. プロジェ�
 - [黒岩稜](https://kurorororo.github.io) (トロント大学 / 半熟仮想株式会社)
 - [清原明加](https://sites.google.com/view/harukakiyohara) (東京工業大学 / 半熟仮想株式会社)
 
-# Contact
+# 連絡先
 論文やOpen Bandit Dataset, Open Bandit Pipelineに関するご質問は, 次のメールアドレス宛にお願いいたします: saito@hanjuku-kaso.com
 
 # 参考
