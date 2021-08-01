@@ -134,10 +134,10 @@ Open Bandit Pipeline consists of the following main modules.
 </details>
 
 Please refer to to our [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of several OPE estimators.
-Note that, in addition to the above algorithms and estimators, the pipeline provides flexible interfaces.
+Note that, in addition to the above algorithms and estimators, Open Bandit Pipeline provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
-Moreover, the pipeline provides an interface for handling real-world logged bandit feedback data.
-Thus, practitioners can combine their own real-world data with the pipeline and easily evaluate bandit algorithms' performance in their settings with OPE.
+Moreover, Open Bandit Pipeline provides an interface for handling real-world logged bandit feedback data.
+Thus, practitioners can combine their own real-world data with Open Bandit Pipeline and easily evaluate bandit algorithms' performance in their settings with OPE.
 
 
 ## Topics and Tasks
@@ -150,7 +150,7 @@ Researchers can evaluate the performance of their bandit algorithms (in bandit p
 - **Evaluation of Bandit Algorithms with Synthetic/Classification/Open Bandit Data**
 - **Evaluation of OPE with Synthetic/Classification/Open Bandit Data**
 
-In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples](./examples/). One can learn how to implement the OPE experiments with the pipeline from the example contents.
+In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples](./examples/). One can learn how to implement the OPE experiments with Open Bandit Pipeline from the examples.
 
 ### Practice
 
