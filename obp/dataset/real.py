@@ -318,13 +318,6 @@ class OpenBanditDataset(BaseRealBanditDataset):
             - action_context: item-related context vectors
 
         """
-        if sample_size:
-            check_scalar(
-                sample_size,
-                name="sample_size",
-                target_type=(int),
-                min_val=0,
-            )
         if is_timeseries_split:
             bandit_feedback = self.obtain_batch_bandit_feedback(
                 test_size=test_size, is_timeseries_split=is_timeseries_split
@@ -337,10 +330,13 @@ class OpenBanditDataset(BaseRealBanditDataset):
         if sample_size is None:
             sample_size = bandit_feedback["n_rounds"]
         else:
-            if sample_size > n_rounds:
-                raise ValueError(
-                    "`sample_size` must be smaller than the original data size (`n_rounds`)."
-                )
+            check_scalar(
+                sample_size,
+                name="sample_size",
+                target_type=(int),
+                min_val=0,
+                max_val=n_rounds,
+            )
         random_ = check_random_state(random_state)
         bootstrap_idx = random_.choice(
             np.arange(n_rounds), size=sample_size, replace=True
