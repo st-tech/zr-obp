@@ -1,58 +1,14 @@
 # Benchmarking Off-Policy Evaluation
 
 ## Description
-We use the (full size) open bandit dataset to evaluate and compare OPE estimators in a *realistic* and *reproducible* manner. Specifically, we evaluate the estimation performances of a wide variety of existing estimators by comparing the estimated policy values with the ground-truth of an evaluation policy contained in the data.
+We use the (full size) open bandit dataset to evaluate and compare OPE estimators in a *realistic* and *reproducible* manner. Specifically, we evaluate the estimation performance of a wide variety of OPE estimators by comparing the policy values estimated by OPE with the on-policy policy value of an evaluation policy.
 
 ### Dataset
-Please download the full [open bandit dataset](https://research.zozo.com/data.html) and put it as the `../open_bandit_dataset/` directory.
-
-## Training Regression Model
-
-Model-dependent estimators such as DM and DR need a pre-trained regression model.
-Here, we train a regression model with some machine learning methods.
-
-[train_regression_model.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/train_regression_model.py) implements the training process of the regression model. ([`conf/hyperparams.yaml`](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/conf/hyperparams.yaml) defines hyperparameters for the machine learning methods.)
-
-```
-python train_regression_model.py\
-    --n_runs $n_runs\
-    --base_model $base_model\ "logistic_regression" or "lightgbm"
-    --behavior_policy $behavior_policy\ "random" or "bts"
-    --campaign $campaign\ # "men", "women", or "all"
-    --n_sim_to_compute_action_dist $n_sim_to_compute_action_dist\
-    --is_timeseries_split $is_timeseries_split\ # in-sample or out-sample
-    --test_size $test_size\
-    --is_mrdr $is_mrdr\ # use "more robust doubly robust" option or not
-    --n_jobs $n_jobs\
-    --random_state $random_state
-```
-
-where
-- `$n_runs` specifies the number of simulation runs with different bootstrap samples in the experiment.
-- `$base_model` specifies the base ML model for defining the regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
-- `$campaign` specifies the campaign considered in ZOZOTOWN and should be one of "all", "men", or "women".
-- `$n_sim_to_compute_action_dist` is the number of monte carlo simulation to compute the action choice probabilities by a given evaluation policy.
-- `$is_timeseries_split` is whether the data is split based on timestamp or not. If true, the out-sample performance of OPE is tested. See the relevant paper for details.
-- `$test_size` specifies the proportion of the dataset to include in the test split when `$is_timeseries_split=True`.
-- `$is_mrdr` is whether the regression model is trained by the more robust doubly robust way. See the relevant paper for details.
-- `$n_jobs` is the maximum number of concurrently running jobs.
-
-For example, the following command trains the regression model based on logistic regression on the logged bandit feedback data collected by the Random policy (as a behavior policy) in "All" campaign.
-
-```bash
-python train_regression_model.py\
-    --n_runs 10\
-    --base_model logistic_regression\
-    --behavior_policy random\
-    --campaign all\
-    --is_mrdr False\
-    --is_timeseries_split False
-```
-
+Please download the full [open bandit dataset](https://research.zozo.com/data.html) and put it in the `../open_bandit_dataset/` directory.
 
 ## Evaluating Off-Policy Estimators
 
-Next, we evaluate and compare the estimation performances of the following OPE estimators:
+In the benchmark experiment, we evaluate the estimation performance of:
 
 - Direct Method (DM)
 - Inverse Probability Weighting (IPW)
@@ -61,48 +17,80 @@ Next, we evaluate and compare the estimation performances of the following OPE e
 - Self-Normalized Doubly Robust (SNDR)
 - Switch Doubly Robust (Switch-DR)
 - Doubly Robust with Optimistic Shrinkage (DRos)
--  More Robust Doubly Robust (MRDR)
 
-For Switch-DR and DRos, we test some different values of hyperparameters.
-See our [documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details about these estimators.
+See [documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details of these estimators.
 
+For Switch-DR and DRos, we use a data-driven hyperparameter tuning method described in [Su et al.](https://arxiv.org/abs/1907.09623).
+For estimators except for DM, we use the true action choice probability contained in Open Bandit Dataset.
+For estimators except for IPW and SNIPW, we need to obtain a reward estimator.
+We do this by using machine learning models (such as gradient boosting) implemented in *scikit-learn*.
+We also use cross-fitting to avoid substantial bias from overfitting when obtaining a reward estimator.
 
-[benchmark_off_policy_estimators.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/benchmark_off_policy_estimators.py) implements the evaluation and comparison of OPE estimators using the open bandit dataset.
-Note that you have to finish training a regression model (see the above section) before conducting the evaluation of OPE in the corresponding setting.
-We summarize the detailed experimental protocol for evaluating OPE estimators using real-world data [here](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html).
+## Requirements and Setup
 
-```
-# run evaluation of OPE estimators with the full open bandit dataset
-python benchmark_off_policy_estimators.py\
-    --n_runs $n_runs\
-    --base_model $base_model\ "logistic_regression" or "lightgbm"
-    --behavior_policy $behavior_policy\ "random" or "bts"
-    --campaign $campaign\ # "men", "women", or "all"
-    --n_sim_to_compute_action_dist $n_sim_to_compute_action_dist\
-    --is_timeseries_split\ # in-sample or out-sample
-    --test_size $test_size\
-    --n_jobs $n_jobs\
-    --random_state $random_state
-```
-where
-- `$n_runs` specifies the number of simulation runs with different bootstrap samples in the experiment to estimate standard deviations of the performance of OPE estimators.
-- $base_model_for_evaluation_policy specifies the base ML model for defining the regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
-- `$campaign` specifies the campaign considered in ZOZOTOWN and should be one of "all", "men", or "women".
-- `$n_sim_to_compute_action_dist` is the number of monte carlo simulation to compute the action choice probabilities by a given evaluation policy.
-- `$is_timeseries_split` is whether the data is split based on timestamp or not. If true, the out-sample performance of OPE is tested. See the relevant paper for details.
-- `$test_size` specifies the proportion of the dataset to include in the test split when `$is_timeseries_split=True`.
-- `$n_jobs` is the maximum number of concurrently running jobs.
-
-For example, the following command compares the estimation performances of the OPE estimators listed above using Bernoulli TS as an evaluation policy and Random as a behavior policy in "All" campaign in the out-sample situation.
+The Python environment is built using [poetry](https://github.com/python-poetry/poetry). You can build the same environment as in our benchmark experiment by cloning the repository and running `poetry install` directly under the folder as follows.
 
 ```bash
-python benchmark_off_policy_estimators.py\
-    --n_runs 10\
-    --base_model logistic_regression\
-    --behavior_policy random\
-    --campaign all\
-    --test_size 0.3\
-    --is_timeseries_split True
+# clone the obp repository
+git clone https://github.com/st-tech/zr-obp.git
+cd benchmark/ope
+
+# build the environment with poetry
+poetry install
+
+# run the benchmark experiment
+poetry run benchmark_off_policy_estimators.py ...
 ```
 
-The results of our benchmark experiments can be found in Section 5 of [our paper](https://arxiv.org/abs/2008.07146).
+The versions of Python and the packages used are as follows.
+
+```
+[tool.poetry.dependencies]
+python = "^3.9"
+scikit-learn = "^0.24.2"
+numpy = "^1.20.3"
+matplotlib = "^3.4.2"
+pandas = "^1.2.4"
+obp = "^0.4.3"
+```
+
+## Files
+
+- [benchmark_off_policy_estimators.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/benchmark_off_policy_estimators.py) implements the experimental workflow to evaluate and compare the above OPE estimators using Open Bandit Dataset. We summarize the detailed experimental protocol for evaluating OPE estimators using real-world data [here](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html).
+- [./conf/](./conf/) specifies experimental settings such as the number of random seeds.
+
+## Scripts
+The experimental workflow is based on [Hydra](https://github.com/facebookresearch/hydra). Below, we explain important experimental configurations.
+
+```bash
+# run evaluation of OPE experiments on the full open bandit dataset
+python benchmark_off_policy_estimators.py\
+    setting.n_seeds=$n_seeds\
+    setting.campaign=$campaign\
+    setting.behavior_policy=$behavior_policy\
+    setting.sample_size=$sample_size\
+    setting.reg_model=$reg_model\
+    setting.is_timeseries_split=$is_time_series_split
+```
+
+- `$n_runs` specifies the number of random seeds used in the experiment.
+- `$campaign` specifies the campaign considered in ZOZOTOWN and should be one of "all", "men", or "women".
+- `$behavior_policy` specifies which policy in Random or Bernoulli TS (bts) is used as the behavior policy. This should be either of "random" or "bts".
+- `$sample_size` specifies the number of samples contained in the logged bandit feedback used to conduct OPE.
+- `$reg_model` specifies the base ML model for defining the regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
+- `$is_timeseries_split` is whether the data is split based on timestamp or not. If true, the out-sample performance of OPE is tested. See the relevant paper for details.
+
+Please see [`./conf/setting/default.yaml`](./conf/setting/default.yaml) for the default experimental configurations, which are to be used when they are not overridden.
+
+It is possible to run multiple experimental settings easily by using the `--multirun (-m)` option implemented in Hydra.
+For example, the following script sweeps over all simulations including the three campaigns ('all', 'men',  and 'women') and two different behavior policies ('random' and 'bts').
+
+```bash
+python main.py\
+    setting.campaign=all,men,women\
+    setting.behavior_policy=random.bts\
+    --multirun
+```
+
+The experimental results will be store in the `logs/` directory.
+Our benchmark results and findings can be found in Section 5 of [our paper](https://arxiv.org/abs/2008.07146).
