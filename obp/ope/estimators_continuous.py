@@ -287,7 +287,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
 
 @dataclass
 class KernelizedSelfNormalizedInverseProbabilityWeighting(
-    KernelizedInverseProbabilityWeighting
+    BaseContinuousOffPolicyEstimator
 ):
     """Kernelized Self-Normalized Inverse Probability Weighting.
 
@@ -333,6 +333,15 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
     bandwidth: float
     estimator_name: str = "kernelized_snipw"
 
+    def __post_init__(self) -> None:
+        if self.kernel not in ["gaussian", "epanechnikov", "triangular", "cosine"]:
+            raise ValueError(
+                f"kernel must be one of 'gaussian', 'epanechnikov', 'triangular', or 'cosine' but {self.kernel} is given"
+            )
+        check_scalar(
+            self.bandwidth, name="bandwidth", target_type=(int, float), min_val=0
+        )
+
     def _estimate_round_rewards(
         self,
         reward: np.ndarray,
@@ -377,6 +386,129 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         estimated_rewards = kernel_func(u) * reward / pscore
         estimated_rewards /= (kernel_func(u) / pscore).mean()
         return estimated_rewards
+
+    def estimate_policy_value(
+        self,
+        reward: np.ndarray,
+        action_by_behavior_policy: np.ndarray,
+        pscore: np.ndarray,
+        action_by_evaluation_policy: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate policy value of evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action_by_behavior_policy: array-like, shape (n_rounds,)
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Probability densities of the continuous action values sampled by behavior policy
+            (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_by_evaluation_policy: array-like, shape (n_rounds,)
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+
+        Returns
+        ----------
+        V_hat: float
+            Estimated policy value (performance) of a given evaluation policy.
+
+        """
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action_by_behavior_policy, np.ndarray):
+            raise ValueError("action_by_behavior_policy must be ndarray")
+        if not isinstance(pscore, np.ndarray):
+            raise ValueError("pscore must be ndarray")
+
+        check_continuous_ope_inputs(
+            reward=reward,
+            action_by_behavior_policy=action_by_behavior_policy,
+            pscore=pscore,
+            action_by_evaluation_policy=action_by_evaluation_policy,
+        )
+
+        return self._estimate_round_rewards(
+            reward=reward,
+            action_by_behavior_policy=action_by_behavior_policy,
+            pscore=pscore,
+            action_by_evaluation_policy=action_by_evaluation_policy,
+        ).mean()
+
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        action_by_behavior_policy: np.ndarray,
+        pscore: np.ndarray,
+        action_by_evaluation_policy: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action_by_behavior_policy: array-like, shape (n_rounds,)
+            Continuous action values sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Probability densities of the continuous action values sampled by behavior policy
+            (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_by_evaluation_policy: array-like, shape (n_rounds,)
+            Continuous action values given by evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        if not isinstance(reward, np.ndarray):
+            raise ValueError("reward must be ndarray")
+        if not isinstance(action_by_behavior_policy, np.ndarray):
+            raise ValueError("action_by_behavior_policy must be ndarray")
+        if not isinstance(pscore, np.ndarray):
+            raise ValueError("pscore must be ndarray")
+
+        check_continuous_ope_inputs(
+            reward=reward,
+            action_by_behavior_policy=action_by_behavior_policy,
+            pscore=pscore,
+            action_by_evaluation_policy=action_by_evaluation_policy,
+        )
+
+        estimated_round_rewards = self._estimate_round_rewards(
+            reward=reward,
+            action_by_behavior_policy=action_by_behavior_policy,
+            pscore=pscore,
+            action_by_evaluation_policy=action_by_evaluation_policy,
+        )
+
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_round_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
 
 
 @dataclass
