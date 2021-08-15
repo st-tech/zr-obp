@@ -77,7 +77,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -126,16 +126,16 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
             If None is given, a learner assumes that there is only one position.
             When `len_list` > 1, position has to be set.
 
@@ -640,7 +640,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -650,10 +650,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             in the given logged bandit feedback.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
             If None is given, a learner assumes that there is only one position.
 
         Returns
@@ -736,20 +736,20 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors in each round, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             If None is given, a learner assumes that the estimated rewards are zero.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
             If None is given, a learner assumes that there is only one position.
             When `len_list` > 1, position has to be set.
             Currently, this feature is not supported.

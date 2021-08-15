@@ -44,18 +44,18 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -70,19 +70,19 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: torch.Tensor,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
 
         Parameters
         ----------
         position: Tensor, shape (n_rounds,)
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         Returns
         ----------
@@ -105,16 +105,16 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -160,7 +160,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
@@ -168,16 +168,16 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         Returns
         ----------
@@ -195,7 +195,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         action_dist: torch.Tensor,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
 
         Parameters
@@ -204,16 +204,16 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: Tensor, shape (n_rounds,)
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         pscore: Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         Returns
         ----------
@@ -242,20 +242,20 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         alpha: float, default=0.05
-            Significant level of confidence intervals.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.

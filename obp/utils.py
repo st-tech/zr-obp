@@ -20,7 +20,7 @@ def check_confidence_interval_arguments(
     Parameters
     ----------
     alpha: float, default=0.05
-        Significant level of confidence intervals.
+        Significance level.
 
     n_bootstrap_samples: int, default=10000
         Number of resampling performed in the bootstrap procedure.
@@ -62,7 +62,7 @@ def estimate_confidence_interval_by_bootstrap(
         Empirical observed samples to be used to estimate cumulative distribution function.
 
     alpha: float, default=0.05
-        Significant level of confidence intervals.
+        Significance level.
 
     n_bootstrap_samples: int, default=10000
         Number of resampling performed in the bootstrap procedure.
@@ -143,7 +143,7 @@ def check_bandit_feedback_inputs(
         Context vectors in each round, i.e., :math:`x_t`.
 
     action: array-like, shape (n_rounds,)
-        Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
     reward: array-like, shape (n_rounds,)
         Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -152,7 +152,7 @@ def check_bandit_feedback_inputs(
         Expected rewards (or outcome) in each round, i.e., :math:`\\mathbb{E}[r_t]`.
 
     position: array-like, shape (n_rounds,), default=None
-        Positions of each round in the given logged bandit feedback.
+        Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
     pscore: array-like, shape (n_rounds,), default=None
         Propensity scores, the probability of selecting each action by behavior policy,
@@ -249,13 +249,13 @@ def check_ope_inputs(
     Parameters
     -----------
     action_dist: array-like, shape (n_rounds, n_actions, len_list)
-        Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+        Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
     position: array-like, shape (n_rounds,), default=None
-        Positions of each round in the given logged bandit feedback.
+        Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
     action: array-like, shape (n_rounds,), default=None
-        Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
     reward: array-like, shape (n_rounds,), default=None
         Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -265,7 +265,7 @@ def check_ope_inputs(
         in the given logged bandit feedback.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-        Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+        Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
     """
     # action_dist
@@ -499,16 +499,16 @@ def _check_slate_ope_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit feedback.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities by a behavior policy (propensity scores).
+        Action choice probabilities of behavior policy (propensity scores).
 
     evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities by the evaluation policy (propensity scores).
+        Action choice probabilities of evaluation policy.
 
     pscore_type: str
         Either "pscore", "pscore_item_position", or "pscore_cascade".
@@ -580,16 +580,16 @@ def check_sips_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit feedback.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
     evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_t|x_t)`.
+        Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
     """
     _check_slate_ope_inputs(
@@ -639,7 +639,7 @@ def check_iips_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit feedback.
@@ -648,7 +648,7 @@ def check_iips_inputs(
         Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
 
     evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-        Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+        Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
     """
     _check_slate_ope_inputs(
@@ -683,16 +683,16 @@ def check_rips_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed in each round and slot of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit feedback.
 
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
     evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities above the slot (:math:`k`) by the evaluation policy (propensity scores), i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+        Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
     """
     _check_slate_ope_inputs(
@@ -762,13 +762,13 @@ def check_ope_inputs_tensor(
     Parameters
     -----------
     action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-        Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+        Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
     position: Tensor, shape (n_rounds,), default=None
-        Positions of each round in the given logged bandit feedback.
+        Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
     action: Tensor, shape (n_rounds,), default=None
-        Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
     reward: Tensor, shape (n_rounds,), default=None
         Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
@@ -778,7 +778,7 @@ def check_ope_inputs_tensor(
         in the given logged bandit feedback.
 
     estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list), default=None
-        Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+        Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
     """
     # action_dist

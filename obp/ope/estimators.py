@@ -8,7 +8,9 @@ from typing import Dict, Optional, Union
 
 import numpy as np
 import torch
+from sklearn.utils import check_scalar
 
+from .helper import estimate_high_probability_upper_bound_bias
 from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     check_ope_inputs,
@@ -22,17 +24,18 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def _estimate_round_rewards(self) -> Union[np.ndarray, torch.Tensor]:
-        """Estimate rewards for each round."""
+        """Estimate round-wise (or sample-wise) rewards."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_policy_value(self) -> float:
-        """Estimate policy value of an evaluation policy."""
+        """Estimate the policy value of evaluation policy."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_policy_value_tensor(self) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """
+        Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
         """
         raise NotImplementedError
@@ -45,11 +48,11 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
 @dataclass
 class ReplayMethod(BaseOffPolicyEstimator):
-    """Estimate the policy value by Relpay Method (RM).
+    """Relpay Method (RM).
 
     Note
     -------
-    Replay Method (RM) estimates the policy value of a given evaluation policy :math:`\\pi_e` by
+    Replay Method (RM) estimates the policy value of evaluation policy :math:`\\pi_e` by
 
     .. math::
 
@@ -64,7 +67,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
     Parameters
     ----------
     estimator_name: str, default='rm'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
@@ -83,7 +86,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         position: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ------------
@@ -91,18 +94,20 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         estimated_rewards: array-like, shape (n_rounds,)
-            Rewards estimated by the Replay Method for each round.
+            Rewards of each round estimated by the Replay Method.
 
         """
         if position is None:
@@ -123,7 +128,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         position: Optional[np.ndarray] = None,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ------------
@@ -131,13 +136,15 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
@@ -167,9 +174,10 @@ class ReplayMethod(BaseOffPolicyEstimator):
         self,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """
+        Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
-        This is not implemnted for RM because it is indifferentiable.
+        This is not implemented for RM because it is indifferentiable.
         """
         raise NotImplementedError(
             "This is not implemented because RM is indifferentiable"
@@ -194,16 +202,18 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -244,11 +254,11 @@ class ReplayMethod(BaseOffPolicyEstimator):
 
 @dataclass
 class InverseProbabilityWeighting(BaseOffPolicyEstimator):
-    """Estimate the policy value by Inverse Probability Weighting (IPW).
+    """Inverse Probability Weighting (IPW) Estimator.
 
     Note
     -------
-    Inverse Probability Weighting (IPW) estimates the policy value of a given evaluation policy :math:`\\pi_e` by
+    Inverse Probability Weighting (IPW) estimates the policy value of evaluation policy :math:`\\pi_e` by
 
     .. math::
 
@@ -257,6 +267,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
     a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
+    where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
 
     IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy (importance weight).
     When the behavior policy is known, IPW is unbiased and consistent for the true policy value.
@@ -264,8 +276,12 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     Parameters
     ------------
+    lambda_: float, default=np.inf
+        A maximum possible value of the importance weight.
+        When a positive finite value is given, importance weights larger than `lambda_` will be clipped.
+
     estimator_name: str, default='ipw'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ------------
@@ -275,9 +291,24 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
     """
 
+    lambda_: float = np.inf
     estimator_name: str = "ipw"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        check_scalar(
+            self.lambda_,
+            name="lambda_",
+            target_type=(int, float),
+            min_val=0.0,
+        )
+        if self.lambda_ != self.lambda_:
+            raise ValueError("lambda_ must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -288,7 +319,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -296,26 +327,31 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         estimated_rewards: array-like or Tensor, shape (n_rounds,)
-            Rewards estimated by IPW for each round.
+            Rewards of each round estimated by IPW.
 
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
         iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
+        # weight clipping
+        if isinstance(iw, np.ndarray):
+            iw = np.minimum(iw, self.lambda_)
         return reward * iw
 
     def estimate_policy_value(
@@ -327,7 +363,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
@@ -335,16 +371,18 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
@@ -386,7 +424,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """
+        Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
 
         Parameters
@@ -395,16 +434,18 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
@@ -457,20 +498,21 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities
-            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -515,14 +557,75 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             random_state=random_state,
         )
 
+    def _estimate_mse_score(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        **kwargs,
+    ) -> float:
+        """Estimate the MSE score of a given clipping hyperparameter to conduct hyperparameter tuning.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+
+        Returns
+        ----------
+        estimated_mse_score: float
+            Estimated MSE score of a given clipping hyperparameter `lambda_`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 5 of Su et al.(2020).
+
+        """
+        n_rounds = reward.shape[0]
+        # estimate the sample variance of IPW with clipping
+        sample_variance = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                position=position,
+            )
+        )
+        sample_variance /= n_rounds
+
+        # estimate the (high probability) upper bound of the bias of IPW with clipping
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=np.minimum(iw, self.lambda_),
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+
+        return estimated_mse_score
+
 
 @dataclass
 class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
-    """Estimate the policy value by Self-Normalized Inverse Probability Weighting (SNIPW).
+    """Self-Normalized Inverse Probability Weighting (SNIPW) Estimator.
 
     Note
     -------
-    Self-Normalized Inverse Probability Weighting (SNIPW) estimates the policy value of a given evaluation policy :math:`\\pi_e` by
+    Self-Normalized Inverse Probability Weighting (SNIPW) estimates the policy value of evaluation policy :math:`\\pi_e` by
 
     .. math::
 
@@ -541,7 +644,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     Parameters
     ----------
     estimator_name: str, default='snipw'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -564,7 +667,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -572,21 +675,21 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         Returns
         ----------
         estimated_rewards: array-like or Tensor, shape (n_rounds,)
-            Rewards estimated by the SNIPW estimator for each round.
+            Rewards of each round estimated by the SNIPW estimator.
 
         """
         if position is None:
@@ -597,7 +700,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
 
 @dataclass
 class DirectMethod(BaseOffPolicyEstimator):
-    """Estimate the policy value by Direct Method (DM).
+    """Direct Method (DM).
 
     Note
     -------
@@ -625,7 +728,7 @@ class DirectMethod(BaseOffPolicyEstimator):
     Parameters
     ----------
     estimator_name: str, default='dm'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -646,23 +749,25 @@ class DirectMethod(BaseOffPolicyEstimator):
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         estimated_rewards: array-like or Tensor, shape (n_rounds,)
-            Rewards estimated by the DM estimator for each round.
+            Rewards of each round estimated by the DM estimator.
 
         """
         if position is None:
@@ -691,18 +796,20 @@ class DirectMethod(BaseOffPolicyEstimator):
         position: Optional[np.ndarray] = None,
         **kwargs,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
@@ -734,19 +841,22 @@ class DirectMethod(BaseOffPolicyEstimator):
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """
+        Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
 
         Parameters
         ----------
         action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
@@ -786,16 +896,18 @@ class DirectMethod(BaseOffPolicyEstimator):
         Parameters
         ----------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -835,7 +947,7 @@ class DirectMethod(BaseOffPolicyEstimator):
 
 @dataclass
 class DoublyRobust(BaseOffPolicyEstimator):
-    """Estimate the policy value by Doubly Robust (DR).
+    """Doubly Robust (DR) Estimator.
 
     Note
     -------
@@ -854,6 +966,8 @@ class DoublyRobust(BaseOffPolicyEstimator):
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
+    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
+    where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
 
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`,
     which supports several fitting methods specific to OPE such as *more robust doubly robust*.
@@ -866,8 +980,13 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
     Parameters
     ----------
+    lambda_: float, default=np.inf
+        A maximum possible value of the importance weight.
+        When a positive finite value is given, importance weights larger than `lambda_` will be clipped.
+        DoublyRobust with a finite positive `lambda_` corresponds to the Doubly Robust with pessimistic shrinkage of Su et al.(2020).
+
     estimator_name: str, default='dr'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -877,9 +996,24 @@ class DoublyRobust(BaseOffPolicyEstimator):
     Mehrdad Farajtabar, Yinlam Chow, and Mohammad Ghavamzadeh.
     "More Robust Doubly Robust Off-policy Evaluation.", 2018.
 
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík.
+    "Doubly robust off-policy evaluation with shrinkage.", 2020.
+
     """
 
+    lambda_: float = np.inf
     estimator_name: str = "dr"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        check_scalar(
+            self.lambda_,
+            name="lambda_",
+            target_type=(int, float),
+            min_val=0.0,
+        )
+        if self.lambda_ != self.lambda_:
+            raise ValueError("lambda_ must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -891,7 +1025,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -899,30 +1033,35 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model or Tensor: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         estimated_rewards: array-like or Tensor, shape (n_rounds,)
-            Rewards estimated by the DR estimator for each round.
+            Rewards of each round estimated by the DR estimator.
 
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        # weight clipping
+        if isinstance(iw, np.ndarray):
+            iw = np.minimum(iw, self.lambda_)
         q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
@@ -940,7 +1079,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be nd-array or Tensor")
+            raise ValueError("reward must be ndarray or Tensor")
 
         estimated_rewards += iw * (reward - q_hat_factual)
         return estimated_rewards
@@ -954,7 +1093,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> float:
-        """Estimate policy value of an evaluation policy.
+        """Estimate the policy value of evaluation policy.
 
         Parameters
         ----------
@@ -962,24 +1101,26 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         V_hat: float
-            Estimated policy value by the DR estimator.
+            Policy value estimated by the DR estimator.
 
         """
         if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
@@ -1021,7 +1162,8 @@ class DoublyRobust(BaseOffPolicyEstimator):
         position: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """
+        Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
 
         Parameters
@@ -1030,24 +1172,26 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         V_hat: Tensor
-            Estimated policy value by the DR estimator.
+            Policy value estimated by the DR estimator.
 
         """
         if not isinstance(estimated_rewards_by_reg_model, torch.Tensor):
@@ -1100,22 +1244,24 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         alpha: float, default=0.05
-            P-value.
+            Significance level.
 
         n_bootstrap_samples: int, default=10000
             Number of resampling performed in the bootstrap procedure.
@@ -1164,14 +1310,82 @@ class DoublyRobust(BaseOffPolicyEstimator):
             random_state=random_state,
         )
 
+    def _estimate_mse_score(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+    ) -> float:
+        """Estimate the MSE score of a given clipping hyperparameter to conduct hyperparameter tuning.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        Returns
+        ----------
+        estimated_mse_score: float
+            Estimated MSE score of a given clipping hyperparameter `lambda_`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 5 of Su et al.(2020).
+
+        """
+        n_rounds = reward.shape[0]
+        # estimate the sample variance of DR with clipping
+        sample_variance = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+        )
+        sample_variance /= n_rounds
+
+        # estimate the (high probability) upper bound of the bias of DR with clipping
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=np.minimum(iw, self.lambda_),
+            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+
+        return estimated_mse_score
+
 
 @dataclass
 class SelfNormalizedDoublyRobust(DoublyRobust):
-    """Estimate the policy value by Self-Normalized Doubly Robust (SNDR).
+    """Self-Normalized Doubly Robust (SNDR) Estimator.
 
     Note
     -------
-    Self-Normalized Doubly Robust estimates the policy value of a given evaluation policy :math:`\\pi_e` by
+    Self-Normalized Doubly Robust estimates the policy value of evaluation policy :math:`\\pi_e` by
 
     .. math::
 
@@ -1191,7 +1405,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
     Parameters
     ----------
     estimator_name: str, default='sndr'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -1215,7 +1429,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -1223,24 +1437,26 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         estimated_rewards: array-like or Tensor, shape (n_rounds,)
-            Rewards estimated by the SNDR estimator for each round.
+            Rewards of each round estimated by the SNDR estimator.
 
         """
         n_rounds = action.shape[0]
@@ -1259,7 +1475,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be nd-array or Tensor")
+            raise ValueError("reward must be ndarray or Tensor")
 
         q_hat_factual = estimated_rewards_by_reg_model[
             np.arange(n_rounds), action, position
@@ -1270,12 +1486,12 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
 
 @dataclass
 class SwitchDoublyRobust(DoublyRobust):
-    """Estimate the policy value by Switch Doubly Robust (Switch-DR).
+    """Switch Doubly Robust (Switch-DR) Estimator.
 
     Note
     -------
-    Switch-DR aims to reduce the variance of the DR estimator by using direct method
-    when the importance weight is large. This estimator estimates the policy value of a given evaluation policy :math:`\\pi_e` by
+    Switch-DR aims to reduce the variance of the DR estimator by using direct method when the importance weight is large.
+    This estimator estimates the policy value of evaluation policy :math:`\\pi_e` by
 
     .. math::
 
@@ -1292,12 +1508,12 @@ class SwitchDoublyRobust(DoublyRobust):
 
     Parameters
     ----------
-    tau: float, default=1
-        Switching hyperparameter. When importance weight is larger than this parameter, the DM estimator is applied, otherwise the DR estimator is applied.
+    tau: float, default=np.inf
+        Switching hyperparameter. When importance weight is larger than this parameter, DM is applied, otherwise DR is used.
         This hyperparameter should be larger than or equal to 0., otherwise it is meaningless.
 
     estimator_name: str, default='switch-dr'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -1307,23 +1523,24 @@ class SwitchDoublyRobust(DoublyRobust):
     Yu-Xiang Wang, Alekh Agarwal, and Miroslav Dudík.
     "Optimal and Adaptive Off-policy Evaluation in Contextual Bandits", 2016.
 
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
     """
 
-    tau: float = 1.0
+    tau: float = np.inf
     estimator_name: str = "switch-dr"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.tau, (float, int)):
-            raise ValueError(
-                f"switching hyperparameter must be float or integer, but {self.tau} is given"
-            )
+        check_scalar(
+            self.tau,
+            name="tau",
+            target_type=(int, float),
+            min_val=0.0,
+        )
         if self.tau != self.tau:
-            raise ValueError("switching hyperparameter must not be nan")
-        if self.tau < 0.0:
-            raise ValueError(
-                f"switching hyperparameter must be larger than or equal to zero, but {self.tau} is given"
-            )
+            raise ValueError("tau must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -1334,8 +1551,8 @@ class SwitchDoublyRobust(DoublyRobust):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
         **kwargs,
-    ) -> float:
-        """Estimate rewards for each round.
+    ) -> np.ndarray:
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -1343,24 +1560,26 @@ class SwitchDoublyRobust(DoublyRobust):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         estimated_rewards: array-like, shape (n_rounds,)
-            Rewards estimated by the Switch-DR estimator for each round.
+            Rewards of each round estimated by the Switch-DR estimator.
 
         """
         n_rounds = action.shape[0]
@@ -1385,18 +1604,87 @@ class SwitchDoublyRobust(DoublyRobust):
         self,
         **kwargs,
     ) -> torch.Tensor:
-        """Estimate policy value of an evaluation policy and return PyTorch Tensor.
+        """
+        Estimate the policy value of evaluation policy and return PyTorch Tensor.
         This is intended for being used with NNPolicyLearner.
-        This is not implemnted because swithing is indifferentiable.
+        This is not implemented because switching is indifferentiable.
         """
         raise NotImplementedError(
-            "This is not implemented for Swtich-DR because it is indifferentiable."
+            "This is not implemented for Switch-DR because it is indifferentiable."
         )
+
+    def _estimate_mse_score(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+    ) -> float:
+        """Estimate the MSE score of a given switching hyperparameter to conduct hyperparameter tuning.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        Returns
+        ----------
+        estimated_mse_score: float
+            Estimated MSE score of a given switching hyperparameter `tau`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 5 of Su et al.(2020).
+
+        """
+        n_rounds = reward.shape[0]
+        # estimate the sample variance of Switch-DR (Eq.(8) of Wang et al.(2017))
+        sample_variance = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+        )
+        sample_variance /= n_rounds
+
+        # estimate the (high probability) upper bound of the bias of Switch-DR
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=iw * np.array(iw <= self.tau, dtype=int),
+            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+
+        return estimated_mse_score
 
 
 @dataclass
 class DoublyRobustWithShrinkage(DoublyRobust):
-    """Estimate the policy value by Doubly Robust with optimistic shrinkage (DRos).
+    """Doubly Robust with optimistic shrinkage (DRos) Estimator.
 
     Note
     ------
@@ -1426,7 +1714,6 @@ class DoublyRobustWithShrinkage(DoublyRobust):
     In contrast, as :math:`\\lambda \\rightarrow \\infty`, :math:`w_{o} (x,a;\\lambda)` increases and in the limit becomes equal to
     the original importance weight, corresponding to the standard DR estimator.
 
-
     Parameters
     ----------
     lambda_: float
@@ -1434,7 +1721,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         This hyperparameter should be larger than or equal to 0., otherwise it is meaningless.
 
     estimator_name: str, default='dr-os'.
-        Name of off-policy estimator.
+        Name of the estimator.
 
     References
     ----------
@@ -1451,16 +1738,14 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.lambda_, (float, int)):
-            raise ValueError(
-                f"shrinkage hyperparameter must be float or integer, but {self.lambda_} is given"
-            )
+        check_scalar(
+            self.lambda_,
+            name="lambda_",
+            target_type=(int, float),
+            min_val=0.0,
+        )
         if self.lambda_ != self.lambda_:
-            raise ValueError("shrinkage hyperparameter must not be nan")
-        if self.lambda_ < 0.0:
-            raise ValueError(
-                f"shrinkage hyperparameter must be larger than or equal to zero, but {self.lambda_} is given"
-            )
+            raise ValueError("lambda_ must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -1472,7 +1757,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         position: Optional[Union[np.ndarray, torch.Tensor]] = None,
         **kwargs,
     ) -> Union[np.ndarray, torch.Tensor]:
-        """Estimate rewards for each round.
+        """Estimate round-wise (or sample-wise) rewards.
 
         Parameters
         ----------
@@ -1480,29 +1765,34 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
-            Action choice probabilities by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards for each round, action, and position estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Positions of each round in the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         Returns
         ----------
         estimated_rewards: array-like or Tensor, shape (n_rounds,)
-            Rewards estimated by the DRos estimator for each round.
+            Rewards of each round estimated by the DRos estimator.
 
         """
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        shrinkage_weight = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        if self.lambda_ < np.inf:
+            iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        else:
+            iw_hat = iw
         q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
@@ -1520,7 +1810,77 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be nd-array or Tensor")
+            raise ValueError("reward must be ndarray or Tensor")
 
-        estimated_rewards += shrinkage_weight * (reward - q_hat_factual)
+        estimated_rewards += iw_hat * (reward - q_hat_factual)
         return estimated_rewards
+
+    def _estimate_mse_score(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+    ) -> float:
+        """Estimate the MSE score of a given shrinkage hyperparameter to conduct hyperparameter tuning.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+
+        Returns
+        ----------
+        estimated_mse_score: float
+            Estimated MSE score of a given shrinkage hyperparameter `lambda_`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 5 of Su et al.(2020).
+
+        """
+        n_rounds = reward.shape[0]
+        # estimate the sample variance of DRos
+        sample_variance = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+        )
+        sample_variance /= n_rounds
+
+        # estimate the (high probability) upper bound of the bias of DRos
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        if self.lambda_ < np.inf:
+            iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+        else:
+            iw_hat = iw
+        bias_upper_bound = estimate_high_probability_upper_bound_bias(
+            reward=reward,
+            iw=iw,
+            iw_hat=iw_hat,
+            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
+        )
+        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+
+        return estimated_mse_score

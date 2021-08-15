@@ -20,7 +20,7 @@ from obp.policy import IPWLearner, NNPolicyLearner
 from obp.ope import DoublyRobust, RegressionModel
 
 
-# hyperparameter for the regression model used in model dependent OPE estimators
+# hyperparameters of the regression model used in model dependent OPE estimators
 hyperparams = {
     "lightgbm": {
         "max_iter": 500,

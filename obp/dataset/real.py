@@ -5,15 +5,13 @@
 from dataclasses import dataclass
 from logging import getLogger, basicConfig, INFO
 from pathlib import Path
-from typing import Optional
-from typing import Union
-from typing import Tuple
+from typing import Optional, Union, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils import check_random_state
+from sklearn.utils import check_random_state, check_scalar
 
 from .base import BaseRealBanditDataset
 from ..types import BanditFeedback
@@ -37,11 +35,12 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Must be either 'random' or 'bts'.
 
     campaign: str
-        One of the three possible campaigns considered in ZOZOTOWN, "all", "men", and "women".
+        One of the three possible campaigns considered in ZOZOTOWN.
+        Must be one of "all", "men", or "women".
 
-    data_path: Path, default=None
-        Path where the Open Bandit Dataset exists.
-        When `None` is given, this class downloads the example small-sized version of the dataset.
+    data_path: str or Path, default=None
+        Path where the Open Bandit Dataset is stored.
+        When `None` is given, this class downloads the example small-sized data.
 
     dataset_name: str, default='obd'
         Name of the dataset.
@@ -55,7 +54,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     behavior_policy: str
     campaign: str
-    data_path: Optional[Path] = None
+    data_path: Optional[Union[str, Path]] = None
     dataset_name: str = "obd"
 
     def __post_init__(self) -> None:
@@ -74,7 +73,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             "women",
         ]:
             raise ValueError(
-                f"campaign must be one of 'all', 'men', and 'women', but {self.campaign} is given"
+                f"campaign must be one of 'all', 'men', or 'women', but {self.campaign} is given"
             )
 
         if self.data_path is None:
@@ -83,8 +82,12 @@ class OpenBanditDataset(BaseRealBanditDataset):
             )
             self.data_path = Path(__file__).parent / "obd"
         else:
-            if not isinstance(self.data_path, Path):
-                raise ValueError("data_path must be a Path type")
+            if isinstance(self.data_path, Path):
+                pass
+            elif isinstance(self.data_path, str):
+                self.data_path = Path(self.data_path)
+            else:
+                raise ValueError("data_path must be a string or Path")
         self.data_path = self.data_path / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
 
@@ -136,7 +139,9 @@ class OpenBanditDataset(BaseRealBanditDataset):
             When `None` is given, this class downloads the example small-sized version of the dataset.
 
         test_size: float, default=0.3
-            If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
+            Proportion of the dataset included in the test split.
+            If float, should be between 0.0 and 1.0.
+            This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
             If true, split the original logged bandit feedback data by time series.
@@ -202,12 +207,12 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Parameters
         -----------
         test_size: float, default=0.3
-            If float, should be between 0.0 and 1.0 and represent the proportion of
-            the dataset to include in the evaluation split.
+            Proportion of the dataset included in the test split.
+            If float, should be between 0.0 and 1.0.
             This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged bandit feedback data by time series.
+            If true, split the original logged bandit feedback data into train and test sets based on time series.
 
         Returns
         --------
@@ -224,11 +229,19 @@ class OpenBanditDataset(BaseRealBanditDataset):
             - action_context: item-related context vectors
 
         """
+        if not isinstance(is_timeseries_split, bool):
+            raise TypeError(
+                f"`is_timeseries_split` must be a bool, but {type(is_timeseries_split)} is given"
+            )
+
         if is_timeseries_split:
-            if not isinstance(test_size, float) or (test_size <= 0 or test_size >= 1):
-                raise ValueError(
-                    f"test_size must be a float in the (0,1) interval, but {test_size} is given"
-                )
+            check_scalar(
+                test_size,
+                name="target_size",
+                target_type=(float),
+                min_val=0.0,
+                max_val=1.0,
+            )
             n_rounds_train = np.int(self.n_rounds * (1.0 - test_size))
             bandit_feedback_train = dict(
                 n_rounds=n_rounds_train,
@@ -265,6 +278,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     def sample_bootstrap_bandit_feedback(
         self,
+        sample_size: Optional[int] = None,
         test_size: float = 0.3,
         is_timeseries_split: bool = False,
         random_state: Optional[int] = None,
@@ -273,13 +287,18 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
         Parameters
         -----------
+        sample_size: int, default=None
+            Number of data sampled by bootstrap.
+            When None is given, the original data size (n_rounds) is used as `sample_size`.
+            The value must be smaller than the original data size.
+
         test_size: float, default=0.3
-            If float, should be between 0.0 and 1.0 and represent the proportion of
-            the dataset to include in the evaluation split.
+            Proportion of the dataset included in the test split.
+            If float, should be between 0.0 and 1.0.
             This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged bandit feedback data by time series.
+            If true, split the original logged bandit feedback data into train and test sets based on time series.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -308,8 +327,21 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 test_size=test_size, is_timeseries_split=is_timeseries_split
             )
         n_rounds = bandit_feedback["n_rounds"]
+        if sample_size is None:
+            sample_size = bandit_feedback["n_rounds"]
+        else:
+            check_scalar(
+                sample_size,
+                name="sample_size",
+                target_type=(int),
+                min_val=0,
+                max_val=n_rounds,
+            )
         random_ = check_random_state(random_state)
-        bootstrap_idx = random_.choice(np.arange(n_rounds), size=n_rounds, replace=True)
+        bootstrap_idx = random_.choice(
+            np.arange(n_rounds), size=sample_size, replace=True
+        )
         for key_ in ["action", "position", "reward", "pscore", "context"]:
             bandit_feedback[key_] = bandit_feedback[key_][bootstrap_idx]
+        bandit_feedback["n_rounds"] = sample_size
         return bandit_feedback
