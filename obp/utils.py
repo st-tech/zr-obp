@@ -379,7 +379,7 @@ def check_continuous_bandit_feedback_inputs(
             == expected_reward.shape[0]
         ):
             raise ValueError(
-                "context, action, reward, and expected_reward must be the same size."
+                "context, action_by_behavior_policy, reward, and expected_reward must be the same size."
             )
     if pscore is not None:
         if not isinstance(pscore, np.ndarray) or pscore.ndim != 1:
@@ -391,7 +391,7 @@ def check_continuous_bandit_feedback_inputs(
             == pscore.shape[0]
         ):
             raise ValueError(
-                "context, action, reward, and pscore must be the same size."
+                "context, action_by_behavior_policy, reward, and pscore must be the same size."
             )
         if np.any(pscore <= 0):
             raise ValueError("pscore must be positive")

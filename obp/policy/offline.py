@@ -375,7 +375,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         - 'identity', the identity function, :math:`f(x) = x`.
         - 'logistic', the sigmoid function, :math:`f(x) = \\frac{1}{1 + \\exp(x)}`.
         - 'tanh', the hyperbolic tangent function, `:math:f(x) = \\frac{\\exp(x) - \\exp(-x)}{\\exp(x) + \\exp(-x)}`
-        - 'relu', the rectfiied linear unit function, `:math:f(x) = \\max(0, x)`
+        - 'relu', the rectified linear unit function, `:math:f(x) = \\max(0, x)`
 
     solver: str, default='adam'
         Optimizer of the neural network.
@@ -388,7 +388,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     alpha: float, default=0.001
         L2 penalty.
 
-    bacth_size: Union[int, str], default="auto"
+    batch_size: Union[int, str], default="auto"
         Batch size for SGD and Adam.
         If "auto", the maximum of 200 and the number of samples is used.
         If integer, must be positive.
@@ -407,7 +407,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Controls the random seed.
 
     tol: float, default=1e-4
-        Tolerance for trainning.
+        Tolerance for training.
         When the training loss is not improved at least `tol' for `n_iter_no_change' consecutive iterations,
         training is stopped.
 
@@ -415,13 +415,13 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Momentum for SGD.
         Must be in the range of [0., 1.].
 
-    nesterovs_moemntum: bool, default=True
-        Whether to use Nestrov momentum.
+    nesterovs_momentum: bool, default=True
+        Whether to use Nesterovs momentum.
 
     early_stopping: bool, default=False
         Whether to use early stopping for SGD and Adam.
-        If set to trure, `validation_fraction' of training data is used as validation data,
-        and training is stopped when the validation loss is not imporved at least `tol' for `n_iter_no_change' consecutive iterations.
+        If set to true, `validation_fraction' of training data is used as validation data,
+        and training is stopped when the validation loss is not improved at least `tol' for `n_iter_no_change' consecutive iterations.
 
     validation_fraction: float, default=0.1
         Fraction of validation data when early stopping is used.
@@ -506,7 +506,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.alpha, float) or self.alpha < 0.0:
             raise ValueError(
-                f"alpha must be a nonnegative float, but {self.alpha} is given"
+                f"alpha must be a non-negative float, but {self.alpha} is given"
             )
 
         if self.batch_size != "auto" and (
@@ -542,7 +542,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
-                f"nestrovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
+                f"nesterovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
             )
 
         if not isinstance(self.early_stopping, bool):
@@ -580,7 +580,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
             raise ValueError(
-                f"epsilon must be a nonnegative float, but {self.epsilon} is given"
+                f"epsilon must be a non-negative float, but {self.epsilon} is given"
             )
 
         if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
@@ -594,12 +594,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         if self.random_state is not None:
-            if isinstance(self.random_state, int):
-                torch.manual_seed(self.random_state)
-            else:
-                raise ValueError(
-                    f"random_state must be None or an integer, but {self.random_state} is given"
-                )
+            self.random_ = check_random_state(self.random_state)
+            torch.manual_seed(self.random_state)
 
         if self.activation == "identity":
             activation_layer = nn.Identity

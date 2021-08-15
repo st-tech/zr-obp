@@ -151,9 +151,13 @@ def test_ipw_learner_sample_action():
 
 
 ipw = InverseProbabilityWeighting()
+
+# n_actions, len_list, dim_context, off_policy_objective, hidden_layer_size, activation, solver, alpha,
+# batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum,
+# early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, description
 invalid_input_of_nn_policy_learner_init = [
     (
-        0,
+        0,  #
         1,
         2,
         ipw.estimate_policy_value_tensor,
@@ -180,7 +184,7 @@ invalid_input_of_nn_policy_learner_init = [
     ),
     (
         10,
-        -1,
+        -1,  #
         2,
         ipw.estimate_policy_value_tensor,
         (100, 50, 100),
@@ -207,7 +211,7 @@ invalid_input_of_nn_policy_learner_init = [
     (
         10,
         1,
-        -1,
+        -1,  #
         ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
@@ -234,7 +238,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         1,
         2,
-        None,
+        None,  #
         (100, 50, 100),
         "relu",
         "adam",
@@ -261,7 +265,7 @@ invalid_input_of_nn_policy_learner_init = [
         1,
         2,
         ipw.estimate_policy_value_tensor,
-        (100, ""),
+        (100, ""),  #
         "relu",
         "adam",
         0.001,
@@ -288,7 +292,7 @@ invalid_input_of_nn_policy_learner_init = [
         2,
         ipw.estimate_policy_value_tensor,
         (100, 50, 100),
-        "sigmoid",
+        "None",  #
         "adam",
         0.001,
         "auto",
@@ -315,7 +319,7 @@ invalid_input_of_nn_policy_learner_init = [
         ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
-        "adagrad",
+        "None",  #
         0.001,
         "auto",
         0.0001,
@@ -342,7 +346,7 @@ invalid_input_of_nn_policy_learner_init = [
         (100, 50, 100),
         "relu",
         "adam",
-        -1,
+        -1,  #
         "auto",
         0.0001,
         200,
@@ -358,7 +362,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "alpha must be a nonnegative float",
+        "alpha must be a non-negative float",
     ),
     (
         10,
@@ -369,7 +373,7 @@ invalid_input_of_nn_policy_learner_init = [
         "relu",
         "adam",
         0.001,
-        0,
+        0,  #
         0.0001,
         200,
         True,
@@ -396,7 +400,7 @@ invalid_input_of_nn_policy_learner_init = [
         "adam",
         0.001,
         "auto",
-        0,
+        0,  #
         200,
         True,
         123,
@@ -423,7 +427,7 @@ invalid_input_of_nn_policy_learner_init = [
         0.001,
         "auto",
         0.0001,
-        0,
+        0,  #
         True,
         123,
         1e-4,
@@ -450,7 +454,7 @@ invalid_input_of_nn_policy_learner_init = [
         "auto",
         0.0001,
         200,
-        None,
+        None,  #
         123,
         1e-4,
         0.9,
@@ -477,7 +481,7 @@ invalid_input_of_nn_policy_learner_init = [
         0.0001,
         200,
         True,
-        "",
+        "",  #
         1e-4,
         0.9,
         True,
@@ -488,7 +492,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "random_state must be None or an integer",
+        "'' cannot be used to seed",
     ),
     (
         10,
@@ -504,7 +508,7 @@ invalid_input_of_nn_policy_learner_init = [
         200,
         True,
         123,
-        -1,
+        -1,  #
         0.9,
         True,
         True,
@@ -531,7 +535,7 @@ invalid_input_of_nn_policy_learner_init = [
         True,
         123,
         1e-4,
-        2,
+        2,  #
         True,
         True,
         0.1,
@@ -558,7 +562,7 @@ invalid_input_of_nn_policy_learner_init = [
         123,
         1e-4,
         0.9,
-        "",
+        "",  #
         True,
         0.1,
         0.9,
@@ -566,7 +570,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "nestrovs_momentum must be a bool",
+        "nesterovs_momentum must be a bool",
     ),
     (
         10,
@@ -585,7 +589,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-4,
         0.9,
         True,
-        None,
+        None,  #
         0.1,
         0.9,
         0.999,
@@ -601,7 +605,7 @@ invalid_input_of_nn_policy_learner_init = [
         ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
-        "lbfgs",
+        "lbfgs",  #
         0.001,
         "auto",
         0.0001,
@@ -611,7 +615,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-4,
         0.9,
         True,
-        True,
+        True,  #
         0.1,
         0.9,
         0.999,
@@ -638,7 +642,7 @@ invalid_input_of_nn_policy_learner_init = [
         0.9,
         True,
         True,
-        2,
+        2,  #
         0.9,
         0.999,
         1e-8,
@@ -665,7 +669,7 @@ invalid_input_of_nn_policy_learner_init = [
         True,
         True,
         0.1,
-        2,
+        2,  #
         0.999,
         1e-8,
         10,
@@ -692,7 +696,7 @@ invalid_input_of_nn_policy_learner_init = [
         True,
         0.1,
         0.9,
-        2,
+        2,  #
         1e-8,
         10,
         15000,
@@ -719,10 +723,10 @@ invalid_input_of_nn_policy_learner_init = [
         0.1,
         0.9,
         0.999,
-        -1,
+        -1,  #
         10,
         15000,
-        "epsilon must be a nonnegative float",
+        "epsilon must be a non-negative float",
     ),
     (
         10,
@@ -746,7 +750,7 @@ invalid_input_of_nn_policy_learner_init = [
         0.9,
         0.999,
         1e-8,
-        0,
+        0,  #
         15000,
         "n_iter_no_change must be a positive integer",
     ),
@@ -773,7 +777,7 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        0,
+        0,  #
         "max_fun must be a positive integer",
     ),
 ]
