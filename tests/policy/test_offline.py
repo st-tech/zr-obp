@@ -292,7 +292,7 @@ invalid_input_of_nn_policy_learner_init = [
         2,
         ipw.estimate_policy_value_tensor,
         (100, 50, 100),
-        "sigmoid",  #
+        "None",  #
         "adam",
         0.001,
         "auto",
@@ -319,7 +319,7 @@ invalid_input_of_nn_policy_learner_init = [
         ipw.estimate_policy_value_tensor,
         (100, 50, 100),
         "relu",
-        "adagrad",  #
+        "None",  #
         0.001,
         "auto",
         0.0001,
@@ -492,7 +492,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         15000,
-        "random_state must be None or an integer",
+        "'' cannot be used to seed",
     ),
     (
         10,

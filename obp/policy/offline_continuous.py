@@ -302,13 +302,8 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 )
 
         if self.random_state is not None:
-            if isinstance(self.random_state, int):
-                torch.manual_seed(self.random_state)
-                self.random_ = check_random_state(self.random_state)
-            else:
-                raise ValueError(
-                    f"random_state must be None or an integer, but {self.random_state} is given"
-                )
+            self.random_ = check_random_state(self.random_state)
+            torch.manual_seed(self.random_state)
 
         if self.activation == "identity":
             activation_layer = nn.Identity
@@ -517,7 +512,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 def closure():
                     optimizer.zero_grad()
                     action_by_current_policy = self.nn_model(x).flatten()
-                    loss = -1.0 * self._policy_loss(
+                    loss = -1.0 * self._estimate_policy_value(
                         context=x,
                         reward=r,
                         action=a,
@@ -539,7 +534,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 for x, a, r, p in training_data_loader:
                     optimizer.zero_grad()
                     action_by_current_policy = self.nn_model(x).flatten()
-                    loss = -1.0 * self._policy_loss(
+                    loss = -1.0 * self._estimate_policy_value(
                         context=x,
                         reward=r,
                         action=a,
@@ -563,7 +558,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                     self.nn_model.eval()
                     for x, a, r, p in validation_data_loader:
                         action_by_current_policy = self.nn_model(x).flatten()
-                        loss = -1.0 * self._policy_loss(
+                        loss = -1.0 * self._estimate_policy_value(
                             context=x,
                             reward=r,
                             action=a,
@@ -581,7 +576,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                             break
                         previous_validation_loss = loss_value
 
-    def _policy_loss(
+    def _estimate_policy_value(
         self,
         context: torch.Tensor,
         action: torch.Tensor,
@@ -621,7 +616,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             )
 
         if self.pg_method == "dpg":
-            policy_loss = self.q_func_estimator.predict(
+            estimated_policy_value = self.q_func_estimator.predict(
                 context=context,
                 action=action_by_current_policy,
             )
@@ -629,8 +624,8 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         elif self.pg_method == "ipw":
             u = action_by_current_policy - action
             u /= self.bandwidth
-            policy_loss = gaussian_kernel(u) * reward / pscore
-            policy_loss /= self.bandwidth
+            estimated_policy_value = gaussian_kernel(u) * reward / pscore
+            estimated_policy_value /= self.bandwidth
 
         elif self.pg_method == "dr":
             u = action_by_current_policy - action
@@ -639,11 +634,11 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 context=context,
                 action=action_by_current_policy,
             )
-            policy_loss = gaussian_kernel(u) * (reward - q_hat) / pscore
-            policy_loss /= self.bandwidth
-            policy_loss += q_hat
+            estimated_policy_value = gaussian_kernel(u) * (reward - q_hat) / pscore
+            estimated_policy_value /= self.bandwidth
+            estimated_policy_value += q_hat
 
-        return policy_loss.mean()
+        return estimated_policy_value.mean()
 
     def predict(self, context: np.ndarray) -> np.ndarray:
         """Predict best continuous actions for new data.
@@ -916,12 +911,8 @@ class QFuncEstimatorForContinuousAction:
             )
 
         if self.random_state is not None:
-            if isinstance(self.random_state, int):
-                torch.manual_seed(self.random_state)
-            else:
-                raise ValueError(
-                    f"random_state must be None or an integer, but {self.random_state} is given"
-                )
+            self.random_ = check_random_state(self.random_state)
+            torch.manual_seed(self.random_state)
 
         if self.activation == "identity":
             activation_layer = nn.Identity

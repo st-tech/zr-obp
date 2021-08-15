@@ -594,12 +594,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         if self.random_state is not None:
-            if isinstance(self.random_state, int):
-                torch.manual_seed(self.random_state)
-            else:
-                raise ValueError(
-                    f"random_state must be None or an integer, but {self.random_state} is given"
-                )
+            self.random_ = check_random_state(self.random_state)
+            torch.manual_seed(self.random_state)
 
         if self.activation == "identity":
             activation_layer = nn.Identity

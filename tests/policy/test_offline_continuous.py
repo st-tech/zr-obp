@@ -38,7 +38,7 @@ invalid_input_of_nn_policy_learner_init = [
     ),
     (
         10,
-        "dm",  #
+        "None",  #
         2,
         (-10, 10),
         (100, 50, 100),
@@ -150,7 +150,7 @@ invalid_input_of_nn_policy_learner_init = [
         0.1,
         (-10, 10),
         (100, 50, 100),
-        "sigmoid",  #
+        "None",  #
         "adam",
         0.001,
         "auto",
@@ -178,7 +178,7 @@ invalid_input_of_nn_policy_learner_init = [
         (-10, 10),
         (100, 50, 100),
         "relu",
-        "adagrad",  #
+        "None",  #
         0.001,
         "auto",
         0.0001,
@@ -358,7 +358,7 @@ invalid_input_of_nn_policy_learner_init = [
         10,
         15000,
         None,
-        "random_state must be None or an integer",
+        "'' cannot be used to seed",
     ),
     (
         10,
