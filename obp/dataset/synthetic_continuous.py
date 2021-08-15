@@ -29,7 +29,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         Number of dimensions of context vectors.
 
     action_noise: float, default=1.0
-            Standard deviation of the Gaussian noise on the continuous action variable.
+        Standard deviation of the Gaussian noise on the continuous action variable.
 
     reward_noise: float, default=1.0
         Standard deviation of the Gaussian noise on the reward variable.
@@ -140,7 +140,10 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         self.random_ = check_random_state(self.random_state)
 
     def _contextfree_reward_function(self, action: np.ndarray) -> np.ndarray:
-        """Calculate context-free expected rewards given only continuous action values."""
+        """
+        Calculate context-free expected rewards given only continuous action values.
+        This is just an example synthetic (expected) reward function.
+        """
         return 2 * np.power(action, 1.5) - (5 * action)
 
     def obtain_batch_bandit_feedback(
@@ -415,7 +418,7 @@ def threshold_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
     return 1.0 + np.sign(context.mean(1) - 1.5)
 
 
-def sin_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
+def sign_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
     """Sign synthtic policy for continuous actions.
 
     Parameters

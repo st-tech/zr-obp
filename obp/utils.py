@@ -494,6 +494,7 @@ def _check_slate_ope_inputs(
     """Check inputs of Slate OPE estimators.
 
     Parameters
+    -----------
     slate_id: array-like, shape (<= n_rounds * len_list,)
         Slate id observed in each round of the logged bandit feedback.
 
