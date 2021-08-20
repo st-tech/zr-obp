@@ -8,7 +8,6 @@ behavior_policy: random
 # regression model settings
 reg_model: lightgbm
 n_folds: 2 # cross-fitting
-is_calibration: False
 # other experimental settings
 is_full_obd: True
 is_timeseries_split: False

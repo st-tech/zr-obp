@@ -8,7 +8,7 @@ Please download the full [open bandit dataset](https://research.zozo.com/data.ht
 
 ## Evaluating Off-Policy Estimators
 
-In the benchmark experiment, we evaluate the estimation performance of:
+In the benchmark experiment, we evaluate the estimation performance of the following OPE estimators.
 
 - Direct Method (DM)
 - Inverse Probability Weighting (IPW)
@@ -28,7 +28,7 @@ We also use cross-fitting to avoid substantial bias from overfitting when obtain
 
 ## Requirements and Setup
 
-The Python environment is built using [poetry](https://github.com/python-poetry/poetry). You can build the same environment as in our benchmark experiment by cloning the repository and running `poetry install` directly under the folder as follows.
+The Python environment is built using [poetry](https://github.com/python-poetry/poetry). You can build the same environment as in our benchmark experiment by cloning the repository and running `poetry install` directly under the folder (if you do not install poetry, please run `pip install poetry` first.).
 
 ```bash
 # clone the obp repository
@@ -39,32 +39,36 @@ cd benchmark/ope
 poetry install
 
 # run the benchmark experiment
-poetry run benchmark_off_policy_estimators.py ...
+poetry run python benchmark_off_policy_estimators.py ...
 ```
 
 The versions of Python and the packages used are as follows.
 
 ```
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.9,<3.10"
 scikit-learn = "^0.24.2"
-numpy = "^1.20.3"
+pandas = "^1.3.1"
+numpy = "^1.21.1"
 matplotlib = "^3.4.2"
-pandas = "^1.2.4"
-obp = "^0.4.3"
+hydra-core = "^1.1.0"
+pingouin = "^0.4.0"
+obp = "^0.4.2"
+pyieoe = "^0.1.0"
 ```
 
 ## Files
 
-- [benchmark_off_policy_estimators.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/benchmark_off_policy_estimators.py) implements the experimental workflow to evaluate and compare the above OPE estimators using Open Bandit Dataset. We summarize the detailed experimental protocol for evaluating OPE estimators using real-world data [here](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html).
+- [benchmark_ope_estimators.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/benchmark_ope_estimators.py) implements the experimental workflow to evaluate and compare the above OPE estimators using Open Bandit Dataset. We summarize the detailed experimental protocol for evaluating OPE estimators using real-world data [here](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html).
+- [benchmark_ope_estimators_hypara.py](https://github.com/st-tech/zr-obp/blob/master/benchmark/ope/benchmark_ope_estimators.py) evaluates the effect of the hyperparameter choice on the OPE performance of DRos.
 - [./conf/](./conf/) specifies experimental settings such as the number of random seeds.
 
 ## Scripts
-The experimental workflow is based on [Hydra](https://github.com/facebookresearch/hydra). Below, we explain important experimental configurations.
+The experimental workflow is implemented using [Hydra](https://github.com/facebookresearch/hydra). Below, we explain important experimental configurations.
 
 ```bash
 # run evaluation of OPE experiments on the full open bandit dataset
-python benchmark_off_policy_estimators.py\
+poetry run python benchmark_ope_estimators.py\
     setting.n_seeds=$n_seeds\
     setting.campaign=$campaign\
     setting.behavior_policy=$behavior_policy\
@@ -82,15 +86,12 @@ python benchmark_off_policy_estimators.py\
 
 Please see [`./conf/setting/default.yaml`](./conf/setting/default.yaml) for the default experimental configurations, which are to be used when they are not overridden.
 
-It is possible to run multiple experimental settings easily by using the `--multirun (-m)` option implemented in Hydra.
+It is possible to run multiple experimental settings easily by using the `--multirun (-m)` option of Hydra.
 For example, the following script sweeps over all simulations including the three campaigns ('all', 'men',  and 'women') and two different behavior policies ('random' and 'bts').
 
 ```bash
-python main.py\
-    setting.campaign=all,men,women\
-    setting.behavior_policy=random.bts\
-    --multirun
+poetry run python benchmark_ope_estimators.py setting.campaign=all,men,women setting.behavior_policy=random.bts --multirun
 ```
 
-The experimental results will be store in the `logs/` directory.
+The experimental results (including the pairwise hypothesis test results) will be store in the `logs/` directory.
 Our benchmark results and findings can be found in Section 5 of [our paper](https://arxiv.org/abs/2008.07146).

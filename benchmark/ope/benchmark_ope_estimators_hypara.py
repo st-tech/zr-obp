@@ -3,39 +3,28 @@ import warnings
 from pathlib import Path
 from logging import getLogger
 
-from sklearn.exceptions import ConvergenceWarning
-
-logger = getLogger(__name__)
-warnings.filterwarnings(action="ignore", category=ConvergenceWarning)
-
 import hydra
 from omegaconf import DictConfig
 import numpy as np
 import matplotlib
-
-matplotlib.use("Agg")
 from pandas import DataFrame
 import pingouin as pg
-from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier as RandomForest
 from sklearn.ensemble import HistGradientBoostingClassifier as LightGBM
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.calibration import CalibratedClassifierCV
-
 from obp.dataset import OpenBanditDataset
 from obp.policy import Random, BernoulliTS
 from obp.ope import (
-    InverseProbabilityWeighting,
-    SelfNormalizedInverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust,
-    SelfNormalizedDoublyRobust,
-    SwitchDoublyRobustTuning,
+    DoublyRobustWithShrinkage,
     DoublyRobustWithShrinkageTuning,
 )
 from pyieoe.evaluator import InterpretableOPEEvaluator
 
+logger = getLogger(__name__)
+warnings.filterwarnings(action="ignore", category=ConvergenceWarning)
+matplotlib.use("Agg")
 
 reg_model_dict = dict(
     logistic_regression=LogisticRegression,
@@ -53,22 +42,19 @@ def main(cfg: DictConfig) -> None:
 
     # compared ope estimators
     lambdas = list(dict(cfg.estimator_hyperparams)["lambdas"])
-    taus = list(dict(cfg.estimator_hyperparams)["taus"])
     ope_estimators = [
-        InverseProbabilityWeighting(estimator_name="IPW"),
-        SelfNormalizedInverseProbabilityWeighting(estimator_name="SNIPW"),
-        DirectMethod(estimator_name="DM"),
-        DoublyRobust(estimator_name="DR"),
-        SelfNormalizedDoublyRobust(estimator_name="SNDR"),
-        SwitchDoublyRobustTuning(taus=taus, estimator_name="Switch-DR"),
-        DoublyRobustWithShrinkageTuning(lambdas=lambdas, estimator_name="DRos"),
+        DoublyRobustWithShrinkage(lambda_=lam_, estimator_name=f"DRos ({lam_})")
+        for lam_ in lambdas
+    ] + [
+        DoublyRobustWithShrinkageTuning(
+            lambdas=lambdas, estimator_name="DRos (tuning)"
+        ),
     ]
 
     # configurations
     n_seeds = cfg.setting.n_seeds
     sample_size = cfg.setting.sample_size
     reg_model = cfg.setting.reg_model
-    is_calibration = cfg.setting.is_calibration
     campaign = cfg.setting.campaign
     behavior_policy = cfg.setting.behavior_policy
     test_size = cfg.setting.test_size
@@ -146,12 +132,7 @@ def main(cfg: DictConfig) -> None:
 
     # regression models used in ope estimators
     hyperparams = dict(cfg.reg_model_hyperparams)[reg_model]
-    if is_calibration:
-        regression_models = [
-            CalibratedClassifierCV(reg_model_dict[reg_model](**hyperparams), cv=2)
-        ]
-    else:
-        regression_models = [reg_model_dict[reg_model](**hyperparams)]
+    regression_models = [reg_model_dict[reg_model](**hyperparams)]
 
     # define an evaluator class
     evaluator = InterpretableOPEEvaluator(
@@ -170,9 +151,7 @@ def main(cfg: DictConfig) -> None:
     mean_scaled = evaluator.calculate_mean(scale=True, root=True)
 
     # save results of the evaluation of off-policy estimators
-    log_path = Path("./outputs")
-    if is_calibration:
-        log_path = log_path / "calibrated"
+    log_path = Path("./outputs/hypara")
     log_path.mkdir(exist_ok=True, parents=True)
     # save root mse
     root_mse_df = DataFrame()
@@ -195,18 +174,8 @@ def main(cfg: DictConfig) -> None:
         .drop(["Contrast", "Parametric", "Tail"], axis=1)
     )
     nonparam_ttests.to_csv(log_path / "nonparam_ttests.csv")
-    # save reg model metrics
-    DataFrame(evaluator.reg_model_metrics).describe().to_csv(
-        log_path / "reg_model_metrics.csv"
-    )
     # print result
     print(root_mse_df)
-    # save cdf plot
-    evaluator.visualize_cdf_aggregate(
-        fig_dir=log_path,
-        fig_name="cdf_full.png",
-        font_size=16,
-    )
     experiment = f"{campaign}-{behavior_policy}-{sample_size}"
     elapsed_time = np.round((time.time() - start_time) / 60, 2)
     logger.info(f"finish experiment {experiment} in {elapsed_time}min")
