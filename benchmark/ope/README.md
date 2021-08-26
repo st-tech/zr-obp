@@ -42,7 +42,7 @@ poetry install
 poetry run python benchmark_off_policy_estimators.py ...
 ```
 
-The versions of Python and the packages used are as follows.
+The versions of Python and the used packages are as follows.
 
 ```
 [tool.poetry.dependencies]

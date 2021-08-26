@@ -6,7 +6,6 @@ from logging import getLogger
 import hydra
 from omegaconf import DictConfig
 import numpy as np
-import matplotlib
 from pandas import DataFrame
 import pingouin as pg
 from sklearn.exceptions import ConvergenceWarning
@@ -29,7 +28,6 @@ from pyieoe.evaluator import InterpretableOPEEvaluator
 
 logger = getLogger(__name__)
 warnings.filterwarnings(action="ignore", category=ConvergenceWarning)
-matplotlib.use("Agg")
 
 reg_model_dict = dict(
     logistic_regression=LogisticRegression,
@@ -187,12 +185,6 @@ def main(cfg: DictConfig) -> None:
     )
     # print result
     print(root_mse_df)
-    # save cdf plot
-    evaluator.visualize_cdf_aggregate(
-        fig_dir=log_path,
-        fig_name="cdf_full.png",
-        font_size=16,
-    )
     experiment = f"{campaign}-{behavior_policy}-{sample_size}"
     elapsed_time = np.round((time.time() - start_time) / 60, 2)
     logger.info(f"finish experiment {experiment} in {elapsed_time}min")

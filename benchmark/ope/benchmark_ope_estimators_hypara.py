@@ -6,7 +6,6 @@ from logging import getLogger
 import hydra
 from omegaconf import DictConfig
 import numpy as np
-import matplotlib
 from pandas import DataFrame
 import pingouin as pg
 from sklearn.exceptions import ConvergenceWarning
@@ -24,7 +23,6 @@ from pyieoe.evaluator import InterpretableOPEEvaluator
 
 logger = getLogger(__name__)
 warnings.filterwarnings(action="ignore", category=ConvergenceWarning)
-matplotlib.use("Agg")
 
 reg_model_dict = dict(
     logistic_regression=LogisticRegression,
