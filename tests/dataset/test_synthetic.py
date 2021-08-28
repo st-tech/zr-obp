@@ -28,6 +28,20 @@ def test_synthetic_init():
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=2, reward_type="aaa")
 
+    # reward_std
+    with pytest.raises(TypeError):
+        SyntheticBanditDataset(n_actions=2, reward_std="aaa")
+
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, reward_std=-1)
+
+    # tau
+    with pytest.raises(TypeError):
+        SyntheticBanditDataset(n_actions=2, tau="aaa")
+
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, tau=-1)
+
     # random_state
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=2, random_state=None)
