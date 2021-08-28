@@ -7,6 +7,7 @@ from obp.dataset.synthetic import (
     linear_reward_function,
     linear_behavior_policy,
 )
+from obp.utils import softmax
 
 
 def test_synthetic_init():
@@ -324,6 +325,8 @@ def test_synthetic_linear_behavior_policy():
     n_actions = 5
     context = np.ones([n_rounds, dim_context])
     action_context = np.ones([n_actions, dim_action_context])
-    action_prob = linear_behavior_policy(context=context, action_context=action_context)
+    action_prob = softmax(
+        linear_behavior_policy(context=context, action_context=action_context)
+    )
     assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
     assert np.all(0 <= action_prob) and np.all(action_prob <= 1)

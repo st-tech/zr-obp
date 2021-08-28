@@ -465,7 +465,7 @@ def linear_behavior_policy(
     Returns
     ---------
     behavior_policy: array-like, shape (n_rounds, n_actions)
-        Action choice probabilities given context (:math:`x`), i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        Logit values given context (:math:`x`), i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
