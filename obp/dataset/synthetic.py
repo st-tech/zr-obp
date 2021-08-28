@@ -7,11 +7,11 @@ from typing import Optional, Callable
 
 import numpy as np
 from scipy.stats import truncnorm
-from sklearn.utils import check_random_state
+from sklearn.utils import check_random_state, check_scalar
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import sigmoid, softmax
+from ..utils import sigmoid, softmax, sample_action_fast
 from .reward_type import RewardType
 
 
@@ -47,10 +47,20 @@ class SyntheticBanditDataset(BaseBanditDataset):
         If None is set, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
+    reward_std: float, default=1.0
+        Standard deviation of the reward distribution.
+        A larger value leads to a noisy reward distribution.
+        This argument is valid only when `reward_type="continuous"`.
+
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating probability distribution over action space,
         i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
         If None is set, context **independent** uniform distribution will be used (uniform random behavior policy).
+
+    tau: float, default=1.0
+        A temperature hyperparameer which controls the behavior policy.
+        A large value leads to a near-uniform behavior policy,
+        while a small value leads to a near-deterministic behavior policy.
 
     random_state: int, default=12345
         Controls the random seed in sampling synthetic bandit dataset.
@@ -126,9 +136,11 @@ class SyntheticBanditDataset(BaseBanditDataset):
     dim_context: int = 1
     reward_type: str = RewardType.BINARY.value
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
+    reward_std: float = 1.0
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
     ] = None
+    tau: float = 1.0
     random_state: int = 12345
     dataset_name: str = "synthetic_bandit_dataset"
 
@@ -149,6 +161,8 @@ class SyntheticBanditDataset(BaseBanditDataset):
             raise ValueError(
                 f"reward_type must be either '{RewardType.BINARY.value}' or '{RewardType.CONTINUOUS.value}', but {self.reward_type} is given.'"
             )
+        check_scalar(self.reward_std, "reward_std", (int, float), min_val=0)
+        check_scalar(self.tau, "tau", (int, float), min_val=0)
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -159,7 +173,6 @@ class SyntheticBanditDataset(BaseBanditDataset):
         if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             self.reward_min = 0
             self.reward_max = 1e10
-            self.reward_std = 1.0
         # one-hot encoding representations characterizing each action
         self.action_context = np.eye(self.n_actions, dtype=int)
 
@@ -269,6 +282,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         # sample actions for each round based on the behavior policy
         if self.behavior_policy_function is None:
             behavior_policy_ = np.tile(self.behavior_policy, (n_rounds, 1))
+            behavior_policy_ = softmax(behavior_policy_ / self.tau)
             action = self.random_.choice(
                 np.arange(self.n_actions), p=self.behavior_policy, size=n_rounds
             )
@@ -278,19 +292,14 @@ class SyntheticBanditDataset(BaseBanditDataset):
                 action_context=self.action_context,
                 random_state=self.random_state,
             )
-            action = np.array(
-                [
-                    self.random_.choice(
-                        np.arange(self.n_actions),
-                        p=behavior_policy_[i],
-                    )
-                    for i in np.arange(n_rounds)
-                ]
+            behavior_policy_ = softmax(behavior_policy_ / self.tau)
+            action = sample_action_fast(
+                behavior_policy_, random_state=self.random_state
             )
         pscore = behavior_policy_[np.arange(n_rounds), action]
 
+        # sample reward based on the context and action
         expected_reward_ = self.calc_expected_reward(context)
-        reward = self.sample_reward_given_expected_reward(expected_reward_, action)
         if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             # correct expected_reward_, as we use truncated normal distribution here
             mean = expected_reward_
@@ -299,6 +308,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             expected_reward_ = truncnorm.stats(
                 a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
             )
+        reward = self.sample_reward_given_expected_reward(expected_reward_, action)
 
         return dict(
             n_rounds=n_rounds,
@@ -471,4 +481,4 @@ def linear_behavior_policy(
     for d in np.arange(action_context.shape[0]):
         logits[:, d] = context @ coef_ + action_context[d] @ action_coef_
 
-    return softmax(logits)
+    return logits
