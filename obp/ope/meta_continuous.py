@@ -17,7 +17,7 @@ from .estimators_continuous import (
     KernelizedDoublyRobust as KDR,
 )
 from ..types import BanditFeedback
-from ..utils import check_confidence_interval_arguments
+from ..utils import check_confidence_interval_arguments, check_array
 
 logger = getLogger(__name__)
 
@@ -113,28 +113,27 @@ class ContinuousOffPolicyEvaluation:
         ] = None,
     ) -> Dict[str, Dict[str, np.ndarray]]:
         """Create input dictionary to estimate policy value by subclasses of `BaseOffPolicyEstimator`"""
-        if (
-            not isinstance(action_by_evaluation_policy, np.ndarray)
-            or action_by_evaluation_policy.ndim != 1
-        ):
-            raise ValueError(
-                "action_by_evaluation_policy must be 1-dimensional ndarray"
-            )
+        check_array(
+            array=action_by_evaluation_policy,
+            name="action_by_evaluation_policy",
+            expected_dim=1,
+        )
         if estimated_rewards_by_reg_model is None:
             pass
         elif isinstance(estimated_rewards_by_reg_model, dict):
             for estimator_name, value in estimated_rewards_by_reg_model.items():
-                if not isinstance(value, np.ndarray):
+                check_array(
+                    array=value,
+                    name=f"estimated_rewards_by_reg_model[{estimator_name}]",
+                    expected_dim=1,
+                )
+                if value.shape != action_by_evaluation_policy.shape:
                     raise ValueError(
-                        f"estimated_rewards_by_reg_model[{estimator_name}] must be ndarray"
-                    )
-                elif value.shape != action_by_evaluation_policy.shape:
-                    raise ValueError(
-                        f"estimated_rewards_by_reg_model[{estimator_name}].shape and action_by_evaluation_policy.shape must be the same"
+                        f"Expected `estimated_rewards_by_reg_model[{estimator_name}].shape == action_by_evaluation_policy.shape`, but found it False"
                     )
         elif estimated_rewards_by_reg_model.shape != action_by_evaluation_policy.shape:
             raise ValueError(
-                "estimated_rewards_by_reg_model.shape and action_by_evaluation_policy.shape must be the same"
+                "Expected `estimated_rewards_by_reg_model.shape == action_by_evaluation_policy.shape`, but found it False"
             )
         estimator_inputs = {
             estimator_name: {

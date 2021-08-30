@@ -15,7 +15,7 @@ from .estimators import (
     SwitchDoublyRobust,
     DoublyRobustWithShrinkage,
 )
-from ..utils import check_ope_inputs
+from ..utils import check_ope_inputs, check_array
 
 
 @dataclass
@@ -287,13 +287,9 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -359,13 +355,9 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -458,15 +450,14 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Policy value estimated by the DR estimator.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -537,15 +528,14 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -640,15 +630,14 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Policy value estimated by the DR estimator.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -719,15 +708,14 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -822,15 +810,14 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Policy value estimated by the DR estimator.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -901,15 +888,14 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,

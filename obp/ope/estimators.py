@@ -15,6 +15,7 @@ from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     check_ope_inputs,
     check_ope_inputs_tensor,
+    check_array,
 )
 
 
@@ -152,11 +153,8 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist, position=position, action=action, reward=reward
         )
@@ -227,11 +225,8 @@ class ReplayMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist, position=position, action=action, reward=reward
         )
@@ -390,13 +385,9 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -526,13 +517,9 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -787,7 +774,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         elif isinstance(action_dist, torch.Tensor):
             return torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("action must be ndarray or Tensor")
+            raise ValueError("action must be 1D array or Tensor")
 
     def estimate_policy_value(
         self,
@@ -817,9 +804,11 @@ class DirectMethod(BaseOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
         check_ope_inputs(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -921,9 +910,11 @@ class DirectMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
         check_ope_inputs(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -983,7 +974,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
     lambda_: float, default=np.inf
         A maximum possible value of the importance weight.
         When a positive finite value is given, importance weights larger than `lambda_` will be clipped.
-        DoublyRobust with a finite positive `lambda_` corresponds to the Doubly Robust with pessimistic shrinkage of Su et al.(2020).
+        DoublyRobust with a finite positive `lambda_` corresponds to Doubly Robust with Pessimistic Shrinkage of Su et al.(2020) or CAB-DR of Su et al.(2019).
 
     estimator_name: str, default='dr'.
         Name of the estimator.
@@ -995,6 +986,9 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
     Mehrdad Farajtabar, Yinlam Chow, and Mohammad Ghavamzadeh.
     "More Robust Doubly Robust Off-policy Evaluation.", 2018.
+
+    Yi Su, Lequn Wang, Michele Santacatterina, and Thorsten Joachims.
+    "CAB: Continuous Adaptive Blending Estimator for Policy Evaluation and Learning", 2019.
 
     Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík.
     "Doubly robust off-policy evaluation with shrinkage.", 2020.
@@ -1079,7 +1073,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be ndarray or Tensor")
+            raise ValueError("reward must be 1D array or Tensor")
 
         estimated_rewards += iw * (reward - q_hat_factual)
         return estimated_rewards
@@ -1123,15 +1117,14 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Policy value estimated by the DR estimator.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -1275,15 +1268,14 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -1475,7 +1467,7 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be ndarray or Tensor")
+            raise ValueError("reward must be 1D array or Tensor")
 
         q_hat_factual = estimated_rewards_by_reg_model[
             np.arange(n_rounds), action, position
@@ -1810,7 +1802,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         elif isinstance(reward, torch.Tensor):
             estimated_rewards = torch.sum(q_hat_at_position * pi_e_at_position, dim=1)
         else:
-            raise ValueError("reward must be ndarray or Tensor")
+            raise ValueError("reward must be 1D array or Tensor")
 
         estimated_rewards += iw_hat * (reward - q_hat_factual)
         return estimated_rewards

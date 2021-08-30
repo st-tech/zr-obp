@@ -239,16 +239,16 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
 
         """
         if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+            raise ValueError("context must be 2D array")
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the size of axis 1 of context must be the same as dim_context"
+                "Expected `context.shape[1] == self.dim_context`, found it False"
             )
         if not isinstance(action, np.ndarray) or action.ndim != 1:
-            raise ValueError("action must be 1-dimensional ndarray")
+            raise ValueError("action must be 1D array")
         if context.shape[0] != action.shape[0]:
             raise ValueError(
-                "the size of axis 0 of context must be the same as that of action"
+                "Expected `context.shape[0] == action.shape[0]`, but found it False"
             )
 
         if self.reward_function is None:
@@ -287,12 +287,12 @@ def linear_reward_funcion_continuous(
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
+        raise ValueError("context must be 2D array")
     if not isinstance(action, np.ndarray) or action.ndim != 1:
-        raise ValueError("action must be 1-dimensional ndarray")
+        raise ValueError("action must be 1D array")
     if context.shape[0] != action.shape[0]:
         raise ValueError(
-            "the size of axis 0 of context must be the same as that of action"
+            "Expected `context.shape[0] == action.shape[0]`, but found it False"
         )
 
     random_ = check_random_state(random_state)
@@ -326,12 +326,12 @@ def quadratic_reward_funcion_continuous(
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
+        raise ValueError("context must be 2D array")
     if not isinstance(action, np.ndarray) or action.ndim != 1:
-        raise ValueError("action must be 1-dimensional ndarray")
+        raise ValueError("action must be 1D array")
     if context.shape[0] != action.shape[0]:
         raise ValueError(
-            "the size of axis 0 of context must be the same as that of action"
+            "Expected `context.shape[0] == action.shape[0]`, but found it False"
         )
 
     random_ = check_random_state(random_state)
@@ -367,7 +367,7 @@ def linear_behavior_policy_continuous(
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
+        raise ValueError("context must be 2D array")
 
     random_ = check_random_state(random_state)
     coef_ = random_.normal(size=context.shape[1])
@@ -393,7 +393,7 @@ def linear_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
+        raise ValueError("context must be 2D array")
 
     return context.mean(1)
 
@@ -413,7 +413,7 @@ def threshold_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
+        raise ValueError("context must be 2D array")
 
     return 1.0 + np.sign(context.mean(1) - 1.5)
 
@@ -433,6 +433,6 @@ def sign_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
 
     """
     if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
+        raise ValueError("context must be 2D array")
 
     return np.sin(context.mean(1))
