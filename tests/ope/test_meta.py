@@ -10,7 +10,7 @@ from pandas.testing import assert_frame_equal
 import torch
 
 from obp.types import BanditFeedback
-from obp.ope import OffPolicyEvaluation, BaseOffPolicyEstimator
+from obp.ope import OffPolicyEvaluation, BaseOffPolicyEstimator, DirectMethod
 from obp.utils import check_confidence_interval_arguments
 
 
@@ -308,6 +308,32 @@ def test_meta_post_init(synthetic_bandit_feedback: BanditFeedback) -> None:
                 _ = OffPolicyEvaluation(
                     bandit_feedback=invalid_bandit_feedback_dict, ope_estimators=[ipw]
                 )
+
+
+def test_meta_estimated_rewards_by_reg_model_inputs(
+    synthetic_bandit_feedback: BanditFeedback,
+) -> None:
+    """
+    Test the estimate_policy_values/estimate_intervals functions wrt estimated_rewards_by_reg_model
+    """
+    ope_ = OffPolicyEvaluation(
+        bandit_feedback=synthetic_bandit_feedback, ope_estimators=[DirectMethod()]
+    )
+
+    action_dist = np.zeros(
+        (synthetic_bandit_feedback["n_rounds"], synthetic_bandit_feedback["n_actions"])
+    )
+    with pytest.raises(ValueError):
+        ope_.estimate_policy_values(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=None,
+        )
+
+    with pytest.raises(ValueError):
+        ope_.estimate_intervals(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=None,
+        )
 
 
 # action_dist, estimated_rewards_by_reg_model, description

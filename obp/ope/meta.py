@@ -12,7 +12,7 @@ import numpy as np
 from pandas import DataFrame
 import seaborn as sns
 
-from .estimators import BaseOffPolicyEstimator
+from .estimators import BaseOffPolicyEstimator, DirectMethod as DM, DoublyRobust as DR
 from ..types import BanditFeedback
 from ..utils import check_confidence_interval_arguments
 
@@ -84,8 +84,11 @@ class OffPolicyEvaluation:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
         self.ope_estimators_ = dict()
+        self.is_model_dependent = False
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
+            if isinstance(estimator, DM) or isinstance(estimator, DR):
+                self.is_model_dependent = True
 
     def _create_estimator_inputs(
         self,
@@ -102,9 +105,7 @@ class OffPolicyEvaluation:
                 f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
             )
         if estimated_rewards_by_reg_model is None:
-            logger.warning(
-                "`estimated_rewards_by_reg_model` is not given; model dependent estimators such as DM or DR cannot be used."
-            )
+            pass
         elif isinstance(estimated_rewards_by_reg_model, dict):
             for estimator_name, value in estimated_rewards_by_reg_model.items():
                 if not isinstance(value, np.ndarray):
@@ -171,6 +172,12 @@ class OffPolicyEvaluation:
             Dictionary containing estimated policy values by OPE estimators.
 
         """
+        if self.is_model_dependent:
+            if estimated_rewards_by_reg_model is None:
+                raise ValueError(
+                    "When model dependent estimators such as DM or DR are used, `estimated_rewards_by_reg_model` must be given"
+                )
+
         policy_value_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
@@ -222,6 +229,12 @@ class OffPolicyEvaluation:
             using nonparametric bootstrap procedure.
 
         """
+        if self.is_model_dependent:
+            if estimated_rewards_by_reg_model is None:
+                raise ValueError(
+                    "When model dependent estimators such as DM or DR are used, `estimated_rewards_by_reg_model` must be given"
+                )
+
         check_confidence_interval_arguments(
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,

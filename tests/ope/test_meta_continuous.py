@@ -12,6 +12,7 @@ from obp.types import BanditFeedback
 from obp.ope import (
     ContinuousOffPolicyEvaluation,
     BaseContinuousOffPolicyEstimator,
+    KernelizedDoublyRobust,
 )
 from obp.utils import check_confidence_interval_arguments
 
@@ -184,6 +185,32 @@ def test_meta_post_init(synthetic_continuous_bandit_feedback: BanditFeedback) ->
                 _ = ContinuousOffPolicyEvaluation(
                     bandit_feedback=invalid_bandit_feedback_dict, ope_estimators=[ipw]
                 )
+
+
+def test_meta_estimated_rewards_by_reg_model_inputs(
+    synthetic_bandit_feedback: BanditFeedback,
+) -> None:
+    """
+    Test the estimate_policy_values/estimate_intervals functions wrt estimated_rewards_by_reg_model
+    """
+    kdr = KernelizedDoublyRobust(kernel="cosine", bandwidth=0.1)
+    ope_ = ContinuousOffPolicyEvaluation(
+        bandit_feedback=synthetic_bandit_feedback,
+        ope_estimators=[kdr],
+    )
+
+    action_by_evaluation_policy = np.zeros((synthetic_bandit_feedback["n_rounds"],))
+    with pytest.raises(ValueError):
+        ope_.estimate_policy_values(
+            action_by_evaluation_policy=action_by_evaluation_policy,
+            estimated_rewards_by_reg_model=None,
+        )
+
+    with pytest.raises(ValueError):
+        ope_.estimate_intervals(
+            action_by_evaluation_policy=action_by_evaluation_policy,
+            estimated_rewards_by_reg_model=None,
+        )
 
 
 # action_by_evaluation_policy, estimated_rewards_by_reg_model, description
