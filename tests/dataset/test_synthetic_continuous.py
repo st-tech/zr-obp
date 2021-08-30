@@ -296,22 +296,22 @@ invalid_input_of_calc_policy_value = [
     (
         np.ones((3, 1)),
         np.ones(4),
-        "the size of axis 0 of context must be the same as that of action",
+        "Expected `context.shape[0]",
     ),
     (
         np.ones((4, 2)),  #
         np.ones(4),
-        "the size of axis 1 of context must be the same as dim_context",
+        "Expected `context.shape[1]",
     ),
-    ("3", np.ones(4), "context must be 2-dimensional ndarray"),
-    (None, np.ones(4), "context must be 2-dimensional ndarray"),
+    ("3", np.ones(4), "context must be 2D array"),
+    (None, np.ones(4), "context must be 2D array"),
     (
         np.ones((4, 1)),
         np.ones((4, 1)),  #
-        "action must be 1-dimensional ndarray",
+        "action must be 1D array",
     ),
-    (np.ones((4, 1)), "3", "action must be 1-dimensional ndarray"),
-    (np.ones((4, 1)), None, "action must be 1-dimensional ndarray"),
+    (np.ones((4, 1)), "3", "action must be 1D array"),
+    (np.ones((4, 1)), None, "action must be 1D array"),
 ]
 
 

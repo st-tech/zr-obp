@@ -110,7 +110,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context must be ndarray",
+        "context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -126,7 +126,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action must be ndarray",
+        "action must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -142,7 +142,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7, 3)),  #
@@ -158,7 +158,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context must be 2-dimensional",
+        "context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -174,7 +174,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action must be 1-dimensional",
+        "action must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -190,7 +190,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "reward must be 1-dimensional",
+        "reward must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -238,7 +238,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -254,7 +254,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "pscore must be 1-dimensional",
+        "pscore must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -270,7 +270,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "context, action, reward, and pscore must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -302,7 +302,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "position must be ndarray",
+        "position must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -318,7 +318,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "position must be 1-dimensional",
+        "position must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -334,7 +334,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context, action, reward, and position must be the same size.",
+        "context, action, reward, and position must have the same number of samples.",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -382,7 +382,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context, action, and reward must be the same size",
+        "context, action, and reward must have the same number of samples",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -398,7 +398,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "context, action, reward, and pscore must be the same size",
+        "Expected `action.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -414,7 +414,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action_context must be ndarray",
+        "action_context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -430,7 +430,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action_context must be 2-dimensional",
+        "action_context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -446,7 +446,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action elements must be smaller than the size of the first dimension of action_context",
+        r"action elements must be smaller than",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -462,7 +462,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "position must be 1-dimensional",
+        "position must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

@@ -341,21 +341,21 @@ invalid_input_of_create_estimator_inputs = [
     (
         np.zeros((2, 3, 4)),
         np.zeros((2, 3, 3)),
-        "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
+        "Expected `estimated_rewards_by_reg_model.shape",
     ),
     (
         np.zeros((2, 3, 4)),
         {"dm": np.zeros((2, 3, 3))},
-        r"estimated_rewards_by_reg_model\[dm\].shape must be the same as action_dist.shape",
+        r"Expected `estimated_rewards_by_reg_model\[dm\].shape",
     ),
     (
         np.zeros((2, 3, 4)),
         {"dm": None},
-        r"estimated_rewards_by_reg_model\[dm\] must be ndarray",
+        r"estimated_rewards_by_reg_model\[dm\] must be 3D array",
     ),
-    (np.zeros((2, 3)), None, "action_dist.ndim must be 3-dimensional"),
-    ("3", None, "action_dist must be ndarray"),
-    (None, None, "action_dist must be ndarray"),
+    (np.zeros((2, 3)), None, "action_dist must be 3D array"),
+    ("3", None, "action_dist must be 3D array"),
+    (None, None, "action_dist must be 3D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [

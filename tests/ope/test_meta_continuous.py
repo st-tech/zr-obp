@@ -218,25 +218,25 @@ invalid_input_of_create_estimator_inputs = [
     (
         np.zeros(5),  #
         np.zeros(4),  #
-        "estimated_rewards_by_reg_model.shape and action_by_evaluation_policy.shape must be the same",
+        "Expected `estimated_rewards_by_reg_model.shape",
     ),
     (
         np.zeros(5),
         {"dr": np.zeros(4)},
-        r"estimated_rewards_by_reg_model\[dr\].shape and action_by_evaluation_policy.shape must be the same",
+        r"Expected `estimated_rewards_by_reg_model\[dr\].shape",
     ),
     (
         np.zeros(5),
         {"dr": None},
-        r"estimated_rewards_by_reg_model\[dr\] must be ndarray",
+        r"estimated_rewards_by_reg_model\[dr\] must be 1D array",
     ),
     (
         np.zeros((2, 3)),
         None,
-        "action_by_evaluation_policy must be 1-dimensional ndarray",
+        "action_by_evaluation_policy must be 1D array",
     ),
-    ("3", None, "action_by_evaluation_policy must be 1-dimensional ndarray"),
-    (None, None, "action_by_evaluation_policy must be 1-dimensional ndarray"),
+    ("3", None, "action_by_evaluation_policy must be 1D array"),
+    (None, None, "action_by_evaluation_policy must be 1D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [
