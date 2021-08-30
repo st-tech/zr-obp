@@ -14,7 +14,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from .base import BaseContinuousOfflinePolicyLearner
-from ..utils import check_continuous_bandit_feedback_inputs
+from ..utils import check_continuous_bandit_feedback_inputs, check_array
 
 
 @dataclass
@@ -459,7 +459,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         if pscore is None:
@@ -654,12 +654,10 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             Continuous action values given by a neural network policy.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
-
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         self.nn_model.eval()
@@ -1039,7 +1037,7 @@ class QFuncEstimatorForContinuousAction:
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         if self.solver == "lbfgs":
@@ -1153,7 +1151,7 @@ class QFuncEstimatorForContinuousAction:
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         if not isinstance(action, torch.Tensor) or action.ndim != 1:

@@ -14,7 +14,7 @@ import seaborn as sns
 
 from .estimators import BaseOffPolicyEstimator, DirectMethod as DM, DoublyRobust as DR
 from ..types import BanditFeedback
-from ..utils import check_confidence_interval_arguments
+from ..utils import check_confidence_interval_arguments, check_array
 
 logger = getLogger(__name__)
 
@@ -98,27 +98,23 @@ class OffPolicyEvaluation:
         ] = None,
     ) -> Dict[str, Dict[str, np.ndarray]]:
         """Create input dictionary to estimate policy value using subclasses of `BaseOffPolicyEstimator`"""
-        if not isinstance(action_dist, np.ndarray):
-            raise ValueError("action_dist must be ndarray")
-        if action_dist.ndim != 3:
-            raise ValueError(
-                f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
-            )
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         if estimated_rewards_by_reg_model is None:
             pass
         elif isinstance(estimated_rewards_by_reg_model, dict):
             for estimator_name, value in estimated_rewards_by_reg_model.items():
-                if not isinstance(value, np.ndarray):
+                check_array(
+                    array=value,
+                    name=f"estimated_rewards_by_reg_model[{estimator_name}]",
+                    expected_dim=3,
+                )
+                if value.shape != action_dist.shape:
                     raise ValueError(
-                        f"estimated_rewards_by_reg_model[{estimator_name}] must be ndarray"
-                    )
-                elif value.shape != action_dist.shape:
-                    raise ValueError(
-                        f"estimated_rewards_by_reg_model[{estimator_name}].shape must be the same as action_dist.shape"
+                        f"Expected `estimated_rewards_by_reg_model[{estimator_name}].shape == action_dist.shape`, but found it False."
                     )
         elif estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
-                "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
+                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
             )
         estimator_inputs = {
             estimator_name: {

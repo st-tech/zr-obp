@@ -185,7 +185,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         """
         if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+            raise ValueError("context must be 2D array")
 
         n_rounds = context.shape[0]
         action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
@@ -216,7 +216,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         """
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
+        ), "context must be 2D array"
 
         n_rounds = context.shape[0]
         score_predicted = np.zeros((n_rounds, self.n_actions, self.len_list))
@@ -272,7 +272,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         """
         if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+            raise ValueError("context must be 2D array")
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
         n_rounds = context.shape[0]
@@ -332,7 +332,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         ), "predict_proba method can be used only when len_list = 1"
         assert (
             isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
+        ), "context must be 2D array"
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
         score_predicted = self.predict_score(context=context)
@@ -764,7 +764,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         if pscore is None:
@@ -901,11 +901,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         """
         if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+            raise ValueError("context must be 2D array")
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         self.nn_model.eval()
@@ -940,11 +940,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         """
         if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+            raise ValueError("context must be 2D array")
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         n_rounds = context.shape[0]
@@ -989,11 +989,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         """
         if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+            raise ValueError("context must be 2D array")
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         self.nn_model.eval()

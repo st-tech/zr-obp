@@ -932,77 +932,77 @@ invalid_input_of_nn_policy_learner_fit = [
         np.ones(5),
         np.ones(5),
         np.ones(5) * 0.5,
-        "context must be 2-dimensional ndarray",
+        "context must be 2D array",
     ),
     (
         np.ones(5),  #
         np.ones(5),
         np.ones(5),
         np.ones(5) * 0.5,
-        "context must be 2-dimensional ndarray",
+        "context must be 2D array",
     ),
     (
         np.ones((5, 2)),
         5,  #
         np.ones(5),
         np.ones(5) * 0.5,
-        "action_by_behavior_policy must be 1-dimensional ndarray",
+        "action_by_behavior_policy must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones((5, 2)),  #
         np.ones(5),
         np.ones(5) * 0.5,
-        "action_by_behavior_policy must be 1-dimensional ndarray",
+        "action_by_behavior_policy must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         5,  #
         np.ones(5) * 0.5,
-        "reward must be 1-dimensional ndarray",
+        "reward must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         np.ones((5, 2)),  #
         np.ones(5) * 0.5,
-        "reward must be 1-dimensional ndarray",
+        "reward must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         np.ones(5),
         0.5,  #
-        "pscore must be 1-dimensional ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         np.ones(5),
         np.ones((5, 2)) * 0.5,  #
-        "pscore must be 1-dimensional ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.ones((4, 2)),  #
         np.ones(5),
         np.ones(5),
         np.ones(5) * 0.5,
-        "context, action_by_behavior_policy, reward, and pscore must be the same size",
+        "Expected `context.shape[0]",
     ),
     (
         np.ones((5, 2)),
         np.ones(4),  #
         np.ones(5),
         np.ones(5) * 0.5,
-        "context, action_by_behavior_policy, reward, and pscore must be the same size",
+        "Expected `context.shape[0]",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         np.ones(4),  #
         np.ones(5) * 0.5,
-        "context, action_by_behavior_policy, reward, and pscore must be the same size",
+        "Expected `context.shape[0]",
     ),
     (
         np.ones((5, 2)),
@@ -1016,7 +1016,7 @@ invalid_input_of_nn_policy_learner_fit = [
         np.ones(5),
         np.ones(5),
         np.ones(5) * 0.5,
-        "the second dimension of context must be equal to dim_context",
+        "Expected `context.shape[1]",
     ),
 ]
 
@@ -1107,16 +1107,14 @@ def test_nn_policy_learner_predict():
     )
 
     # shape error
-    with pytest.raises(ValueError, match="context must be 2-dimensional ndarray"):
+    with pytest.raises(ValueError, match="context must be 2D array"):
         learner.predict(context=np.ones(5))
 
-    with pytest.raises(ValueError, match="context must be 2-dimensional ndarray"):
+    with pytest.raises(ValueError, match="context must be 2D array"):
         learner.predict(context="np.ones(5)")
 
     # inconsistency between dim_context and context
-    with pytest.raises(
-        ValueError, match="the second dimension of context must be equal to dim_context"
-    ):
+    with pytest.raises(ValueError, match="Expected `context.shape[1]*"):
         learner.predict(context=np.ones((5, 3)))
 
     # check output shape
