@@ -11,6 +11,7 @@ from sklearn.utils import check_random_state, check_scalar
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
+from ..utils import check_array
 
 
 @dataclass
@@ -238,8 +239,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
             The policy value of the evaluation policy on the given test bandit feedback data.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2D array")
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, found it False"
@@ -286,10 +286,8 @@ def linear_reward_funcion_continuous(
         Expected reward given context (:math:`x`) and continuous action (:math:`a`).
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2D array")
-    if not isinstance(action, np.ndarray) or action.ndim != 1:
-        raise ValueError("action must be 1D array")
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action, name="action", expected_dim=1)
     if context.shape[0] != action.shape[0]:
         raise ValueError(
             "Expected `context.shape[0] == action.shape[0]`, but found it False"
@@ -325,10 +323,8 @@ def quadratic_reward_funcion_continuous(
         Expected reward given context (:math:`x`) and continuous action (:math:`a`).
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2D array")
-    if not isinstance(action, np.ndarray) or action.ndim != 1:
-        raise ValueError("action must be 1D array")
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action, name="action", expected_dim=1)
     if context.shape[0] != action.shape[0]:
         raise ValueError(
             "Expected `context.shape[0] == action.shape[0]`, but found it False"
@@ -366,8 +362,7 @@ def linear_behavior_policy_continuous(
         Expected continuous action values given context (:math:`x`).
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2D array")
+    check_array(array=context, name="context", expected_dim=2)
 
     random_ = check_random_state(random_state)
     coef_ = random_.normal(size=context.shape[1])
@@ -392,8 +387,7 @@ def linear_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
         Continuous action values given by a synthetic (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2D array")
+    check_array(array=context, name="context", expected_dim=2)
 
     return context.mean(1)
 
@@ -412,8 +406,7 @@ def threshold_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
         Continuous action values given by a synthetic (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2D array")
+    check_array(array=context, name="context", expected_dim=2)
 
     return 1.0 + np.sign(context.mean(1) - 1.5)
 
@@ -432,7 +425,6 @@ def sign_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
         Continuous action values given by a synthetic (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2D array")
+    check_array(array=context, name="context", expected_dim=2)
 
     return np.sin(context.mean(1))
