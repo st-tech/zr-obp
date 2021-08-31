@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="60%" src="./images/logo.png" />
+  <img width="60%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/logo.png" />
 </p>
 
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
@@ -41,7 +41,7 @@
 各ユーザリクエストに対して, 3つのファッションアイテムが同時に推薦されることがわかります.
 
 <p align="center">
-  <img width="50%" src="./images/recommended_fashion_items.png" />
+  <img width="50%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/recommended_fashion_items.png" />
   <figcaption>
     <p align="center">
       図1. ZOZOTOWNにおけるファッションアイテムの推薦の例
@@ -54,7 +54,7 @@
 図2はOpen Bandit Datasetの記述統計を示しています.
 
 <p align="center">
-  <img width="75%" src="./images/obd_stats.png" />
+  <img width="75%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/obd_stats.png" />
   <figcaption>
     <p align="center">
       図2. Open Bandit Datasetのキャンペーンとデータ収集方策ごとの記述統計
@@ -73,7 +73,7 @@ Open Bandit Pipelineを活用することで, 研究者はオフ方策推定量 
 オフ方策評価(Off-Policy Evaluation)については, [こちらのブログ記事](https://techblog.zozo.com/entry/openbanditproject)をご確認ください.
 
 <p align="center">
-  <img width="90%" src="./images/overview.png" />
+  <img width="90%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/overview.png" />
   <figcaption>
     <p align="center">
       図3. Open Bandit Pipelineの構成
