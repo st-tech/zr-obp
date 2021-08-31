@@ -12,51 +12,39 @@ from obp.ope.estimators import InverseProbabilityWeighting
 base_classifier = LogisticRegression()
 base_regressor = LinearRegression()
 
-# n_actions, len_list, dim_context, base_classifier, description
-invalid_input_of_nn_policy_learner_init = [
+# n_actions, len_list, base_classifier, description
+invalid_input_of_ipw_learner_init = [
     (
         0,  #
         1,
-        2,
         base_classifier,
         "n_actions must be an integer larger than 1",
     ),
     (
         10,
         -1,  #
-        2,
         base_classifier,
         "len_list must be a positive integer",
     ),
     (
         10,
         20,  #
-        2,
         base_classifier,
         "Expected `n_actions",
     ),
-    (
-        10,
-        1,
-        -1,  #
-        base_classifier,
-        "dim_context must be a positive integer",
-    ),
-    (10, 1, 2, base_regressor, "base_classifier must be a classifier"),  #
+    (10, 1, base_regressor, "base_classifier must be a classifier"),
 ]
 
-valid_input_of_nn_policy_learner_init = [
+valid_input_of_ipw_learner_init = [
     (
         10,
         1,
-        2,
         None,
         "valid input",
     ),
     (
         10,
         1,
-        2,
         base_classifier,
         "valid input",
     ),
@@ -64,13 +52,12 @@ valid_input_of_nn_policy_learner_init = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, base_classifier, description",
-    invalid_input_of_nn_policy_learner_init,
+    "n_actions, len_list, base_classifier, description",
+    invalid_input_of_ipw_learner_init,
 )
 def test_ipw_learner_init_using_invalid_inputs(
     n_actions,
     len_list,
-    dim_context,
     base_classifier,
     description,
 ):
@@ -78,26 +65,23 @@ def test_ipw_learner_init_using_invalid_inputs(
         _ = IPWLearner(
             n_actions=n_actions,
             len_list=len_list,
-            dim_context=dim_context,
             base_classifier=base_classifier,
         )
 
 
 @pytest.mark.parametrize(
-    "n_actions, len_list, dim_context, base_classifier, description",
-    valid_input_of_nn_policy_learner_init,
+    "n_actions, len_list, base_classifier, description",
+    valid_input_of_ipw_learner_init,
 )
 def test_ipw_learner_init_using_valid_inputs(
     n_actions,
     len_list,
-    dim_context,
     base_classifier,
     description,
 ):
     ipw_learner = IPWLearner(
         n_actions=n_actions,
         len_list=len_list,
-        dim_context=dim_context,
         base_classifier=base_classifier,
     )
     # policy_type
