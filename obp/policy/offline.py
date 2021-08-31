@@ -18,8 +18,7 @@ import torch.optim as optim
 from tqdm import tqdm
 
 from .base import BaseOfflinePolicyLearner
-
-from ..utils import check_bandit_feedback_inputs
+from ..utils import check_bandit_feedback_inputs, check_array
 
 
 @dataclass
@@ -147,11 +146,20 @@ class IPWLearner(BaseOfflinePolicyLearner):
             pscore=pscore,
             position=position,
         )
+        if (reward < 0).any():
+            raise ValueError(
+                "A negative value is found in `reward`."
+                "`obp.policy.IPWLearner` cannot handle negative rewards,"
+                "and please use `obp.policy.NNPolicyLearner` instead."
+            )
         if pscore is None:
             n_actions = np.int(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
-        if position is None or self.len_list == 1:
+        if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
+        else:
+            if position is None:
+                raise ValueError("When `self.len_list=1`, `position` must be given.")
 
         for position_ in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
@@ -184,8 +192,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             If you want a non-repetitive action set, please use the `sample_action` method.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2D array")
+        check_array(array=context, name="context", expected_dim=2)
 
         n_rounds = context.shape[0]
         action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
@@ -214,9 +221,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Scores for all possible pairs of action and position predicted by a classifier.
 
         """
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2D array"
+        check_array(array=context, name="context", expected_dim=2)
 
         n_rounds = context.shape[0]
         score_predicted = np.zeros((n_rounds, self.n_actions, self.len_list))
@@ -271,8 +276,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Action sampled by a trained classifier.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2D array")
+        check_array(array=context, name="context", expected_dim=2)
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
         n_rounds = context.shape[0]
@@ -329,10 +333,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
         """
         assert (
             self.len_list == 1
-        ), "predict_proba method can be used only when len_list = 1"
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2D array"
+        ), "predict_proba method cannot be used when `len_list != 1`"
+        check_array(array=context, name="context", expected_dim=2)
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
         score_predicted = self.predict_score(context=context)
@@ -761,19 +763,16 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             pscore=pscore,
             position=position,
         )
-
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
-
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions
         if estimated_rewards_by_reg_model is None:
             estimated_rewards_by_reg_model = np.zeros(
                 (context.shape[0], self.n_actions, self.len_list)
             )
-
         if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
         else:
@@ -900,9 +899,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             If you want a non-repetitive action set, please use the `sample_action` method.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2D array")
-
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, but found it False"
@@ -939,9 +936,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action sampled by a trained classifier.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2D array")
-
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, but found it False"
@@ -988,9 +983,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action choice probabilities obtained by a trained classifier.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2D array")
-
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, but found it False"

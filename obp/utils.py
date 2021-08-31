@@ -204,7 +204,8 @@ def check_bandit_feedback_inputs(
             == expected_reward.shape[0]
         ):
             raise ValueError(
-                "context, action, reward, and expected_reward must have the same number of samples."
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0] == expected_reward.shape[0]`"
+                ", but found it False"
             )
         if action.max() >= expected_reward.shape[1]:
             raise ValueError(
@@ -216,7 +217,8 @@ def check_bandit_feedback_inputs(
             context.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0]`, but found it False"
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0]`"
+                ", but found it False"
             )
         if np.any(pscore <= 0):
             raise ValueError("pscore must be positive")
@@ -227,14 +229,16 @@ def check_bandit_feedback_inputs(
             context.shape[0] == action.shape[0] == reward.shape[0] == position.shape[0]
         ):
             raise ValueError(
-                "context, action, reward, and position must have the same number of samples."
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0] == position.shape[0]`"
+                ", but found it False"
             )
         if not (np.issubdtype(position.dtype, np.integer) and position.min() >= 0):
             raise ValueError("position elements must be non-negative integers")
     else:
         if not (context.shape[0] == action.shape[0] == reward.shape[0]):
             raise ValueError(
-                "context, action, and reward must have the same number of samples."
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0]`"
+                ", but found it False"
             )
     if action_context is not None:
         check_array(array=action_context, name="action_context", expected_dim=2)
@@ -444,7 +448,8 @@ def check_continuous_ope_inputs(
             != action_by_evaluation_policy.shape[0]
         ):
             raise ValueError(
-                "Expected `estimated_rewards_by_reg_model.shape[0] == action_by_evaluation_policy.shape[0]`, but found if False"
+                "Expected `estimated_rewards_by_reg_model.shape[0] == action_by_evaluation_policy.shape[0]`"
+                ", but found if False"
             )
 
     # action, reward
@@ -457,14 +462,15 @@ def check_continuous_ope_inputs(
         check_array(array=reward, name="reward", expected_dim=1)
         if not (action_by_behavior_policy.shape[0] == reward.shape[0]):
             raise ValueError(
-                "Expected `action_by_behavior_policy.shape[0] == reward.shape[0]`, but found it False"
+                "Expected `action_by_behavior_policy.shape[0] == reward.shape[0]`"
+                ", but found it False"
             )
         if not (
             action_by_behavior_policy.shape[0] == action_by_evaluation_policy.shape[0]
         ):
             raise ValueError(
                 "Expected `action_by_behavior_policy.shape[0] == action_by_evaluation_policy.shape[0]`"
-                "but found it False"
+                ", but found it False"
             )
 
     # pscore
@@ -548,7 +554,8 @@ def _check_slate_ope_inputs(
         == evaluation_policy_pscore.shape[0]
     ):
         raise ValueError(
-            f"slate_id, position, reward, {pscore_type}, and evaluation_policy_{pscore_type} must have the same number of samples."
+            f"slate_id, position, reward, {pscore_type}, and evaluation_policy_{pscore_type} "
+            "must have the same number of samples."
         )
 
 
@@ -805,7 +812,8 @@ def check_ope_inputs_tensor(
     if estimated_rewards_by_reg_model is not None:
         if estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
-                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
+                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`"
+                ", but found it False"
             )
 
     # action, reward
@@ -831,7 +839,8 @@ def check_ope_inputs_tensor(
             raise ValueError("pscore must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0]`, but found it False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0]`"
+                ", but found it False"
             )
         if torch.any(pscore <= 0):
             raise ValueError("pscore must be positive")

@@ -209,7 +209,7 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
 
         if self.n_actions < self.len_list:
             raise ValueError(
-                f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
+                f"Expected `n_actions >= len_list`, but got n_actions={self.n_actions} < len_list={self.len_list}"
             )
 
     @property

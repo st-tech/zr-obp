@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LinearRegression
 import torch
 
 from obp.policy.offline import IPWLearner
@@ -9,44 +9,92 @@ from obp.policy.policy_type import PolicyType
 from obp.ope.estimators import InverseProbabilityWeighting
 
 
-def test_base_opl_init():
-    # n_actions
-    with pytest.raises(ValueError):
-        IPWLearner(n_actions=1)
+base_classifier = LogisticRegression()
+base_regressor = LinearRegression()
 
-    with pytest.raises(ValueError):
-        IPWLearner(n_actions="3")
+# n_actions, len_list, base_classifier, description
+invalid_input_of_ipw_learner_init = [
+    (
+        0,  #
+        1,
+        base_classifier,
+        "n_actions must be an integer larger than 1",
+    ),
+    (
+        10,
+        -1,  #
+        base_classifier,
+        "len_list must be a positive integer",
+    ),
+    (
+        10,
+        20,  #
+        base_classifier,
+        "Expected `n_actions",
+    ),
+    (10, 1, base_regressor, "base_classifier must be a classifier"),
+]
 
-    # len_list
-    with pytest.raises(ValueError):
-        IPWLearner(n_actions=2, len_list=0)
+valid_input_of_ipw_learner_init = [
+    (
+        10,
+        1,
+        None,
+        "valid input",
+    ),
+    (
+        10,
+        1,
+        base_classifier,
+        "valid input",
+    ),
+]
 
-    with pytest.raises(ValueError):
-        IPWLearner(n_actions=2, len_list="3")
 
+@pytest.mark.parametrize(
+    "n_actions, len_list, base_classifier, description",
+    invalid_input_of_ipw_learner_init,
+)
+def test_ipw_learner_init_using_invalid_inputs(
+    n_actions,
+    len_list,
+    base_classifier,
+    description,
+):
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = IPWLearner(
+            n_actions=n_actions,
+            len_list=len_list,
+            base_classifier=base_classifier,
+        )
+
+
+@pytest.mark.parametrize(
+    "n_actions, len_list, base_classifier, description",
+    valid_input_of_ipw_learner_init,
+)
+def test_ipw_learner_init_using_valid_inputs(
+    n_actions,
+    len_list,
+    base_classifier,
+    description,
+):
+    ipw_learner = IPWLearner(
+        n_actions=n_actions,
+        len_list=len_list,
+        base_classifier=base_classifier,
+    )
     # policy_type
-    assert IPWLearner(n_actions=2).policy_type == PolicyType.OFFLINE
-
-    # invalid relationship between n_actions and len_list
-    with pytest.raises(ValueError):
-        IPWLearner(n_actions=5, len_list=10)
-
-    with pytest.raises(ValueError):
-        IPWLearner(n_actions=2, len_list=3)
+    assert ipw_learner.policy_type == PolicyType.OFFLINE
 
 
-def test_ipw_learner_init():
+def test_ipw_learner_init_base_classifier_list():
     # base classifier
     len_list = 2
     learner1 = IPWLearner(n_actions=2, len_list=len_list)
     assert isinstance(learner1.base_classifier, LogisticRegression)
     for i in range(len_list):
         assert isinstance(learner1.base_classifier_list[i], LogisticRegression)
-
-    with pytest.raises(ValueError):
-        from sklearn.linear_model import LinearRegression
-
-        IPWLearner(n_actions=2, base_classifier=LinearRegression())
 
     from sklearn.naive_bayes import GaussianNB
 
@@ -73,25 +121,50 @@ def test_ipw_learner_create_train_data_for_opl():
 
 
 def test_ipw_learner_fit():
-    context = np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, -1)
-    action = np.array([0, 1])
-    reward = np.array([1.0, 0.0])
-    position = np.array([0, 0])
-    learner = IPWLearner(n_actions=2, len_list=1)
-    learner.fit(context=context, action=action, reward=reward, position=position)
+    n_rounds = 1000
+    dim_context = 5
+    n_actions = 3
+    len_list = 2
+    context = np.ones((n_rounds, dim_context))
+    action = np.random.choice(np.arange(len_list, dtype=int), size=n_rounds)
+    reward = np.random.choice(np.arange(2), size=n_rounds)
+    position = np.random.choice(np.arange(len_list, dtype=int), size=n_rounds)
 
     # inconsistency with the shape
-    with pytest.raises(ValueError):
-        learner = IPWLearner(n_actions=2, len_list=2)
-        variant_context = np.array([1.0, 1.0, 1.0, 1.0])
+    desc = "Expected `context.shape[0]"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        learner = IPWLearner(n_actions=n_actions, len_list=len_list)
+        variant_context = np.random.normal(size=(n_rounds + 1, n_actions))
         learner.fit(
-            context=variant_context, action=action, reward=reward, position=position
+            context=variant_context,
+            action=action,
+            reward=reward,
+            position=position,
         )
 
     # len_list > 2, but position is not set
-    with pytest.raises(ValueError):
-        learner = IPWLearner(n_actions=2, len_list=2)
+    desc = "When `self.len_list=1"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        learner = IPWLearner(n_actions=n_actions, len_list=len_list)
         learner.fit(context=context, action=action, reward=reward)
+
+    # position must be non-negative
+    desc = "position elements must be non-negative integers"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        negative_position = position - 1
+        learner = IPWLearner(n_actions=n_actions, len_list=len_list)
+        learner.fit(
+            context=context, action=action, reward=reward, position=negative_position
+        )
+
+    # IPWLearner cannot handle negative rewards
+    desc = "A negative value is found in"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        negative_reward = reward - 1.0
+        learner = IPWLearner(n_actions=n_actions, len_list=len_list)
+        learner.fit(
+            context=context, action=action, reward=negative_reward, position=position
+        )
 
 
 def test_ipw_learner_predict():
@@ -99,7 +172,8 @@ def test_ipw_learner_predict():
     len_list = 1
 
     # shape error
-    with pytest.raises(ValueError):
+    desc = "context must be 2D array"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         context = np.array([1.0, 1.0])
         learner = IPWLearner(n_actions=n_actions, len_list=len_list)
         learner.predict(context=context)
@@ -133,11 +207,12 @@ def test_ipw_learner_sample_action():
     learner = IPWLearner(n_actions=n_actions, len_list=len_list)
     learner.fit(context=context, action=action, reward=reward, position=position)
 
-    with pytest.raises(ValueError):
+    desc = "context must be 2D array"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         invalid_type_context = [1.0, 2.0]
         learner.sample_action(context=invalid_type_context)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=f"{desc}*"):
         invalid_ndim_context = np.array([1.0, 2.0, 3.0, 4.0])
         learner.sample_action(context=invalid_ndim_context)
 
@@ -1009,7 +1084,8 @@ def test_nn_policy_learner_fit():
     ipw = InverseProbabilityWeighting()
 
     # inconsistency with the shape
-    with pytest.raises(ValueError):
+    desc = "Expected `context.shape[0]"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=2,
             dim_context=2,
@@ -1021,7 +1097,8 @@ def test_nn_policy_learner_fit():
         )
 
     # inconsistency between dim_context and context
-    with pytest.raises(ValueError):
+    desc = "Expected `context.shape[1]"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=2,
             dim_context=3,
@@ -1041,7 +1118,8 @@ def test_nn_policy_learner_predict():
     ipw = InverseProbabilityWeighting()
 
     # shape error
-    with pytest.raises(ValueError):
+    desc = "context must be 2D array"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
             len_list=len_list,
@@ -1053,7 +1131,8 @@ def test_nn_policy_learner_predict():
         learner.predict(context=invalid_context)
 
     # inconsistency between dim_context and context
-    with pytest.raises(ValueError):
+    desc = "Expected `context.shape[1]"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
             len_list=len_list,
@@ -1093,7 +1172,8 @@ def test_nn_policy_learner_sample_action():
     ipw = InverseProbabilityWeighting()
 
     # shape error
-    with pytest.raises(ValueError):
+    desc = "context must be 2D array"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
             len_list=len_list,
@@ -1105,7 +1185,8 @@ def test_nn_policy_learner_sample_action():
         learner.sample_action(context=invalid_context)
 
     # inconsistency between dim_context and context
-    with pytest.raises(ValueError):
+    desc = "Expected `context.shape[1]"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
             len_list=len_list,
@@ -1143,7 +1224,8 @@ def test_nn_policy_learner_predict_proba():
     ipw = InverseProbabilityWeighting()
 
     # shape error
-    with pytest.raises(ValueError):
+    desc = "context must be 2D array"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
             len_list=len_list,
@@ -1155,7 +1237,8 @@ def test_nn_policy_learner_predict_proba():
         learner.predict_proba(context=invalid_context)
 
     # inconsistency between dim_context and context
-    with pytest.raises(ValueError):
+    desc = "Expected `context.shape[1]"
+    with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
             len_list=len_list,

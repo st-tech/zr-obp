@@ -270,7 +270,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "Expected `action.shape[0]",
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -334,7 +334,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context, action, reward, and position must have the same number of samples.",
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -382,7 +382,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context, action, and reward must have the same number of samples",
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -398,7 +398,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "Expected `action.shape[0]",
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
