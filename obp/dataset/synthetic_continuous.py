@@ -240,12 +240,11 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
 
         """
         check_array(array=context, name="context", expected_dim=2)
+        check_array(array=action, name="action", expected_dim=1)
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, found it False"
             )
-        if not isinstance(action, np.ndarray) or action.ndim != 1:
-            raise ValueError("action must be 1D array")
         if context.shape[0] != action.shape[0]:
             raise ValueError(
                 "Expected `context.shape[0] == action.shape[0]`, but found it False"
