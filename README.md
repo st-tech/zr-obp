@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="60%" src="./images/logo.png" />
+  <img width="60%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/logo.png" />
 </p>
 
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
@@ -41,7 +41,7 @@ The following figure presents examples of displayed fashion items as actions.
 The figure shows that there are three *positions* in the data.
 
 <p align="center">
-  <img width="45%" src="./images/recommended_fashion_items.png" />
+  <img width="45%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/recommended_fashion_items.png" />
   <figcaption>
   <p align="center">
   Recommended fashion items as actions in the ZOZOTOWN recommendation interface
@@ -54,7 +54,7 @@ Each campaign randomly used either the Uniform Random policy or the Bernoulli Th
 This dataset is unique in that it contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
 
 <p align="center">
-  <img width="90%" src="./images/obd_stats.png" />
+  <img width="90%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/obd_stats.png" />
 </p>
 
 The small size version of our data is available at [obd](./obd).
@@ -68,7 +68,7 @@ Please see [obd/README.md](./obd/README.md) for the dataset description.
 *Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair, transparent, and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
 
 <p align="center">
-  <img width="80%" src="./images/overview.png" />
+  <img width="80%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/overview.png" />
   <figcaption>
   <p align="center">
     Overview of the Open Bandit Pipeline
@@ -233,7 +233,7 @@ ope.visualize_off_policy_estimates(
 )
 ```
 <p align="center">
-  <img width="60%" src="./images/ope_results_example.png" />
+  <img width="60%" src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/ope_results_example.png" />
   <figcaption>
   <p align="center">
     Performance of IPWLearner estimated by OPE
