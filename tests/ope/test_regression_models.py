@@ -334,7 +334,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context, action, reward, and position must have the same number of samples.",
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
