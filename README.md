@@ -177,7 +177,7 @@ cd zr-obp
 python setup.py install
 ```
 
-Open Bandit Pipeline supports Python 3.7 or newer.
+Open Bandit Pipeline supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
 
 # Usage Examples
 
@@ -234,7 +234,7 @@ ope.visualize_off_policy_estimates(
 )
 ```
 
-<div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/overview.png" width="60%"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/ope_results_example.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Performance of IPWLearner estimated by OPE
@@ -242,8 +242,7 @@ ope.visualize_off_policy_estimates(
 </figcaption>
 
 
-A formal quickstart example with synthetic bandit data is available at [examples/quickstart/synthetic.ipynb](./examples/quickstart/synthetic.ipynb).
-We also prepare a script to conduct the evaluation of OPE experiment with synthetic bandit data in [examples/synthetic](./examples/synthetic/).
+A formal quickstart example with synthetic bandit data is available at [examples/quickstart/synthetic.ipynb](./examples/quickstart/synthetic.ipynb). We also prepare a script to conduct the evaluation of OPE experiment with synthetic bandit data in [examples/synthetic](./examples/synthetic/).
 
 ## Example with Multi-Class Classification Data
 

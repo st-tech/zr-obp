@@ -170,18 +170,25 @@ cd zr-obp
 python setup.py install
 ```
 
+Pythonおよび利用パッケージのバージョンは以下の通りです。
 
-## 依存パッケージ
-- **python>=3.7.0**
-- matplotlib>=3.2.2
-- numpy>=1.18.1
-- pandas>=0.25.1
-- pyyaml>=5.1
-- seaborn>=0.10.1
-- scikit-learn>=0.23.1
-- scipy>=1.4.1
-- tqdm>=4.41.1
+```
+[tool.poetry.dependencies]
+python = ">=3.7.1,<3.10"
+torch = "^1.9.0"
+scikit-learn = "^0.24.2"
+pandas = "^1.3.2"
+numpy = "^1.21.2"
+matplotlib = "^3.4.3"
+tqdm = "^4.62.2"
+scipy = "^1.7.1"
+PyYAML = "^5.4.1"
+seaborn = "^0.11.2"
+pyieoe = "^0.1.1"
+pingouin = "^0.4.0"
+```
 
+これらのパッケージのバージョンが異なると、使用方法や挙動が本書執筆時点と異なる場合があるので、注意してください。
 
 # 使用方法
 
