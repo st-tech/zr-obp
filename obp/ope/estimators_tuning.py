@@ -140,9 +140,6 @@ class BaseOffPolicyEstimatorTuning:
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
-        q_hat: array-like, shape (n_rounds,), default=None
-            Estimated expected reward given context :math:`x_t` and action :math:`a_t`.
-
         Returns
         ----------
         V_hat: float
