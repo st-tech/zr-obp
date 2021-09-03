@@ -26,7 +26,7 @@ class BaseOffPolicyEstimatorTuning:
         An OPE estimator with a hyperparameter
         (such as IPW/DR with clipping, Switch-DR, and DR with Shrinkage).
 
-    candidate_hyperparameter_list: List[float]
+    lambdas: List[float]
         A list of candidate hyperparameter values.
 
     use_bias_upper_bound: bool, default=True
@@ -46,7 +46,7 @@ class BaseOffPolicyEstimatorTuning:
     """
 
     base_ope_estimator: BaseOffPolicyEstimator = field(init=False)
-    candidate_hyperparameter_list: List[float] = field(init=False)
+    lambdas: List[float] = None
     use_bias_upper_bound: bool = True
     delta: float = 0.05
 
@@ -54,28 +54,29 @@ class BaseOffPolicyEstimatorTuning:
         dataclass(cls)
         return super().__new__(cls)
 
-    def _check_candidate_hyperparameter_list(self, hyperparam_name: str) -> None:
-        """Check type and value of candidate_hyperparameter_list."""
-        if isinstance(self.candidate_hyperparameter_list, list):
-            if len(self.candidate_hyperparameter_list) == 0:
-                raise ValueError(f"{hyperparam_name} must not be empty")
-            for hyperparam_ in self.candidate_hyperparameter_list:
+    def _check_lambdas(self) -> None:
+        """Check type and value of lambdas."""
+        if isinstance(self.lambdas, list):
+            if len(self.lambdas) == 0:
+                raise ValueError("lambdas must not be empty")
+            for hyperparam_ in self.lambdas:
                 check_scalar(
                     hyperparam_,
-                    name=f"an element of {hyperparam_name}",
+                    name="an element of lambdas",
                     target_type=(int, float),
                     min_val=0.0,
                 )
                 if hyperparam_ != hyperparam_:
-                    raise ValueError(f"an element of {hyperparam_name} must not be nan")
+                    raise ValueError("an element of lambdas must not be nan")
         else:
-            raise TypeError(f"{hyperparam_name} must be a list")
+            raise TypeError("lambdas must be a list")
 
     def _check_init_inputs(self) -> None:
         """Initialize Class."""
         if not isinstance(self.use_bias_upper_bound, bool):
             raise TypeError(
-                f"`use_bias_upper_bound` must be a bool, but {type(self.use_bias_upper_bound)} is given"
+                "`use_bias_upper_bound` must be a bool"
+                ", but {type(self.use_bias_upper_bound)} is given"
             )
         check_scalar(self.delta, "delta", target_type=(float), min_val=0.0, max_val=1.0)
 
@@ -90,7 +91,7 @@ class BaseOffPolicyEstimatorTuning:
     ) -> None:
         """Find the best hyperparameter value from the given candidate set."""
         self.estimated_mse_score_dict = dict()
-        for hyperparam_ in self.candidate_hyperparameter_list:
+        for hyperparam_ in self.lambdas:
             estimated_mse_score = self.base_ope_estimator(
                 hyperparam_
             )._estimate_mse_score(
@@ -271,14 +272,12 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
 
     """
 
-    lambdas: List[float] = None
     estimator_name: str = "ipw"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = InverseProbabilityWeighting
-        self.candidate_hyperparameter_list = self.lambdas
-        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_lambdas()
         super()._check_init_inputs()
 
     def estimate_policy_value(
@@ -438,8 +437,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = DoublyRobust
-        self.candidate_hyperparameter_list = self.lambdas
-        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_lambdas()
         super()._check_init_inputs()
 
     def estimate_policy_value(
@@ -595,7 +593,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
 
     Parameters
     ----------
-    taus: List[float]
+    lambdas: List[float]
         A list of candidate switching hyperparameters.
         The automatic hyperparameter tuning proposed by Su et al.(2020)
         will choose the best hyperparameter value from the data.
@@ -613,14 +611,12 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
 
     """
 
-    taus: List[float] = None
     estimator_name: str = "switch-dr"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = SwitchDoublyRobust
-        self.candidate_hyperparameter_list = self.taus
-        super()._check_candidate_hyperparameter_list(hyperparam_name="taus")
+        super()._check_lambdas()
         super()._check_init_inputs()
 
     def estimate_policy_value(
@@ -794,14 +790,12 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
 
     """
 
-    lambdas: List[float] = None
     estimator_name: str = "dr-os"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = DoublyRobustWithShrinkage
-        self.candidate_hyperparameter_list = self.lambdas
-        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_lambdas()
         super()._check_init_inputs()
 
     def estimate_policy_value(

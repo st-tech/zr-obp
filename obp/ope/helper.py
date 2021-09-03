@@ -26,9 +26,9 @@ def estimate_bias_in_ope(
     iw_hat: array-like, shape (n_rounds,)
         Importance weight (IW) modified by a hyparpareter. How IW is modified depends on the estimator as follows.
             - clipping: :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
-            - switching: :math:`\\hat{w}(x,a) := w(x,a) \\cdot \\mathbb{I} \\{ w(x,a) < \\tau \\}`
+            - switching: :math:`\\hat{w}(x,a) := w(x,a) \\cdot \\mathbb{I} \\{ w(x,a) < \\lambda \\}`
             - shrinkage: :math:`\\hat{w}(x,a) := (\\lambda w(x,a)) / (\\lambda + w^2(x,a))`
-        where :math:`\\tau` and :math:`\\lambda` are hyperparameters.
+        where :math:`\\lambda` is a hyperparameter value.
 
     q_hat: array-like, shape (n_rounds,), default=None
         Estimated expected reward given context :math:`x_t` and action :math:`a_t`.
@@ -74,9 +74,9 @@ def estimate_high_probability_upper_bound_bias(
     iw_hat: array-like, shape (n_rounds,)
         Importance weight (IW) modified by a hyparpareter. How IW is modified depends on the estimator as follows.
             - clipping: :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
-            - switching: :math:`\\hat{w}(x,a) := w(x,a) \\cdot \\mathbb{I} \\{ w(x,a) < \\tau \\}`
+            - switching: :math:`\\hat{w}(x,a) := w(x,a) \\cdot \\mathbb{I} \\{ w(x,a) < \\lambda \\}`
             - shrinkage: :math:`\\hat{w}(x,a) := (\\lambda w(x,a)) / (\\lambda + w^2(x,a))`
-        where :math:`\\tau` and :math:`\\lambda` are hyperparameters.
+        where :math:`\\lambda` and :math:`\\lambda` are hyperparameters.
 
     q_hat: array-like, shape (n_rounds,), default=None
         Estimated expected reward given context :math:`x_t` and action :math:`a_t`.

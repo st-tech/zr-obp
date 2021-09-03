@@ -1521,20 +1521,20 @@ class SwitchDoublyRobust(DoublyRobust):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SwitchDR}} (\\pi_e; \\mathcal{D}, \\hat{q}, \\tau)
-        := \\mathbb{E}_{\\mathcal{D}} [\\hat{q}(x_t,\\pi_e) +  w(x_t,a_t) (r_t - \\hat{q}(x_t,a_t)) \\mathbb{I} \\{ w(x_t,a_t) \\le \\tau \\}],
+        \\hat{V}_{\\mathrm{SwitchDR}} (\\pi_e; \\mathcal{D}, \\hat{q}, \\lambda)
+        := \\mathbb{E}_{\\mathcal{D}} [\\hat{q}(x_t,\\pi_e) +  w(x_t,a_t) (r_t - \\hat{q}(x_t,a_t)) \\mathbb{I} \\{ w(x_t,a_t) \\le \\lambda \\}],
 
     where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
     a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
-    :math:`\\tau (\\ge 0)` is a switching hyperparameter, which decides the threshold for the importance weight.
+    :math:`\\lambda (\\ge 0)` is a switching hyperparameter, which decides the threshold for the importance weight.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_t,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
     To estimate the mean reward function, please use `obp.ope.regression_model.RegressionModel`.
 
     Parameters
     ----------
-    tau: float, default=np.inf
+    lambda_: float, default=np.inf
         Switching hyperparameter. When importance weight is larger than this parameter, DM is applied, otherwise DR is used.
         This hyperparameter should be larger than or equal to 0., otherwise it is meaningless.
 
@@ -1554,19 +1554,19 @@ class SwitchDoublyRobust(DoublyRobust):
 
     """
 
-    tau: float = np.inf
+    lambda_: float = np.inf
     estimator_name: str = "switch-dr"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         check_scalar(
-            self.tau,
-            name="tau",
+            self.lambda_,
+            name="lambda_",
             target_type=(int, float),
             min_val=0.0,
         )
-        if self.tau != self.tau:
-            raise ValueError("tau must not be nan")
+        if self.lambda_ != self.lambda_:
+            raise ValueError("lambda_ must not be nan")
 
     def _estimate_round_rewards(
         self,
@@ -1610,7 +1610,7 @@ class SwitchDoublyRobust(DoublyRobust):
         """
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        switch_indicator = np.array(iw <= self.tau, dtype=int)
+        switch_indicator = np.array(iw <= self.lambda_, dtype=int)
         q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
@@ -1683,7 +1683,7 @@ class SwitchDoublyRobust(DoublyRobust):
         Returns
         ----------
         estimated_mse_score: float
-            Estimated MSE score of a given switching hyperparameter `tau`.
+            Estimated MSE score of a given switching hyperparameter `lambda_`.
             MSE score is the sum of (high probability) upper bound of bias and the sample variance.
             This is estimated using the automatic hyperparameter tuning procedure
             based on Section 5 of Su et al.(2020).
@@ -1709,7 +1709,7 @@ class SwitchDoublyRobust(DoublyRobust):
             bias_term = estimate_high_probability_upper_bound_bias(
                 reward=reward,
                 iw=iw,
-                iw_hat=iw * np.array(iw <= self.tau, dtype=int),
+                iw_hat=iw * np.array(iw <= self.lambda_, dtype=int),
                 q_hat=estimated_rewards_by_reg_model[
                     np.arange(n_rounds), action, position
                 ],
@@ -1719,7 +1719,7 @@ class SwitchDoublyRobust(DoublyRobust):
             bias_term = estimate_bias_in_ope(
                 reward=reward,
                 iw=iw,
-                iw_hat=iw * np.array(iw <= self.tau, dtype=int),
+                iw_hat=iw * np.array(iw <= self.lambda_, dtype=int),
                 q_hat=estimated_rewards_by_reg_model[
                     np.arange(n_rounds), action, position
                 ],
