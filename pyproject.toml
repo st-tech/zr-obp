@@ -18,11 +18,16 @@ PyYAML = "^5.4.1"
 seaborn = "^0.11.2"
 pyieoe = "^0.1.1"
 pingouin = "^0.4.0"
+mypy-extensions = "^0.4.3"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.2"
 black = "^21.8b0"
+pytest = "^6.2.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--color=yes"
