@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "obp"
+version = "0.4.2"
+description = "Open Bandit Pipeline: a python library for bandit algorithms and off-policy evaluation"
+authors = ["Yuta Saito <ys552@cornell.edu>"]
+license = "Apache License 2.0"
+
+[tool.poetry.dependencies]
+python = ">=3.7.1,<3.10"
+torch = "^1.9.0"
+scikit-learn = "^0.24.2"
+pandas = "^1.3.2"
+numpy = "^1.21.2"
+matplotlib = "^3.4.3"
+tqdm = "^4.62.2"
+scipy = "^1.7.1"
+PyYAML = "^5.4.1"
+seaborn = "^0.11.2"
+pyieoe = "^0.1.1"
+pingouin = "^0.4.0"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.9.2"
+black = "^21.8b0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
