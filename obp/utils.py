@@ -153,6 +153,33 @@ def convert_to_action_dist(
     return action_dist
 
 
+def check_array(
+    array: np.ndarray,
+    name: str,
+    expected_dim: int = 1,
+) -> ValueError:
+    """Input validation on an array.
+
+    Parameters
+    -------------
+    array: object
+        Input object to check.
+
+    name: str
+        Name of the input array.
+
+    expected_dim: int, default=1
+        Expected dimension of the input array.
+
+    """
+    if not isinstance(array, np.ndarray):
+        raise ValueError(f"{name} must be {expected_dim}D array, but got {type(array)}")
+    if array.ndim != expected_dim:
+        raise ValueError(
+            f"{name} must be {expected_dim}D array, but got {array.ndim}D array"
+        )
+
+
 def check_bandit_feedback_inputs(
     context: np.ndarray,
     action: np.ndarray,
@@ -189,26 +216,14 @@ def check_bandit_feedback_inputs(
         Context vectors characterizing each action.
 
     """
-    if not isinstance(context, np.ndarray):
-        raise ValueError("context must be ndarray")
-    if context.ndim != 2:
-        raise ValueError("context must be 2-dimensional")
-    if not isinstance(action, np.ndarray):
-        raise ValueError("action must be ndarray")
-    if action.ndim != 1:
-        raise ValueError("action must be 1-dimensional")
-    if not isinstance(reward, np.ndarray):
-        raise ValueError("reward must be ndarray")
-    if reward.ndim != 1:
-        raise ValueError("reward must be 1-dimensional")
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action, name="action", expected_dim=1)
+    check_array(array=reward, name="reward", expected_dim=1)
     if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
         raise ValueError("action elements must be non-negative integers")
 
     if expected_reward is not None:
-        if not isinstance(expected_reward, np.ndarray):
-            raise ValueError("expected_reward must be ndarray")
-        if expected_reward.ndim != 2:
-            raise ValueError("expected_reward must be 2-dimensional")
+        check_array(array=expected_reward, name="expected_reward", expected_dim=2)
         if not (
             context.shape[0]
             == action.shape[0]
@@ -216,50 +231,47 @@ def check_bandit_feedback_inputs(
             == expected_reward.shape[0]
         ):
             raise ValueError(
-                "context, action, reward, and expected_reward must be the same size."
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0] == expected_reward.shape[0]`"
+                ", but found it False"
             )
         if action.max() >= expected_reward.shape[1]:
             raise ValueError(
-                "action elements must be smaller than the size of the second dimension of expected_reward"
+                "action elements must be smaller than `expected_reward.shape[1]`"
             )
     if pscore is not None:
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-        if pscore.ndim != 1:
-            raise ValueError("pscore must be 1-dimensional")
+        check_array(array=pscore, name="pscore", expected_dim=1)
         if not (
             context.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0]
         ):
             raise ValueError(
-                "context, action, reward, and pscore must be the same size."
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0]`"
+                ", but found it False"
             )
         if np.any(pscore <= 0):
             raise ValueError("pscore must be positive")
 
     if position is not None:
-        if not isinstance(position, np.ndarray):
-            raise ValueError("position must be ndarray")
-        if position.ndim != 1:
-            raise ValueError("position must be 1-dimensional")
+        check_array(array=position, name="position", expected_dim=1)
         if not (
             context.shape[0] == action.shape[0] == reward.shape[0] == position.shape[0]
         ):
             raise ValueError(
-                "context, action, reward, and position must be the same size."
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0] == position.shape[0]`"
+                ", but found it False"
             )
         if not (np.issubdtype(position.dtype, np.integer) and position.min() >= 0):
             raise ValueError("position elements must be non-negative integers")
     else:
         if not (context.shape[0] == action.shape[0] == reward.shape[0]):
-            raise ValueError("context, action, and reward must be the same size.")
+            raise ValueError(
+                "Expected `context.shape[0] == action.shape[0] == reward.shape[0]`"
+                ", but found it False"
+            )
     if action_context is not None:
-        if not isinstance(action_context, np.ndarray):
-            raise ValueError("action_context must be ndarray")
-        if action_context.ndim != 2:
-            raise ValueError("action_context must be 2-dimensional")
+        check_array(array=action_context, name="action_context", expected_dim=2)
         if action.max() >= action_context.shape[0]:
             raise ValueError(
-                "action elements must be smaller than the size of the first dimension of action_context"
+                "action elements must be smaller than `action_context.shape[0]`"
             )
 
 
@@ -296,56 +308,48 @@ def check_ope_inputs(
 
     """
     # action_dist
-    if not isinstance(action_dist, np.ndarray):
-        raise ValueError("action_dist must be ndarray")
-    if action_dist.ndim != 3:
-        raise ValueError(
-            f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
-        )
+    check_array(array=action_dist, name="action_dist", expected_dim=3)
     if not np.allclose(action_dist.sum(axis=1), 1):
         raise ValueError("action_dist must be a probability distribution")
 
     # position
     if position is not None:
-        if not isinstance(position, np.ndarray):
-            raise ValueError("position must be ndarray")
-        if position.ndim != 1:
-            raise ValueError("position must be 1-dimensional")
+        check_array(array=position, name="position", expected_dim=1)
         if not (position.shape[0] == action_dist.shape[0]):
             raise ValueError(
-                "the first dimension of position and the first dimension of action_dist must be the same"
+                "Expected `position.shape[0] == action_dist.shape[0]`, but found it False"
             )
         if not (np.issubdtype(position.dtype, np.integer) and position.min() >= 0):
             raise ValueError("position elements must be non-negative integers")
         if position.max() >= action_dist.shape[2]:
             raise ValueError(
-                "position elements must be smaller than the third dimension of action_dist"
+                "position elements must be smaller than `action_dist.shape[2]`"
             )
     elif action_dist.shape[2] > 1:
         raise ValueError(
-            "position elements must be given when the third dimension of action_dist is greater than 1"
+            "position elements must be given when `action_dist.shape[2] > 1`"
         )
 
     # estimated_rewards_by_reg_model
     if estimated_rewards_by_reg_model is not None:
         if estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
-                "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
+                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
             )
 
     # action, reward
     if action is not None or reward is not None:
-        if action.ndim != 1:
-            raise ValueError("action must be 1-dimensional")
-        if reward.ndim != 1:
-            raise ValueError("reward must be 1-dimensional")
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=reward, name="reward", expected_dim=1)
         if not (action.shape[0] == reward.shape[0]):
-            raise ValueError("action and reward must be the same size.")
+            raise ValueError(
+                "Expected `action.shape[0] == reward.shape[0]`, but found it False"
+            )
         if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
             raise ValueError("action elements must be non-negative integers")
         if action.max() >= action_dist.shape[1]:
             raise ValueError(
-                "action elements must be smaller than the second dimension of action_dist"
+                "action elements must be smaller than `action_dist.shape[1]`"
             )
 
     # pscore
@@ -353,7 +357,159 @@ def check_ope_inputs(
         if pscore.ndim != 1:
             raise ValueError("pscore must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
-            raise ValueError("action, reward, and pscore must be the same size.")
+            raise ValueError(
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0]`, but found it False"
+            )
+        if np.any(pscore <= 0):
+            raise ValueError("pscore must be positive")
+
+
+def check_continuous_bandit_feedback_inputs(
+    context: np.ndarray,
+    action_by_behavior_policy: np.ndarray,
+    reward: np.ndarray,
+    expected_reward: Optional[np.ndarray] = None,
+    pscore: Optional[np.ndarray] = None,
+) -> Optional[ValueError]:
+    """Check inputs for bandit learning or simulation with continuous actions.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors in each round, i.e., :math:`x_t`.
+
+    action_by_behavior_policy: array-like, shape (n_rounds,)
+        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+    reward: array-like, shape (n_rounds,)
+        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+
+    expected_reward: array-like, shape (n_rounds, n_actions), default=None
+        Expected rewards (or outcome) in each round, i.e., :math:`\\mathbb{E}[r_t]`.
+
+    pscore: array-like, shape (n_rounds,), default=None
+        Probability densities of the continuous action values sampled by a behavior policy
+        (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+    """
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(
+        array=action_by_behavior_policy,
+        name="action_by_behavior_policy",
+        expected_dim=1,
+    )
+    check_array(array=reward, name="reward", expected_dim=1)
+
+    if expected_reward is not None:
+        check_array(array=expected_reward, name="expected_reward", expected_dim=1)
+        if not (
+            context.shape[0]
+            == action_by_behavior_policy.shape[0]
+            == reward.shape[0]
+            == expected_reward.shape[0]
+        ):
+            raise ValueError(
+                "Expected `context.shape[0] == action_by_behavior_policy.shape[0]"
+                "== reward.shape[0] == expected_reward.shape[0]`, but found it False"
+            )
+    if pscore is not None:
+        check_array(array=pscore, name="pscore", expected_dim=1)
+        if not (
+            context.shape[0]
+            == action_by_behavior_policy.shape[0]
+            == reward.shape[0]
+            == pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `context.shape[0] == action_by_behavior_policy.shape[0]"
+                "== reward.shape[0] == pscore.shape[0]`, but found it False"
+            )
+        if np.any(pscore <= 0):
+            raise ValueError("pscore must be positive")
+
+
+def check_continuous_ope_inputs(
+    action_by_evaluation_policy: np.ndarray,
+    action_by_behavior_policy: Optional[np.ndarray] = None,
+    reward: Optional[np.ndarray] = None,
+    pscore: Optional[np.ndarray] = None,
+    estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+) -> Optional[ValueError]:
+    """Check inputs for OPE with continuous actions.
+
+    Parameters
+    -----------
+    action_by_evaluation_policy: array-like, shape (n_rounds,)
+        Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
+
+    action_by_behavior_policy: array-like, shape (n_rounds,), default=None
+        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+    reward: array-like, shape (n_rounds,), default=None
+        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+
+    pscore: array-like, shape (n_rounds,), default=None
+        Probability densities of the continuous action values sampled by a behavior policy
+        (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+    estimated_rewards_by_reg_model: array-like, shape (n_rounds,), default=None
+            Expected rewards given context and action estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+    """
+    # action_by_evaluation_policy
+    check_array(
+        array=action_by_evaluation_policy,
+        name="action_by_evaluation_policy",
+        expected_dim=1,
+    )
+
+    # estimated_rewards_by_reg_model
+    if estimated_rewards_by_reg_model is not None:
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=1,
+        )
+        if (
+            estimated_rewards_by_reg_model.shape[0]
+            != action_by_evaluation_policy.shape[0]
+        ):
+            raise ValueError(
+                "Expected `estimated_rewards_by_reg_model.shape[0] == action_by_evaluation_policy.shape[0]`"
+                ", but found if False"
+            )
+
+    # action, reward
+    if action_by_behavior_policy is not None or reward is not None:
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        if not (action_by_behavior_policy.shape[0] == reward.shape[0]):
+            raise ValueError(
+                "Expected `action_by_behavior_policy.shape[0] == reward.shape[0]`"
+                ", but found it False"
+            )
+        if not (
+            action_by_behavior_policy.shape[0] == action_by_evaluation_policy.shape[0]
+        ):
+            raise ValueError(
+                "Expected `action_by_behavior_policy.shape[0] == action_by_evaluation_policy.shape[0]`"
+                ", but found it False"
+            )
+
+    # pscore
+    if pscore is not None:
+        check_array(array=pscore, name="pscore", expected_dim=1)
+        if not (
+            action_by_behavior_policy.shape[0] == reward.shape[0] == pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `action_by_behavior_policy.shape[0] == reward.shape[0] == pscore.shape[0]`"
+                ", but found it False"
+            )
         if np.any(pscore <= 0):
             raise ValueError("pscore must be positive")
 
@@ -369,6 +525,7 @@ def _check_slate_ope_inputs(
     """Check inputs of Slate OPE estimators.
 
     Parameters
+    -----------
     slate_id: array-like, shape (<= n_rounds * len_list,)
         Slate id observed in each round of the logged bandit feedback.
 
@@ -389,42 +546,31 @@ def _check_slate_ope_inputs(
 
     """
     # position
-    if not isinstance(position, np.ndarray):
-        raise ValueError("position must be ndarray")
-    if position.ndim != 1:
-        raise ValueError("position must be 1-dimensional")
+    check_array(array=position, name="position", expected_dim=1)
     if not (position.dtype == int and position.min() >= 0):
         raise ValueError("position elements must be non-negative integers")
 
     # reward
-    if not isinstance(reward, np.ndarray):
-        raise ValueError("reward must be ndarray")
-    if reward.ndim != 1:
-        raise ValueError("reward must be 1-dimensional")
+    check_array(array=reward, name="reward", expected_dim=1)
 
     # pscore
-    if not isinstance(pscore, np.ndarray):
-        raise ValueError(f"{pscore_type} must be ndarray")
-    if pscore.ndim != 1:
-        raise ValueError(f"{pscore_type} must be 1-dimensional")
+    check_array(array=pscore, name=f"{pscore_type}", expected_dim=1)
     if np.any(pscore <= 0) or np.any(pscore > 1):
         raise ValueError(f"{pscore_type} must be in the range of (0, 1]")
 
     # evaluation_policy_pscore
-    if not isinstance(evaluation_policy_pscore, np.ndarray):
-        raise ValueError(f"evaluation_policy_{pscore_type} must be ndarray")
-    if evaluation_policy_pscore.ndim != 1:
-        raise ValueError(f"evaluation_policy_{pscore_type} must be 1-dimensional")
+    check_array(
+        array=evaluation_policy_pscore,
+        name=f"evaluation_policy_{pscore_type}",
+        expected_dim=1,
+    )
     if np.any(evaluation_policy_pscore < 0) or np.any(evaluation_policy_pscore > 1):
         raise ValueError(
             f"evaluation_policy_{pscore_type} must be in the range of [0, 1]"
         )
 
     # slate id
-    if not isinstance(slate_id, np.ndarray):
-        raise ValueError("slate_id must be ndarray")
-    if slate_id.ndim != 1:
-        raise ValueError("slate_id must be 1-dimensional")
+    check_array(array=slate_id, name="slate_id", expected_dim=1)
     if not (slate_id.dtype == int and slate_id.min() >= 0):
         raise ValueError("slate_id elements must be non-negative integers")
     if not (
@@ -435,7 +581,8 @@ def _check_slate_ope_inputs(
         == evaluation_policy_pscore.shape[0]
     ):
         raise ValueError(
-            f"slate_id, position, reward, {pscore_type}, and evaluation_policy_{pscore_type} must be the same size."
+            f"slate_id, position, reward, {pscore_type}, and evaluation_policy_{pscore_type} "
+            "must have the same number of samples."
         )
 
 
@@ -660,7 +807,7 @@ def check_ope_inputs_tensor(
         raise ValueError("action_dist must be Tensor")
     if action_dist.ndim != 3:
         raise ValueError(
-            f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
+            f"action_dist must be 3-dimensional, but is {action_dist.ndim}"
         )
     action_dist_sum = action_dist.sum(axis=1)
     action_dist_ones = torch.ones_like(action_dist_sum)
@@ -675,24 +822,25 @@ def check_ope_inputs_tensor(
             raise ValueError("position must be 1-dimensional")
         if not (position.shape[0] == action_dist.shape[0]):
             raise ValueError(
-                "the first dimension of position and the first dimension of action_dist must be the same"
+                "Expected `position.shape[0] == action_dist.shape[0]`, but found it False"
             )
         if not (position.dtype == torch.int64 and position.min() >= 0):
             raise ValueError("position elements must be non-negative integers")
         if position.max() >= action_dist.shape[2]:
             raise ValueError(
-                "position elements must be smaller than the third dimension of action_dist"
+                "position elements must be smaller than `action_dist.shape[2]`"
             )
     elif action_dist.shape[2] > 1:
         raise ValueError(
-            "position elements must be given when the third dimension of action_dist is greater than 1"
+            "position elements must be given when `action_dist.shape[2] > 1`"
         )
 
     # estimated_rewards_by_reg_model
     if estimated_rewards_by_reg_model is not None:
         if estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
-                "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
+                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`"
+                ", but found it False"
             )
 
     # action, reward
@@ -702,12 +850,14 @@ def check_ope_inputs_tensor(
         if reward.ndim != 1:
             raise ValueError("reward must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0]):
-            raise ValueError("action and reward must be the same size.")
+            raise ValueError(
+                "Expected `action.shape[0] == reward.shape[0]`, but found it False"
+            )
         if not (action.dtype == torch.int64 and action.min() >= 0):
             raise ValueError("action elements must be non-negative integers")
         if action.max() >= action_dist.shape[1]:
             raise ValueError(
-                "action elements must be smaller than the second dimension of action_dist"
+                "action elements must be smaller than `action_dist.shape[1]`"
             )
 
     # pscore
@@ -715,7 +865,10 @@ def check_ope_inputs_tensor(
         if pscore.ndim != 1:
             raise ValueError("pscore must be 1-dimensional")
         if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
-            raise ValueError("action, reward, and pscore must be the same size.")
+            raise ValueError(
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0]`"
+                ", but found it False"
+            )
         if torch.any(pscore <= 0):
             raise ValueError("pscore must be positive")
 

@@ -18,8 +18,7 @@ import torch.optim as optim
 from tqdm import tqdm
 
 from .base import BaseOfflinePolicyLearner
-
-from ..utils import check_bandit_feedback_inputs
+from ..utils import check_bandit_feedback_inputs, check_array
 
 
 @dataclass
@@ -147,11 +146,20 @@ class IPWLearner(BaseOfflinePolicyLearner):
             pscore=pscore,
             position=position,
         )
+        if (reward < 0).any():
+            raise ValueError(
+                "A negative value is found in `reward`."
+                "`obp.policy.IPWLearner` cannot handle negative rewards,"
+                "and please use `obp.policy.NNPolicyLearner` instead."
+            )
         if pscore is None:
             n_actions = np.int(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
-        if position is None or self.len_list == 1:
+        if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
+        else:
+            if position is None:
+                raise ValueError("When `self.len_list=1`, `position` must be given.")
 
         for position_ in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
@@ -184,8 +192,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             If you want a non-repetitive action set, please use the `sample_action` method.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+        check_array(array=context, name="context", expected_dim=2)
 
         n_rounds = context.shape[0]
         action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
@@ -214,9 +221,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Scores for all possible pairs of action and position predicted by a classifier.
 
         """
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
+        check_array(array=context, name="context", expected_dim=2)
 
         n_rounds = context.shape[0]
         score_predicted = np.zeros((n_rounds, self.n_actions, self.len_list))
@@ -271,8 +276,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Action sampled by a trained classifier.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
+        check_array(array=context, name="context", expected_dim=2)
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
         n_rounds = context.shape[0]
@@ -329,10 +333,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
         """
         assert (
             self.len_list == 1
-        ), "predict_proba method can be used only when len_list = 1"
-        assert (
-            isinstance(context, np.ndarray) and context.ndim == 2
-        ), "context must be 2-dimensional ndarray"
+        ), "predict_proba method cannot be used when `len_list != 1`"
+        check_array(array=context, name="context", expected_dim=2)
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
         score_predicted = self.predict_score(context=context)
@@ -375,7 +377,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         - 'identity', the identity function, :math:`f(x) = x`.
         - 'logistic', the sigmoid function, :math:`f(x) = \\frac{1}{1 + \\exp(x)}`.
         - 'tanh', the hyperbolic tangent function, `:math:f(x) = \\frac{\\exp(x) - \\exp(-x)}{\\exp(x) + \\exp(-x)}`
-        - 'relu', the rectfiied linear unit function, `:math:f(x) = \\max(0, x)`
+        - 'relu', the rectified linear unit function, `:math:f(x) = \\max(0, x)`
 
     solver: str, default='adam'
         Optimizer of the neural network.
@@ -388,7 +390,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     alpha: float, default=0.001
         L2 penalty.
 
-    bacth_size: Union[int, str], default="auto"
+    batch_size: Union[int, str], default="auto"
         Batch size for SGD and Adam.
         If "auto", the maximum of 200 and the number of samples is used.
         If integer, must be positive.
@@ -407,7 +409,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Controls the random seed.
 
     tol: float, default=1e-4
-        Tolerance for trainning.
+        Tolerance for training.
         When the training loss is not improved at least `tol' for `n_iter_no_change' consecutive iterations,
         training is stopped.
 
@@ -415,13 +417,13 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Momentum for SGD.
         Must be in the range of [0., 1.].
 
-    nesterovs_moemntum: bool, default=True
-        Whether to use Nestrov momentum.
+    nesterovs_momentum: bool, default=True
+        Whether to use Nesterovs momentum.
 
     early_stopping: bool, default=False
         Whether to use early stopping for SGD and Adam.
-        If set to trure, `validation_fraction' of training data is used as validation data,
-        and training is stopped when the validation loss is not imporved at least `tol' for `n_iter_no_change' consecutive iterations.
+        If set to true, `validation_fraction' of training data is used as validation data,
+        and training is stopped when the validation loss is not improved at least `tol' for `n_iter_no_change' consecutive iterations.
 
     validation_fraction: float, default=0.1
         Fraction of validation data when early stopping is used.
@@ -506,7 +508,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.alpha, float) or self.alpha < 0.0:
             raise ValueError(
-                f"alpha must be a nonnegative float, but {self.alpha} is given"
+                f"alpha must be a non-negative float, but {self.alpha} is given"
             )
 
         if self.batch_size != "auto" and (
@@ -542,7 +544,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
-                f"nestrovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
+                f"nesterovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
             )
 
         if not isinstance(self.early_stopping, bool):
@@ -580,7 +582,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
             raise ValueError(
-                f"epsilon must be a nonnegative float, but {self.epsilon} is given"
+                f"epsilon must be a non-negative float, but {self.epsilon} is given"
             )
 
         if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
@@ -594,12 +596,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         if self.random_state is not None:
-            if isinstance(self.random_state, int):
-                torch.manual_seed(self.random_state)
-            else:
-                raise ValueError(
-                    f"random_state must be None or an integer, but {self.random_state} is given"
-                )
+            self.random_ = check_random_state(self.random_state)
+            torch.manual_seed(self.random_state)
 
         if self.activation == "identity":
             activation_layer = nn.Identity
@@ -765,19 +763,16 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             pscore=pscore,
             position=position,
         )
-
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
-
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions
         if estimated_rewards_by_reg_model is None:
             estimated_rewards_by_reg_model = np.zeros(
                 (context.shape[0], self.n_actions, self.len_list)
             )
-
         if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
         else:
@@ -904,12 +899,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             If you want a non-repetitive action set, please use the `sample_action` method.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
-
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         self.nn_model.eval()
@@ -943,12 +936,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action sampled by a trained classifier.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
-
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         n_rounds = context.shape[0]
@@ -992,12 +983,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action choice probabilities obtained by a trained classifier.
 
         """
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
-
+        check_array(array=context, name="context", expected_dim=2)
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the second dimension of context must be equal to dim_context"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         self.nn_model.eval()

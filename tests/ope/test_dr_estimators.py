@@ -249,7 +249,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action must be ndarray",
+        "action must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -258,7 +258,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -267,7 +267,7 @@ invalid_input_of_dr = [
         None,  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -276,7 +276,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         None,  #
-        "estimated_rewards_by_reg_model must be ndarray",
+        "estimated_rewards_by_reg_model must be 3D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -303,7 +303,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action must be ndarray",
+        "action must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -312,7 +312,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action must be 1-dimensional",
+        "action must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -321,7 +321,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action elements must be smaller than the second dimension of action_dist",
+        r"action elements must be smaller than`",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -330,7 +330,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -339,7 +339,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "reward must be 1-dimensional",
+        "reward must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -348,7 +348,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action and reward must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -357,7 +357,7 @@ invalid_input_of_dr = [
         "4",  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -366,7 +366,7 @@ invalid_input_of_dr = [
         np.ones((5, 3)),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "pscore must be 1-dimensional",
+        "pscore must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -375,7 +375,7 @@ invalid_input_of_dr = [
         np.ones(4),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action, reward, and pscore must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -393,7 +393,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 2)),  #
-        "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
+        "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -402,7 +402,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         "4",  #
-        "estimated_rewards_by_reg_model must be ndarray",
+        "estimated_rewards_by_reg_model must be 3D array",
     ),
 ]
 
@@ -524,7 +524,7 @@ invalid_input_tensor_of_dr = [
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
-        "action elements must be smaller than the second dimension of action_dist",
+        r"action elements must be smaller than`",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
@@ -551,7 +551,7 @@ invalid_input_tensor_of_dr = [
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
-        "action and reward must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
@@ -578,7 +578,7 @@ invalid_input_tensor_of_dr = [
         torch.ones(4),  #
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 3)),
-        "action, reward, and pscore must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
@@ -596,7 +596,7 @@ invalid_input_tensor_of_dr = [
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
         torch.zeros((5, 4, 2)),  #
-        "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
+        "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),

@@ -32,7 +32,7 @@ class SlateStandardIPSMock(SlateStandardIPS):
     """Slate Standard Inverse Propensity Scoring (SIPS) Mock."""
 
     estimator_name: str = "sips"
-    eps: int = 0.1
+    eps: float = 0.1
 
     def estimate_policy_value(
         self,

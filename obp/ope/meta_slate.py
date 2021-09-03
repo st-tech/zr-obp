@@ -202,7 +202,7 @@ class SlateOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of estimated policy values by nonparametric bootstrap procedure.
+        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure.
 
         Parameters
         ------------
@@ -228,7 +228,7 @@ class SlateOffPolicyEvaluation:
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
             Dictionary containing confidence intervals of estimated policy value estimated
-            by nonparametric bootstrap procedure.
+            using nonparametric bootstrap procedure.
 
         """
         check_confidence_interval_arguments(
@@ -530,7 +530,7 @@ class SlateOffPolicyEvaluation:
         Returns
         ----------
         eval_metric_ope_df: DataFrame
-            Evaluation metric for evaluating the estimation performance of OPE estimators.
+            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
 
         """
         eval_metric_ope_df = DataFrame(

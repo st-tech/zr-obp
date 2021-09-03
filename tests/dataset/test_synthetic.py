@@ -67,25 +67,25 @@ def test_synthetic_init():
 
 # context, action, description
 invalid_input_of_sample_reward = [
-    ("3", np.ones(2, dtype=int), "context must be ndarray"),
-    (None, np.ones(2, dtype=int), "context must be ndarray"),
-    (np.ones((2, 3)), "3", "action must be ndarray"),
-    (np.ones((2, 3)), None, "action must be ndarray"),
+    ("3", np.ones(2, dtype=int), "context must be 2D array"),
+    (None, np.ones(2, dtype=int), "context must be 2D array"),
+    (np.ones((2, 3)), "3", "action must be 1D array"),
+    (np.ones((2, 3)), None, "action must be 1D array"),
     (
         np.ones((2, 3)),
         np.ones(2, dtype=np.float32),
         "the dtype of action must be a subdtype of int",
     ),
-    (np.ones(2), np.ones(2, dtype=int), "context must be 2-dimensional, but is 1."),
+    (np.ones(2), np.ones(2, dtype=int), "context must be 2D array"),
     (
         np.ones((2, 3)),
         np.ones((2, 3), dtype=int),
-        "action must be 1-dimensional, but is 2.",
+        "action must be 1D array",
     ),
     (
         np.ones((2, 3)),
         np.ones(3, dtype=int),
-        "the size of axis 0 of context must be the same as that of action",
+        "Expected `context.shape[0]",
     ),
 ]
 
@@ -172,18 +172,18 @@ invalid_input_of_calc_policy_value = [
     (
         np.ones((2, 3)),
         np.ones((3, 3, 3)),
-        "the size of axis 0 of expected_reward must be the same as that of action_dist",
+        "Expected `expected_reward.shape[0]",
     ),
     (
         np.ones((2, 3)),
         np.ones((2, 2, 3)),
-        "the size of axis 1 of expected_reward must be the same as that of action_dist",
+        "Expected `expected_reward.shape[1]",
     ),
-    ("3", np.ones((2, 2, 3)), "expected_reward must be ndarray"),
-    (None, np.ones((2, 2, 3)), "expected_reward must be ndarray"),
-    (np.ones((2, 3)), np.ones((2, 3)), "action_dist must be 3-dimensional, but is 2."),
-    (np.ones((2, 3)), "3", "action_dist must be ndarray"),
-    (np.ones((2, 3)), None, "action_dist must be ndarray"),
+    ("3", np.ones((2, 2, 3)), "expected_reward must be 2D array"),
+    (None, np.ones((2, 2, 3)), "expected_reward must be 2D array"),
+    (np.ones((2, 3)), np.ones((2, 3)), "action_dist must be 3D array"),
+    (np.ones((2, 3)), "3", "action_dist must be 3D array"),
+    (np.ones((2, 3)), None, "action_dist must be 3D array"),
 ]
 
 valid_input_of_calc_policy_value = [
@@ -319,7 +319,7 @@ def test_synthetic_linear_behavior_policy():
         action_context = [1.0, 1.0]
         linear_behavior_policy(context=np.ones([2, 2]), action_context=action_context)
 
-    # expected_reward
+    # pscore (action choice probabilities by behavior policy)
     n_rounds = 10
     dim_context = dim_action_context = 3
     n_actions = 5

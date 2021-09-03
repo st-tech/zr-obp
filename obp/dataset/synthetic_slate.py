@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import softmax, sigmoid
+from ..utils import softmax, sigmoid, check_array
 
 
 @dataclass
@@ -427,20 +427,21 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
 
         """
-        if not isinstance(action, np.ndarray) or action.ndim != 1:
-            raise ValueError("action must be 1-dimensional ndarray")
-        if (
-            not isinstance(evaluation_policy_logit_, np.ndarray)
-            or evaluation_policy_logit_.ndim != 2
-        ):
-            raise ValueError("evaluation_policy_logit_ must be 2-dimensional ndarray")
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(
+            array=evaluation_policy_logit_,
+            name="evaluation_policy_logit_",
+            expected_dim=2,
+        )
         if (
             len(action) / self.len_list != len(evaluation_policy_logit_)
             or evaluation_policy_logit_.shape[1] != self.n_unique_action
         ):
             raise ValueError(
-                "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, ) and (n_rounds, n_unique_action) respectively"
+                "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, )"
+                "and (n_rounds, n_unique_action) respectively"
             )
+
         n_rounds = action.reshape((-1, self.len_list)).shape[0]
         pscore_cascade = np.zeros(n_rounds * self.len_list)
         pscore = np.zeros(n_rounds * self.len_list)
@@ -852,17 +853,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             The on-policy policy value estimate of the behavior policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(slate_id, np.ndarray):
-            raise ValueError("slate_id must be ndarray")
-        if reward.ndim != 1:
-            raise ValueError(f"reward must be 1-dimensional, but is {reward.ndim}.")
-        if slate_id.ndim != 1:
-            raise ValueError(f"slate_id must be 1-dimensional, but is {slate_id.ndim}.")
+        check_array(array=slate_id, name="slate_id", expected_dim=1)
+        check_array(array=reward, name="reward", expected_dim=1)
         if reward.shape[0] != slate_id.shape[0]:
             raise ValueError(
-                "the size of axis 0 of reward must be the same as that of slate_id"
+                "Expected `reward.shape[0] == slate_id.shape[0]`, but found it False"
             )
 
         return reward.sum() / np.unique(slate_id).shape[0]
@@ -883,24 +878,25 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Evaluation policy function generating logit value of each action in action space.
 
         """
-        if (
-            not isinstance(evaluation_policy_logit_, np.ndarray)
-            or evaluation_policy_logit_.ndim != 2
-        ):
-            raise ValueError("evaluation_policy_logit_ must be 2-dimensional ndarray")
+        check_array(array=context, name="context", expected_dim=2)
+        check_array(
+            array=evaluation_policy_logit_,
+            name="evaluation_policy_logit_",
+            expected_dim=2,
+        )
         if evaluation_policy_logit_.shape[1] != self.n_unique_action:
             raise ValueError(
-                "the size of axis 1 of evaluation_policy_logit_ must be the same as n_unique_action"
+                "Expected `evaluation_policy_logit_.shape[1] != self.n_unique_action`,"
+                "but found it False"
             )
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "the size of axis 1 of context must be the same as dim_context"
+                "Expected `context.shape[1] == self.dim_context`, found it False"
             )
         if evaluation_policy_logit_.shape[0] != context.shape[0]:
             raise ValueError(
-                "the length of evaluation_policy_logit_ and context must be same"
+                "Expected `evaluation_policy_logit_.shape[0] == context.shape[0]`,"
+                "but found it False"
             )
 
         if self.is_factorizable:
@@ -1066,12 +1062,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
 
         """
+        check_array(array=context, name="context", expected_dim=2)
         if evaluation_policy_type not in ["optimal", "anti-optimal", "random"]:
             raise ValueError(
                 f"evaluation_policy_type must be 'optimal', 'anti-optimal', or 'random', but {evaluation_policy_type} is given"
             )
-        if not isinstance(context, np.ndarray) or context.ndim != 2:
-            raise ValueError("context must be 2-dimensional ndarray")
 
         # [Caution]: OverflowError raises when integer division result is too large for a float
         if self.is_factorizable:
@@ -1111,18 +1106,16 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 action_context=self.action_context,
                 random_state=self.random_state,
             )
-            if (
-                not isinstance(action, np.ndarray)
-                or action.ndim != 1
-                or action.shape[0] != context.shape[0] * self.len_list
-            ):
+            check_array(array=action, name="action", expected_dim=1)
+            if action.shape[0] != context.shape[0] * self.len_list:
                 raise ValueError(
-                    "action must be 1-dimensional ndarray, shape (n_rounds * len_list)"
+                    "Expected `action.shape[0] == context.shape[0] * self.len_list`,"
+                    "but found it False"
                 )
             action_2d = action.reshape((context.shape[0], self.len_list))
             if context.shape[0] != action_2d.shape[0]:
                 raise ValueError(
-                    "the size of axis 0 of context must be the same as that of action_2d"
+                    "Expected `context.shape[0] == action_2d.shape[0]`, but found it False"
                 )
 
             check_scalar(
@@ -1201,8 +1194,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
 
         """
-        if not isinstance(action_2d, np.ndarray) or action_2d.ndim != 2:
-            raise ValueError("action_2d must be 2-dimensional ndarray")
+        check_array(array=action_2d, name="action_2d", expected_dim=2)
         if not self.is_factorizable and set(
             [np.unique(x).shape[0] for x in action_2d]
         ) != set([self.len_list]):
@@ -1318,25 +1310,18 @@ def action_interaction_reward_function(
         Otherwise, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} g^{-1}(f(x, a(j))) * W(k, j)`
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
-
-    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
-        raise ValueError("action_context must be 2-dimensional ndarray")
-
-    if not isinstance(action, np.ndarray) or action.ndim != 1:
-        raise ValueError("action must be 1-dimensional ndarray")
-
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action_context, name="action_context", expected_dim=2)
+    check_array(array=action, name="action", expected_dim=1)
     if is_enumerated and action.shape[0] % len_list != 0:
         raise ValueError(
-            "the size of axis 0 of context times len_list must be multiple of that of action"
+            "Expected `action.shape[0] % len_list == 0` if `is_enumerated is True`,"
+            "but found it False"
         )
-
     if not is_enumerated and action.shape[0] != len_list * context.shape[0]:
         raise ValueError(
-            "the size of axis 0 of context times len_list must be same with that of action"
+            "Expected `action.shape[0] == len_list * context.shape[0]` if `is_enumerated is False`, but found it False"
         )
-
     if reward_type not in [
         "binary",
         "continuous",
@@ -1344,7 +1329,6 @@ def action_interaction_reward_function(
         raise ValueError(
             f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given."
         )
-
     if reward_structure not in [
         "standard_additive",
         "cascade_additive",
@@ -1465,12 +1449,8 @@ def linear_behavior_policy_logit(
         Logit given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
-
-    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
-        raise ValueError("action_context must be 2-dimensional ndarray")
-
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action_context, name="action_context", expected_dim=2)
     check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
     random_ = check_random_state(random_state)
@@ -1492,8 +1472,8 @@ def exponential_decay_function(distance: np.ndarray) -> np.ndarray:
         Distance between two slots.
 
     """
-    if not isinstance(distance, np.ndarray) or distance.ndim != 1:
-        raise ValueError("distance must be 1-dimensional ndarray")
+    check_array(array=distance, name="distance", expected_dim=1)
+
     return np.exp(-distance)
 
 
@@ -1506,6 +1486,6 @@ def inverse_decay_function(distance: np.ndarray) -> np.ndarray:
         Distance between two slots.
 
     """
-    if not isinstance(distance, np.ndarray) or distance.ndim != 1:
-        raise ValueError("distance must be 1-dimensional ndarray")
+    check_array(array=distance, name="distance", expected_dim=1)
+
     return 1 / (distance + 1)

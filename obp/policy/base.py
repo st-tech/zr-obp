@@ -209,7 +209,7 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
 
         if self.n_actions < self.len_list:
             raise ValueError(
-                f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
+                f"Expected `n_actions >= len_list`, but got n_actions={self.n_actions} < len_list={self.len_list}"
             )
 
     @property
@@ -236,6 +236,40 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
         Returns
         -----------
         action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Action choices by a policy trained by calling the `fit` method.
+
+        """
+        raise NotImplementedError
+
+
+@dataclass
+class BaseContinuousOfflinePolicyLearner(metaclass=ABCMeta):
+    """Base class for off-policy learners for the continuous action setting."""
+
+    @property
+    def policy_type(self) -> PolicyType:
+        """Type of the bandit policy."""
+        return PolicyType.OFFLINE
+
+    @abstractmethod
+    def fit(
+        self,
+    ) -> None:
+        """Fits an offline bandit policy using the given logged bandit feedback data."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def predict(self, context: np.ndarray) -> np.ndarray:
+        """Predict the best continuous action value for new data.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        Returns
+        -----------
+        action: array-like, shape (n_rounds_of_new_data,)
             Action choices by a policy trained by calling the `fit` method.
 
         """

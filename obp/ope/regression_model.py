@@ -33,8 +33,8 @@ class RegressionModel(BaseEstimator):
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
-        Context vector characterizing each action, vector representation of each action.
-        If not given, then one-hot encoding of the action variable is automatically used.
+        Context vector characterizing action (i.e., vector representation of each action).
+        If not given, one-hot encoding of the action variable is used as default.
 
     fitting_method: str, default='normal'
         Method to fit the regression model.
@@ -102,18 +102,17 @@ class RegressionModel(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
-        pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities (propensity score) of a behavior policy
-            in the training logged bandit feedback.
-            When None is given, the behavior policy is assumed to be a uniform one.
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            When None is given, behavior policy is assumed to be uniform.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
@@ -193,12 +192,12 @@ class RegressionModel(BaseEstimator):
         Parameters
         -----------
         context: array-like, shape (n_rounds_of_new_data, dim_context)
-            Context vectors for new data.
+            Context vectors of new data.
 
         Returns
         -----------
         estimated_rewards_by_reg_model: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Estimated expected rewards for new data by the regression model.
+            Expected rewards of new data estimated by the regression model.
 
         """
         n_rounds_of_new_data = context.shape[0]
@@ -246,7 +245,7 @@ class RegressionModel(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
@@ -280,7 +279,7 @@ class RegressionModel(BaseEstimator):
         Returns
         -----------
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Estimated expected rewards for new data by the regression model.
+            Expected rewards of new data estimated by the regression model.
 
         """
         check_bandit_feedback_inputs(
@@ -361,7 +360,7 @@ class RegressionModel(BaseEstimator):
         action: np.ndarray,
         action_context: np.ndarray,
     ) -> np.ndarray:
-        """Preprocess feature vectors to train a give regression model.
+        """Preprocess feature vectors to train a regression model.
 
         Note
         -----
@@ -371,13 +370,13 @@ class RegressionModel(BaseEstimator):
         Parameters
         -----------
         context: array-like, shape (n_rounds,)
-            Context vectors in the training logged bandit feedback.
+            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
-            Context vector characterizing each action, vector representation of each action.
+            Context vector characterizing action (i.e., vector representation of each action).
 
         """
         return np.c_[context, action_context[action]]

@@ -11,7 +11,7 @@ from sklearn.utils import check_random_state, check_scalar
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import sigmoid, softmax, sample_action_fast
+from ..utils import sigmoid, softmax, sample_action_fast, check_array
 from .reward_type import RewardType
 
 
@@ -239,18 +239,13 @@ class SyntheticBanditDataset(BaseBanditDataset):
         ---------
         reward: array-like, shape (n_rounds,)
             Sampled rewards given contexts and actions.
+
         """
-        if not isinstance(context, np.ndarray):
-            raise ValueError("context must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if context.ndim != 2:
-            raise ValueError(f"context must be 2-dimensional, but is {context.ndim}.")
-        if action.ndim != 1:
-            raise ValueError(f"action must be 1-dimensional, but is {action.ndim}.")
+        check_array(array=context, name="context", expected_dim=2)
+        check_array(array=action, name="action", expected_dim=1)
         if context.shape[0] != action.shape[0]:
             raise ValueError(
-                "the size of axis 0 of context must be the same as that of action"
+                "Expected `context.shape[0] == action.shape[0]`, but found it False"
             )
         if not np.issubdtype(action.dtype, np.integer):
             raise ValueError("the dtype of action must be a subdtype of int")
@@ -342,21 +337,15 @@ class SyntheticBanditDataset(BaseBanditDataset):
             The policy value of the given action distribution on the given bandit feedback data.
 
         """
-        if not isinstance(expected_reward, np.ndarray):
-            raise ValueError("expected_reward must be ndarray")
-        if not isinstance(action_dist, np.ndarray):
-            raise ValueError("action_dist must be ndarray")
-        if action_dist.ndim != 3:
-            raise ValueError(
-                f"action_dist must be 3-dimensional, but is {action_dist.ndim}."
-            )
+        check_array(array=expected_reward, name="expected_reward", expected_dim=2)
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         if expected_reward.shape[0] != action_dist.shape[0]:
             raise ValueError(
-                "the size of axis 0 of expected_reward must be the same as that of action_dist"
+                "Expected `expected_reward.shape[0] = action_dist.shape[0]`, but found it False"
             )
         if expected_reward.shape[1] != action_dist.shape[1]:
             raise ValueError(
-                "the size of axis 1 of expected_reward must be the same as that of action_dist"
+                "Expected `expected_reward.shape[1] = action_dist.shape[1]`, but found it False"
             )
 
         return np.average(expected_reward, weights=action_dist[:, :, 0], axis=1).mean()
@@ -386,11 +375,8 @@ def logistic_reward_function(
         Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
-
-    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
-        raise ValueError("action_context must be 2-dimensional ndarray")
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action_context, name="action_context", expected_dim=2)
 
     random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))
@@ -427,11 +413,8 @@ def linear_reward_function(
         Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
-
-    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
-        raise ValueError("action_context must be 2-dimensional ndarray")
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action_context, name="action_context", expected_dim=2)
 
     random_ = check_random_state(random_state)
     expected_reward = np.zeros((context.shape[0], action_context.shape[0]))
@@ -468,11 +451,8 @@ def linear_behavior_policy(
         Logit values given context (:math:`x`), i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
 
     """
-    if not isinstance(context, np.ndarray) or context.ndim != 2:
-        raise ValueError("context must be 2-dimensional ndarray")
-
-    if not isinstance(action_context, np.ndarray) or action_context.ndim != 2:
-        raise ValueError("action_context must be 2-dimensional ndarray")
+    check_array(array=context, name="context", expected_dim=2)
+    check_array(array=action_context, name="action_context", expected_dim=2)
 
     random_ = check_random_state(random_state)
     logits = np.zeros((context.shape[0], action_context.shape[0]))
