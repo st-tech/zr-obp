@@ -825,8 +825,8 @@ def test_performance_of_binary_outcome_models(
     auc_scores: Dict[str, float] = {}
     # check ground truth
     print(f"gt_mean: {gt_mean}")
-    # check the performance of regression models using doubly robust criteria (|\hat{q} - q| <= |q| is satisfied with a high probability)
-    dr_criteria_pass_rate = 0.8
+    # check the performance of regression models using doubly robust criterion (|\hat{q} - q| <= |q| is satisfied with a high probability)
+    dr_criterion_pass_rate = 0.7
     fit_methods = ["normal", "iw", "mrdr"]
     for fit_method in fit_methods:
         for model_name, model in binary_model_dict.items():
@@ -864,16 +864,16 @@ def test_performance_of_binary_outcome_models(
                     np.zeros_like(bandit_feedback["action"], dtype=int),
                 ],
             )
-            # compare dr criteria
-            dr_criteria = np.abs((gt_mean - estimated_rewards_by_reg_model)) - np.abs(
+            # compare dr criterion
+            dr_criterion = np.abs((gt_mean - estimated_rewards_by_reg_model)) - np.abs(
                 gt_mean
             )
             print(
-                f"Dr criteria is satisfied with probability {np.mean(dr_criteria <= 0)} ------ model: {model_name} ({fit_method}),"
+                f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fit_method}),"
             )
             assert (
-                np.mean(dr_criteria <= 0) >= dr_criteria_pass_rate
-            ), f" should be satisfied with a probability at least {dr_criteria_pass_rate}"
+                np.mean(dr_criterion <= 0) >= dr_criterion_pass_rate
+            ), f" should be satisfied with a probability at least {dr_criterion_pass_rate}"
 
     for model_name in auc_scores:
         print(f"AUC of {model_name} is {auc_scores[model_name]}")
