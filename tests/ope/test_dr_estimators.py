@@ -927,7 +927,7 @@ def test_switch_dr_using_random_evaluation_policy(
     switch_dr_max_value = switch_dr_max.estimate_policy_value(**input_dict)
     assert (
         dm_value == switch_dr_0_value
-    ), "SwitchDR (lambda_=0) should be the same as DirectMethod"
+    ), "SwitchDR (lambda=0) should be the same as DirectMethod"
     assert (
         dr_value == switch_dr_max_value
-    ), "SwitchDR (lambda_=1e10) should be the same as DoublyRobust"
+    ), "SwitchDR (lambda=1e10) should be the same as DoublyRobust"

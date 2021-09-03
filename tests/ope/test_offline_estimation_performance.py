@@ -142,8 +142,8 @@ ope_estimators = [
     DoublyRobust(),
     DoublyRobustTuning(lambdas=[100, 1000, np.inf], estimator_name="dr (tuning)"),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(lambda_=1.0, estimator_name="switch-dr (lambda_=1)"),
-    SwitchDoublyRobust(lambda_=100.0, estimator_name="switch-dr (lambda_=100)"),
+    SwitchDoublyRobust(lambda_=1.0, estimator_name="switch-dr (lambda=1)"),
+    SwitchDoublyRobust(lambda_=100.0, estimator_name="switch-dr (lambda=100)"),
     SwitchDoublyRobustTuning(
         lambdas=[100, 1000, np.inf], estimator_name="switch-dr (tuning)"
     ),
@@ -249,10 +249,8 @@ def test_offline_estimation_performance(
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr (tuning)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["sndr"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda_=1)"]
-    assert (
-        relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda_=100)"]
-    )
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda=1)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda=100)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tuning)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=1)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=100)"]
