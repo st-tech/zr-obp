@@ -50,52 +50,116 @@ def test_dr_init_using_invalid_inputs(
         _ = DoublyRobustWithShrinkage(lambda_=lambda_)
 
 
-# lambdas, err, description
+# lambdas, use_bias_upper_bound, delta, err, description
 invalid_input_of_dr_tuning_init = [
     (
-        "",
+        "",  #
+        True,
+        0.05,
         TypeError,
         "lambdas must be a list",
     ),
     (
-        None,
+        None,  #
+        True,
+        0.05,
         TypeError,
         "lambdas must be a list",
     ),
     (
-        [""],
+        [""],  #
+        True,
+        0.05,
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
-        [None],
+        [None],  #
+        True,
+        0.05,
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
-        [],
+        [],  #
+        True,
+        0.05,
         ValueError,
         "lambdas must not be empty",
     ),
-    ([-1.0], ValueError, "`an element of lambdas`= -1.0, must be >= 0.0."),
-    ([np.nan], ValueError, "an element of lambdas must not be nan"),
+    (
+        [-1.0],  #
+        True,
+        0.05,
+        ValueError,
+        "`an element of lambdas`= -1.0, must be >= 0.0.",
+    ),
+    ([np.nan], True, 0.05, ValueError, "an element of lambdas must not be nan"),
+    (
+        [1],
+        "",  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        None,  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        True,
+        "",  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        None,  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        -1.0,  #
+        ValueError,
+        "`delta`= -1.0, must be >= 0.0.",
+    ),
+    (
+        [1],
+        True,
+        1.1,  #
+        ValueError,
+        "`delta`= 1.1, must be <= 1.0.",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas, err, description",
+    "lambdas, use_bias_upper_bound, delta, err, description",
     invalid_input_of_dr_tuning_init,
 )
 def test_dr_tuning_init_using_invalid_inputs(
     lambdas,
+    use_bias_upper_bound,
+    delta,
     err,
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = DoublyRobustTuning(lambdas=lambdas)
+        _ = DoublyRobustTuning(
+            use_bias_upper_bound=use_bias_upper_bound, delta=delta, lambdas=lambdas
+        )
 
     with pytest.raises(err, match=f"{description}*"):
         _ = DoublyRobustWithShrinkageTuning(
+            use_bias_upper_bound=use_bias_upper_bound,
+            delta=delta,
             lambdas=lambdas,
         )
 
@@ -133,46 +197,102 @@ def test_switch_dr_init_using_invalid_inputs(
 # taus, err, description
 invalid_input_of_switch_dr_tuning_init = [
     (
-        "",
+        "",  #
+        True,
+        0.05,
         TypeError,
         "taus must be a list",
     ),
     (
-        None,
+        None,  #
+        True,
+        0.05,
         TypeError,
         "taus must be a list",
     ),
     (
-        [""],
+        [""],  #
+        True,
+        0.05,
         TypeError,
         r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
-        [None],
+        [None],  #
+        True,
+        0.05,
         TypeError,
         r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
-        [],
+        [],  #
+        True,
+        0.05,
         ValueError,
         "taus must not be empty",
     ),
-    ([-1.0], ValueError, "`an element of taus`= -1.0, must be >= 0.0."),
-    ([np.nan], ValueError, "an element of taus must not be nan"),
+    ([-1.0], True, 0.05, ValueError, "`an element of taus`= -1.0, must be >= 0.0."),
+    ([np.nan], True, 0.05, ValueError, "an element of taus must not be nan"),
+    (
+        [1],
+        "",  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        None,  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        True,
+        "",  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        None,  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        -1.0,  #
+        ValueError,
+        "`delta`= -1.0, must be >= 0.0.",
+    ),
+    (
+        [1],
+        True,
+        1.1,  #
+        ValueError,
+        "`delta`= 1.1, must be <= 1.0.",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "taus, err, description",
+    "taus, use_bias_upper_bound, delta, err, description",
     invalid_input_of_switch_dr_tuning_init,
 )
 def test_switch_dr_tuning_init_using_invalid_inputs(
     taus,
+    use_bias_upper_bound,
+    delta,
     err,
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = SwitchDoublyRobustTuning(taus=taus)
+        _ = SwitchDoublyRobustTuning(
+            use_bias_upper_bound=use_bias_upper_bound, delta=delta, taus=taus
+        )
 
 
 valid_input_of_dr_init = [
