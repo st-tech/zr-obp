@@ -29,6 +29,12 @@ class BaseOffPolicyEstimatorTuning:
     candidate_hyperparameter_list: List[float]
         A list of candidate hyperparameter values.
 
+    use_bias_upper_bound: bool, default=True
+            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+
+    delta: float, default=0.05
+        A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
+
     References
     ----------
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
@@ -41,6 +47,8 @@ class BaseOffPolicyEstimatorTuning:
 
     base_ope_estimator: BaseOffPolicyEstimator = field(init=False)
     candidate_hyperparameter_list: List[float] = field(init=False)
+    use_bias_upper_bound: bool = True
+    delta: float = 0.05
 
     def __new__(cls, *args, **kwargs):
         dataclass(cls)
@@ -63,6 +71,14 @@ class BaseOffPolicyEstimatorTuning:
         else:
             raise TypeError(f"{hyperparam_name} must be a list")
 
+    def _check_init_inputs(self) -> None:
+        """Initialize Class."""
+        if not isinstance(self.use_bias_upper_bound, bool):
+            raise TypeError(
+                f"`use_bias_upper_bound` must be a bool, but {type(self.use_bias_upper_bound)} is given"
+            )
+        check_scalar(self.delta, "delta", target_type=(float), min_val=0.0, max_val=1.0)
+
     def _tune_hyperparam(
         self,
         reward: np.ndarray,
@@ -84,6 +100,8 @@ class BaseOffPolicyEstimatorTuning:
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 position=position,
+                use_bias_upper_bound=self.use_bias_upper_bound,
+                delta=self.delta,
             )
             self.estimated_mse_score_dict[hyperparam_] = estimated_mse_score
         self.best_hyperparam = min(
@@ -120,6 +138,9 @@ class BaseOffPolicyEstimatorTuning:
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+
+        q_hat: array-like, shape (n_rounds,), default=None
+            Estimated expected reward given context :math:`x_t` and action :math:`a_t`.
 
         Returns
         ----------
@@ -231,6 +252,12 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         The automatic hyperparameter tuning proposed by Su et al.(2020)
         will choose the best hyperparameter value from the data.
 
+    use_bias_upper_bound: bool, default=True
+        Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+
+    delta: float, default=0.05
+        A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
+
     estimator_name: str, default='ipw'.
         Name of the estimator.
 
@@ -252,6 +279,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = InverseProbabilityWeighting
         self.candidate_hyperparameter_list = self.lambdas
         super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,
@@ -412,6 +440,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = DoublyRobust
         self.candidate_hyperparameter_list = self.lambdas
         super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,
@@ -592,6 +621,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = SwitchDoublyRobust
         self.candidate_hyperparameter_list = self.taus
         super()._check_candidate_hyperparameter_list(hyperparam_name="taus")
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,
@@ -772,6 +802,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = DoublyRobustWithShrinkage
         self.candidate_hyperparameter_list = self.lambdas
         super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,

@@ -7,6 +7,53 @@ import numpy as np
 from sklearn.utils import check_scalar
 
 
+def estimate_bias_in_ope(
+    reward: np.ndarray,
+    iw: np.ndarray,
+    iw_hat: np.ndarray,
+    q_hat: Optional[np.ndarray] = None,
+) -> float:
+    """Helper to estimate a bias in OPE.
+
+    Parameters
+    ----------
+    reward: array-like, shape (n_rounds,)
+        Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+    iw: array-like, shape (n_rounds,)
+        Importance weight in each round of the logged bandit feedback, i.e., :math:`w(x,a)=\\pi_e(a|x)/ \\pi_b(a|x)`.
+
+    iw_hat: array-like, shape (n_rounds,)
+        Importance weight (IW) modified by a hyparpareter. How IW is modified depends on the estimator as follows.
+            - clipping: :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
+            - switching: :math:`\\hat{w}(x,a) := w(x,a) \\cdot \\mathbb{I} \\{ w(x,a) < \\tau \\}`
+            - shrinkage: :math:`\\hat{w}(x,a) := (\\lambda w(x,a)) / (\\lambda + w^2(x,a))`
+        where :math:`\\tau` and :math:`\\lambda` are hyperparameters.
+
+    q_hat: array-like, shape (n_rounds,), default=None
+        Estimated expected reward given context :math:`x_t` and action :math:`a_t`.
+
+    Returns
+    ----------
+    estimated_bias: float
+        Estimated the bias in OPE.
+        This is based on the direct bias estimation stated on page 17 of Su et al.(2020).
+
+    References
+    ----------
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
+    """
+    n_rounds = reward.shape[0]
+    if q_hat is None:
+        q_hat = np.zeros(n_rounds)
+    estimated_bias_arr = (iw - iw_hat) * (reward - q_hat)
+    estimated_bias = np.abs(estimated_bias_arr.mean())
+
+    return estimated_bias
+
+
 def estimate_high_probability_upper_bound_bias(
     reward: np.ndarray,
     iw: np.ndarray,
@@ -51,14 +98,16 @@ def estimate_high_probability_upper_bound_bias(
 
     """
     check_scalar(
-        delta, name="delta", target_type=(int, float), max_val=1.0, min_val=0.0
+        delta, name="delta", target_type=(int, float), min_val=0.0, max_val=1.0
     )
 
+    bias_upper_bound = estimate_bias_in_ope(
+        reward=reward,
+        iw=iw,
+        iw_hat=iw_hat,
+        q_hat=q_hat,
+    )
     n_rounds = reward.shape[0]
-    if q_hat is None:
-        q_hat = np.zeros(n_rounds)
-    bias_upper_bound_arr = (iw - iw_hat) * (reward - q_hat)
-    bias_upper_bound = np.abs(bias_upper_bound_arr.mean())
     bias_upper_bound += np.sqrt((2 * (iw ** 2).mean() * np.log(2 / delta)) / n_rounds)
     bias_upper_bound += (2 * iw.max() * np.log(2 / delta)) / (3 * n_rounds)
 

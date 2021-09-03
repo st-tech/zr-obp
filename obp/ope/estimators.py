@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from sklearn.utils import check_scalar
 
-from .helper import estimate_high_probability_upper_bound_bias
+from .helper import estimate_high_probability_upper_bound_bias, estimate_bias_in_ope
 from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     check_ope_inputs,
@@ -551,6 +551,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         pscore: np.ndarray,
         action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
+        use_bias_upper_bound: bool = True,
+        delta: float = 0.05,
         **kwargs,
     ) -> float:
         """Estimate the MSE score of a given clipping hyperparameter to conduct hyperparameter tuning.
@@ -571,6 +573,12 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+
+        use_bias_upper_bound: bool, default=True
+            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+
+        delta: float, default=0.05
+            A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
 
         Returns
         ----------
@@ -596,12 +604,17 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         # estimate the (high probability) upper bound of the bias of IPW with clipping
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        bias_upper_bound = estimate_high_probability_upper_bound_bias(
-            reward=reward,
-            iw=iw,
-            iw_hat=np.minimum(iw, self.lambda_),
-        )
-        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+        if use_bias_upper_bound:
+            bias_term = estimate_high_probability_upper_bound_bias(
+                reward=reward, iw=iw, iw_hat=np.minimum(iw, self.lambda_), delta=delta
+            )
+        else:
+            bias_term = estimate_bias_in_ope(
+                reward=reward,
+                iw=iw,
+                iw_hat=np.minimum(iw, self.lambda_),
+            )
+        estimated_mse_score = sample_variance + (bias_term ** 2)
 
         return estimated_mse_score
 
@@ -1310,6 +1323,8 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        use_bias_upper_bound: bool = True,
+        delta: float = 0.05,
     ) -> float:
         """Estimate the MSE score of a given clipping hyperparameter to conduct hyperparameter tuning.
 
@@ -1334,6 +1349,12 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        use_bias_upper_bound: bool, default=True
+            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+
+        delta: float, default=0.05
+            A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
 
         Returns
         ----------
@@ -1360,13 +1381,26 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         # estimate the (high probability) upper bound of the bias of DR with clipping
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        bias_upper_bound = estimate_high_probability_upper_bound_bias(
-            reward=reward,
-            iw=iw,
-            iw_hat=np.minimum(iw, self.lambda_),
-            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
-        )
-        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+        if use_bias_upper_bound:
+            bias_term = estimate_high_probability_upper_bound_bias(
+                reward=reward,
+                iw=iw,
+                iw_hat=np.minimum(iw, self.lambda_),
+                q_hat=estimated_rewards_by_reg_model[
+                    np.arange(n_rounds), action, position
+                ],
+                delta=delta,
+            )
+        else:
+            bias_term = estimate_bias_in_ope(
+                reward=reward,
+                iw=iw,
+                iw_hat=np.minimum(iw, self.lambda_),
+                q_hat=estimated_rewards_by_reg_model[
+                    np.arange(n_rounds), action, position
+                ],
+            )
+        estimated_mse_score = sample_variance + (bias_term ** 2)
 
         return estimated_mse_score
 
@@ -1613,6 +1647,8 @@ class SwitchDoublyRobust(DoublyRobust):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        use_bias_upper_bound: bool = False,
+        delta: float = 0.05,
     ) -> float:
         """Estimate the MSE score of a given switching hyperparameter to conduct hyperparameter tuning.
 
@@ -1637,6 +1673,12 @@ class SwitchDoublyRobust(DoublyRobust):
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
             When None is given, the effect of position on the reward will be ignored.
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        use_bias_upper_bound: bool, default=True
+            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+
+        delta: float, default=0.05
+            A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
 
         Returns
         ----------
@@ -1663,13 +1705,26 @@ class SwitchDoublyRobust(DoublyRobust):
 
         # estimate the (high probability) upper bound of the bias of Switch-DR
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        bias_upper_bound = estimate_high_probability_upper_bound_bias(
-            reward=reward,
-            iw=iw,
-            iw_hat=iw * np.array(iw <= self.tau, dtype=int),
-            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
-        )
-        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+        if use_bias_upper_bound:
+            bias_term = estimate_high_probability_upper_bound_bias(
+                reward=reward,
+                iw=iw,
+                iw_hat=iw * np.array(iw <= self.tau, dtype=int),
+                q_hat=estimated_rewards_by_reg_model[
+                    np.arange(n_rounds), action, position
+                ],
+                delta=delta,
+            )
+        else:
+            bias_term = estimate_bias_in_ope(
+                reward=reward,
+                iw=iw,
+                iw_hat=iw * np.array(iw <= self.tau, dtype=int),
+                q_hat=estimated_rewards_by_reg_model[
+                    np.arange(n_rounds), action, position
+                ],
+            )
+        estimated_mse_score = sample_variance + (bias_term ** 2)
 
         return estimated_mse_score
 
@@ -1703,8 +1758,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         w_{o} (x_t,a_t;\\lambda) := \\frac{\\lambda}{w^2(x_t,a_t) + \\lambda} w(x_t,a_t).
 
     When :math:`\\lambda=0`, we have :math:`w_{o} (x,a;\\lambda)=0` corresponding to the DM estimator.
-    In contrast, as :math:`\\lambda \\rightarrow \\infty`, :math:`w_{o} (x,a;\\lambda)` increases and in the limit becomes equal to
-    the original importance weight, corresponding to the standard DR estimator.
+    In contrast, as :math:`\\lambda \\rightarrow \\infty`, :math:`w_{o} (x,a;\\lambda)` increases and in the limit becomes equal to the original importance weight, corresponding to the standard DR estimator.
 
     Parameters
     ----------
@@ -1815,6 +1869,8 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        use_bias_upper_bound: bool = False,
+        delta: float = 0.05,
     ) -> float:
         """Estimate the MSE score of a given shrinkage hyperparameter to conduct hyperparameter tuning.
 
@@ -1837,6 +1893,12 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+
+        use_bias_upper_bound: bool, default=True
+            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+
+        delta: float, default=0.05
+            A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
 
         Returns
         ----------
@@ -1867,12 +1929,25 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
         else:
             iw_hat = iw
-        bias_upper_bound = estimate_high_probability_upper_bound_bias(
-            reward=reward,
-            iw=iw,
-            iw_hat=iw_hat,
-            q_hat=estimated_rewards_by_reg_model[np.arange(n_rounds), action, position],
-        )
-        estimated_mse_score = sample_variance + (bias_upper_bound ** 2)
+        if use_bias_upper_bound:
+            bias_term = estimate_high_probability_upper_bound_bias(
+                reward=reward,
+                iw=iw,
+                iw_hat=iw_hat,
+                q_hat=estimated_rewards_by_reg_model[
+                    np.arange(n_rounds), action, position
+                ],
+                delta=0.05,
+            )
+        else:
+            bias_term = estimate_bias_in_ope(
+                reward=reward,
+                iw=iw,
+                iw_hat=iw_hat,
+                q_hat=estimated_rewards_by_reg_model[
+                    np.arange(n_rounds), action, position
+                ],
+            )
+        estimated_mse_score = sample_variance + (bias_term ** 2)
 
         return estimated_mse_score
