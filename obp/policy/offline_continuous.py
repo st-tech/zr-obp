@@ -4,17 +4,22 @@
 """Offline(Batch) Policy Learning for Continuous Action."""
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Tuple, Optional, Union, Dict
-from tqdm import tqdm
+from typing import Dict
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import numpy as np
 from sklearn.utils import check_random_state
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from tqdm import tqdm
 
+from ..utils import check_array
+from ..utils import check_continuous_bandit_feedback_inputs
+from ..utils import check_tensor
 from .base import BaseContinuousOfflinePolicyLearner
-from ..utils import check_continuous_bandit_feedback_inputs, check_array, check_tensor
 
 
 @dataclass

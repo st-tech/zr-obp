@@ -2,7 +2,8 @@
 # Licensed under the Apache 2.0 License.
 
 """Base Interfaces for Bandit Algorithms."""
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 

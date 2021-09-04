@@ -2,12 +2,14 @@
 # Licensed under the Apache 2.0 License.
 
 """Useful Tools."""
-from typing import Dict, Optional, Union
+from typing import Dict
+from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
-import torch
 from sklearn.utils import check_random_state
+import torch
 
 
 def check_confidence_interval_arguments(

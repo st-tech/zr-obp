@@ -6,11 +6,11 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from sklearn.utils import check_random_state
 from scipy.optimize import minimize
+from sklearn.utils import check_random_state
 
-from .base import BaseContextualPolicy
 from ..utils import sigmoid
+from .base import BaseContextualPolicy
 
 
 @dataclass

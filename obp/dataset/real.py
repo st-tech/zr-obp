@@ -3,18 +3,24 @@
 
 """Dataset Class for Real-World Logged Bandit Feedback."""
 from dataclasses import dataclass
-from logging import getLogger, basicConfig, INFO
+from logging import basicConfig
+from logging import getLogger
+from logging import INFO
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils import check_random_state, check_scalar
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
-from .base import BaseRealBanditDataset
 from ..types import BanditFeedback
+from .base import BaseRealBanditDataset
+
 
 logger = getLogger(__name__)
 basicConfig(level=INFO)

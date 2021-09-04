@@ -3,18 +3,25 @@
 
 """Class for Generating Synthetic Slate Logged Bandit Feedback."""
 from dataclasses import dataclass
-from typing import Optional, Callable, Tuple, Union
-from itertools import permutations, product
+from itertools import permutations
+from itertools import product
+from typing import Callable
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import numpy as np
-from scipy.stats import truncnorm
 from scipy.special import perm
-from sklearn.utils import check_random_state, check_scalar
+from scipy.stats import truncnorm
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 from tqdm import tqdm
 
-from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import softmax, sigmoid, check_array
+from ..utils import check_array
+from ..utils import sigmoid
+from ..utils import softmax
+from .base import BaseBanditDataset
 
 
 @dataclass
