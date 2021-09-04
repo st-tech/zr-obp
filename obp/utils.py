@@ -6,8 +6,8 @@ from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.utils import check_random_state
 import torch
+from sklearn.utils import check_random_state
 
 
 def check_confidence_interval_arguments(
@@ -180,6 +180,35 @@ def check_array(
         )
 
 
+def check_tensor(
+    tensor: torch.tensor,
+    name: str,
+    expected_dim: int = 1,
+) -> ValueError:
+    """Input validation on a tensor.
+
+    Parameters
+    -------------
+    array: object
+        Input object to check.
+
+    name: str
+        Name of the input array.
+
+    expected_dim: int, default=1
+        Expected dimension of the input array.
+
+    """
+    if not isinstance(tensor, torch.Tensor):
+        raise ValueError(
+            f"{name} must be {expected_dim}D tensor, but got {type(tensor)}"
+        )
+    if tensor.ndim != expected_dim:
+        raise ValueError(
+            f"{name} must be {expected_dim}D tensor, but got {tensor.ndim}D tensor"
+        )
+
+
 def check_bandit_feedback_inputs(
     context: np.ndarray,
     action: np.ndarray,
@@ -206,11 +235,11 @@ def check_bandit_feedback_inputs(
         Expected rewards (or outcome) in each round, i.e., :math:`\\mathbb{E}[r_t]`.
 
     position: array-like, shape (n_rounds,), default=None
-        Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+        Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
     pscore: array-like, shape (n_rounds,), default=None
         Propensity scores, the probability of selecting each action by behavior policy,
-        in the given logged bandit feedback.
+        in the given logged bandit data.
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Context vectors characterizing each action.
@@ -291,7 +320,7 @@ def check_ope_inputs(
         Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
     position: array-like, shape (n_rounds,), default=None
-        Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+        Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
     action: array-like, shape (n_rounds,), default=None
         Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
@@ -301,7 +330,7 @@ def check_ope_inputs(
 
     pscore: array-like, shape (n_rounds,), default=None
         Propensity scores, the probability of selecting each action by behavior policy,
-        in the given logged bandit feedback.
+        in the given logged bandit data.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
         Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
@@ -533,7 +562,7 @@ def _check_slate_ope_inputs(
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit feedback.
+        Positions of each round and slot in the given logged bandit data.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities of behavior policy (propensity scores).
@@ -604,7 +633,7 @@ def check_sips_inputs(
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit feedback.
+        Positions of each round and slot in the given logged bandit data.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
@@ -663,7 +692,7 @@ def check_iips_inputs(
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit feedback.
+        Positions of each round and slot in the given logged bandit data.
 
     pscore_item_position: array-like, shape (<= n_rounds * len_list,)
         Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
@@ -707,7 +736,7 @@ def check_rips_inputs(
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit feedback.
+        Positions of each round and slot in the given logged bandit data.
 
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
@@ -767,110 +796,6 @@ def check_rips_inputs(
         raise ValueError(
             "evaluation_policy_pscore_cascade must be non-increasing sequence in each slate"
         )
-
-
-def check_ope_inputs_tensor(
-    action_dist: torch.Tensor,
-    position: Optional[torch.Tensor] = None,
-    action: Optional[torch.Tensor] = None,
-    reward: Optional[torch.Tensor] = None,
-    pscore: Optional[torch.Tensor] = None,
-    estimated_rewards_by_reg_model: Optional[torch.Tensor] = None,
-) -> Optional[ValueError]:
-    """Check inputs for bandit learning or simulation.
-    This is intended for being used with NNPolicyLearner.
-
-    Parameters
-    -----------
-    action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-        Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
-
-    position: Tensor, shape (n_rounds,), default=None
-        Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
-
-    action: Tensor, shape (n_rounds,), default=None
-        Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
-
-    reward: Tensor, shape (n_rounds,), default=None
-        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
-
-    pscore: Tensor, shape (n_rounds,), default=None
-        Propensity scores, the probability of selecting each action by behavior policy,
-        in the given logged bandit feedback.
-
-    estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list), default=None
-        Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
-
-    """
-    # action_dist
-    if not isinstance(action_dist, torch.Tensor):
-        raise ValueError("action_dist must be Tensor")
-    if action_dist.ndim != 3:
-        raise ValueError(
-            f"action_dist must be 3-dimensional, but is {action_dist.ndim}"
-        )
-    action_dist_sum = action_dist.sum(axis=1)
-    action_dist_ones = torch.ones_like(action_dist_sum)
-    if not torch.allclose(action_dist_sum, action_dist_ones):
-        raise ValueError("action_dist must be a probability distribution")
-
-    # position
-    if position is not None:
-        if not isinstance(position, torch.Tensor):
-            raise ValueError("position must be Tensor")
-        if position.ndim != 1:
-            raise ValueError("position must be 1-dimensional")
-        if not (position.shape[0] == action_dist.shape[0]):
-            raise ValueError(
-                "Expected `position.shape[0] == action_dist.shape[0]`, but found it False"
-            )
-        if not (position.dtype == torch.int64 and position.min() >= 0):
-            raise ValueError("position elements must be non-negative integers")
-        if position.max() >= action_dist.shape[2]:
-            raise ValueError(
-                "position elements must be smaller than `action_dist.shape[2]`"
-            )
-    elif action_dist.shape[2] > 1:
-        raise ValueError(
-            "position elements must be given when `action_dist.shape[2] > 1`"
-        )
-
-    # estimated_rewards_by_reg_model
-    if estimated_rewards_by_reg_model is not None:
-        if estimated_rewards_by_reg_model.shape != action_dist.shape:
-            raise ValueError(
-                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`"
-                ", but found it False"
-            )
-
-    # action, reward
-    if action is not None or reward is not None:
-        if action.ndim != 1:
-            raise ValueError("action must be 1-dimensional")
-        if reward.ndim != 1:
-            raise ValueError("reward must be 1-dimensional")
-        if not (action.shape[0] == reward.shape[0]):
-            raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0]`, but found it False"
-            )
-        if not (action.dtype == torch.int64 and action.min() >= 0):
-            raise ValueError("action elements must be non-negative integers")
-        if action.max() >= action_dist.shape[1]:
-            raise ValueError(
-                "action elements must be smaller than `action_dist.shape[1]`"
-            )
-
-    # pscore
-    if pscore is not None:
-        if pscore.ndim != 1:
-            raise ValueError("pscore must be 1-dimensional")
-        if not (action.shape[0] == reward.shape[0] == pscore.shape[0]):
-            raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0]`"
-                ", but found it False"
-            )
-        if torch.any(pscore <= 0):
-            raise ValueError("pscore must be positive")
 
 
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
