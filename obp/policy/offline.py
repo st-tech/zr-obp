@@ -417,7 +417,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     learning_rate_init: int, default=0.0001
         Initial learning rate for SGD, Adagrad, and Adam.
 
-    max_iter: int, default=200
+    max_iter: int, default=100
         Number of epochs for SGD, Adagrad, and Adam.
 
     shuffle: bool, default=True
@@ -487,7 +487,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
     learning_rate_init: float = 0.0001
-    max_iter: int = 200
+    max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None
     tol: float = 1e-4
@@ -711,9 +711,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         """
         if self.batch_size == "auto":
-            self.batch_size_ = min(200, context.shape[0])
+            batch_size_ = min(200, context.shape[0])
         elif isinstance(self.batch_size, int) and self.batch_size > 0:
-            self.batch_size_ = self.batch_size
+            batch_size_ = self.batch_size
         else:
             raise ValueError("batch_size must be a positive integer or 'auto'")
 
@@ -738,12 +738,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
             training_data_loader = torch.utils.data.DataLoader(
                 training_dataset,
-                batch_size=self.batch_size_,
+                batch_size=batch_size_,
                 shuffle=self.shuffle,
             )
             validation_data_loader = torch.utils.data.DataLoader(
                 validation_dataset,
-                batch_size=self.batch_size_,
+                batch_size=batch_size_,
                 shuffle=self.shuffle,
             )
 
@@ -751,7 +751,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         data_loader = torch.utils.data.DataLoader(
             dataset,
-            batch_size=self.batch_size_,
+            batch_size=batch_size_,
             shuffle=self.shuffle,
         )
 
@@ -969,21 +969,20 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         elif self.off_policy_objective == "ipw":
-            idx_tensor = torch.arange(self.batch_size_, dtype=torch.long)
+            n_rounds = action.shape[0]
+            idx_tensor = torch.arange(n_rounds, dtype=torch.long)
             iw = action_dist[idx_tensor, action, 0] / pscore
             baseline = reward.mean()
             estimated_policy_value_arr = iw * (reward - baseline)
 
         elif self.off_policy_objective == "dr":
-            idx_tensor = torch.arange(self.batch_size_, dtype=torch.long)
+            idx_tensor = torch.arange(n_rounds, dtype=torch.long)
             iw = action_dist[idx_tensor, action, 0] / pscore
             q_hat_baseline = self.q_func_estimator.predict(
                 context=context,
                 action_dist=action_dist,
             )
-            action_dist_ = torch.zeros(
-                (self.batch_size_, self.n_actions, self.len_list)
-            )
+            action_dist_ = torch.zeros((n_rounds, self.n_actions, self.len_list))
             action_dist_[idx_tensor, action, 0] = 1
             q_hat_actions = self.q_func_estimator.predict(
                 context=context,
@@ -1014,7 +1013,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         """
-        idx_tensor = torch.arange(self.batch_size_, dtype=torch.long)
+        idx_tensor = torch.arange(action.shape[0], dtype=torch.long)
         iw = action_dist[idx_tensor, action, 0] / pscore
 
         return torch.log(iw.mean())
@@ -1180,7 +1179,7 @@ class QFuncEstimator:
     learning_rate_init: int, default=0.0001
         Initial learning rate for SGD, Adagrad, and Adam.
 
-    max_iter: int, default=200
+    max_iter: int, default=100
         Maximum number of iterations for L-BFGS.
         Number of epochs for SGD, Adagrad, and Adam.
 
@@ -1246,7 +1245,7 @@ class QFuncEstimator:
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
     learning_rate_init: float = 0.0001
-    max_iter: int = 200
+    max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None
     tol: float = 1e-4
@@ -1415,9 +1414,9 @@ class QFuncEstimator:
 
         """
         if self.batch_size == "auto":
-            self.batch_size_ = min(200, context.shape[0])
+            batch_size_ = min(200, context.shape[0])
         elif isinstance(self.batch_size, int) and self.batch_size > 0:
-            self.batch_size_ = self.batch_size
+            batch_size_ = self.batch_size
         else:
             raise ValueError("batch_size must be a positive integer or 'auto'")
 
@@ -1441,12 +1440,12 @@ class QFuncEstimator:
             )
             training_data_loader = torch.utils.data.DataLoader(
                 training_dataset,
-                batch_size=self.batch_size_,
+                batch_size=batch_size_,
                 shuffle=self.shuffle,
             )
             validation_data_loader = torch.utils.data.DataLoader(
                 validation_dataset,
-                batch_size=self.batch_size_,
+                batch_size=batch_size_,
                 shuffle=self.shuffle,
             )
 
@@ -1454,7 +1453,7 @@ class QFuncEstimator:
 
         data_loader = torch.utils.data.DataLoader(
             dataset,
-            batch_size=self.batch_size_,
+            batch_size=batch_size_,
             shuffle=self.shuffle,
         )
 

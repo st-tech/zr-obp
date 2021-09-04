@@ -81,7 +81,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
     learning_rate_init: int, default=0.0001
         Initial learning rate for SGD, Adagrad, and Adam.
 
-    max_iter: int, default=200
+    max_iter: int, default=100
         Number of epochs for SGD, Adagrad, and Adam.
 
     shuffle: bool, default=True
@@ -157,7 +157,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
     learning_rate_init: float = 0.0001
-    max_iter: int = 200
+    max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None
     tol: float = 1e-4
@@ -696,7 +696,7 @@ class QFuncEstimatorForContinuousAction:
     learning_rate_init: int, default=0.0001
         Initial learning rate for SGD, Adagrad, and Adam.
 
-    max_iter: int, default=200
+    max_iter: int, default=100
         Number of epochs for SGD, Adagrad, and Adam.
 
     shuffle: bool, default=True
@@ -766,7 +766,7 @@ class QFuncEstimatorForContinuousAction:
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
     learning_rate_init: float = 0.0001
-    max_iter: int = 200
+    max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None
     tol: float = 1e-4
