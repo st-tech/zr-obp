@@ -7,13 +7,15 @@ from obp.ope.estimators import ReplayMethod
 from obp.ope.estimators import SelfNormalizedDoublyRobust
 from obp.ope.estimators import SelfNormalizedInverseProbabilityWeighting
 from obp.ope.estimators import SwitchDoublyRobust
+from obp.ope.estimators_continuous import (
+    KernelizedSelfNormalizedInverseProbabilityWeighting,
+)
 from obp.ope.estimators_continuous import BaseContinuousOffPolicyEstimator
 from obp.ope.estimators_continuous import cosine_kernel
 from obp.ope.estimators_continuous import epanechnikov_kernel
 from obp.ope.estimators_continuous import gaussian_kernel
 from obp.ope.estimators_continuous import KernelizedDoublyRobust
 from obp.ope.estimators_continuous import KernelizedInverseProbabilityWeighting
-from obp.ope.estimators_continuous import KernelizedSelfNormalizedInverseProbabilityWeighting
 from obp.ope.estimators_continuous import triangular_kernel
 from obp.ope.estimators_slate import SlateIndependentIPS
 from obp.ope.estimators_slate import SlateRewardInteractionIPS
