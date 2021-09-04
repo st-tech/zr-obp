@@ -90,7 +90,9 @@ def test_offline_nn_policy_learner_performance(
             output_space=(min_action_value, max_action_value),
             hidden_layer_size=(10, 10),
             learning_rate_init=0.001,
+            max_iter=200,
             solver="sgd",
+            q_func_estimator_hyperparams={"max_iter": 200},
         )
         # baseline method 1. RandomPolicy
         random_policy = RandomPolicy(output_space=(min_action_value, max_action_value))

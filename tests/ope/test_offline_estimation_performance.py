@@ -6,7 +6,7 @@ from joblib import Parallel
 import numpy as np
 from pandas import DataFrame
 import pytest
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.linear_model import LogisticRegression
@@ -56,7 +56,7 @@ hyperparams = {
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 

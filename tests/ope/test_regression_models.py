@@ -5,7 +5,7 @@ from conftest import generate_action_dist
 import numpy as np
 import pytest
 from sklearn.base import BaseEstimator
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.linear_model import LogisticRegression
@@ -21,7 +21,7 @@ np.random.seed(1)
 
 binary_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 

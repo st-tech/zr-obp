@@ -1,27 +1,18 @@
 import argparse
-import yaml
 from pathlib import Path
 
 from pandas import DataFrame
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import yaml
 
-from obp.dataset import (
-    SyntheticBanditDataset,
-    linear_behavior_policy,
-    logistic_reward_function,
-)
-from obp.policy import IPWLearner, NNPolicyLearner, Random
-from obp.ope import (
-    RegressionModel,
-    InverseProbabilityWeighting,
-    SelfNormalizedInverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust,
-    SelfNormalizedDoublyRobust,
-    DoublyRobustWithShrinkage,
-)
+from obp.dataset import linear_behavior_policy
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDataset
+from obp.policy import IPWLearner
+from obp.policy import NNPolicyLearner
+from obp.policy import Random
 
 
 # hyperparameters of the regression model used in model dependent OPE estimators
@@ -30,17 +21,8 @@ with open("./conf/hyperparams.yaml", "rb") as f:
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
-)
-
-ope_estimator_dict = dict(
-    dm=DirectMethod(),
-    ipw=InverseProbabilityWeighting(),
-    snipw=SelfNormalizedInverseProbabilityWeighting(),
-    dr=DoublyRobust(),
-    sndr=SelfNormalizedDoublyRobust(),
-    dros=DoublyRobustWithShrinkage(lambda_=1.0),
 )
 
 if __name__ == "__main__":
@@ -66,25 +48,18 @@ if __name__ == "__main__":
         help="dimensions of context vectors characterizing each round.",
     )
     parser.add_argument(
-        "--base_model_for_evaluation_policy",
+        "--base_model_for_ipw_learner",
         type=str,
         choices=["logistic_regression", "lightgbm", "random_forest"],
         required=True,
-        help="base ML model for evaluation policy, logistic_regression, random_forest or lightgbm.",
+        help="base ML model for ipw learner, logistic_regression, random_forest or lightgbm.",
     )
     parser.add_argument(
-        "--base_model_for_reg_model",
+        "--off_policy_objective",
         type=str,
-        choices=["logistic_regression", "lightgbm", "random_forest"],
+        choices=["dm", "ipw", "dr"],
         required=True,
-        help="base ML model for regression model, logistic_regression, random_forest or lightgbm.",
-    )
-    parser.add_argument(
-        "--ope_estimator",
-        type=str,
-        choices=["dm", "ipw", "snipw", "dr", "sndr", "dros"],
-        required=True,
-        help="OPE estimator for NNPolicyLearner, dm, ipw, snipw, dr, sndr, or dros.",
+        help="OPE estimator for NNPolicyLearner, 'dm', 'ipw', or 'dr'",
     )
     parser.add_argument(
         "--n_hidden",
@@ -108,7 +83,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--solver",
         type=str,
-        choices=["lbfgs", "sgd", "adam"],
+        choices=["adagrad", "sgd", "adam"],
         default="adam",
         help="optimizer for the NN Policy Learner",
     )
@@ -131,9 +106,8 @@ if __name__ == "__main__":
     n_rounds = args.n_rounds
     n_actions = args.n_actions
     dim_context = args.dim_context
-    base_model_for_evaluation_policy = args.base_model_for_evaluation_policy
-    base_model_for_reg_model = args.base_model_for_reg_model
-    ope_estimator = args.ope_estimator
+    base_model_for_ipw_learner = args.base_model_for_ipw_learner
+    off_policy_objective = args.off_policy_objective
     n_hidden = args.n_hidden
     n_layers = args.n_layers
     activation = args.activation
@@ -153,37 +127,21 @@ if __name__ == "__main__":
     # sample new training and test sets of synthetic logged bandit feedback
     bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    # estimate the mean reward function of the train set of synthetic bandit feedback with ML model
-    regression_model = RegressionModel(
-        n_actions=dataset.n_actions,
-        action_context=dataset.action_context,
-        base_model=base_model_dict[base_model_for_reg_model](
-            **hyperparams[base_model_for_reg_model]
-        ),
-    )
-    estimated_rewards_by_reg_model = regression_model.fit_predict(
-        context=bandit_feedback_train["context"],
-        action=bandit_feedback_train["action"],
-        reward=bandit_feedback_train["reward"],
-        n_folds=3,  # 3-fold cross-fitting
-        random_state=random_state,
-    )
+
     # define random evaluation policy
     random_policy = Random(n_actions=dataset.n_actions, random_state=random_state)
     # define evaluation policy using IPWLearner
     ipw_learner = IPWLearner(
         n_actions=dataset.n_actions,
-        base_classifier=base_model_dict[base_model_for_evaluation_policy](
-            **hyperparams[base_model_for_evaluation_policy]
+        base_classifier=base_model_dict[base_model_for_ipw_learner](
+            **hyperparams[base_model_for_ipw_learner]
         ),
     )
     # define evaluation policy using NNPolicyLearner
     nn_policy_learner = NNPolicyLearner(
         n_actions=dataset.n_actions,
         dim_context=dim_context,
-        off_policy_objective=ope_estimator_dict[
-            ope_estimator
-        ].estimate_policy_value_tensor,
+        off_policy_objective=off_policy_objective,
         hidden_layer_size=tuple((n_hidden for _ in range(n_layers))),
         activation=activation,
         solver=solver,
@@ -203,7 +161,6 @@ if __name__ == "__main__":
         action=bandit_feedback_train["action"],
         reward=bandit_feedback_train["reward"],
         pscore=bandit_feedback_train["pscore"],
-        estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
     # predict the action decisions for the test set of the synthetic logged bandit feedback
     random_action_dist = random_policy.compute_batch_action_dist(n_rounds=n_rounds)
@@ -238,7 +195,7 @@ if __name__ == "__main__":
         index=[
             "random_policy",
             "ipw_learner",
-            f"nn_policy_learner (with {ope_estimator})",
+            f"nn_policy_learner (with {off_policy_objective})",
         ],
     ).round(6)
     print("=" * 45)

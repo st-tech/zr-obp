@@ -1,30 +1,30 @@
+from logging import getLogger
+from pathlib import Path
 import time
 import warnings
-from pathlib import Path
-from logging import getLogger
 
 import hydra
-from omegaconf import DictConfig
 import numpy as np
+from omegaconf import DictConfig
 from pandas import DataFrame
 import pingouin as pg
-from sklearn.exceptions import ConvergenceWarning
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier as RandomForest
-from sklearn.ensemble import HistGradientBoostingClassifier as LightGBM
-from obp.dataset import OpenBanditDataset
-from obp.policy import Random, BernoulliTS
-from obp.ope import (
-    InverseProbabilityWeighting,
-    SelfNormalizedInverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust,
-    SelfNormalizedDoublyRobust,
-    SwitchDoublyRobustTuning,
-    DoublyRobustWithShrinkageTuning,
-)
 from pyieoe.evaluator import InterpretableOPEEvaluator
+from sklearn.ensemble import GradientBoostingClassifier as LightGBM
+from sklearn.ensemble import RandomForestClassifier as RandomForest
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.linear_model import LogisticRegression
+
+from obp.dataset import OpenBanditDataset
+from obp.ope import DirectMethod
+from obp.ope import DoublyRobust
+from obp.ope import DoublyRobustWithShrinkageTuning
+from obp.ope import InverseProbabilityWeighting
+from obp.ope import SelfNormalizedDoublyRobust
+from obp.ope import SelfNormalizedInverseProbabilityWeighting
+from obp.ope import SwitchDoublyRobustTuning
+from obp.policy import BernoulliTS
+from obp.policy import Random
+
 
 logger = getLogger(__name__)
 warnings.filterwarnings(action="ignore", category=ConvergenceWarning)
