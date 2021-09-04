@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 import torch
 
 from obp.policy.offline_continuous import ContinuousNNPolicyLearner
@@ -7,7 +7,7 @@ from obp.policy.offline_continuous import ContinuousNNPolicyLearner
 
 # dim_context, pg_method, bandwidth, output_space, hidden_layer_size, activation, solver, alpha,
 # batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum,
-# early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, q_func_estimator_hyperparams, description
+# early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, q_func_estimator_hyperparams, description
 invalid_input_of_nn_policy_learner_init = [
     (
         0,  #
@@ -32,7 +32,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "dim_context must be a positive integer",
     ),
@@ -59,7 +58,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "pg_method must be one of 'dgp', 'ipw', or 'dr'",
     ),
@@ -86,7 +84,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "bandwidth must be a positive float",
     ),
@@ -113,7 +110,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "output_space must be tuple of integers or floats",
     ),
@@ -140,7 +136,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "hidden_layer_size must be tuple of positive integers",
     ),
@@ -167,7 +162,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'",
     ),
@@ -194,9 +188,8 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
-        "solver must be one of 'adam', 'lbfgs', or 'sgd'",
+        "solver must be one of 'adam', 'adagrad', or 'sgd'",
     ),
     (
         10,
@@ -221,7 +214,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "alpha must be a non-negative float",
     ),
@@ -248,7 +240,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "batch_size must be a positive integer or 'auto'",
     ),
@@ -275,7 +266,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "learning_rate_init must be a positive float",
     ),
@@ -302,7 +292,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "max_iter must be a positive integer",
     ),
@@ -329,7 +318,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "shuffle must be a bool",
     ),
@@ -356,7 +344,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "'' cannot be used to seed",
     ),
@@ -383,7 +370,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "tol must be a positive float",
     ),
@@ -410,7 +396,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "momentum must be a float in [0., 1.]",
     ),
@@ -437,7 +422,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "nesterovs_momentum must be a bool",
     ),
@@ -464,7 +448,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "early_stopping must be a bool",
     ),
@@ -491,9 +474,8 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
-        "if early_stopping is True, solver must be one of 'sgd' or 'adam'",
+        "solver must be one of 'adam', 'adagrad', or 'sgd',",
     ),
     (
         10,
@@ -518,7 +500,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "validation_fraction must be a float in",
     ),
@@ -545,7 +526,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "beta_1 must be a float in [0. 1.]",
     ),
@@ -572,7 +552,6 @@ invalid_input_of_nn_policy_learner_init = [
         2,  #
         1e-8,
         10,
-        15000,
         None,
         "beta_2 must be a float in [0., 1.]",
     ),
@@ -599,7 +578,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         -1,  #
         10,
-        15000,
         None,
         "epsilon must be a non-negative float",
     ),
@@ -626,7 +604,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         0,  #
-        15000,
         None,
         "n_iter_no_change must be a positive integer",
     ),
@@ -653,34 +630,6 @@ invalid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        0,  #
-        None,
-        "max_fun must be a positive integer",
-    ),
-    (
-        10,
-        "ipw",
-        0.1,
-        (-10, 10),
-        (100, 50, 100),
-        "relu",
-        "adam",
-        0.001,
-        "auto",
-        0.0001,
-        200,
-        True,
-        123,
-        1e-4,
-        0.9,
-        True,
-        True,
-        0.1,
-        0.9,
-        0.999,
-        1e-8,
-        10,
-        15000,
         "",  #
         "q_func_estimator_hyperparams must be a dict,",
     ),
@@ -710,7 +659,6 @@ valid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "valid input",
     ),
@@ -737,7 +685,6 @@ valid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         None,
         "valid input",
     ),
@@ -764,7 +711,6 @@ valid_input_of_nn_policy_learner_init = [
         0.999,
         1e-8,
         10,
-        15000,
         {},
         "valid input",
     ),
@@ -772,7 +718,7 @@ valid_input_of_nn_policy_learner_init = [
 
 
 @pytest.mark.parametrize(
-    "dim_context, pg_method, bandwidth, output_space, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, q_func_estimator_hyperparams, description",
+    "dim_context, pg_method, bandwidth, output_space, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, q_func_estimator_hyperparams, description",
     invalid_input_of_nn_policy_learner_init,
 )
 def test_nn_policy_learner_init_using_invalid_inputs(
@@ -798,7 +744,6 @@ def test_nn_policy_learner_init_using_invalid_inputs(
     beta_2,
     epsilon,
     n_iter_no_change,
-    max_fun,
     q_func_estimator_hyperparams,
     description,
 ):
@@ -826,13 +771,12 @@ def test_nn_policy_learner_init_using_invalid_inputs(
             beta_2=beta_2,
             epsilon=epsilon,
             n_iter_no_change=n_iter_no_change,
-            max_fun=max_fun,
             q_func_estimator_hyperparams=q_func_estimator_hyperparams,
         )
 
 
 @pytest.mark.parametrize(
-    "dim_context, pg_method, bandwidth, output_space, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, max_fun, q_func_estimator_hyperparams, description",
+    "dim_context, pg_method, bandwidth, output_space, hidden_layer_size, activation, solver, alpha, batch_size, learning_rate_init, max_iter, shuffle, random_state, tol, momentum, nesterovs_momentum, early_stopping, validation_fraction, beta_1, beta_2, epsilon, n_iter_no_change, q_func_estimator_hyperparams, description",
     valid_input_of_nn_policy_learner_init,
 )
 def test_nn_policy_learner_init_using_valid_inputs(
@@ -858,7 +802,6 @@ def test_nn_policy_learner_init_using_valid_inputs(
     beta_2,
     epsilon,
     n_iter_no_change,
-    max_fun,
     q_func_estimator_hyperparams,
     description,
 ):
@@ -885,7 +828,6 @@ def test_nn_policy_learner_init_using_valid_inputs(
         beta_2=beta_2,
         epsilon=epsilon,
         n_iter_no_change=n_iter_no_change,
-        max_fun=max_fun,
         q_func_estimator_hyperparams=q_func_estimator_hyperparams,
     )
     assert isinstance(nn_policy_learner, ContinuousNNPolicyLearner)

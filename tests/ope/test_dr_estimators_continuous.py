@@ -1,13 +1,11 @@
-import pytest
 import numpy as np
+import pytest
 
+from obp.dataset import linear_behavior_policy_continuous
+from obp.dataset import linear_reward_funcion_continuous
+from obp.dataset import linear_synthetic_policy_continuous
+from obp.dataset import SyntheticContinuousBanditDataset
 from obp.ope import KernelizedDoublyRobust
-from obp.dataset import (
-    SyntheticContinuousBanditDataset,
-    linear_reward_funcion_continuous,
-    linear_behavior_policy_continuous,
-    linear_synthetic_policy_continuous,
-)
 
 
 def test_synthetic_init():

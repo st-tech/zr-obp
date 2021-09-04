@@ -2,11 +2,9 @@ import numpy as np
 import pytest
 
 from obp.dataset.synthetic import logistic_reward_function
-from obp.dataset.synthetic_slate import (
-    linear_behavior_policy_logit,
-    action_interaction_reward_function,
-    generate_symmetric_matrix,
-)
+from obp.dataset.synthetic_slate import action_interaction_reward_function
+from obp.dataset.synthetic_slate import generate_symmetric_matrix
+from obp.dataset.synthetic_slate import linear_behavior_policy_logit
 
 
 def test_generate_symmetric_matrix():

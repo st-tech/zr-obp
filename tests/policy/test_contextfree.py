@@ -1,9 +1,9 @@
-import pytest
 import numpy as np
+import pytest
 
+from obp.policy.contextfree import BernoulliTS
 from obp.policy.contextfree import EpsilonGreedy
 from obp.policy.contextfree import Random
-from obp.policy.contextfree import BernoulliTS
 from obp.policy.policy_type import PolicyType
 
 

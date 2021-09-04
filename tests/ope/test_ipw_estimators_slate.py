@@ -1,12 +1,13 @@
-import pytest
 import numpy as np
+import pytest
 
-from obp.ope import SlateStandardIPS, SlateIndependentIPS, SlateRewardInteractionIPS
-from obp.dataset import (
-    logistic_reward_function,
-    linear_behavior_policy_logit,
-    SyntheticSlateBanditDataset,
-)
+from obp.dataset import linear_behavior_policy_logit
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticSlateBanditDataset
+from obp.ope import SlateIndependentIPS
+from obp.ope import SlateRewardInteractionIPS
+from obp.ope import SlateStandardIPS
+
 
 # setting
 len_list = 3

@@ -1,12 +1,10 @@
-import pytest
 import numpy as np
+import pytest
 
 from obp.dataset import SyntheticBanditDataset
-from obp.dataset.synthetic import (
-    logistic_reward_function,
-    linear_reward_function,
-    linear_behavior_policy,
-)
+from obp.dataset.synthetic import linear_behavior_policy
+from obp.dataset.synthetic import linear_reward_function
+from obp.dataset.synthetic import logistic_reward_function
 from obp.utils import softmax
 
 

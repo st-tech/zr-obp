@@ -1,37 +1,35 @@
-import numpy as np
-from pandas import DataFrame
-from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-import torch
-import pytest
 from dataclasses import dataclass
-from obp.ope.estimators import BaseOffPolicyEstimator
-
 from typing import Dict
 
-from obp.dataset import (
-    SyntheticBanditDataset,
-    linear_behavior_policy,
-    logistic_reward_function,
-)
+from joblib import delayed
+from joblib import Parallel
+import numpy as np
+from pandas import DataFrame
+import pytest
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.linear_model import LogisticRegression
+import torch
+
+from obp.dataset import linear_behavior_policy
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDataset
+from obp.ope import DirectMethod
+from obp.ope import DoublyRobust
+from obp.ope import DoublyRobustTuning
+from obp.ope import DoublyRobustWithShrinkage
+from obp.ope import DoublyRobustWithShrinkageTuning
+from obp.ope import InverseProbabilityWeighting
+from obp.ope import InverseProbabilityWeightingTuning
+from obp.ope import OffPolicyEvaluation
+from obp.ope import RegressionModel
+from obp.ope import SelfNormalizedDoublyRobust
+from obp.ope import SelfNormalizedInverseProbabilityWeighting
+from obp.ope import SwitchDoublyRobust
+from obp.ope import SwitchDoublyRobustTuning
+from obp.ope.estimators import BaseOffPolicyEstimator
 from obp.policy import IPWLearner
-from obp.ope import (
-    RegressionModel,
-    OffPolicyEvaluation,
-    InverseProbabilityWeighting,
-    InverseProbabilityWeightingTuning,
-    SelfNormalizedInverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust,
-    DoublyRobustTuning,
-    SelfNormalizedDoublyRobust,
-    SwitchDoublyRobust,
-    SwitchDoublyRobustTuning,
-    DoublyRobustWithShrinkage,
-    DoublyRobustWithShrinkageTuning,
-)
 
 
 # hyperparameters of the regression model used in model dependent OPE estimators

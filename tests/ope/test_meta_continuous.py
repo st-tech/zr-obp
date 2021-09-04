@@ -1,19 +1,18 @@
-from typing import Dict, Optional
+from copy import deepcopy
 from dataclasses import dataclass
 import itertools
-from copy import deepcopy
+from typing import Dict
+from typing import Optional
 
-import pytest
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
+import pytest
 
+from obp.ope import BaseContinuousOffPolicyEstimator
+from obp.ope import ContinuousOffPolicyEvaluation
+from obp.ope import KernelizedDoublyRobust
 from obp.types import BanditFeedback
-from obp.ope import (
-    ContinuousOffPolicyEvaluation,
-    BaseContinuousOffPolicyEstimator,
-    KernelizedDoublyRobust,
-)
 from obp.utils import check_confidence_interval_arguments
 
 

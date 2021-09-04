@@ -1,23 +1,27 @@
+from dataclasses import dataclass
 from typing import Optional
 from typing import Tuple
 
+from joblib import delayed
+from joblib import Parallel
 import numpy as np
-from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 import pytest
-from dataclasses import dataclass
-from obp.policy.base import BaseOfflinePolicyLearner
-from sklearn.base import clone, ClassifierMixin, is_classifier
+from sklearn.base import ClassifierMixin
+from sklearn.base import clone
+from sklearn.base import is_classifier
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.linear_model import LogisticRegression
 
-from obp.dataset import (
-    SyntheticBanditDataset,
-    linear_behavior_policy,
-    logistic_reward_function,
-)
-from obp.policy import IPWLearner, NNPolicyLearner
-from obp.ope import DoublyRobust, RegressionModel
+from obp.dataset import linear_behavior_policy
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDataset
+from obp.ope import DoublyRobust
+from obp.ope import RegressionModel
+from obp.policy import IPWLearner
+from obp.policy import NNPolicyLearner
+from obp.policy.base import BaseOfflinePolicyLearner
 
 
 # hyperparameters of the regression model used in model dependent OPE estimators
