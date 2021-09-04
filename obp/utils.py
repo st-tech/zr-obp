@@ -93,6 +93,33 @@ def estimate_confidence_interval_by_bootstrap(
     }
 
 
+def sample_action_fast(
+    action_dist: np.ndarray, random_state: Optional[int] = None
+) -> np.ndarray:
+    """Sample actions faster based on a given action distribution.
+
+    Parameters
+    ----------
+    action_dist: array-like, shape (n_rounds, n_actions)
+        Distribution over actions.
+
+    random_state: Optional[int], default=None
+        Controls the random seed in sampling synthetic bandit dataset.
+
+    Returns
+    ---------
+    sampled_action: array-like, shape (n_rounds,)
+        Actions sampled based on `action_dist`.
+
+    """
+    random_ = check_random_state(random_state)
+    uniform_rvs = random_.uniform(size=action_dist.shape[0])[:, np.newaxis]
+    cum_action_dist = action_dist.cumsum(axis=1)
+    flg = cum_action_dist > uniform_rvs
+    sampled_action = flg.argmax(axis=1)
+    return sampled_action
+
+
 def convert_to_action_dist(
     n_actions: int,
     selected_actions: np.ndarray,
