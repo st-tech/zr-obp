@@ -90,7 +90,7 @@ It is possible to run multiple experimental settings easily by using the `--mult
 For example, the following script sweeps over all simulations including the three campaigns ('all', 'men',  and 'women') and two different behavior policies ('random' and 'bts').
 
 ```bash
-poetry run python benchmark_ope_estimators.py setting.campaign=all,men,women setting.behavior_policy=random.bts --multirun
+poetry run python benchmark_ope_estimators.py setting.campaign=all,men,women setting.behavior_policy=random,bts --multirun
 ```
 
 The experimental results (including the pairwise hypothesis test results) will be store in the `logs/` directory.
