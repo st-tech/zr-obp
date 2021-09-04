@@ -35,7 +35,7 @@ from obp.policy import IPWLearner
 # hyperparameters of the regression model used in model dependent OPE estimators
 hyperparams = {
     "lightgbm": {
-        "max_iter": 500,
+        "n_estimators": 100,
         "learning_rate": 0.005,
         "max_depth": 5,
         "min_samples_leaf": 10,
