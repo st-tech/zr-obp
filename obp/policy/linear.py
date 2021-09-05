@@ -5,7 +5,9 @@
 from dataclasses import dataclass
 
 import numpy as np
+from sklearn.utils import check_scalar
 
+from ..utils import check_array
 from .base import BaseContextualPolicy
 
 
@@ -123,10 +125,7 @@ class LinEpsilonGreedy(BaseLinPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not 0 <= self.epsilon <= 1:
-            raise ValueError(
-                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
-            )
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0, max_val=1.0)
         self.policy_name = f"linear_epsilon_greedy_{self.epsilon}"
 
         super().__post_init__()
@@ -145,10 +144,9 @@ class LinEpsilonGreedy(BaseLinPolicy):
             List of selected actions.
 
         """
-        if context.ndim != 2 or context.shape[0] != 1:
-            raise ValueError(
-                f"context shape must be (1, dim_context),but {context.shape} is given"
-            )
+        check_array(array=context, name="context", expected_dim=2)
+        if context.shape[0] != 1:
+            raise ValueError("Expected `context.shape[0] == 1`, but found it False")
 
         if self.random_.rand() > self.epsilon:
             self.theta_hat = np.concatenate(
@@ -189,7 +187,7 @@ class LinUCB(BaseLinPolicy):
         Controls the random seed in sampling actions.
 
     epsilon: float, default=0.
-        Exploration hyperparameter that must take value in the range of [0., 1.].
+        Exploration hyperparameter that must be greater than or equal to 0.0.
 
     References
     --------------
@@ -203,10 +201,7 @@ class LinUCB(BaseLinPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if self.epsilon < 0:
-            raise ValueError(
-                f"epsilon must be positive scalar, but {self.epsilon} is given"
-            )
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0)
         self.policy_name = f"linear_ucb_{self.epsilon}"
 
         super().__post_init__()
@@ -225,10 +220,10 @@ class LinUCB(BaseLinPolicy):
             List of selected actions.
 
         """
-        if context.ndim != 2 or context.shape[0] != 1:
-            raise ValueError(
-                f"context shape must be (1, dim_context),but {context.shape} is given"
-            )
+        check_array(array=context, name="context", expected_dim=2)
+        if context.shape[0] != 1:
+            raise ValueError("Expected `context.shape[0] == 1`, but found it False")
+
         self.theta_hat = np.concatenate(
             [
                 self.A_inv[i] @ self.b[:, i][:, np.newaxis]

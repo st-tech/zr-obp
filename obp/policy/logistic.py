@@ -8,6 +8,7 @@ from typing import Optional
 import numpy as np
 from scipy.optimize import minimize
 from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
 from ..utils import sigmoid
 from .base import BaseContextualPolicy
@@ -49,15 +50,13 @@ class BaseLogisticPolicy(BaseContextualPolicy):
     def __post_init__(self) -> None:
         """Initialize class."""
         super().__post_init__()
-        if not isinstance(self.alpha_, float) or self.alpha_ <= 0.0:
-            raise ValueError(
-                f"alpha_ should be a positive float, but {self.alpha_} is given"
-            )
+        check_scalar(self.alpha_, "alpha_", float)
+        if self.alpha_ <= 0.0:
+            raise ValueError(f"`alpha_`= {self.alpha_}, must be > 0.0.")
 
-        if not isinstance(self.lambda_, float) or self.lambda_ <= 0.0:
-            raise ValueError(
-                f"lambda_ should be a positive float, but {self.lambda_} is given"
-            )
+        check_scalar(self.lambda_, "lambda_", float)
+        if self.lambda_ <= 0.0:
+            raise ValueError(f"`lambda_`= {self.lambda_}, must be > 0.0.")
 
         self.alpha_list = self.alpha_ * np.ones(self.n_actions)
         self.lambda_list = self.lambda_ * np.ones(self.n_actions)
@@ -138,10 +137,7 @@ class LogisticEpsilonGreedy(BaseLogisticPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not 0 <= self.epsilon <= 1:
-            raise ValueError(
-                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
-            )
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0, max_val=1.0)
         self.policy_name = f"logistic_egreedy_{self.epsilon}"
 
         super().__post_init__()
@@ -200,7 +196,7 @@ class LogisticUCB(BaseLogisticPolicy):
         Regularization hyperparameter for the online logistic regression.
 
     epsilon: float, default=0.
-        Exploration hyperparameter that must take value in the range of [0., 1.].
+        Exploration hyperparameter that must be greater than or equal to 0.0.
 
     References
     ----------
@@ -213,10 +209,7 @@ class LogisticUCB(BaseLogisticPolicy):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if self.epsilon < 0:
-            raise ValueError(
-                f"epsilon must be positive scalar, but {self.epsilon} is given"
-            )
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0)
         self.policy_name = f"logistic_ucb_{self.epsilon}"
 
         super().__post_init__()

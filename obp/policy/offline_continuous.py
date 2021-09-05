@@ -11,6 +11,7 @@ from typing import Union
 
 import numpy as np
 from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -173,10 +174,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
-            raise ValueError(
-                f"dim_context must be a positive integer, but {self.dim_context} is given"
-            )
+        check_scalar(self.dim_context, "dim_context", int, min_val=1)
 
         if self.pg_method not in ["dpg", "ipw", "dr"]:
             raise ValueError(
@@ -184,10 +182,9 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             )
 
         if self.pg_method != "dpg":
-            if not isinstance(self.bandwidth, (int, float)) or self.bandwidth <= 0:
-                raise ValueError(
-                    f"bandwidth must be a positive float, but {self.bandwidth} is given"
-                )
+            check_scalar(self.bandwidth, "bandwidth", (int, float))
+            if self.bandwidth <= 0:
+                raise ValueError(f"`bandwidth`= {self.bandwidth}, must be > 0.")
 
         if self.output_space is not None:
             if not isinstance(self.output_space, tuple) or any(
@@ -209,10 +206,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
-        if not isinstance(self.alpha, float) or self.alpha < 0.0:
-            raise ValueError(
-                f"alpha must be a non-negative float, but {self.alpha} is given"
-            )
+        check_scalar(self.alpha, "alpha", float, min_val=0.0)
 
         if self.batch_size != "auto" and (
             not isinstance(self.batch_size, int) or self.batch_size <= 0
@@ -221,29 +215,22 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
-        if (
-            not isinstance(self.learning_rate_init, float)
-            or self.learning_rate_init <= 0.0
-        ):
+        check_scalar(self.learning_rate_init, "learning_rate_init", float)
+        if self.learning_rate_init <= 0.0:
             raise ValueError(
-                f"learning_rate_init must be a positive float, but {self.learning_rate_init} is given"
+                f"`learning_rate_init`= {self.learning_rate_init}, must be > 0.0"
             )
 
-        if not isinstance(self.max_iter, int) or self.max_iter <= 0:
-            raise ValueError(
-                f"max_iter must be a positive integer, but {self.max_iter} is given"
-            )
+        check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
             raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
 
-        if not isinstance(self.tol, float) or self.tol <= 0.0:
-            raise ValueError(f"tol must be a positive float, but {self.tol} is given")
+        check_scalar(self.tol, "tol", float)
+        if self.tol <= 0.0:
+            raise ValueError(f"`tol`= {self.tol}, must be > 0.0")
 
-        if not isinstance(self.momentum, float) or not 0.0 <= self.momentum <= 1.0:
-            raise ValueError(
-                f"momentum must be a float in [0., 1.], but {self.momentum} is given"
-            )
+        check_scalar(self.momentum, "momentum", float, min_val=0.0, max_val=1.0)
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
@@ -255,43 +242,24 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 f"early_stopping must be a bool, but {self.early_stopping} is given"
             )
 
-        if (
-            not isinstance(self.validation_fraction, float)
-            or not 0.0 < self.validation_fraction <= 1.0
-        ):
+        check_scalar(
+            self.validation_fraction, "validation_fraction", float, max_val=1.0
+        )
+        if self.validation_fraction <= 0.0:
             raise ValueError(
-                f"validation_fraction must be a float in (0., 1.], but {self.validation_fraction} is given"
+                f"`validation_fraction`= {self.validation_fraction}, must be > 0.0"
             )
 
-        if not isinstance(self.beta_1, float) or not 0.0 <= self.beta_1 <= 1.0:
-            raise ValueError(
-                f"beta_1 must be a float in [0. 1.], but {self.beta_1} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
-            raise ValueError(
-                f"epsilon must be a non-negative float, but {self.epsilon} is given"
-            )
-
-        if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
-            raise ValueError(
-                f"n_iter_no_change must be a positive integer, but {self.n_iter_no_change} is given"
-            )
+        check_scalar(self.beta_1, "beta_1", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.beta_2, "beta_2", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0)
+        check_scalar(self.n_iter_no_change, "n_iter_no_change", int, min_val=1)
 
         if self.q_func_estimator_hyperparams is not None:
             if not isinstance(self.q_func_estimator_hyperparams, dict):
                 raise ValueError(
-                    f"q_func_estimator_hyperparams must be a dict, but {type(self.q_func_estimator_hyperparams)} is given"
+                    "q_func_estimator_hyperparams must be a dict"
+                    f", but {type(self.q_func_estimator_hyperparams)} is given"
                 )
 
         if self.random_state is not None:
@@ -311,7 +279,6 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         else:
             raise ValueError(
                 "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
-                f", but {self.activation} is given"
             )
 
         layer_list = []
@@ -511,12 +478,15 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             for x, a, r, p in training_data_loader:
                 optimizer.zero_grad()
                 action_by_current_policy = self.nn_model(x).flatten()
-                loss = -1.0 * self._estimate_policy_value(
-                    context=x,
-                    reward=r,
-                    action=a,
-                    pscore=p,
-                    action_by_current_policy=action_by_current_policy,
+                loss = (
+                    -1.0
+                    * self._estimate_policy_value(
+                        context=x,
+                        reward=r,
+                        action=a,
+                        pscore=p,
+                        action_by_current_policy=action_by_current_policy,
+                    ).mean()
                 )
                 loss.backward()
                 optimizer.step()
@@ -535,12 +505,15 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 self.nn_model.eval()
                 for x, a, r, p in validation_data_loader:
                     action_by_current_policy = self.nn_model(x).flatten()
-                    loss = -1.0 * self._estimate_policy_value(
-                        context=x,
-                        reward=r,
-                        action=a,
-                        pscore=p,
-                        action_by_current_policy=action_by_current_policy,
+                    loss = (
+                        -1.0
+                        * self._estimate_policy_value(
+                            context=x,
+                            reward=r,
+                            action=a,
+                            pscore=p,
+                            action_by_current_policy=action_by_current_policy,
+                        ).mean()
                     )
                     loss_value = loss.item()
                     self.val_loss_curve.append(-loss_value)
@@ -565,24 +538,25 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
         Parameters
         -----------
-        context: Tensor, shape (n_rounds, dim_context)
+        context: Tensor, shape (batch_size, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action: Tensor, shape (n_rounds,)
+        action: Tensor, shape (batch_size,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        reward: Tensor, shape (n_rounds,)
+        reward: Tensor, shape (batch_size,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: Tensor, shape (n_rounds,)
+        pscore: Tensor, shape (batch_size,)
             Action choice probabilities of a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
-        action_by_current_policy: array-like or Tensor, shape (n_rounds,)
+        action_by_current_policy: array-like or Tensor, shape (batch_size,)
             Continuous action values given by the current policy.
 
         Returns
-        ---------
-        TODO
+        ----------
+        estimated_policy_value_arr: array-like, shape (batch_size,)
+            Rewards of each round estimated by an OPE estimator.
 
         """
 
@@ -597,7 +571,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             )
 
         if self.pg_method == "dpg":
-            estimated_policy_value = self.q_func_estimator.predict(
+            estimated_policy_value_arr = self.q_func_estimator.predict(
                 context=context,
                 action=action_by_current_policy,
             )
@@ -605,8 +579,8 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         elif self.pg_method == "ipw":
             u = action_by_current_policy - action
             u /= self.bandwidth
-            estimated_policy_value = gaussian_kernel(u) * reward / pscore
-            estimated_policy_value /= self.bandwidth
+            estimated_policy_value_arr = gaussian_kernel(u) * reward / pscore
+            estimated_policy_value_arr /= self.bandwidth
 
         elif self.pg_method == "dr":
             u = action_by_current_policy - action
@@ -615,11 +589,11 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 context=context,
                 action=action_by_current_policy,
             )
-            estimated_policy_value = gaussian_kernel(u) * (reward - q_hat) / pscore
-            estimated_policy_value /= self.bandwidth
-            estimated_policy_value += q_hat
+            estimated_policy_value_arr = gaussian_kernel(u) * (reward - q_hat) / pscore
+            estimated_policy_value_arr /= self.bandwidth
+            estimated_policy_value_arr += q_hat
 
-        return estimated_policy_value.mean()
+        return estimated_policy_value_arr
 
     def predict(self, context: np.ndarray) -> np.ndarray:
         """Predict best continuous actions for new data.
@@ -781,10 +755,7 @@ class QFuncEstimatorForContinuousAction:
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
-            raise ValueError(
-                f"dim_context must be a positive integer, but {self.dim_context} is given"
-            )
+        check_scalar(self.dim_context, "dim_context", int, min_val=1)
 
         if not isinstance(self.hidden_layer_size, tuple) or any(
             [not isinstance(h, int) or h <= 0 for h in self.hidden_layer_size]
@@ -798,10 +769,7 @@ class QFuncEstimatorForContinuousAction:
                 f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
-        if not isinstance(self.alpha, float) or self.alpha < 0.0:
-            raise ValueError(
-                f"alpha must be a non-negative float, but {self.alpha} is given"
-            )
+        check_scalar(self.alpha, "alpha", float, min_val=0.0)
 
         if self.batch_size != "auto" and (
             not isinstance(self.batch_size, int) or self.batch_size <= 0
@@ -810,29 +778,22 @@ class QFuncEstimatorForContinuousAction:
                 f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
-        if (
-            not isinstance(self.learning_rate_init, float)
-            or self.learning_rate_init <= 0.0
-        ):
+        check_scalar(self.learning_rate_init, "learning_rate_init", float)
+        if self.learning_rate_init <= 0.0:
             raise ValueError(
-                f"learning_rate_init must be a positive float, but {self.learning_rate_init} is given"
+                f"`learning_rate_init`= {self.learning_rate_init}, must be > 0.0"
             )
 
-        if not isinstance(self.max_iter, int) or self.max_iter <= 0:
-            raise ValueError(
-                f"max_iter must be a positive integer, but {self.max_iter} is given"
-            )
+        check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
             raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
 
-        if not isinstance(self.tol, float) or self.tol <= 0.0:
-            raise ValueError(f"tol must be a positive float, but {self.tol} is given")
+        check_scalar(self.tol, "tol", float)
+        if self.tol <= 0.0:
+            raise ValueError(f"`tol`= {self.tol}, must be > 0.0")
 
-        if not isinstance(self.momentum, float) or not 0.0 <= self.momentum <= 1.0:
-            raise ValueError(
-                f"momentum must be a float in [0., 1.], but {self.momentum} is given"
-            )
+        check_scalar(self.momentum, "momentum", float, min_val=0.0, max_val=1.0)
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
@@ -844,38 +805,18 @@ class QFuncEstimatorForContinuousAction:
                 f"early_stopping must be a bool, but {self.early_stopping} is given"
             )
 
-        if (
-            not isinstance(self.validation_fraction, float)
-            or not 0.0 < self.validation_fraction <= 1.0
-        ):
+        check_scalar(
+            self.validation_fraction, "validation_fraction", float, max_val=1.0
+        )
+        if self.validation_fraction <= 0.0:
             raise ValueError(
-                f"validation_fraction must be a float in (0., 1.], but {self.validation_fraction} is given"
+                f"`validation_fraction`= {self.validation_fraction}, must be > 0.0"
             )
 
-        if not isinstance(self.beta_1, float) or not 0.0 <= self.beta_1 <= 1.0:
-            raise ValueError(
-                f"beta_1 must be a float in [0. 1.], but {self.beta_1} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
-            raise ValueError(
-                f"epsilon must be a non-negative float, but {self.epsilon} is given"
-            )
-
-        if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
-            raise ValueError(
-                f"n_iter_no_change must be a positive integer, but {self.n_iter_no_change} is given"
-            )
+        check_scalar(self.beta_1, "beta_1", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.beta_2, "beta_2", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0)
+        check_scalar(self.n_iter_no_change, "n_iter_no_change", int, min_val=1)
 
         if self.random_state is not None:
             self.random_ = check_random_state(self.random_state)
@@ -893,7 +834,8 @@ class QFuncEstimatorForContinuousAction:
             activation_layer = nn.ELU
         else:
             raise ValueError(
-                f"activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu', but {self.activation} is given"
+                "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
+                f", but {self.activation} is given"
             )
 
         layer_list = []

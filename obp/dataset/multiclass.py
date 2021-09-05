@@ -13,6 +13,7 @@ from sklearn.base import clone
 from sklearn.base import is_classifier
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 from sklearn.utils import check_X_y
 
 from ..types import BanditFeedback
@@ -156,10 +157,9 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         """Initialize Class."""
         if not is_classifier(self.base_classifier_b):
             raise ValueError("base_classifier_b must be a classifier")
-        if not isinstance(self.alpha_b, float) or not (0.0 <= self.alpha_b < 1.0):
-            raise ValueError(
-                f"alpha_b must be a float in the [0,1) interval, but {self.alpha_b} is given"
-            )
+        check_scalar(self.alpha_b, "alpha_b", float, min_val=0.0)
+        if self.alpha_b >= 1.0:
+            raise ValueError(f"`alpha_b`= {self.alpha_b}, must be < 1.0.")
 
         self.X, y = check_X_y(X=self.X, y=self.y, ensure_2d=True, multi_output=False)
         self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index action
@@ -284,10 +284,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
             axis 2 represents the length of list; it is always 1 in the current implementation.
 
         """
-        if not isinstance(alpha_e, float) or not (0.0 <= alpha_e <= 1.0):
-            raise ValueError(
-                f"alpha_e must be a float in the [0,1] interval, but {alpha_e} is given"
-            )
+        check_scalar(alpha_e, "alpha_e", float, min_val=0.0, max_val=1.0)
         # train a base ML classifier
         if base_classifier_e is None:
             base_clf_e = clone(self.base_classifier_b)

@@ -10,6 +10,8 @@ from sklearn.base import BaseEstimator
 from sklearn.base import clone
 from sklearn.base import is_classifier
 from sklearn.model_selection import KFold
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
 from ..utils import check_bandit_feedback_inputs
 
@@ -64,20 +66,14 @@ class RegressionModel(BaseEstimator):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
+        check_scalar(self.n_actions, "n_actions", int, min_val=2)
+        check_scalar(self.len_list, "len_list", int, min_val=1)
         if not (
             isinstance(self.fitting_method, str)
             and self.fitting_method in ["normal", "iw", "mrdr"]
         ):
             raise ValueError(
                 f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
-            )
-        if not (isinstance(self.n_actions, int) and self.n_actions > 1):
-            raise ValueError(
-                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-            )
-        if not (isinstance(self.len_list, int) and self.len_list > 0):
-            raise ValueError(
-                f"len_list must be a positive integer, but {self.len_list} is given"
             )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
@@ -294,15 +290,8 @@ class RegressionModel(BaseEstimator):
         )
         n_rounds = context.shape[0]
 
-        if not (isinstance(n_folds, int) and n_folds > 0):
-            raise ValueError(
-                f"n_folds must be a positive integer, but {n_folds} is given"
-            )
-
-        if random_state is not None and not isinstance(random_state, int):
-            raise ValueError(
-                f"random_state must be an integer, but {random_state} is given"
-            )
+        check_scalar(n_folds, "n_folds", int, min_val=1)
+        check_random_state(random_state)
 
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)

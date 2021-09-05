@@ -23,8 +23,8 @@ invalid_input_of_init = [
         "pbm",
         1.0,
         1,
-        ValueError,
-        "n_unique_action must be an integer larger than 1",
+        TypeError,
+        "`n_unique_action` must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         1,
@@ -37,7 +37,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "n_unique_action must be an integer larger than 1",
+        "`n_unique_action`= 1, must be >= 2.",
     ),
     (
         5,
@@ -49,8 +49,8 @@ invalid_input_of_init = [
         "pbm",
         1.0,
         1,
-        ValueError,
-        "len_list must be an integer larger than",
+        TypeError,
+        "`len_list` must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         5,
@@ -63,7 +63,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "len_list must be an integer larger than",
+        "`len_list`= -1, must be >= 2.",
     ),
     (
         5,
@@ -76,7 +76,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "len_list must be equal to or smaller than",
+        "`len_list`= 10, must be <= 5.",
     ),
     (
         5,
@@ -89,7 +89,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "dim_context must be a positive integer",
+        "`dim_context`= 0, must be >= 1.",
     ),
     (
         5,
@@ -101,8 +101,8 @@ invalid_input_of_init = [
         "pbm",
         1.0,
         1,
-        ValueError,
-        "dim_context must be a positive integer",
+        TypeError,
+        "`dim_context` must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         5,
@@ -193,20 +193,7 @@ invalid_input_of_init = [
         1.0,
         "x",
         ValueError,
-        "random_state must be an integer",
-    ),
-    (
-        5,
-        3,
-        2,
-        "binary",
-        "independent",
-        "exponential",
-        "pbm",
-        1.0,
-        None,
-        ValueError,
-        "random_state must be an integer",
+        "'x' cannot be used to seed a numpy.random.RandomState instance",
     ),
 ]
 
@@ -462,7 +449,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_linear_behavior_poli
     )
     with pytest.raises(ValueError):
         _ = dataset.obtain_batch_bandit_feedback(n_rounds=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         _ = dataset.obtain_batch_bandit_feedback(n_rounds="a")
 
     # obtain feedback

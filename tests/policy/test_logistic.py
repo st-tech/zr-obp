@@ -7,6 +7,55 @@ from obp.policy.logistic import LogisticUCB
 from obp.policy.logistic import MiniBatchLogisticRegression
 
 
+def test_logistic_base_exception():
+    # invalid dim
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=2, dim=-3)
+
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=2, dim=0)
+
+    with pytest.raises(TypeError):
+        LogisticEpsilonGreedy(n_actions=2, dim="3")
+
+    # invalid n_actions
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=-3, dim=2)
+
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=1, dim=2)
+
+    with pytest.raises(TypeError):
+        LogisticEpsilonGreedy(n_actions="2", dim=2)
+
+    # invalid len_list
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=2, dim=2, len_list=-3)
+
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=2, dim=2, len_list=0)
+
+    with pytest.raises(TypeError):
+        LogisticEpsilonGreedy(n_actions=2, dim=2, len_list="3")
+
+    # invalid batch_size
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=2, dim=2, batch_size=-2)
+
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=2, dim=2, batch_size=0)
+
+    with pytest.raises(TypeError):
+        LogisticEpsilonGreedy(n_actions=2, dim=2, batch_size="10")
+
+    # invalid relationship between n_actions and len_list
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=5, len_list=10, dim=2)
+
+    with pytest.raises(ValueError):
+        LogisticEpsilonGreedy(n_actions=2, len_list=3, dim=2)
+
+
 def test_logistic_epsilon_normal_epsilon():
 
     policy1 = LogisticEpsilonGreedy(n_actions=2, dim=2)

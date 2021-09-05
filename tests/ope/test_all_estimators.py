@@ -273,12 +273,30 @@ def test_estimation_of_all_estimators_using_valid_input_data(
 
 # alpha, n_bootstrap_samples, random_state, description
 invalid_input_of_estimate_intervals = [
-    (0.05, 100, "s", "random_state must be an integer"),
-    (0.05, -1, 1, "n_bootstrap_samples must be a positive integer"),
-    (0.05, "s", 1, "n_bootstrap_samples must be a positive integer"),
-    (0.0, 1, 1, "alpha must be a positive float (< 1)"),
-    (1.0, 1, 1, "alpha must be a positive float (< 1)"),
-    ("0", 1, 1, "alpha must be a positive float (< 1)"),
+    (
+        0.05,
+        100,
+        "s",
+        ValueError,
+        "'s' cannot be used to seed a numpy.random.RandomState instance",
+    ),
+    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (
+        0.05,
+        "s",
+        1,
+        TypeError,
+        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+    ),
+    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (
+        "0",
+        1,
+        1,
+        TypeError,
+        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+    ),
 ]
 
 valid_input_of_estimate_intervals = [
@@ -288,7 +306,7 @@ valid_input_of_estimate_intervals = [
 
 
 @pytest.mark.parametrize(
-    "alpha, n_bootstrap_samples, random_state, description",
+    "alpha, n_bootstrap_samples, random_state, err, description",
     invalid_input_of_estimate_intervals,
 )
 def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
@@ -297,6 +315,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     random_state,
     description: str,
     synthetic_bandit_feedback: BanditFeedback,
+    err,
     random_action_dist: np.ndarray,
 ) -> None:
     """
@@ -317,7 +336,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
-        with pytest.raises(ValueError, match=f"{description}*"):
+        with pytest.raises(err, match=f"{description}*"):
             _ = estimator.estimate_interval(
                 reward=bandit_feedback["reward"],
                 action=bandit_feedback["action"],
@@ -330,7 +349,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
                 random_state=random_state,
             )
     for estimator_tuning in estimators_tuning:
-        with pytest.raises(ValueError, match=f"{description}*"):
+        with pytest.raises(err, match=f"{description}*"):
             _ = estimator_tuning.estimate_interval(
                 reward=bandit_feedback["reward"],
                 action=bandit_feedback["action"],

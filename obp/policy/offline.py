@@ -15,11 +15,11 @@ from sklearn.base import ClassifierMixin
 from sklearn.base import clone
 from sklearn.base import is_classifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import check_random_state
 from sklearn.utils import check_scalar
 import torch
 import torch.nn as nn
+from torch.nn.functional import mse_loss
 import torch.optim as optim
 from tqdm import tqdm
 
@@ -417,7 +417,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     learning_rate_init: int, default=0.0001
         Initial learning rate for SGD, Adagrad, and Adam.
 
-    max_iter: int, default=100
+    max_iter: int, default=200
         Number of epochs for SGD, Adagrad, and Adam.
 
     shuffle: bool, default=True
@@ -487,7 +487,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
     learning_rate_init: float = 0.0001
-    max_iter: int = 100
+    max_iter: int = 200
     shuffle: bool = True
     random_state: Optional[int] = None
     tol: float = 1e-4
@@ -508,10 +508,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         if self.len_list != 1:
             raise NotImplementedError("currently, len_list > 1 is not supported")
 
-        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
-            raise ValueError(
-                f"dim_context must be a positive integer, but {self.dim_context} is given"
-            )
+        check_scalar(self.dim_context, "dim_context", int, min_val=1)
 
         if self.off_policy_objective not in ["dm", "ipw", "dr"]:
             raise ValueError(
@@ -521,14 +518,15 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         check_scalar(
             self.policy_reg_param,
-            name="policy_reg_param",
-            target_type=(int, float),
+            "policy_reg_param",
+            (int, float),
             min_val=0.0,
         )
+
         check_scalar(
             self.var_reg_param,
-            name="var_reg_param",
-            target_type=(int, float),
+            "var_reg_param",
+            (int, float),
             min_val=0.0,
         )
 
@@ -544,10 +542,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
-        if not isinstance(self.alpha, float) or self.alpha < 0.0:
-            raise ValueError(
-                f"alpha must be a non-negative float, but {self.alpha} is given"
-            )
+        check_scalar(self.alpha, "alpha", float, min_val=0.0)
 
         if self.batch_size != "auto" and (
             not isinstance(self.batch_size, int) or self.batch_size <= 0
@@ -556,29 +551,22 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
-        if (
-            not isinstance(self.learning_rate_init, float)
-            or self.learning_rate_init <= 0.0
-        ):
+        check_scalar(self.learning_rate_init, "learning_rate_init", float)
+        if self.learning_rate_init <= 0.0:
             raise ValueError(
-                f"learning_rate_init must be a positive float, but {self.learning_rate_init} is given"
+                f"`learning_rate_init`= {self.learning_rate_init}, must be > 0.0"
             )
 
-        if not isinstance(self.max_iter, int) or self.max_iter <= 0:
-            raise ValueError(
-                f"max_iter must be a positive integer, but {self.max_iter} is given"
-            )
+        check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
             raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
 
-        if not isinstance(self.tol, float) or self.tol <= 0.0:
-            raise ValueError(f"tol must be a positive float, but {self.tol} is given")
+        check_scalar(self.tol, "tol", float)
+        if self.tol <= 0.0:
+            raise ValueError(f"`tol`= {self.tol}, must be > 0.0")
 
-        if not isinstance(self.momentum, float) or not 0.0 <= self.momentum <= 1.0:
-            raise ValueError(
-                f"momentum must be a float in [0., 1.], but {self.momentum} is given"
-            )
+        check_scalar(self.momentum, "momentum", float, min_val=0.0, max_val=1.0)
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
@@ -590,37 +578,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"early_stopping must be a bool, but {self.early_stopping} is given"
             )
 
-        if (
-            not isinstance(self.validation_fraction, float)
-            or not 0.0 < self.validation_fraction <= 1.0
-        ):
+        check_scalar(
+            self.validation_fraction, "validation_fraction", float, max_val=1.0
+        )
+        if self.validation_fraction <= 0.0:
             raise ValueError(
-                f"validation_fraction must be a float in (0., 1.], but {self.validation_fraction} is given"
-            )
-
-        if not isinstance(self.beta_1, float) or not 0.0 <= self.beta_1 <= 1.0:
-            raise ValueError(
-                f"beta_1 must be a float in [0. 1.], but {self.beta_1} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
-            raise ValueError(
-                f"epsilon must be a non-negative float, but {self.epsilon} is given"
-            )
-
-        if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
-            raise ValueError(
-                f"n_iter_no_change must be a positive integer, but {self.n_iter_no_change} is given"
+                f"`validation_fraction`= {self.validation_fraction}, must be > 0.0"
             )
 
         if self.q_func_estimator_hyperparams is not None:
@@ -629,6 +592,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                     "q_func_estimator_hyperparams must be a dict"
                     f", but {type(self.q_func_estimator_hyperparams)} is given"
                 )
+        check_scalar(self.beta_1, "beta_1", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.beta_2, "beta_2", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0)
+        check_scalar(self.n_iter_no_change, "n_iter_no_change", int, min_val=1)
 
         if self.random_state is not None:
             self.random_ = check_random_state(self.random_state)
@@ -712,10 +679,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         """
         if self.batch_size == "auto":
             batch_size_ = min(200, context.shape[0])
-        elif isinstance(self.batch_size, int) and self.batch_size > 0:
-            batch_size_ = self.batch_size
         else:
-            raise ValueError("batch_size must be a positive integer or 'auto'")
+            check_scalar(self.batch_size, "batch_size", int, min_val=1)
+            batch_size_ = self.batch_size
 
         dataset = NNPolicyDataset(
             torch.from_numpy(context).float(),
@@ -941,24 +907,24 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         Parameters
         -----------
-        context: array-like, shape (n_rounds, dim_context)
+        context: array-like, shape (batch_size, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action: array-like, shape (n_rounds,)
+        action: array-like, shape (batch_size,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        reward: array-like, shape (n_rounds,)
+        reward: array-like, shape (batch_size,)
             Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
 
-        pscore: array-like, shape (n_rounds,), default=None
+        pscore: array-like, shape (batch_size,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
-        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+        action_dist: array-like, shape (batch_size, n_actions, len_list)
             Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         Returns
         ----------
-        estimated_policy_value_arr: array-like, shape (n_rounds,)
+        estimated_policy_value_arr: array-like, shape (batch_size,)
             Rewards of each round estimated by an OPE estimator.
 
         """
@@ -971,9 +937,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         elif self.off_policy_objective == "ipw":
             n_rounds = action.shape[0]
             idx_tensor = torch.arange(n_rounds, dtype=torch.long)
-            iw = action_dist[idx_tensor, action, 0] / pscore
-            baseline = reward.mean()
-            estimated_policy_value_arr = iw * (reward - baseline)
+            # with torch.no_grad():
+            current_pi = action_dist[idx_tensor, action, 0]
+            iw = current_pi / pscore
+            # log_prob = torch.log(action_dist[idx_tensor, action, 0])
+            estimated_policy_value_arr = iw * reward  # * log_prob
 
         elif self.off_policy_objective == "dr":
             n_rounds = action.shape[0]
@@ -1180,8 +1148,7 @@ class QFuncEstimator:
     learning_rate_init: int, default=0.0001
         Initial learning rate for SGD, Adagrad, and Adam.
 
-    max_iter: int, default=100
-        Maximum number of iterations for L-BFGS.
+    max_iter: int, default=200
         Number of epochs for SGD, Adagrad, and Adam.
 
     shuffle: bool, default=True
@@ -1246,7 +1213,7 @@ class QFuncEstimator:
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
     learning_rate_init: float = 0.0001
-    max_iter: int = 100
+    max_iter: int = 200
     shuffle: bool = True
     random_state: Optional[int] = None
     tol: float = 1e-4
@@ -1261,10 +1228,7 @@ class QFuncEstimator:
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
-            raise ValueError(
-                f"dim_context must be a positive integer, but {self.dim_context} is given"
-            )
+        check_scalar(self.dim_context, "dim_context", int, min_val=1)
 
         if not isinstance(self.hidden_layer_size, tuple) or any(
             [not isinstance(h, int) or h <= 0 for h in self.hidden_layer_size]
@@ -1278,10 +1242,7 @@ class QFuncEstimator:
                 f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
-        if not isinstance(self.alpha, float) or self.alpha < 0.0:
-            raise ValueError(
-                f"alpha must be a non-negative float, but {self.alpha} is given"
-            )
+        check_scalar(self.alpha, "alpha", float, min_val=0.0)
 
         if self.batch_size != "auto" and (
             not isinstance(self.batch_size, int) or self.batch_size <= 0
@@ -1290,29 +1251,22 @@ class QFuncEstimator:
                 f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
-        if (
-            not isinstance(self.learning_rate_init, float)
-            or self.learning_rate_init <= 0.0
-        ):
+        check_scalar(self.learning_rate_init, "learning_rate_init", float)
+        if self.learning_rate_init <= 0.0:
             raise ValueError(
-                f"learning_rate_init must be a positive float, but {self.learning_rate_init} is given"
+                f"`learning_rate_init`= {self.learning_rate_init}, must be > 0.0"
             )
 
-        if not isinstance(self.max_iter, int) or self.max_iter <= 0:
-            raise ValueError(
-                f"max_iter must be a positive integer, but {self.max_iter} is given"
-            )
+        check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
             raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
 
-        if not isinstance(self.tol, float) or self.tol <= 0.0:
-            raise ValueError(f"tol must be a positive float, but {self.tol} is given")
+        check_scalar(self.tol, "tol", float)
+        if self.tol <= 0.0:
+            raise ValueError(f"`tol`= {self.tol}, must be > 0.0")
 
-        if not isinstance(self.momentum, float) or not 0.0 <= self.momentum <= 1.0:
-            raise ValueError(
-                f"momentum must be a float in [0., 1.], but {self.momentum} is given"
-            )
+        check_scalar(self.momentum, "momentum", float, min_val=0.0, max_val=1.0)
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
@@ -1324,38 +1278,18 @@ class QFuncEstimator:
                 f"early_stopping must be a bool, but {self.early_stopping} is given"
             )
 
-        if (
-            not isinstance(self.validation_fraction, float)
-            or not 0.0 < self.validation_fraction <= 1.0
-        ):
+        check_scalar(
+            self.validation_fraction, "validation_fraction", float, max_val=1.0
+        )
+        if self.validation_fraction <= 0.0:
             raise ValueError(
-                f"validation_fraction must be a float in (0., 1.], but {self.validation_fraction} is given"
+                f"`validation_fraction`= {self.validation_fraction}, must be > 0.0"
             )
 
-        if not isinstance(self.beta_1, float) or not 0.0 <= self.beta_1 <= 1.0:
-            raise ValueError(
-                f"beta_1 must be a float in [0. 1.], but {self.beta_1} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
-            raise ValueError(
-                f"epsilon must be a non-negative float, but {self.epsilon} is given"
-            )
-
-        if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
-            raise ValueError(
-                f"n_iter_no_change must be a positive integer, but {self.n_iter_no_change} is given"
-            )
+        check_scalar(self.beta_1, "beta_1", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.beta_2, "beta_2", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0)
+        check_scalar(self.n_iter_no_change, "n_iter_no_change", int, min_val=1)
 
         if self.random_state is not None:
             self.random_ = check_random_state(self.random_state)
@@ -1378,13 +1312,13 @@ class QFuncEstimator:
             )
 
         layer_list = []
-        input_size = self.dim_context + (self.n_actions - 1)
+        input_size = self.dim_context
 
         for i, h in enumerate(self.hidden_layer_size):
             layer_list.append(("l{}".format(i), nn.Linear(input_size, h)))
             layer_list.append(("a{}".format(i), activation_layer()))
             input_size = h
-        layer_list.append(("output", nn.Linear(input_size, 1)))
+        layer_list.append(("output", nn.Linear(input_size, self.n_actions)))
 
         self.nn_model = nn.Sequential(OrderedDict(layer_list))
 
@@ -1416,15 +1350,13 @@ class QFuncEstimator:
         """
         if self.batch_size == "auto":
             batch_size_ = min(200, context.shape[0])
-        elif isinstance(self.batch_size, int) and self.batch_size > 0:
-            batch_size_ = self.batch_size
         else:
-            raise ValueError("batch_size must be a positive integer or 'auto'")
+            check_scalar(self.batch_size, "batch_size", int, min_val=1)
+            batch_size_ = self.batch_size
 
-        action_context = self.drop_enc.transform(action[:, np.newaxis])
-        feature = np.c_[context, action_context]
         dataset = QFuncEstimatorDataset(
-            torch.from_numpy(feature).float(),
+            torch.from_numpy(context).float(),
+            torch.from_numpy(action).long(),
             torch.from_numpy(reward).float(),
         )
 
@@ -1485,9 +1417,6 @@ class QFuncEstimator:
             action=action,
             reward=reward,
         )
-        self.drop_enc = OneHotEncoder(drop="first", sparse=False).fit(
-            action[:, np.newaxis]
-        )
 
         if context.shape[1] != self.dim_context:
             raise ValueError(
@@ -1537,10 +1466,10 @@ class QFuncEstimator:
         previous_validation_loss = None
         for _ in tqdm(np.arange(self.max_iter), desc="q-func learning"):
             self.nn_model.train()
-            for x, r in training_data_loader:
+            for x, a, r in training_data_loader:
                 optimizer.zero_grad()
-                q_hat = self.nn_model(x).flatten()
-                loss = nn.functional.mse_loss(r, q_hat)
+                q_hat = self.nn_model(x)[torch.arange(a.shape[0], dtype=torch.long), a]
+                loss = mse_loss(r, q_hat)
                 loss.backward()
                 optimizer.step()
 
@@ -1556,9 +1485,11 @@ class QFuncEstimator:
 
             if self.early_stopping:
                 self.nn_model.eval()
-                for x, r in validation_data_loader:
-                    q_hat = self.nn_model(x).flatten()
-                    loss = nn.functional.mse_loss(r, q_hat)
+                for x, a, r in validation_data_loader:
+                    q_hat = self.nn_model(x)[
+                        torch.arange(a.shape[0], dtype=torch.long), a
+                    ]
+                    loss = mse_loss(r, q_hat)
                     loss_value = loss.item()
                     if previous_validation_loss is not None:
                         if loss_value - previous_validation_loss < self.tol:
@@ -1598,20 +1529,8 @@ class QFuncEstimator:
             )
 
         self.nn_model.eval()
-        n_rounds_of_new_data = context.shape[0]
-        estimated_expected_rewards = torch.zeros(
-            (n_rounds_of_new_data, self.n_actions, 1)
-        )
-        for a in np.arange(self.n_actions):
-            action_ = np.ones(n_rounds_of_new_data, dtype=int) * a
-            action_context = torch.from_numpy(
-                self.drop_enc.transform(action_[:, np.newaxis])
-            ).float()
-            x = torch.cat((context, action_context), 1)
-            estimated_expected_rewards[np.arange(n_rounds_of_new_data), a, 0] = (
-                action_dist[np.arange(n_rounds_of_new_data), a, 0]
-                * self.nn_model(x).flatten()
-            )
+        q_hat = self.nn_model(context)
+        estimated_expected_rewards = (q_hat * action_dist[:, :, 0]).mean(1)
 
         return estimated_expected_rewards
 
@@ -1654,15 +1573,17 @@ class QFuncEstimatorDataset(torch.utils.data.Dataset):
     """PyTorch dataset for QFuncEstimator"""
 
     feature: np.ndarray
+    action: np.ndarray
     reward: np.ndarray
 
     def __post_init__(self):
         """initialize class"""
-        assert self.feature.shape[0] == self.reward.shape[0]
+        assert self.feature.shape[0] == self.action.shape[0] == self.reward.shape[0]
 
     def __getitem__(self, index):
         return (
             self.feature[index],
+            self.action[index],
             self.reward[index],
         )
 

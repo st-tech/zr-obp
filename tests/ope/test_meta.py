@@ -456,14 +456,32 @@ def test_meta_estimate_policy_values_using_valid_input_data(
     }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod, IPW]) returns a wrong value"
 
 
-# alpha, n_bootstrap_samples, random_state, description
+# alpha, n_bootstrap_samples, random_state, err, description
 invalid_input_of_estimate_intervals = [
-    (0.05, 100, "s", "random_state must be an integer"),
-    (0.05, -1, 1, "n_bootstrap_samples must be a positive integer"),
-    (0.05, "s", 1, "n_bootstrap_samples must be a positive integer"),
-    (0.0, 1, 1, "alpha must be a positive float (< 1)"),
-    (1.0, 1, 1, "alpha must be a positive float (< 1)"),
-    ("0", 1, 1, "alpha must be a positive float (< 1)"),
+    (
+        0.05,
+        100,
+        "s",
+        ValueError,
+        "'s' cannot be used to seed a numpy.random.RandomState instance",
+    ),
+    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (
+        0.05,
+        "s",
+        1,
+        TypeError,
+        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+    ),
+    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (
+        "0",
+        1,
+        1,
+        TypeError,
+        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+    ),
 ]
 
 valid_input_of_estimate_intervals = [
@@ -477,7 +495,7 @@ valid_input_of_estimate_intervals = [
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
-    "alpha, n_bootstrap_samples, random_state, description_2",
+    "alpha, n_bootstrap_samples, random_state, err, description_2",
     invalid_input_of_estimate_intervals,
 )
 def test_meta_estimate_intervals_using_invalid_input_data(
@@ -487,6 +505,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     alpha,
     n_bootstrap_samples,
     random_state,
+    err,
     description_2: str,
     synthetic_bandit_feedback: BanditFeedback,
 ) -> None:
@@ -496,7 +515,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[dm]
     )
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.estimate_intervals(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -505,7 +524,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
             random_state=random_state,
         )
     # estimate_intervals function is called in summarize_off_policy_estimates
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.summarize_off_policy_estimates(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -642,12 +661,23 @@ def test_meta_summarize_off_policy_estimates(
 
 
 invalid_input_of_evaluation_performance_of_estimators = [
-    ("foo", 0.3, "metric must be either 'relative-ee' or 'se'"),
-    ("se", 1, "ground_truth_policy_value must be a float"),
-    ("se", "a", "ground_truth_policy_value must be a float"),
+    ("foo", 0.3, ValueError, "metric must be either 'relative-ee' or 'se'"),
+    (
+        "se",
+        1,
+        TypeError,
+        "`ground_truth_policy_value` must be an instance of <class 'float'>, not <class 'int'>.",
+    ),
+    (
+        "se",
+        "a",
+        TypeError,
+        "`ground_truth_policy_value` must be an instance of <class 'float'>, not <class 'str'>.",
+    ),
     (
         "relative-ee",
         0.0,
+        ValueError,
         "ground_truth_policy_value must be non-zero when metric is relative-ee",
     ),
 ]
@@ -663,7 +693,7 @@ valid_input_of_evaluation_performance_of_estimators = [
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
-    "metric, ground_truth_policy_value, description_2",
+    "metric, ground_truth_policy_value, err, description_2",
     invalid_input_of_evaluation_performance_of_estimators,
 )
 def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
@@ -672,6 +702,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
     description_1: str,
     metric,
     ground_truth_policy_value,
+    err,
     description_2: str,
     synthetic_bandit_feedback: BanditFeedback,
 ) -> None:
@@ -681,7 +712,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[dm]
     )
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.evaluate_performance_of_estimators(
             ground_truth_policy_value=ground_truth_policy_value,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -689,7 +720,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
             metric=metric,
         )
     # estimate_intervals function is called in summarize_off_policy_estimates
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.summarize_estimators_comparison(
             ground_truth_policy_value=ground_truth_policy_value,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,

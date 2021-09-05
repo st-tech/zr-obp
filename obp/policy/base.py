@@ -9,6 +9,7 @@ from typing import Optional
 
 import numpy as np
 from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
 from .policy_type import PolicyType
 
@@ -41,26 +42,9 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
-            raise ValueError(
-                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-            )
-
-        if not isinstance(self.len_list, int) or self.len_list <= 0:
-            raise ValueError(
-                f"len_list must be a positive integer, but {self.len_list} is given"
-            )
-
-        if not isinstance(self.batch_size, int) or self.batch_size <= 0:
-            raise ValueError(
-                f"batch_size must be a positive integer, but {self.batch_size} is given"
-            )
-
-        if self.n_actions < self.len_list:
-            raise ValueError(
-                f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
-            )
-
+        check_scalar(self.n_actions, "n_actions", int, min_val=2)
+        check_scalar(self.len_list, "len_list", int, min_val=1, max_val=self.n_actions)
+        check_scalar(self.batch_size, "batch_size", int, min_val=1)
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
         self.action_counts = np.zeros(self.n_actions, dtype=int)
@@ -125,29 +109,10 @@ class BaseContextualPolicy(metaclass=ABCMeta):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not isinstance(self.dim, int) or self.dim <= 0:
-            raise ValueError(f"dim must be a positive integer, but {self.dim} is given")
-
-        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
-            raise ValueError(
-                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-            )
-
-        if not isinstance(self.len_list, int) or self.len_list <= 0:
-            raise ValueError(
-                f"len_list must be a positive integer, but {self.len_list} is given"
-            )
-
-        if not isinstance(self.batch_size, int) or self.batch_size <= 0:
-            raise ValueError(
-                f"batch_size must be a positive integer, but {self.batch_size} is given"
-            )
-
-        if self.n_actions < self.len_list:
-            raise ValueError(
-                f"n_actions >= len_list should hold, but n_actions is {self.n_actions} and len_list is {self.len_list}"
-            )
-
+        check_scalar(self.dim, "dim", int, min_val=1)
+        check_scalar(self.n_actions, "n_actions", int, min_val=2)
+        check_scalar(self.len_list, "len_list", int, min_val=1, max_val=self.n_actions)
+        check_scalar(self.batch_size, "batch_size", int, min_val=1)
         self.n_trial = 0
         self.random_ = check_random_state(self.random_state)
         self.action_counts = np.zeros(self.n_actions, dtype=int)
@@ -198,20 +163,8 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
-            raise ValueError(
-                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-            )
-
-        if not isinstance(self.len_list, int) or self.len_list <= 0:
-            raise ValueError(
-                f"len_list must be a positive integer, but {self.len_list} is given"
-            )
-
-        if self.n_actions < self.len_list:
-            raise ValueError(
-                f"Expected `n_actions >= len_list`, but got n_actions={self.n_actions} < len_list={self.len_list}"
-            )
+        check_scalar(self.n_actions, "n_actions", int, min_val=2)
+        check_scalar(self.len_list, "len_list", int, min_val=1, max_val=self.n_actions)
 
     @property
     def policy_type(self) -> PolicyType:

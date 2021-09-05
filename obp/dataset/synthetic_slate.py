@@ -197,24 +197,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.n_unique_action, int) or self.n_unique_action <= 1:
-            raise ValueError(
-                f"n_unique_action must be an integer larger than 1, but {self.n_unique_action} is given"
-            )
-        if not isinstance(self.len_list, int) or self.len_list <= 1:
-            raise ValueError(
-                f"len_list must be an integer larger than 1, but {self.len_list} is given"
-            )
-        if not self.is_factorizable and self.len_list > self.n_unique_action:
-            raise ValueError(
-                f"len_list must be equal to or smaller than n_unique_action, but {self.len_list} is given"
-            )
-        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
-            raise ValueError(
-                f"dim_context must be a positive integer, but {self.dim_context} is given"
-            )
-        if not isinstance(self.random_state, int):
-            raise ValueError("random_state must be an integer")
+        check_scalar(self.n_unique_action, "n_unique_action", int, min_val=2)
+        if self.is_factorizable:
+            max_len_list = None
+        else:
+            max_len_list = self.n_unique_action
+        check_scalar(self.len_list, "len_list", int, min_val=2, max_val=max_len_list)
+
+        check_scalar(self.dim_context, "dim_context", int, min_val=1)
         self.random_ = check_random_state(self.random_state)
         if self.reward_type not in [
             "binary",
@@ -751,11 +741,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Generated synthetic slate bandit feedback dataset.
 
         """
-        if not isinstance(n_rounds, int) or n_rounds <= 0:
-            raise ValueError(
-                f"n_rounds must be a positive integer, but {n_rounds} is given"
-            )
-
+        check_scalar(n_rounds, "n_rounds", int, min_val=1)
         context = self.random_.normal(size=(n_rounds, self.dim_context))
         # sample actions for each round based on the behavior policy
         if self.behavior_policy_function is None:
@@ -898,7 +884,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "Expected `context.shape[1] == self.dim_context`, found it False"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
         if evaluation_policy_logit_.shape[0] != context.shape[0]:
             raise ValueError(

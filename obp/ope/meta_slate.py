@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame
 import seaborn as sns
+from sklearn.utils import check_scalar
 
 from ..types import BanditFeedback
 from ..utils import check_confidence_interval_arguments
@@ -471,11 +472,7 @@ class SlateOffPolicyEvaluation:
             Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
 
         """
-
-        if not isinstance(ground_truth_policy_value, float):
-            raise ValueError(
-                f"ground_truth_policy_value must be a float, but {ground_truth_policy_value} is given"
-            )
+        check_scalar(ground_truth_policy_value, "ground_truth_policy_value", float)
         if metric not in ["relative-ee", "se"]:
             raise ValueError(
                 f"metric must be either 'relative-ee' or 'se', but {metric} is given"

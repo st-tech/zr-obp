@@ -33,7 +33,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "dim_context must be a positive integer",
+        "`dim_context`= 0, must be >= 1",
     ),
     (
         10,
@@ -85,7 +85,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "bandwidth must be a positive float",
+        "`bandwidth`= -0.1, must be > 0",
     ),
     (
         10,
@@ -199,7 +199,7 @@ invalid_input_of_nn_policy_learner_init = [
         (100, 50, 100),
         "relu",
         "adam",
-        -1,  #
+        -1.0,  #
         "auto",
         0.0001,
         200,
@@ -215,7 +215,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "alpha must be a non-negative float",
+        "`alpha`= -1.0, must be >= 0.0",
     ),
     (
         10,
@@ -253,7 +253,7 @@ invalid_input_of_nn_policy_learner_init = [
         "adam",
         0.001,
         "auto",
-        0,  #
+        0.0,  #
         200,
         True,
         123,
@@ -267,7 +267,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "learning_rate_init must be a positive float",
+        "`learning_rate_init`= 0.0, must be > 0.0",
     ),
     (
         10,
@@ -293,7 +293,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "max_iter must be a positive integer",
+        "`max_iter`= 0, must be >= 1",
     ),
     (
         10,
@@ -361,7 +361,7 @@ invalid_input_of_nn_policy_learner_init = [
         200,
         True,
         123,
-        -1,  #
+        -1.0,  #
         0.9,
         True,
         True,
@@ -371,7 +371,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "tol must be a positive float",
+        "`tol`= -1.0, must be > 0.0",
     ),
     (
         10,
@@ -388,7 +388,7 @@ invalid_input_of_nn_policy_learner_init = [
         True,
         123,
         1e-4,
-        2,  #
+        2.0,  #
         True,
         True,
         0.1,
@@ -397,7 +397,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "momentum must be a float in [0., 1.]",
+        "`momentum`= 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -495,13 +495,13 @@ invalid_input_of_nn_policy_learner_init = [
         0.9,
         True,
         True,
-        2,  #
+        2.0,  #
         0.9,
         0.999,
         1e-8,
         10,
         None,
-        "validation_fraction must be a float in",
+        "`validation_fraction`= 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -522,38 +522,12 @@ invalid_input_of_nn_policy_learner_init = [
         True,
         True,
         0.1,
-        2,  #
+        2.0,  #
         0.999,
         1e-8,
         10,
         None,
-        "beta_1 must be a float in [0. 1.]",
-    ),
-    (
-        10,
-        "ipw",
-        0.1,
-        (-10, 10),
-        (100, 50, 100),
-        "relu",
-        "adam",
-        0.001,
-        "auto",
-        0.0001,
-        200,
-        True,
-        123,
-        1e-4,
-        0.9,
-        True,
-        True,
-        0.1,
-        0.9,
-        2,  #
-        1e-8,
-        10,
-        None,
-        "beta_2 must be a float in [0., 1.]",
+        "`beta_1`= 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -575,11 +549,37 @@ invalid_input_of_nn_policy_learner_init = [
         True,
         0.1,
         0.9,
-        0.999,
-        -1,  #
+        2.0,  #
+        1e-8,
         10,
         None,
-        "epsilon must be a non-negative float",
+        "`beta_2`= 2.0, must be <= 1.0",
+    ),
+    (
+        10,
+        "ipw",
+        0.1,
+        (-10, 10),
+        (100, 50, 100),
+        "relu",
+        "adam",
+        0.001,
+        "auto",
+        0.0001,
+        200,
+        True,
+        123,
+        1e-4,
+        0.9,
+        True,
+        True,
+        0.1,
+        0.9,
+        0.999,
+        -1.0,  #
+        10,
+        None,
+        "`epsilon`= -1.0, must be >= 0.0",
     ),
     (
         10,
@@ -605,7 +605,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         0,  #
         None,
-        "n_iter_no_change must be a positive integer",
+        "`n_iter_no_change`= 0, must be >= 1",
     ),
     (
         10,

@@ -9,6 +9,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 import torch
 
 
@@ -36,18 +37,9 @@ def check_confidence_interval_arguments(
         Dictionary storing the estimated mean and upper-lower confidence bounds.
 
     """
-    if not (isinstance(alpha, float) and (0.0 < alpha < 1.0)):
-        raise ValueError(
-            f"alpha must be a positive float (< 1.0), but {alpha} is given"
-        )
-    if not (isinstance(n_bootstrap_samples, int) and n_bootstrap_samples > 0):
-        raise ValueError(
-            f"n_bootstrap_samples must be a positive integer, but {n_bootstrap_samples} is given"
-        )
-    if random_state is not None and not isinstance(random_state, int):
-        raise ValueError(
-            f"random_state must be an integer, but {random_state} is given"
-        )
+    check_random_state(random_state)
+    check_scalar(alpha, "alpha", float, min_val=0.0, max_val=1.0)
+    check_scalar(n_bootstrap_samples, "n_bootstrap_samples", int, min_val=1)
 
 
 def estimate_confidence_interval_by_bootstrap(
