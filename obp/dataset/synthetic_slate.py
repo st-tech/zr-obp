@@ -877,7 +877,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "Expected `context.shape[1] == self.dim_context`, found it False"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
         if evaluation_policy_logit_.shape[0] != context.shape[0]:
             raise ValueError(

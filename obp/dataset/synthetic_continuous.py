@@ -243,7 +243,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         check_array(array=action, name="action", expected_dim=1)
         if context.shape[1] != self.dim_context:
             raise ValueError(
-                "Expected `context.shape[1] == self.dim_context`, found it False"
+                "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
         if context.shape[0] != action.shape[0]:
             raise ValueError(
