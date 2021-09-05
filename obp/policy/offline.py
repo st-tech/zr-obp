@@ -976,6 +976,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             estimated_policy_value_arr = iw * (reward - baseline)
 
         elif self.off_policy_objective == "dr":
+            n_rounds = action.shape[0]
             idx_tensor = torch.arange(n_rounds, dtype=torch.long)
             iw = action_dist[idx_tensor, action, 0] / pscore
             q_hat_baseline = self.q_func_estimator.predict(

@@ -7,7 +7,6 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import Ridge
 from sklearn.metrics import roc_auc_score

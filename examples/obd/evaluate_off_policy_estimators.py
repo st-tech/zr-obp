@@ -7,7 +7,6 @@ import numpy as np
 from pandas import DataFrame
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.linear_model import LogisticRegression
 import yaml
 
