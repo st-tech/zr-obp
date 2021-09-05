@@ -146,7 +146,7 @@ class LinEpsilonGreedy(BaseLinPolicy):
         """
         check_array(array=context, name="context", expected_dim=2)
         if context.shape[0] != 1:
-            raise ValueError("Expected `context.shape[1] == 1`, but found it False")
+            raise ValueError("Expected `context.shape[0] == 1`, but found it False")
 
         if self.random_.rand() > self.epsilon:
             self.theta_hat = np.concatenate(
@@ -222,7 +222,7 @@ class LinUCB(BaseLinPolicy):
         """
         check_array(array=context, name="context", expected_dim=2)
         if context.shape[0] != 1:
-            raise ValueError("Expected `context.shape[1] == 1`, but found it False")
+            raise ValueError("Expected `context.shape[0] == 1`, but found it False")
 
         self.theta_hat = np.concatenate(
             [

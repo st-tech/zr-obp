@@ -54,7 +54,7 @@ class BaseLogisticPolicy(BaseContextualPolicy):
             raise ValueError(f"`alpha_`= {self.alpha_}, must be > 0.0.")
 
         check_scalar(self.lambda_, "lambda_", float)
-        if self.alpha_ <= 0.0:
+        if self.lambda_ <= 0.0:
             raise ValueError(f"`lambda_`= {self.lambda_}, must be > 0.0.")
 
         self.alpha_list = self.alpha_ * np.ones(self.n_actions)
