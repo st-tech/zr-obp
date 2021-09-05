@@ -564,3 +564,81 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
+
+
+@dataclass
+class SelfNormalizedSlateRewardInteractionIPS(SlateRewardInteractionIPS):
+    """Self-Normalized Inverse Probability Weighting (SNIPW) Estimator.
+
+    Note
+    -------
+    Self-Normalized Inverse Probability Weighting (SNIPW) estimates the policy value of evaluation policy :math:`\\pi_e` by
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{SNIPW}} (\\pi_e; \\mathcal{D}) :=
+        \\frac{\\mathbb{E}_{\\mathcal{D}} [w(x_t,a_t) r_t]}{ \\mathbb{E}_{\\mathcal{D}} [w(x_t,a_t)]},
+
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
+    :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+
+    SNIPW re-weights the observed rewards by the self-normalized importance weihgt.
+    This estimator is not unbiased even when the behavior policy is known.
+    However, it is still consistent for the true policy value and increases the stability in some senses.
+    See the references for the detailed discussions.
+
+    Parameters
+    ----------
+    estimator_name: str, default='snipw'.
+        Name of the estimator.
+
+    References
+    ----------
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-normalized Estimator for Counterfactual Learning.", 2015.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    """
+
+    estimator_name: str = "snrips"
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        position: np.ndarray,
+        behavior_policy_pscore: np.ndarray,
+        evaluation_policy_pscore: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate rewards given round (slate_id) and slot (position).
+
+        Parameters
+        ----------
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        Returns
+        ----------
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by IPW given round (slate_id) and slot (position).
+
+        """
+        estimated_rewards = np.zeros_like(behavior_policy_pscore)
+        iw = np.zeros_like(behavior_policy_pscore)
+        for position_ in range(self.len_list):
+            idx = position == position_
+            iw[idx] = evaluation_policy_pscore[idx] / behavior_policy_pscore[idx]
+            estimated_rewards[idx] = reward[idx] * iw[idx] / iw[idx].mean()
+        return estimated_rewards

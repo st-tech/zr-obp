@@ -14,6 +14,7 @@ from obp.ope.estimators_tuning import DoublyRobustWithShrinkageTuning
 from obp.ope.estimators_slate import SlateStandardIPS
 from obp.ope.estimators_slate import SlateIndependentIPS
 from obp.ope.estimators_slate import SlateRewardInteractionIPS
+from obp.ope.estimators_slate import SelfNormalizedSlateRewardInteractionIPS
 from obp.ope.estimators_continuous import BaseContinuousOffPolicyEstimator
 from obp.ope.estimators_continuous import KernelizedInverseProbabilityWeighting
 from obp.ope.estimators_continuous import (
@@ -50,6 +51,7 @@ __all__ = [
     "SlateStandardIPS",
     "SlateIndependentIPS",
     "SlateRewardInteractionIPS",
+    "SelfNormalizedSlateRewardInteractionIPS",
     "BaseContinuousOffPolicyEstimator",
     "KernelizedInverseProbabilityWeighting",
     "KernelizedSelfNormalizedInverseProbabilityWeighting",
