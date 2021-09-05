@@ -146,14 +146,8 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not isinstance(self.n_actions, int) or self.n_actions <= 1:
-            raise ValueError(
-                f"n_actions must be an integer larger than 1, but {self.n_actions} is given"
-            )
-        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
-            raise ValueError(
-                f"dim_context must be a positive integer, but {self.dim_context} is given"
-            )
+        check_scalar(self.n_actions, "n_actions", int, min_val=2)
+        check_scalar(self.dim_context, "dim_context", int, min_val=1)
         if RewardType(self.reward_type) not in [
             RewardType.BINARY,
             RewardType.CONTINUOUS,
@@ -164,7 +158,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         check_scalar(self.reward_std, "reward_std", (int, float), min_val=0)
         check_scalar(self.tau, "tau", (int, float), min_val=0)
         if self.random_state is None:
-            raise ValueError("random_state must be given")
+            raise ValueError("`random_state` must be given")
         self.random_ = check_random_state(self.random_state)
         if self.reward_function is None:
             self.expected_reward = self.sample_contextfree_expected_reward()
@@ -268,11 +262,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             Generated synthetic bandit feedback dataset.
 
         """
-        if not isinstance(n_rounds, int) or n_rounds <= 0:
-            raise ValueError(
-                f"n_rounds must be a positive integer, but {n_rounds} is given"
-            )
-
+        check_scalar(n_rounds, "n_rounds", int, min_val=1)
         context = self.random_.normal(size=(n_rounds, self.dim_context))
         # sample actions for each round based on the behavior policy
         if self.behavior_policy_function is None:
