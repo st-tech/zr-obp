@@ -15,14 +15,14 @@ def test_synthetic_init():
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         SyntheticBanditDataset(n_actions="3")
 
     # dim_context
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=2, dim_context=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         SyntheticBanditDataset(n_actions=2, dim_context="2")
 
     # reward_type
@@ -129,7 +129,7 @@ def test_synthetic_obtain_batch_bandit_feedback():
         dataset = SyntheticBanditDataset(n_actions=2)
         dataset.obtain_batch_bandit_feedback(n_rounds=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         dataset = SyntheticBanditDataset(n_actions=2)
         dataset.obtain_batch_bandit_feedback(n_rounds="3")
 

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
+from sklearn.utils import check_scalar
 
 from .base import BaseContextFreePolicy
 
@@ -51,10 +52,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not 0 <= self.epsilon <= 1:
-            raise ValueError(
-                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
-            )
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0, max_val=1.0)
         self.policy_name = f"egreedy_{self.epsilon}"
         super().__post_init__()
 

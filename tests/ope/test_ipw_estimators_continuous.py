@@ -241,14 +241,32 @@ def test_ipw_continuous_using_valid_input_data(
 
 
 # --- confidence intervals ---
-# alpha, n_bootstrap_samples, random_state, description
+# alpha, n_bootstrap_samples, random_state, err, description
 invalid_input_of_estimate_intervals = [
-    (0.05, 100, "s", "random_state must be an integer"),
-    (0.05, -1, 1, "n_bootstrap_samples must be a positive integer"),
-    (0.05, "s", 1, "n_bootstrap_samples must be a positive integer"),
-    (0.0, 1, 1, "alpha must be a positive float (< 1)"),
-    (1.0, 1, 1, "alpha must be a positive float (< 1)"),
-    ("0", 1, 1, "alpha must be a positive float (< 1)"),
+    (
+        0.05,
+        100,
+        "s",
+        ValueError,
+        "'s' cannot be used to seed a numpy.random.RandomState instance",
+    ),
+    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (
+        0.05,
+        "s",
+        1,
+        TypeError,
+        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+    ),
+    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (
+        "0",
+        1,
+        1,
+        TypeError,
+        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+    ),
 ]
 
 valid_input_of_estimate_intervals = [
@@ -262,7 +280,7 @@ valid_input_of_estimate_intervals = [
     valid_input_of_ipw,
 )
 @pytest.mark.parametrize(
-    "alpha, n_bootstrap_samples, random_state, description",
+    "alpha, n_bootstrap_samples, random_state, err, description",
     invalid_input_of_estimate_intervals,
 )
 def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
@@ -273,9 +291,10 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     alpha,
     n_bootstrap_samples,
     random_state,
+    err,
     description,
 ) -> None:
-    with pytest.raises(ValueError, match=f"{description}*"):
+    with pytest.raises(err, match=f"{description}*"):
         _ = ipw.estimate_interval(
             action_by_evaluation_policy=action_by_evaluation_policy,
             action_by_behavior_policy=action_by_behavior_policy,
