@@ -78,7 +78,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
-        "action must be ndarray",
+        "action must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -86,7 +86,7 @@ invalid_input_of_ipw = [
         None,  #
         np.ones(5),
         np.random.choice(3, size=5),
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -94,7 +94,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         None,  #
         np.random.choice(3, size=5),
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -118,7 +118,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
-        "action must be ndarray",
+        "action must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -126,7 +126,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
-        "action must be 1-dimensional",
+        "action must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -134,7 +134,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.ones(5),
         np.random.choice(3, size=5),
-        "action elements must be smaller than the second dimension of action_dist",
+        r"action elements must be smaller than`",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -142,7 +142,7 @@ invalid_input_of_ipw = [
         "4",  #
         np.ones(5),
         np.random.choice(3, size=5),
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -150,7 +150,7 @@ invalid_input_of_ipw = [
         np.zeros((3, 2), dtype=int),  #
         np.ones(5),
         np.random.choice(3, size=5),
-        "reward must be 1-dimensional",
+        "reward must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -158,7 +158,7 @@ invalid_input_of_ipw = [
         np.zeros(4, dtype=int),  #
         np.ones(5),
         np.random.choice(3, size=5),
-        "action and reward must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -166,7 +166,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         "4",  #
         np.random.choice(3, size=5),
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -174,7 +174,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.ones((5, 3)),  #
         np.random.choice(3, size=5),
-        "pscore must be 1-dimensional",
+        "pscore must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -182,7 +182,7 @@ invalid_input_of_ipw = [
         np.zeros(5, dtype=int),
         np.ones(4),  #
         np.random.choice(3, size=5),
-        "action, reward, and pscore must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -321,7 +321,7 @@ invalid_input_tensor_of_ipw = [
         torch.zeros(5, dtype=torch.float32),
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
-        "action elements must be smaller than the second dimension of action_dist",
+        r"action elements must be smaller than`",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
@@ -345,7 +345,7 @@ invalid_input_tensor_of_ipw = [
         torch.zeros(4, dtype=torch.float32),  #
         torch.ones(5),
         torch.from_numpy(np.random.choice(3, size=5)),
-        "action and reward must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
@@ -369,7 +369,7 @@ invalid_input_tensor_of_ipw = [
         torch.zeros(5, dtype=torch.float32),
         torch.ones(4),  #
         torch.from_numpy(np.random.choice(3, size=5)),
-        "action, reward, and pscore must be the same size.",
+        "Expected `action.shape[0]",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),

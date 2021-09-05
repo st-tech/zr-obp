@@ -12,6 +12,7 @@ from obp.types import BanditFeedback
 from obp.ope import (
     ContinuousOffPolicyEvaluation,
     BaseContinuousOffPolicyEstimator,
+    KernelizedDoublyRobust,
 )
 from obp.utils import check_confidence_interval_arguments
 
@@ -186,30 +187,56 @@ def test_meta_post_init(synthetic_continuous_bandit_feedback: BanditFeedback) ->
                 )
 
 
+def test_meta_estimated_rewards_by_reg_model_inputs(
+    synthetic_bandit_feedback: BanditFeedback,
+) -> None:
+    """
+    Test the estimate_policy_values/estimate_intervals functions wrt estimated_rewards_by_reg_model
+    """
+    kdr = KernelizedDoublyRobust(kernel="cosine", bandwidth=0.1)
+    ope_ = ContinuousOffPolicyEvaluation(
+        bandit_feedback=synthetic_bandit_feedback,
+        ope_estimators=[kdr],
+    )
+
+    action_by_evaluation_policy = np.zeros((synthetic_bandit_feedback["n_rounds"],))
+    with pytest.raises(ValueError):
+        ope_.estimate_policy_values(
+            action_by_evaluation_policy=action_by_evaluation_policy,
+            estimated_rewards_by_reg_model=None,
+        )
+
+    with pytest.raises(ValueError):
+        ope_.estimate_intervals(
+            action_by_evaluation_policy=action_by_evaluation_policy,
+            estimated_rewards_by_reg_model=None,
+        )
+
+
 # action_by_evaluation_policy, estimated_rewards_by_reg_model, description
 invalid_input_of_create_estimator_inputs = [
     (
         np.zeros(5),  #
         np.zeros(4),  #
-        "estimated_rewards_by_reg_model.shape and action_by_evaluation_policy.shape must be the same",
+        "Expected `estimated_rewards_by_reg_model.shape",
     ),
     (
         np.zeros(5),
         {"dr": np.zeros(4)},
-        r"estimated_rewards_by_reg_model\[dr\].shape and action_by_evaluation_policy.shape must be the same",
+        r"Expected `estimated_rewards_by_reg_model\[dr\].shape",
     ),
     (
         np.zeros(5),
         {"dr": None},
-        r"estimated_rewards_by_reg_model\[dr\] must be ndarray",
+        r"estimated_rewards_by_reg_model\[dr\] must be 1D array",
     ),
     (
         np.zeros((2, 3)),
         None,
-        "action_by_evaluation_policy must be 1-dimensional ndarray",
+        "action_by_evaluation_policy must be 1D array",
     ),
-    ("3", None, "action_by_evaluation_policy must be 1-dimensional ndarray"),
-    (None, None, "action_by_evaluation_policy must be 1-dimensional ndarray"),
+    ("3", None, "action_by_evaluation_policy must be 1D array"),
+    (None, None, "action_by_evaluation_policy must be 1D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [

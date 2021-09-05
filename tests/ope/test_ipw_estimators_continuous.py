@@ -68,77 +68,77 @@ invalid_input_of_ipw = [
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_evaluation_policy must be 1-dimensional ndarray",
+        "action_by_evaluation_policy must be 1D array",
     ),
     (
         np.ones((5, 1)),  #
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_evaluation_policy must be 1-dimensional ndarray",
+        "action_by_evaluation_policy must be 1D array",
     ),
     (
         np.ones(5),
         None,  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy must be ndarray",
+        "action_by_behavior_policy must be 1D array",
     ),
     (
         np.ones(5),
         np.ones((5, 1)),  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy must be 1-dimensional ndarray",
+        "action_by_behavior_policy must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         None,  #
         np.random.uniform(size=5),
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones((5, 1)),  #
         np.random.uniform(size=5),
-        "reward must be 1-dimensional ndarray",
+        "reward must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(4),  #
         np.ones(3),  #
         np.random.uniform(size=5),
-        "action_by_behavior_policy and reward must be the same size",
+        "Expected `action_by_behavior_policy.shape[0]",
     ),
     (
         np.ones(4),  #
         np.ones(5),  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy and action_by_evaluation_policy must be the same size",
+        "Expected `action_by_behavior_policy.shape[0]",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones(5),
         None,  #
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=(5, 1)),  #
-        "pscore must be 1-dimensional ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=4),  #
-        "action_by_behavior_policy, reward, and pscore must be the same size",
+        "Expected `action_by_behavior_policy.shape[0]",
     ),
     (
         np.ones(5),

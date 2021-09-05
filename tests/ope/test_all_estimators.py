@@ -19,7 +19,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 3)),
-        "action_dist must be ndarray",
+        "action_dist must be 3D array",
     ),
     (
         generate_action_dist(5, 4, 1)[:, :, 0],  #
@@ -28,7 +28,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 1)),
-        "action_dist.ndim must be 3-dimensional",
+        "action_dist must be 3D array",
     ),
     (
         np.ones((5, 4, 3)),  #
@@ -46,7 +46,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         "4",  #
         np.zeros((5, 4, 3)),
-        "position must be ndarray",
+        "position must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -55,7 +55,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros((5, 4), dtype=int),  #
         np.zeros((5, 4, 3)),
-        "position must be 1-dimensional",
+        "position must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -82,7 +82,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros(4, dtype=int),  #
         np.zeros((5, 4, 3)),
-        "the first dimension of position and the first dimension of action_dist must be the same.",
+        "Expected `position.shape[0]",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -91,7 +91,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.ones(5, dtype=int) * 8,  #
         np.zeros((5, 4, 3)),
-        "position elements must be smaller than the third dimension of action_dist",
+        "position elements must be smaller than",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -100,7 +100,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,  #
         np.zeros((5, 4, 3)),
-        "position elements must be given when the third dimension of action_dist is greater than 1",
+        "position elements must be given when",
     ),
 ]
 
@@ -290,7 +290,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.ones(5)),
         None,
         torch.from_numpy(np.zeros((5, 4, 1))),
-        "action_dist.ndim must be 3-dimensional",
+        "action_dist must be 3-dimensional",
     ),
     (
         torch.from_numpy(np.ones((5, 4, 3))),  #
@@ -344,7 +344,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.ones(5)),
         torch.from_numpy(np.zeros(4, dtype=int)),  #
         torch.from_numpy(np.zeros((5, 4, 3))),
-        "the first dimension of position and the first dimension of action_dist must be the same.",
+        "Expected `position.shape[0]",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
@@ -353,7 +353,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.ones(5)),
         torch.from_numpy(np.ones(5, dtype=int) * 8),  #
         torch.from_numpy(np.zeros((5, 4, 3))),
-        "position elements must be smaller than the third dimension of action_dist",
+        "position elements must be smaller than",
     ),
     (
         torch.from_numpy(generate_action_dist(5, 4, 3)),
@@ -362,7 +362,7 @@ invalid_input_of_estimation_tensor = [
         torch.from_numpy(np.ones(5)),
         None,  #
         torch.from_numpy(np.zeros((5, 4, 3))),
-        "position elements must be given when the third dimension of action_dist is greater than 1",
+        "position elements must be given when",
     ),
 ]
 

@@ -1103,27 +1103,27 @@ invalid_input_of_calc_on_policy_policy_value = [
     (
         np.repeat(np.arange(n_rounds), len_list),
         "4",  #
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros((n_rounds, len_list), dtype=int),  #
-        "reward must be 1-dimensional",
+        "reward must be 1D array",
     ),
     (
         "4",  #
         np.zeros(n_rounds * len_list, dtype=int),
-        "slate_id must be ndarray",
+        "slate_id must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list).reshape((n_rounds, len_list)),  #
         np.zeros(n_rounds * len_list, dtype=int),
-        "slate_id must be 1-dimensional",
+        "slate_id must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list - 1, dtype=int),  #
-        "the size of axis 0 of reward must be the same as that of slate_id",
+        "Expected `reward.shape[0]",
     ),
 ]
 
@@ -1211,7 +1211,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.array([5, 2]),  #
         np.tile(np.arange(3), 5),
         ValueError,
-        "context must be 2-dimensional ndarray",
+        "context must be 2D array",
     ),
     (
         "optimal",
@@ -1219,7 +1219,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.ones([5, 2]),  #
         ValueError,
-        "action must be 1-dimensional ndarray",
+        "action must be 1D array",
     ),
     (
         "optimal",
@@ -1227,7 +1227,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.random.choice(5),  #
         ValueError,
-        "action must be 1-dimensional ndarray",
+        "action must be 1D array",
     ),
     (
         "optimal",
@@ -1235,7 +1235,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.ones(5),  #
         ValueError,
-        "action must be 1-dimensional ndarray, shape (n_rounds * len_list)",
+        "Expected `action.shape[0]",
     ),
     (
         "optimal",
@@ -1544,7 +1544,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]).flatten(),
         np.ones((3, 2)),
         ValueError,
-        "evaluation_policy_logit_ must be 2-dimensional",
+        "evaluation_policy_logit_ must be 2D array",
     ),
     (
         3,
@@ -1557,7 +1557,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
         ValueError,
-        "the size of axis 1 of evaluation_policy_logit_ must be",
+        "Expected `evaluation_policy_logit_.shape[1]",
     ),
     (
         3,
@@ -1570,7 +1570,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
         ValueError,
-        "the size of axis 1 of context must be",
+        "Expected `context.shape[1]",
     ),
     (
         4,
@@ -1583,7 +1583,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
         ValueError,
-        "the length of evaluation_policy_logit_ and context",
+        "Expected `evaluation_policy_logit_.shape[0]",
     ),
     (
         3,
@@ -1596,7 +1596,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]),
         np.ones((3, 2)),
         ValueError,
-        "the length of evaluation_policy_logit_ and context",
+        "Expected `evaluation_policy_logit_.shape[0]",
     ),
 ]
 
@@ -1994,13 +1994,13 @@ invalid_input_of_obtain_pscore_given_evaluation_policy_logit = [
         np.ones((n_rounds, len_list)),
         np.ones((n_rounds, n_unique_action)),
         ValueError,
-        "action must be 1-dimensional",
+        "action must be 1D array",
     ),
     (
         np.ones((n_rounds * len_list)),
         np.ones((n_rounds * n_unique_action)),
         ValueError,
-        "evaluation_policy_logit_ must be 2-dimensional",
+        "evaluation_policy_logit_ must be 2D array",
     ),
     (
         np.ones((n_rounds * len_list + 1)),

@@ -1,0 +1,10 @@
+defaults:
+  - estimator_hyperparams: default
+  - reg_model_hyperparams: default
+  - setting: default
+hydra:
+  run:
+    dir: ./logs/is_timeseries_split=${setting.is_timeseries_split}/behavior_policy=${setting.behavior_policy}/campaign=${setting.campaign}/reg_model=${setting.reg_model}/sample_size=${setting.sample_size}
+  sweep:
+    dir: ./logs/is_timeseries_split=${setting.is_timeseries_split}/behavior_policy=${setting.behavior_policy}/campaign=${setting.campaign}/reg_model=${setting.reg_model}/sample_size=${setting.sample_size}
+    subdir: ./

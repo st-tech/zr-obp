@@ -10,7 +10,7 @@ from pandas.testing import assert_frame_equal
 import torch
 
 from obp.types import BanditFeedback
-from obp.ope import OffPolicyEvaluation, BaseOffPolicyEstimator
+from obp.ope import OffPolicyEvaluation, BaseOffPolicyEstimator, DirectMethod
 from obp.utils import check_confidence_interval_arguments
 
 mock_policy_value = 0.5
@@ -309,26 +309,52 @@ def test_meta_post_init(synthetic_bandit_feedback: BanditFeedback) -> None:
                 )
 
 
+def test_meta_estimated_rewards_by_reg_model_inputs(
+    synthetic_bandit_feedback: BanditFeedback,
+) -> None:
+    """
+    Test the estimate_policy_values/estimate_intervals functions wrt estimated_rewards_by_reg_model
+    """
+    ope_ = OffPolicyEvaluation(
+        bandit_feedback=synthetic_bandit_feedback, ope_estimators=[DirectMethod()]
+    )
+
+    action_dist = np.zeros(
+        (synthetic_bandit_feedback["n_rounds"], synthetic_bandit_feedback["n_actions"])
+    )
+    with pytest.raises(ValueError):
+        ope_.estimate_policy_values(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=None,
+        )
+
+    with pytest.raises(ValueError):
+        ope_.estimate_intervals(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=None,
+        )
+
+
 # action_dist, estimated_rewards_by_reg_model, description
 invalid_input_of_create_estimator_inputs = [
     (
         np.zeros((2, 3, 4)),
         np.zeros((2, 3, 3)),
-        "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
+        "Expected `estimated_rewards_by_reg_model.shape",
     ),
     (
         np.zeros((2, 3, 4)),
         {"dm": np.zeros((2, 3, 3))},
-        r"estimated_rewards_by_reg_model\[dm\].shape must be the same as action_dist.shape",
+        r"Expected `estimated_rewards_by_reg_model\[dm\].shape",
     ),
     (
         np.zeros((2, 3, 4)),
         {"dm": None},
-        r"estimated_rewards_by_reg_model\[dm\] must be ndarray",
+        r"estimated_rewards_by_reg_model\[dm\] must be 3D array",
     ),
-    (np.zeros((2, 3)), None, "action_dist.ndim must be 3-dimensional"),
-    ("3", None, "action_dist must be ndarray"),
-    (None, None, "action_dist must be ndarray"),
+    (np.zeros((2, 3)), None, "action_dist must be 3D array"),
+    ("3", None, "action_dist must be 3D array"),
+    (None, None, "action_dist must be 3D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [

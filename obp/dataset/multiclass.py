@@ -13,6 +13,7 @@ from sklearn.utils import check_random_state, check_X_y
 
 from .base import BaseBanditDataset
 from ..types import BanditFeedback
+from ..utils import check_array
 
 
 @dataclass
@@ -318,10 +319,9 @@ class MultiClassToBanditReduction(BaseBanditDataset):
             policy value of a given action distribution (mostly evaluation policy).
 
         """
-        if not isinstance(action_dist, np.ndarray) or action_dist.ndim != 3:
-            raise ValueError("action_dist must be a 3-D np.ndarray")
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         if action_dist.shape[0] != self.n_rounds_ev:
             raise ValueError(
-                "the size of axis 0 of action_dist must be the same as the number of samples in the evaluation set"
+                "Expected `action_dist.shape[0] == self.n_rounds_ev`, but found it False"
             )
         return action_dist[np.arange(self.n_rounds_ev), self.y_ev].mean()

@@ -12,6 +12,7 @@ from sklearn.utils import check_scalar
 from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     check_continuous_ope_inputs,
+    check_array,
 )
 
 # kernel functions, reference: https://en.wikipedia.org/wiki/Kernel_(statistics)
@@ -192,13 +193,13 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action_by_behavior_policy, np.ndarray):
-            raise ValueError("action_by_behavior_policy must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_continuous_ope_inputs(
             reward=reward,
             action_by_behavior_policy=action_by_behavior_policy,
@@ -256,13 +257,13 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action_by_behavior_policy, np.ndarray):
-            raise ValueError("action_by_behavior_policy must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_continuous_ope_inputs(
             reward=reward,
             action_by_behavior_policy=action_by_behavior_policy,
@@ -373,12 +374,13 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
             Rewards of each round estimated by KernelizedSNIPW.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action_by_behavior_policy, np.ndarray):
-            raise ValueError("action_by_behavior_policy must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=pscore, name="pscore", expected_dim=1)
 
         kernel_func = kernel_functions[self.kernel]
         u = action_by_evaluation_policy - action_by_behavior_policy
@@ -418,13 +420,13 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action_by_behavior_policy, np.ndarray):
-            raise ValueError("action_by_behavior_policy must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_continuous_ope_inputs(
             reward=reward,
             action_by_behavior_policy=action_by_behavior_policy,
@@ -482,13 +484,13 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action_by_behavior_policy, np.ndarray):
-            raise ValueError("action_by_behavior_policy must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_continuous_ope_inputs(
             reward=reward,
             action_by_behavior_policy=action_by_behavior_policy,
@@ -646,15 +648,18 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action_by_behavior_policy, np.ndarray):
-            raise ValueError("action_by_behavior_policy must be ndarray")
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=1,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_continuous_ope_inputs(
             reward=reward,
             action_by_behavior_policy=action_by_behavior_policy,
@@ -718,15 +723,18 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action_by_behavior_policy, np.ndarray):
-            raise ValueError("action_by_behavior_policy must be ndarray")
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=1,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(
+            array=action_by_behavior_policy,
+            name="action_by_behavior_policy",
+            expected_dim=1,
+        )
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_continuous_ope_inputs(
             reward=reward,
             action_by_behavior_policy=action_by_behavior_policy,

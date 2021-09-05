@@ -1,7 +1,14 @@
-<p align="center">
-  <img width="60%" src="./images/logo.png" />
-</p>
+<div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/logo.png" width="60%"/></div>
 
+[![pypi](https://img.shields.io/pypi/v/obp.svg)](https://pypi.python.org/pypi/obp)
+[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue)](https://www.python.org)
+[![Downloads](https://pepy.tech/badge/obp)](https://pepy.tech/project/obp)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/st-tech/zr-obp)
+![GitHub last commit](https://img.shields.io/github/last-commit/st-tech/zr-obp)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![arXiv](https://img.shields.io/badge/arXiv-2008.07146-b31b1b.svg)](https://arxiv.org/abs/2008.07146)
+
+[[arXiv]](https://arxiv.org/abs/2008.07146)
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
 
 **[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](./slides/slides_EN.pdf)** | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd)** | **[日本語](./README_JN.md)**
@@ -40,22 +47,18 @@ The company uses some multi-armed bandit algorithms to recommend fashion items t
 The following figure presents examples of displayed fashion items as actions.
 The figure shows that there are three *positions* in the data.
 
+<div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/recommended_fashion_items.png" width="45%"/></div>
+<figcaption>
 <p align="center">
-  <img width="45%" src="./images/recommended_fashion_items.png" />
-  <figcaption>
-  <p align="center">
   Recommended fashion items as actions in the ZOZOTOWN recommendation interface
-  </p>
-  </figcaption>
 </p>
+</figcaption>
 
 We collected the dataset in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
 Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection.
 This dataset is unique in that it contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
 
-<p align="center">
-  <img width="90%" src="./images/obd_stats.png" />
-</p>
+<div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/obd_stats.png" width="90%"/></div>
 
 The small size version of our data is available at [obd](./obd).
 One can use this example data to run some [examples](./examples).
@@ -67,14 +70,12 @@ Please see [obd/README.md](./obd/README.md) for the dataset description.
 
 *Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair, transparent, and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
 
+<div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/overview.png" width="80%"/></div>
+<figcaption>
 <p align="center">
-  <img width="80%" src="./images/overview.png" />
-  <figcaption>
-  <p align="center">
-    Overview of the Open Bandit Pipeline
-  </p>
-  </figcaption>
+  Overview of the Open Bandit Pipeline
 </p>
+</figcaption>
 
 Open Bandit Pipeline consists of the following main modules.
 
@@ -176,7 +177,7 @@ cd zr-obp
 python setup.py install
 ```
 
-Open Bandit Pipeline supports Python 3.7 or newer.
+Open Bandit Pipeline supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
 
 # Usage Examples
 
@@ -232,18 +233,16 @@ ope.visualize_off_policy_estimates(
     estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
 )
 ```
+
+<div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/ope_results_example.png" width="60%"/></div>
+<figcaption>
 <p align="center">
-  <img width="60%" src="./images/ope_results_example.png" />
-  <figcaption>
-  <p align="center">
-    Performance of IPWLearner estimated by OPE
-  </p>
-  </figcaption>
+  Performance of IPWLearner estimated by OPE
 </p>
+</figcaption>
 
 
-A formal quickstart example with synthetic bandit data is available at [examples/quickstart/synthetic.ipynb](./examples/quickstart/synthetic.ipynb).
-We also prepare a script to conduct the evaluation of OPE experiment with synthetic bandit data in [examples/synthetic](./examples/synthetic/).
+A formal quickstart example with synthetic bandit data is available at [examples/quickstart/synthetic.ipynb](./examples/quickstart/synthetic.ipynb). We also prepare a script to conduct the evaluation of OPE experiment with synthetic bandit data in [examples/synthetic](./examples/synthetic/).
 
 ## Example with Multi-Class Classification Data
 
@@ -375,20 +374,19 @@ For any question about the paper, data, and pipeline, feel free to contact: sait
 <details>
 <summary><strong>Papers </strong>(click to expand)</summary>
 
-1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In
-*Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining*, pages 129–138, 2009.
+1. Alina Beygelzimer and John Langford. [The offset tree for learning with partial labels](https://arxiv.org/abs/0812.4044). In *Proceedings of the 15th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining*, 129–138, 2009.
 
-2. Olivier Chapelle and Lihong Li. [An empirical evaluation of thompson sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling). In *Advances in neural information processing systems*, pages 2249–2257, 2011.
+2. Olivier Chapelle and Lihong Li. [An empirical evaluation of thompson sampling](https://papers.nips.cc/paper/4321-an-empirical-evaluation-of-thompson-sampling). In *Advances in Neural Information Processing Systems*, 2249–2257, 2011.
 
-3. Lihong Li, Wei Chu, John Langford, and Xuanhui Wang. [Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms](https://arxiv.org/abs/1003.5956). In *Proceedings of the Fourth ACM International Conference on Web Search and Data Mining*, pages 297–306, 2011.
+3. Lihong Li, Wei Chu, John Langford, and Xuanhui Wang. [Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms](https://arxiv.org/abs/1003.5956). In *Proceedings of the Fourth ACM International Conference on Web Search and Data Mining*, 297–306, 2011.
 
-4. Alex Strehl, John Langford, Lihong Li, and Sham M Kakade. [Learning from Logged Implicit Exploration Data](https://arxiv.org/abs/1003.0120). In *Advances in Neural Information Processing Systems*, pages 2217–2225, 2010.
+4. Alex Strehl, John Langford, Lihong Li, and Sham M Kakade. [Learning from Logged Implicit Exploration Data](https://arxiv.org/abs/1003.0120). In *Advances in Neural Information Processing Systems*, 2217–2225, 2010.
 
 5.  Doina Precup, Richard S. Sutton, and Satinder Singh. [Eligibility Traces for Off-Policy Policy Evaluation](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs). In *Proceedings of the 17th International Conference on Machine Learning*, 759–766. 2000.
 
 6.  Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li. [Doubly Robust Policy Evaluation and Optimization](https://arxiv.org/abs/1503.02834). *Statistical Science*, 29:485–511, 2014.
 
-7. Adith Swaminathan and Thorsten Joachims. [The Self-normalized Estimator for Counterfactual Learning](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning). In *Advances in Neural Information Processing Systems*, pages 3231–3239, 2015.
+7. Adith Swaminathan and Thorsten Joachims. [The Self-normalized Estimator for Counterfactual Learning](https://papers.nips.cc/paper/5748-the-self-normalized-estimator-for-counterfactual-learning). In *Advances in Neural Information Processing Systems*, 3231–3239, 2015.
 
 8. Dhruv Kumar Mahajan, Rajeev Rastogi, Charu Tiwari, and Adway Mitra. [LogUCB: An Explore-Exploit Algorithm for Comments Recommendation](https://dl.acm.org/doi/10.1145/2396761.2396767). In *Proceedings of the 21st ACM international conference on Information and knowledge management*, 6–15. 2012.
 
@@ -400,17 +398,23 @@ For any question about the paper, data, and pipeline, feel free to contact: sait
 
 12. Nathan Kallus and Masatoshi Uehara. [Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1906.03735). In *Advances in Neural Information Processing Systems*. 2019.
 
-13. Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík. [Doubly Robust Off-policy Evaluation with Shrinkage](https://arxiv.org/abs/1907.09623). In *Proceedings of the 37th International Conference on Machine Learning*, 2020.
+13. Yi Su, Lequn Wang, Michele Santacatterina, and Thorsten Joachims. [CAB: Continuous Adaptive Blending Estimator for Policy Evaluation and Learning](https://proceedings.mlr.press/v97/su19a). In *Proceedings of the 36th International Conference on Machine Learning*, 6005-6014, 2019.
 
-14. Nathan Kallus and Angela Zhou. [Policy Evaluation and Optimization with Continuous Treatments](https://arxiv.org/abs/1802.06037). In International Conference on Artificial Intelligence and Statistics, 1243–1251. PMLR, 2018.
+14. Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudík. [Doubly Robust Off-policy Evaluation with Shrinkage](https://proceedings.mlr.press/v119/su20a.html). In *Proceedings of the 37th International Conference on Machine Learning*, 9167-9176, 2020.
 
-15. Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S Muthukrishnan, Vishwa Vinay, and Zheng Wen. [Offline Evaluation of Ranking Policies with Click Models](https://arxiv.org/pdf/1804.10488). In Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining, 1685–1694, 2018.
+15. Nathan Kallus and Angela Zhou. [Policy Evaluation and Optimization with Continuous Treatments](https://arxiv.org/abs/1802.06037). In *International Conference on Artificial Intelligence and Statistics*, 1243–1251. PMLR, 2018.
 
-16. James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Benjamin Carterette. [Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions](https://arxiv.org/abs/2007.12986). In Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining, 1779–1788, 2020.
+16. Aman Agarwal, Soumya Basu, Tobias Schnabel, and Thorsten Joachims. [Effective Evaluation using Logged Bandit Feedback from Multiple Loggers](https://arxiv.org/abs/1703.06180). In *Proceedings of the 23rd ACM SIGKDD international conference on Knowledge discovery and data mining*, 687–696, 2017.
 
-17.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Off-policy Bandit and Reinforcement Learning](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+17. Nathan Kallus, Yuta Saito, and Masatoshi Uehara. [Optimal Off-Policy Evaluation from Multiple Logging Policies](http://proceedings.mlr.press/v139/kallus21a.html). In *Proceedings of the 38th International Conference on Machine Learning*, 5247-5256, 2021.
 
-18. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). *arXiv preprint arXiv:2005.00687*, 2020.
+18. Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S Muthukrishnan, Vishwa Vinay, and Zheng Wen. [Offline Evaluation of Ranking Policies with Click Models](https://arxiv.org/pdf/1804.10488). In *Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining*, 1685–1694, 2018.
+
+19. James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Benjamin Carterette. [Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions](https://arxiv.org/abs/2007.12986). In *Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining*, 1779–1788, 2020.
+
+20.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Debiased Off-Policy Evaluation for Recommendation Systems](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+
+21. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). In *Advances in Neural Information Processing Systems*. 2020.
 
 
 

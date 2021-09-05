@@ -1,0 +1,15 @@
+# @package _group_
+experiment: default
+# dataset settings
+n_seeds: 200
+sample_size: 10000
+campaign: men
+behavior_policy: random
+# regression model settings
+reg_model: lightgbm
+n_folds: 2 # cross-fitting
+# other experimental settings
+is_full_obd: True
+is_timeseries_split: False
+test_size: 0.3
+random_state: 12345
