@@ -484,10 +484,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         if self.len_list != 1:
             raise NotImplementedError("currently, len_list > 1 is not supported")
 
-        if not isinstance(self.dim_context, int) or self.dim_context <= 0:
-            raise ValueError(
-                f"dim_context must be a positive integer, but {self.dim_context} is given"
-            )
+        check_scalar(self.dim_context, "dim_context", int, min_val=1)
 
         if not callable(self.off_policy_objective):
             raise ValueError(
@@ -506,10 +503,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"solver must be one of 'adam', 'lbfgs', or 'sgd', but {self.solver} is given"
             )
 
-        if not isinstance(self.alpha, float) or self.alpha < 0.0:
-            raise ValueError(
-                f"alpha must be a non-negative float, but {self.alpha} is given"
-            )
+        check_scalar(self.alpha, "alpha", float, min_val=0.0)
 
         if self.batch_size != "auto" and (
             not isinstance(self.batch_size, int) or self.batch_size <= 0
@@ -518,29 +512,22 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
-        if (
-            not isinstance(self.learning_rate_init, float)
-            or self.learning_rate_init <= 0.0
-        ):
+        check_scalar(self.learning_rate_init, "learning_rate_init", float)
+        if self.learning_rate_init <= 0.0:
             raise ValueError(
-                f"learning_rate_init must be a positive float, but {self.learning_rate_init} is given"
+                f"`learning_rate_init`= {self.learning_rate_init}, must be > 0.0"
             )
 
-        if not isinstance(self.max_iter, int) or self.max_iter <= 0:
-            raise ValueError(
-                f"max_iter must be a positive integer, but {self.max_iter} is given"
-            )
+        check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
             raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
 
-        if not isinstance(self.tol, float) or self.tol <= 0.0:
-            raise ValueError(f"tol must be a positive float, but {self.tol} is given")
+        check_scalar(self.tol, "tol", float)
+        if self.tol <= 0.0:
+            raise ValueError(f"`tol`= {self.tol}, must be > 0.0")
 
-        if not isinstance(self.momentum, float) or not 0.0 <= self.momentum <= 1.0:
-            raise ValueError(
-                f"momentum must be a float in [0., 1.], but {self.momentum} is given"
-            )
+        check_scalar(self.momentum, "momentum", float, min_val=0.0, max_val=1.0)
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
@@ -557,43 +544,19 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 f"if early_stopping is True, solver must be one of 'sgd' or 'adam', but {self.solver} is given"
             )
 
-        if (
-            not isinstance(self.validation_fraction, float)
-            or not 0.0 < self.validation_fraction <= 1.0
-        ):
+        check_scalar(
+            self.validation_fraction, "validation_fraction", float, max_val=1.0
+        )
+        if self.validation_fraction <= 0.0:
             raise ValueError(
-                f"validation_fraction must be a float in (0., 1.], but {self.validation_fraction} is given"
+                f"`validation_fraction`= {self.validation_fraction}, must be > 0.0"
             )
 
-        if not isinstance(self.beta_1, float) or not 0.0 <= self.beta_1 <= 1.0:
-            raise ValueError(
-                f"beta_1 must be a float in [0. 1.], but {self.beta_1} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.beta_2, float) or not 0.0 <= self.beta_2 <= 1.0:
-            raise ValueError(
-                f"beta_2 must be a float in [0., 1.], but {self.beta_2} is given"
-            )
-
-        if not isinstance(self.epsilon, float) or self.epsilon < 0.0:
-            raise ValueError(
-                f"epsilon must be a non-negative float, but {self.epsilon} is given"
-            )
-
-        if not isinstance(self.n_iter_no_change, int) or self.n_iter_no_change <= 0:
-            raise ValueError(
-                f"n_iter_no_change must be a positive integer, but {self.n_iter_no_change} is given"
-            )
-
-        if not isinstance(self.max_fun, int) or self.max_fun <= 0:
-            raise ValueError(
-                f"max_fun must be a positive integer, but {self.max_fun} is given"
-            )
+        check_scalar(self.beta_1, "beta_1", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.beta_2, "beta_2", float, min_val=0.0, max_val=1.0)
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0)
+        check_scalar(self.n_iter_no_change, "n_iter_no_change", int, min_val=1)
+        check_scalar(self.max_fun, "max_fun", int, min_val=1)
 
         if self.random_state is not None:
             self.random_ = check_random_state(self.random_state)
@@ -665,10 +628,9 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         """
         if self.batch_size == "auto":
             batch_size_ = min(200, context.shape[0])
-        elif isinstance(self.batch_size, int) and self.batch_size > 0:
-            batch_size_ = self.batch_size
         else:
-            raise ValueError("batch_size must be a positive integer or 'auto'")
+            check_scalar(self.batch_size, "batch_size", int, min_val=1)
+            batch_size_ = self.batch_size
 
         dataset = NNPolicyDataset(
             torch.from_numpy(context).float(),
