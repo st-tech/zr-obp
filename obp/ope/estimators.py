@@ -575,7 +575,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+            Whether to use bias upper bound in hyperparameter tuning.
+            If False, direct bias estimator is used to estimate the MSE.
 
         delta: float, default=0.05
             A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
@@ -1351,7 +1352,8 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+            Whether to use bias upper bound in hyperparameter tuning.
+            If False, direct bias estimator is used to estimate the MSE.
 
         delta: float, default=0.05
             A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
@@ -1675,7 +1677,8 @@ class SwitchDoublyRobust(DoublyRobust):
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+            Whether to use bias upper bound in hyperparameter tuning.
+            If False, direct bias estimator is used to estimate the MSE.
 
         delta: float, default=0.05
             A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
@@ -1895,7 +1898,8 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+            Whether to use bias upper bound in hyperparameter tuning.
+            If False, direct bias estimator is used to estimate the MSE.
 
         delta: float, default=0.05
             A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.

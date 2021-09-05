@@ -97,9 +97,7 @@ def estimate_high_probability_upper_bound_bias(
     "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
 
     """
-    check_scalar(
-        delta, name="delta", target_type=(int, float), min_val=0.0, max_val=1.0
-    )
+    check_scalar(delta, "delta", (int, float), min_val=0.0, max_val=1.0)
 
     bias_upper_bound = estimate_bias_in_ope(
         reward=reward,

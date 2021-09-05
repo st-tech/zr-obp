@@ -30,7 +30,8 @@ class BaseOffPolicyEstimatorTuning:
         A list of candidate hyperparameter values.
 
     use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+        Whether to use bias upper bound in hyperparameter tuning.
+        If False, direct bias estimator is used to estimate the MSE.
 
     delta: float, default=0.05
         A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
@@ -78,7 +79,7 @@ class BaseOffPolicyEstimatorTuning:
                 "`use_bias_upper_bound` must be a bool"
                 ", but {type(self.use_bias_upper_bound)} is given"
             )
-        check_scalar(self.delta, "delta", target_type=(float), min_val=0.0, max_val=1.0)
+        check_scalar(self.delta, "delta", (float), min_val=0.0, max_val=1.0)
 
     def _tune_hyperparam(
         self,
@@ -251,7 +252,8 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         will choose the best hyperparameter value from the data.
 
     use_bias_upper_bound: bool, default=True
-        Whether to use bias upper bound. If False, direct bias estimator is used to estimate the MSE.
+        Whether to use bias upper bound in hyperparameter tuning.
+        If False, direct bias estimator is used to estimate the MSE.
 
     delta: float, default=0.05
         A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
