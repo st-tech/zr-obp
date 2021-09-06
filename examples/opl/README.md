@@ -18,10 +18,7 @@ See [our documentation](https://zr-obp.readthedocs.io/en/latest/_autosummary/obp
 NNPolicyLearner can use the following OPE estimators as the objective function:
 - Direct Method (DM)
 - Inverse Probability Weighting (IPW)
-- Self-Normalized Inverse Probability Weighting (SNIPW)
 - Doubly Robust (DR)
-- Self-Normalized Doubly Robust (SNDR)
-- Doubly Robust with Optimistic Shrinkage (DRos)
 
 See [our documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details about these estimators.
 
@@ -39,7 +36,7 @@ python evaluate_off_policy_learners.py\
     --dim_context $dim_context\
     --base_model_for_evaluation_policy $base_model_for_evaluation_policy\
     --base_model_for_reg_model $base_model_for_reg_model\
-    --ope_estimator $ope_estimator\
+    --off_policy_objective $off_policy_objective\
     --n_hidden $n_hidden\
     --n_layers $n_layers\
     --activation $activation\
@@ -50,13 +47,12 @@ python evaluate_off_policy_learners.py\
 ```
 - `$n_rounds` and `$n_actions` specify the number of rounds (or samples) and the number of actions of the synthetic bandit data.
 - `$dim_context` specifies the dimension of context vectors.
-- `$base_model_for_evaluation_policy` specifies the base ML model for defining evaluation policy and should be one of "logistic_regression", "random_forest", or "lightgbm".
-- `$base_model_for_reg_model` specifies the base ML model for defining regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
-- `$ope_estimator` specifies the OPE estimator for NNPolicyLearner and should be one of "dm", "ipw", "sipw", "dr", "sndr" or "dros".
+- `$base_model_for_ipw_learner` specifies the base ML model for defining evaluation policy and should be one of "logistic_regression", "random_forest", or "lightgbm".
+- `$off_policy_objective` specifies the OPE estimator for NNPolicyLearner and should be one of "dm", "ipw", or "dr".
 - `$n_hidden` specifies the size of hidden layers in NNPolicyLearner.
 - `$n_layers` specifies the number of hidden layers in NNPolicyLearner.
-- `$activation` specifies theadam activation function for NNPolicyLearner and should be one of "identity", "tanh", "logistic", or "relu".
-- `$solver` specifies the optimizer for NNPolicyLearner and should be one of "lbfgs", "sgd", or "adam".
+- `$activation` specifies the activation function for NNPolicyLearner and should be one of "identity", "tanh", "logistic", or "relu".
+- `$solver` specifies the optimizer for NNPolicyLearner and should be one of "adagrad", "sgd", or "adam".
 - `$batch_size` specifies the batch size for NNPolicyLearner.
 - `$early_stopping` enables early stopping of training of NNPolicyLearner.
 
@@ -67,9 +63,8 @@ python evaluate_off_policy_learners.py\
     --n_rounds 10000\
     --n_actions 10\
     --dim_context 5\
-    --base_model_for_evaluation_policy logistic_regression\
-    --base_model_for_reg_model logistic_regression\
-    --ope_estimator dr\
+    --base_model_for_ipw_learner logistic_regression\
+    --off_policy_objective ipw\
     --n_hidden 100\
     --n_layers 1\
     --activation relu\
@@ -81,10 +76,10 @@ python evaluate_off_policy_learners.py\
 # =============================================
 # random_state=12345
 # ---------------------------------------------
-#                              policy value
-# random_policy                    0.604339
-# ipw_learner                      0.767615
-# nn_policy_learner (with dr)      0.764302
+#                               policy value
+# random_policy                     0.605604
+# ipw_learner                       0.753016
+# nn_policy_learner (with ipw)      0.759228
 # =============================================
 ```
 

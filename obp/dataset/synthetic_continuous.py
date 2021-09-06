@@ -3,15 +3,18 @@
 
 """Class for Generating Synthetic Continuous Logged Bandit Feedback."""
 from dataclasses import dataclass
-from typing import Optional, Callable
+from typing import Callable
+from typing import Optional
 
 import numpy as np
-from scipy.stats import uniform, truncnorm
-from sklearn.utils import check_random_state, check_scalar
+from scipy.stats import truncnorm
+from scipy.stats import uniform
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
-from .base import BaseBanditDataset
 from ..types import BanditFeedback
 from ..utils import check_array
+from .base import BaseBanditDataset
 
 
 @dataclass

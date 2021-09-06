@@ -2,12 +2,14 @@
 # Licensed under the Apache 2.0 License.
 
 """Base Interfaces for Bandit Algorithms."""
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from sklearn.utils import check_random_state, check_scalar
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
 from .policy_type import PolicyType
 

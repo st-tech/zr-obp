@@ -4,8 +4,11 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Dict, List, Optional, Tuple
 from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,10 +16,10 @@ from pandas import DataFrame
 import seaborn as sns
 from sklearn.utils import check_scalar
 
-
-from .estimators_slate import BaseSlateOffPolicyEstimator
 from ..types import BanditFeedback
 from ..utils import check_confidence_interval_arguments
+from .estimators_slate import BaseSlateOffPolicyEstimator
+
 
 logger = getLogger(__name__)
 

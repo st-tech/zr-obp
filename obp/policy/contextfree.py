@@ -2,15 +2,15 @@
 # Licensed under the Apache 2.0 License.
 
 """Context-Free Bandit Algorithms."""
-import os
-
-# import pkg_resources
-import yaml
 from dataclasses import dataclass
+import os
 from typing import Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
+
+# import pkg_resources
+import yaml
 
 from .base import BaseContextFreePolicy
 

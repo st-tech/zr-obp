@@ -1,18 +1,19 @@
 import argparse
 from pathlib import Path
-import yaml
-
-import numpy as np
-from pandas import DataFrame
-from joblib import Parallel, delayed
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier
 
 from custom_dataset import OBDWithInteractionFeatures
-from obp.policy import IPWLearner
+from joblib import delayed
+from joblib import Parallel
+import numpy as np
+from pandas import DataFrame
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+import yaml
+
 from obp.ope import InverseProbabilityWeighting
+from obp.policy import IPWLearner
+
 
 # hyperparameters of the regression model used in model dependent OPE estimators
 with open("./conf/hyperparams.yaml", "rb") as f:
@@ -20,7 +21,7 @@ with open("./conf/hyperparams.yaml", "rb") as f:
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 

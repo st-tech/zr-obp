@@ -1,9 +1,9 @@
-import pytest
+from typing import Tuple
+
 import numpy as np
+import pytest
 from sklearn.datasets import load_digits
 from sklearn.linear_model import LogisticRegression
-
-from typing import Tuple
 
 from obp.dataset import MultiClassToBanditReduction
 

@@ -1,15 +1,13 @@
-import pytest
 import numpy as np
+import pytest
 
 from obp.dataset import SyntheticContinuousBanditDataset
-from obp.dataset.synthetic_continuous import (
-    linear_reward_funcion_continuous,
-    quadratic_reward_funcion_continuous,
-    linear_behavior_policy_continuous,
-    linear_synthetic_policy_continuous,
-    threshold_synthetic_policy_continuous,
-    sign_synthetic_policy_continuous,
-)
+from obp.dataset.synthetic_continuous import linear_behavior_policy_continuous
+from obp.dataset.synthetic_continuous import linear_reward_funcion_continuous
+from obp.dataset.synthetic_continuous import linear_synthetic_policy_continuous
+from obp.dataset.synthetic_continuous import quadratic_reward_funcion_continuous
+from obp.dataset.synthetic_continuous import sign_synthetic_policy_continuous
+from obp.dataset.synthetic_continuous import threshold_synthetic_policy_continuous
 
 
 # dim_context, action_noise, reward_noise, min_action_value, max_action_value, random_state, err, description

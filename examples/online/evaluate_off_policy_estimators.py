@@ -1,26 +1,25 @@
 import argparse
 from pathlib import Path
 
+from joblib import delayed
+from joblib import Parallel
 import numpy as np
 from pandas import DataFrame
-from joblib import Parallel, delayed
 
-from obp.dataset import (
-    SyntheticBanditDataset,
-    logistic_reward_function,
-)
-from obp.policy import (
-    BernoulliTS,
-    EpsilonGreedy,
-    LinEpsilonGreedy,
-    LinTS,
-    LinUCB,
-    LogisticEpsilonGreedy,
-    LogisticTS,
-    LogisticUCB,
-)
-from obp.ope import OffPolicyEvaluation, ReplayMethod
-from obp.simulator import calc_ground_truth_policy_value, run_bandit_simulation
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDataset
+from obp.ope import OffPolicyEvaluation
+from obp.ope import ReplayMethod
+from obp.policy import BernoulliTS
+from obp.policy import EpsilonGreedy
+from obp.policy import LinEpsilonGreedy
+from obp.policy import LinTS
+from obp.policy import LinUCB
+from obp.policy import LogisticEpsilonGreedy
+from obp.policy import LogisticTS
+from obp.policy import LogisticUCB
+from obp.simulator import calc_ground_truth_policy_value
+from obp.simulator import run_bandit_simulation
 
 
 ope_estimators = [ReplayMethod()]

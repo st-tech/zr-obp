@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from sklearn.base import BaseEstimator, clone, is_classifier
+from sklearn.base import BaseEstimator
+from sklearn.base import clone
+from sklearn.base import is_classifier
 from sklearn.model_selection import KFold
-from sklearn.utils import check_scalar, check_random_state
-
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
 from ..utils import check_bandit_feedback_inputs
 
@@ -111,7 +113,7 @@ class RegressionModel(BaseEstimator):
             When None is given, behavior policy is assumed to be uniform.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
             If None is set, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 
@@ -255,7 +257,7 @@ class RegressionModel(BaseEstimator):
             When None is given, the the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
             If None is set, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 

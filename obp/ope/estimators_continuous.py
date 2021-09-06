@@ -2,18 +2,19 @@
 # Licensed under the Apache 2.0 License.
 
 """Off-Policy Estimators for Continuous Actions."""
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict
+from typing import Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
 
-from ..utils import (
-    estimate_confidence_interval_by_bootstrap,
-    check_continuous_ope_inputs,
-    check_array,
-)
+from ..utils import check_array
+from ..utils import check_continuous_ope_inputs
+from ..utils import estimate_confidence_interval_by_bootstrap
+
 
 # kernel functions, reference: https://en.wikipedia.org/wiki/Kernel_(statistics)
 

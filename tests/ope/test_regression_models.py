@@ -1,25 +1,26 @@
-from typing import Dict
 from pathlib import Path
-import yaml
+from typing import Dict
 
+from conftest import generate_action_dist
 import numpy as np
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.metrics import roc_auc_score
-from sklearn.base import BaseEstimator
 import pytest
+from sklearn.base import BaseEstimator
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import Ridge
+from sklearn.metrics import roc_auc_score
+import yaml
 
 from obp.ope import RegressionModel
 from obp.types import BanditFeedback
-from conftest import generate_action_dist
 
 
 np.random.seed(1)
 
 binary_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 

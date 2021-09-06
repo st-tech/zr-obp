@@ -1,17 +1,15 @@
 from typing import List
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
-from obp.dataset import (
-    linear_reward_function,
-    logistic_reward_function,
-    linear_behavior_policy_logit,
-    SyntheticSlateBanditDataset,
-)
-
+from obp.dataset import linear_behavior_policy_logit
+from obp.dataset import linear_reward_function
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticSlateBanditDataset
 from obp.types import BanditFeedback
+
 
 # n_unique_action, len_list, dim_context, reward_type, reward_structure, decay_function, click_model, eta, random_state, err, description
 invalid_input_of_init = [

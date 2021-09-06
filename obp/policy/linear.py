@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import numpy as np
 from sklearn.utils import check_scalar
 
-from .base import BaseContextualPolicy
 from ..utils import check_array
+from .base import BaseContextualPolicy
 
 
 @dataclass

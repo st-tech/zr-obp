@@ -1,23 +1,24 @@
 import argparse
-import yaml
 from pathlib import Path
 
+from joblib import delayed
+from joblib import Parallel
 import numpy as np
 from pandas import DataFrame
-from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import yaml
 
 from obp.dataset import OpenBanditDataset
-from obp.policy import Random, BernoulliTS
-from obp.ope import (
-    RegressionModel,
-    OffPolicyEvaluation,
-    InverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust,
-)
+from obp.ope import DirectMethod
+from obp.ope import DoublyRobust
+from obp.ope import InverseProbabilityWeighting
+from obp.ope import OffPolicyEvaluation
+from obp.ope import RegressionModel
+from obp.policy import BernoulliTS
+from obp.policy import Random
+
 
 evaluation_policy_dict = dict(bts=BernoulliTS, random=Random)
 
@@ -27,7 +28,7 @@ with open("./conf/hyperparams.yaml", "rb") as f:
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 

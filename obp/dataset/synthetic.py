@@ -3,15 +3,20 @@
 
 """Class for Generating Synthetic Logged Bandit Feedback."""
 from dataclasses import dataclass
-from typing import Optional, Callable
+from typing import Callable
+from typing import Optional
 
 import numpy as np
 from scipy.stats import truncnorm
-from sklearn.utils import check_random_state, check_scalar
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 
-from .base import BaseBanditDataset
 from ..types import BanditFeedback
-from ..utils import sigmoid, softmax, sample_action_fast, check_array
+from ..utils import check_array
+from ..utils import sample_action_fast
+from ..utils import sigmoid
+from ..utils import softmax
+from .base import BaseBanditDataset
 from .reward_type import RewardType
 
 

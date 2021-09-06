@@ -1,9 +1,9 @@
-import pytest
 import numpy as np
+import pytest
 
 from obp.policy.linear import LinEpsilonGreedy
-from obp.policy.linear import LinUCB
 from obp.policy.linear import LinTS
+from obp.policy.linear import LinUCB
 from obp.policy.policy_type import PolicyType
 
 

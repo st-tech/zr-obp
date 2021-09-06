@@ -1,6 +1,7 @@
 import numpy as np
 
-from obp.utils import sample_action_fast, softmax
+from obp.utils import sample_action_fast
+from obp.utils import softmax
 
 
 def test_sample_action_fast():

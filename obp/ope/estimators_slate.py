@@ -2,18 +2,18 @@
 # Licensed under the Apache 2.0 License.
 
 """Slate Off-Policy Estimators."""
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict
+from typing import Optional
 
 import numpy as np
 
-from ..utils import (
-    estimate_confidence_interval_by_bootstrap,
-    check_sips_inputs,
-    check_iips_inputs,
-    check_rips_inputs,
-)
+from ..utils import check_iips_inputs
+from ..utils import check_rips_inputs
+from ..utils import check_sips_inputs
+from ..utils import estimate_confidence_interval_by_bootstrap
 
 
 @dataclass

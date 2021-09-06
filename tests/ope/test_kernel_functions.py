@@ -1,12 +1,10 @@
 import numpy as np
 from scipy import integrate
 
-from obp.ope import (
-    triangular_kernel,
-    epanechnikov_kernel,
-    gaussian_kernel,
-    cosine_kernel,
-)
+from obp.ope import cosine_kernel
+from obp.ope import epanechnikov_kernel
+from obp.ope import gaussian_kernel
+from obp.ope import triangular_kernel
 
 
 def test_kernel_functions():

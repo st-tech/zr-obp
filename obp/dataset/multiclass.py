@@ -3,17 +3,22 @@
 
 """Class for Multi-Class Classification to Bandit Reduction."""
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 import numpy as np
 from scipy.stats import rankdata
-from sklearn.base import ClassifierMixin, is_classifier, clone
+from sklearn.base import ClassifierMixin
+from sklearn.base import clone
+from sklearn.base import is_classifier
 from sklearn.model_selection import train_test_split
-from sklearn.utils import check_random_state, check_X_y, check_scalar
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
+from sklearn.utils import check_X_y
 
-from .base import BaseBanditDataset
 from ..types import BanditFeedback
 from ..utils import check_array
+from .base import BaseBanditDataset
 
 
 @dataclass

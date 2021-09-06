@@ -1,9 +1,9 @@
-import pytest
 import numpy as np
+import pytest
 
 from obp.policy.logistic import LogisticEpsilonGreedy
-from obp.policy.logistic import LogisticUCB
 from obp.policy.logistic import LogisticTS
+from obp.policy.logistic import LogisticUCB
 from obp.policy.logistic import MiniBatchLogisticRegression
 
 

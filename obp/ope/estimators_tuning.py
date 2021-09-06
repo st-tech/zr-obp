@@ -2,20 +2,22 @@
 # Licensed under the Apache 2.0 License.
 
 """Off-Policy Estimators with built-in hyperparameter tuning."""
-from dataclasses import dataclass, field
-from typing import Dict, Optional, List
+from dataclasses import dataclass
+from dataclasses import field
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
 
-from .estimators import (
-    BaseOffPolicyEstimator,
-    InverseProbabilityWeighting,
-    DoublyRobust,
-    SwitchDoublyRobust,
-    DoublyRobustWithShrinkage,
-)
-from ..utils import check_ope_inputs, check_array
+from ..utils import check_array
+from ..utils import check_ope_inputs
+from .estimators import BaseOffPolicyEstimator
+from .estimators import DoublyRobust
+from .estimators import DoublyRobustWithShrinkage
+from .estimators import InverseProbabilityWeighting
+from .estimators import SwitchDoublyRobust
 
 
 @dataclass
@@ -139,7 +141,7 @@ class BaseOffPolicyEstimatorTuning:
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -200,7 +202,7 @@ class BaseOffPolicyEstimatorTuning:
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -305,7 +307,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -364,7 +366,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -468,7 +470,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -537,7 +539,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -647,7 +649,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -716,7 +718,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -826,7 +828,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -895,7 +897,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.

@@ -4,8 +4,12 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Dict, List, Optional, Tuple, Union
 from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,12 +17,12 @@ from pandas import DataFrame
 import seaborn as sns
 from sklearn.utils import check_scalar
 
-from .estimators_continuous import (
-    BaseContinuousOffPolicyEstimator,
-    KernelizedDoublyRobust as KDR,
-)
 from ..types import BanditFeedback
-from ..utils import check_confidence_interval_arguments, check_array
+from ..utils import check_array
+from ..utils import check_confidence_interval_arguments
+from .estimators_continuous import BaseContinuousOffPolicyEstimator
+from .estimators_continuous import KernelizedDoublyRobust as KDR
+
 
 logger = getLogger(__name__)
 
