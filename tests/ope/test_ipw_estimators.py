@@ -10,55 +10,141 @@ from obp.ope import SelfNormalizedInverseProbabilityWeighting
 from obp.types import BanditFeedback
 
 
-def test_ipw_init():
-    # lambda_
-    with pytest.raises(
+# lambda_, err, description
+invalid_input_of_ipw_init = [
+    (
+        "",
         TypeError,
-        match=r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
-    ):
-        InverseProbabilityWeighting(lambda_=None)
-
-    with pytest.raises(
+        r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        None,
         TypeError,
-        match=r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
-    ):
-        InverseProbabilityWeighting(lambda_="")
+        r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ),
+    (-1.0, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
+    (np.nan, ValueError, "lambda_ must not be nan"),
+]
 
-    with pytest.raises(ValueError, match=r"`lambda_`= -1.0, must be >= 0.0."):
-        InverseProbabilityWeighting(lambda_=-1.0)
 
-    with pytest.raises(ValueError, match=r"lambda_ must not be nan"):
-        InverseProbabilityWeighting(lambda_=np.nan)
+@pytest.mark.parametrize(
+    "lambda_, err, description",
+    invalid_input_of_ipw_init,
+)
+def test_ipw_init_using_invalid_inputs(
+    lambda_,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        _ = InverseProbabilityWeighting(lambda_=lambda_)
 
-    # lambdas
-    with pytest.raises(
+
+# lambdas, use_bias_upper_bound, delta, err, description
+invalid_input_of_ipw_tuning_init = [
+    (
+        "",  #
+        True,
+        0.05,
         TypeError,
-        match=r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
-    ):
-        InverseProbabilityWeightingTuning(lambdas=[None])
-
-    with pytest.raises(
+        "lambdas must be a list",
+    ),
+    (
+        None,  #
+        True,
+        0.05,
         TypeError,
-        match=r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
-    ):
-        InverseProbabilityWeightingTuning(lambdas=[""])
+        "lambdas must be a list",
+    ),
+    (
+        [""],  #
+        True,
+        0.05,
+        TypeError,
+        r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        [None],  #
+        True,
+        0.05,
+        TypeError,
+        r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+    ),
+    (
+        [],  #
+        True,
+        0.05,
+        ValueError,
+        "lambdas must not be empty",
+    ),
+    (
+        [-1.0],  #
+        True,
+        0.05,
+        ValueError,
+        "`an element of lambdas`= -1.0, must be >= 0.0.",
+    ),
+    ([np.nan], True, 0.05, ValueError, "an element of lambdas must not be nan"),
+    (
+        [1],
+        "",  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        None,  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        True,
+        "",  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        None,  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        -1.0,  #
+        ValueError,
+        "`delta`= -1.0, must be >= 0.0.",
+    ),
+    (
+        [1],
+        True,
+        1.1,  #
+        ValueError,
+        "`delta`= 1.1, must be <= 1.0.",
+    ),
+]
 
-    with pytest.raises(
-        ValueError, match="`an element of lambdas`= -1.0, must be >= 0.0."
-    ):
-        InverseProbabilityWeightingTuning(lambdas=[-1.0])
 
-    with pytest.raises(ValueError, match="an element of lambdas must not be nan"):
-        InverseProbabilityWeightingTuning(lambdas=[np.nan])
-
-    with pytest.raises(ValueError, match="lambdas must not be empty"):
-        InverseProbabilityWeightingTuning(lambdas=[])
-
-    with pytest.raises(TypeError, match="lambdas must be a list"):
-        InverseProbabilityWeightingTuning(lambdas="")
-
-    with pytest.raises(TypeError, match="lambdas must be a list"):
-        InverseProbabilityWeightingTuning(lambdas=None)
+@pytest.mark.parametrize(
+    "lambdas, use_bias_upper_bound, delta, err, description",
+    invalid_input_of_ipw_tuning_init,
+)
+def test_ipw_tuning_init_using_invalid_inputs(
+    lambdas,
+    use_bias_upper_bound,
+    delta,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        _ = InverseProbabilityWeightingTuning(
+            use_bias_upper_bound=use_bias_upper_bound, delta=delta, lambdas=lambdas
+        )
 
 
 # prepare ipw instances

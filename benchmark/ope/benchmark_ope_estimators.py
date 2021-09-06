@@ -45,14 +45,13 @@ def main(cfg: DictConfig) -> None:
 
     # compared ope estimators
     lambdas = list(dict(cfg.estimator_hyperparams)["lambdas"])
-    taus = list(dict(cfg.estimator_hyperparams)["taus"])
     ope_estimators = [
         InverseProbabilityWeighting(estimator_name="IPW"),
         SelfNormalizedInverseProbabilityWeighting(estimator_name="SNIPW"),
         DirectMethod(estimator_name="DM"),
         DoublyRobust(estimator_name="DR"),
         SelfNormalizedDoublyRobust(estimator_name="SNDR"),
-        SwitchDoublyRobustTuning(taus=taus, estimator_name="Switch-DR"),
+        SwitchDoublyRobustTuning(lambdas=lambdas, estimator_name="Switch-DR"),
         DoublyRobustWithShrinkageTuning(lambdas=lambdas, estimator_name="DRos"),
     ]
 
