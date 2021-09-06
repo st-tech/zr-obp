@@ -47,168 +47,167 @@ def test_dr_init_using_invalid_inputs(
         _ = DoublyRobust(lambda_=lambda_)
 
     with pytest.raises(err, match=f"{description}*"):
+        _ = SwitchDoublyRobust(lambda_=lambda_)
+
+    with pytest.raises(err, match=f"{description}*"):
         _ = DoublyRobustWithShrinkage(lambda_=lambda_)
 
 
-# lambdas, err, description
+# lambdas, use_bias_upper_bound, delta, err, description
 invalid_input_of_dr_tuning_init = [
     (
-        "",
+        "",  #
+        True,
+        0.05,
         TypeError,
         "lambdas must be a list",
     ),
     (
-        None,
+        None,  #
+        True,
+        0.05,
         TypeError,
         "lambdas must be a list",
     ),
     (
-        [""],
+        [""],  #
+        True,
+        0.05,
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
-        [None],
+        [None],  #
+        True,
+        0.05,
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
-        [],
+        [],  #
+        True,
+        0.05,
         ValueError,
         "lambdas must not be empty",
     ),
-    ([-1.0], ValueError, "`an element of lambdas`= -1.0, must be >= 0.0."),
-    ([np.nan], ValueError, "an element of lambdas must not be nan"),
+    (
+        [-1.0],  #
+        True,
+        0.05,
+        ValueError,
+        "`an element of lambdas`= -1.0, must be >= 0.0.",
+    ),
+    ([np.nan], True, 0.05, ValueError, "an element of lambdas must not be nan"),
+    (
+        [1],
+        "",  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        None,  #
+        0.05,
+        TypeError,
+        "`use_bias_upper_bound` must be a bool",
+    ),
+    (
+        [1],
+        True,
+        "",  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        None,  #
+        TypeError,
+        "`delta` must be an instance of <class 'float'>",
+    ),
+    (
+        [1],
+        True,
+        -1.0,  #
+        ValueError,
+        "`delta`= -1.0, must be >= 0.0.",
+    ),
+    (
+        [1],
+        True,
+        1.1,  #
+        ValueError,
+        "`delta`= 1.1, must be <= 1.0.",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas, err, description",
+    "lambdas, use_bias_upper_bound, delta, err, description",
     invalid_input_of_dr_tuning_init,
 )
 def test_dr_tuning_init_using_invalid_inputs(
     lambdas,
+    use_bias_upper_bound,
+    delta,
     err,
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = DoublyRobustTuning(lambdas=lambdas)
+        _ = DoublyRobustTuning(
+            use_bias_upper_bound=use_bias_upper_bound, delta=delta, lambdas=lambdas
+        )
+
+    with pytest.raises(err, match=f"{description}*"):
+        _ = SwitchDoublyRobustTuning(
+            use_bias_upper_bound=use_bias_upper_bound,
+            delta=delta,
+            lambdas=lambdas,
+        )
 
     with pytest.raises(err, match=f"{description}*"):
         _ = DoublyRobustWithShrinkageTuning(
+            use_bias_upper_bound=use_bias_upper_bound,
+            delta=delta,
             lambdas=lambdas,
         )
 
 
-# tau, err, description
-invalid_input_of_switch_dr_init = [
-    (
-        "",
-        TypeError,
-        r"`tau` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
-    ),
-    (
-        None,
-        TypeError,
-        r"`tau` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
-    ),
-    (-1.0, ValueError, "`tau`= -1.0, must be >= 0.0."),
-    (np.nan, ValueError, "tau must not be nan"),
-]
-
-
-@pytest.mark.parametrize(
-    "tau, err, description",
-    invalid_input_of_switch_dr_init,
-)
-def test_switch_dr_init_using_invalid_inputs(
-    tau,
-    err,
-    description,
-):
-    with pytest.raises(err, match=f"{description}*"):
-        _ = SwitchDoublyRobust(tau=tau)
-
-
-# taus, err, description
-invalid_input_of_switch_dr_tuning_init = [
-    (
-        "",
-        TypeError,
-        "taus must be a list",
-    ),
-    (
-        None,
-        TypeError,
-        "taus must be a list",
-    ),
-    (
-        [""],
-        TypeError,
-        r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
-    ),
-    (
-        [None],
-        TypeError,
-        r"`an element of taus` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
-    ),
-    (
-        [],
-        ValueError,
-        "taus must not be empty",
-    ),
-    ([-1.0], ValueError, "`an element of taus`= -1.0, must be >= 0.0."),
-    ([np.nan], ValueError, "an element of taus must not be nan"),
-]
-
-
-@pytest.mark.parametrize(
-    "taus, err, description",
-    invalid_input_of_switch_dr_tuning_init,
-)
-def test_switch_dr_tuning_init_using_invalid_inputs(
-    taus,
-    err,
-    description,
-):
-    with pytest.raises(err, match=f"{description}*"):
-        _ = SwitchDoublyRobustTuning(taus=taus)
-
-
 valid_input_of_dr_init = [
-    (np.inf, "infinite lambda_tau"),
-    (3.0, "float lambda_tau"),
-    (2, "integer lambda_tau"),
+    (np.inf, "infinite lambda_"),
+    (3.0, "float lambda_"),
+    (2, "integer lambda_"),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambda_tau, description",
+    "lambda_, description",
     valid_input_of_dr_init,
 )
-def test_dr_init_using_valid_input_data(lambda_tau: float, description: str) -> None:
-    _ = DoublyRobust(lambda_=lambda_tau)
-    _ = DoublyRobustWithShrinkage(lambda_=lambda_tau)
-    _ = SwitchDoublyRobust(tau=lambda_tau)
+def test_dr_init_using_valid_input_data(lambda_: float, description: str) -> None:
+    _ = DoublyRobust(lambda_=lambda_)
+    _ = DoublyRobustWithShrinkage(lambda_=lambda_)
+    _ = SwitchDoublyRobust(lambda_=lambda_)
 
 
 valid_input_of_dr_tuning_init = [
-    ([3.0, np.inf, 100.0], "float lambda_tau"),
-    ([2], "integer lambda_tau"),
+    ([3.0, np.inf, 100.0], "float lambda_"),
+    ([2], "integer lambda_"),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas_taus, description",
+    "lambdas, description",
     valid_input_of_dr_tuning_init,
 )
-def test_dr_tuning_init_using_valid_input_data(lambdas_taus, description):
-    _ = DoublyRobustTuning(lambdas=lambdas_taus)
+def test_dr_tuning_init_using_valid_input_data(lambdas, description):
+    _ = DoublyRobustTuning(lambdas=lambdas)
     _ = DoublyRobustWithShrinkageTuning(
-        lambdas=lambdas_taus,
+        lambdas=lambdas,
     )
     _ = SwitchDoublyRobustTuning(
-        taus=lambdas_taus,
+        lambdas=lambdas,
     )
 
 
@@ -222,11 +221,11 @@ dr_os_tuning = DoublyRobustWithShrinkageTuning(
 )
 dr_os_max = DoublyRobustWithShrinkage(lambda_=np.inf)
 sndr = SelfNormalizedDoublyRobust()
-switch_dr_0 = SwitchDoublyRobust(tau=0.0)
+switch_dr_0 = SwitchDoublyRobust(lambda_=0.0)
 switch_dr_tuning = SwitchDoublyRobustTuning(
-    taus=[1, 100], estimator_name="switch_dr_tuning"
+    lambdas=[1, 100], estimator_name="switch_dr_tuning"
 )
-switch_dr_max = SwitchDoublyRobust(tau=np.inf)
+switch_dr_max = SwitchDoublyRobust(lambda_=np.inf)
 
 dr_estimators = [
     dr,
@@ -666,9 +665,9 @@ def test_dr_variants_using_valid_input_data(
     description: str,
 ) -> None:
     # check dr variants
-    switch_dr = SwitchDoublyRobust(tau=hyperparameter)
+    switch_dr = SwitchDoublyRobust(lambda_=hyperparameter)
     switch_dr_tuning = SwitchDoublyRobustTuning(
-        taus=[hyperparameter, hyperparameter * 10]
+        lambdas=[hyperparameter, hyperparameter * 10]
     )
     dr_os = DoublyRobustWithShrinkage(lambda_=hyperparameter)
     dr_os_tuning = DoublyRobustWithShrinkageTuning(
@@ -928,7 +927,7 @@ def test_switch_dr_using_random_evaluation_policy(
     switch_dr_max_value = switch_dr_max.estimate_policy_value(**input_dict)
     assert (
         dm_value == switch_dr_0_value
-    ), "SwitchDR (tau=0) should be the same as DirectMethod"
+    ), "SwitchDR (lambda=0) should be the same as DirectMethod"
     assert (
         dr_value == switch_dr_max_value
-    ), "SwitchDR (tau=1e10) should be the same as DoublyRobust"
+    ), "SwitchDR (lambda=1e10) should be the same as DoublyRobust"

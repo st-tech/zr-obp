@@ -76,8 +76,8 @@ python evaluate_off_policy_estimators.py\
 # snipw                 0.006797  0.004094
 # dr                    0.007780  0.004492
 # sndr                  0.007210  0.004089
-# switch-dr (tau=1)     0.173282  0.020025
-# switch-dr (tau=100)   0.007780  0.004492
+# switch-dr (lambda=1)     0.173282  0.020025
+# switch-dr (lambda=100)   0.007780  0.004492
 # dr-os (lambda=1)      0.079629  0.014008
 # dr-os (lambda=100)    0.008031  0.004634
 # =============================================
