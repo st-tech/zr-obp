@@ -184,23 +184,25 @@ python-versions = ">=3.7,<3.11"
 
 [[package]]
 name = "obp"
-version = "0.4.1"
+version = "0.5.0"
 description = "Open Bandit Pipeline: a python library for bandit algorithms and off-policy evaluation"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7.1,<3.10"
 
 [package.dependencies]
-matplotlib = ">=3.2.2"
-mypy-extensions = ">=0.4.3"
-numpy = ">=1.18.1"
-pandas = ">=0.25.1"
-pyyaml = ">=5.1"
-scikit-learn = ">=0.23.1"
-scipy = ">=1.4.1"
-seaborn = ">=0.10.1"
-torch = ">=1.7.1"
-tqdm = ">=4.41.1"
+matplotlib = ">=3.4.3,<4.0.0"
+mypy-extensions = ">=0.4.3,<0.5.0"
+numpy = ">=1.21.2,<2.0.0"
+pandas = ">=1.3.2,<2.0.0"
+pingouin = ">=0.4.0,<0.5.0"
+pyieoe = ">=0.1.1,<0.2.0"
+PyYAML = ">=5.4.1,<6.0.0"
+scikit-learn = ">=0.24.2,<0.25.0"
+scipy = ">=1.7.1,<2.0.0"
+seaborn = ">=0.11.2,<0.12.0"
+torch = ">=1.9.0,<2.0.0"
+tqdm = ">=4.62.2,<5.0.0"
 
 [[package]]
 name = "omegaconf"
@@ -320,7 +322,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "pyieoe"
-version = "0.1.0"
+version = "0.1.1"
 description = "pyIEOE: a Python package to facilitate interpretable OPE evaluation"
 category = "main"
 optional = false
@@ -509,7 +511,7 @@ typing-extensions = "*"
 
 [[package]]
 name = "tqdm"
-version = "4.62.1"
+version = "4.62.2"
 description = "Fast, Extensible Progress Meter"
 category = "main"
 optional = false
@@ -567,7 +569,7 @@ viz = ["matplotlib", "seaborn", "nc-time-axis"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9,<3.10"
-content-hash = "4d5877b71e7c289230edf83a4a4fba035f9ede84ef017df5bed560154d2c13c6"
+content-hash = "f61d01af9f6cb2ab9ec46eeb39d3d02f096cc4964ea7532cff3f5bf032e118a2"
 
 [metadata.files]
 antlr4-python3-runtime = [
@@ -718,9 +720,7 @@ numpy = [
     {file = "numpy-1.21.2.zip", hash = "sha256:423216d8afc5923b15df86037c6053bf030d15cc9e3224206ef868c2d63dd6dc"},
 ]
 obp = [
-    {file = "obp-0.4.1-py3-none-any.whl", hash = "sha256:87dec9caf4283c25ab13036532e0a24566f1c7bdcad1653a8ded43b2f5ef8208"},
-    {file = "obp-0.4.1-py3.8.egg", hash = "sha256:ec415eda29f718d9e93e911b00b8fcb8d0d8caf72b5c47992b424f525da7ceca"},
-    {file = "obp-0.4.1.tar.gz", hash = "sha256:4be96fae9ba4f7a0cff3e313209e767c466f1b940bbc203c4238cc23f1241d15"},
+    {file = "obp-0.5.0.tar.gz", hash = "sha256:a8bbcb9aeb6e17da754690abac7e64e28f4c09214de3ce64643966aeaf1b947b"},
 ]
 omegaconf = [
     {file = "omegaconf-2.1.1-py3-none-any.whl", hash = "sha256:be93d73eaa2564fbe52d88ee13e3b79f4c6e04876b2f326551a21391f7dc6367"},
@@ -816,7 +816,7 @@ pyflakes = [
     {file = "pyflakes-2.3.1.tar.gz", hash = "sha256:f5bc8ecabc05bb9d291eb5203d6810b49040f6ff446a756326104746cc00c1db"},
 ]
 pyieoe = [
-    {file = "pyieoe-0.1.0.tar.gz", hash = "sha256:a9f2f4b88c80b6dd9bfada8d9b79b250e33ceabb0fe713c385958a65962a5559"},
+    {file = "pyieoe-0.1.1.tar.gz", hash = "sha256:679bee6e437cbba7bae9462a5d52d7d1a71bc7568aa4f80eec0add1dc3126b78"},
 ]
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
@@ -1020,8 +1020,8 @@ torch = [
     {file = "torch-1.9.0-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:569ead6ae6bb0e636df0fc8af660ef03260e630dc5f2f4cf3198027e7b6bb481"},
 ]
 tqdm = [
-    {file = "tqdm-4.62.1-py2.py3-none-any.whl", hash = "sha256:07856e19a1fe4d2d9621b539d3f072fa88c9c1ef1f3b7dd4d4953383134c3164"},
-    {file = "tqdm-4.62.1.tar.gz", hash = "sha256:35540feeaca9ac40c304e916729e6b78045cbbeccd3e941b2868f09306798ac9"},
+    {file = "tqdm-4.62.2-py2.py3-none-any.whl", hash = "sha256:80aead664e6c1672c4ae20dc50e1cdc5e20eeff9b14aa23ecd426375b28be588"},
+    {file = "tqdm-4.62.2.tar.gz", hash = "sha256:a4d6d112e507ef98513ac119ead1159d286deab17dffedd96921412c2d236ff5"},
 ]
 typing-extensions = [
     {file = "typing_extensions-3.10.0.0-py2-none-any.whl", hash = "sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497"},
