@@ -53,8 +53,8 @@ numpy = "^1.21.1"
 matplotlib = "^3.4.2"
 hydra-core = "^1.1.0"
 pingouin = "^0.4.0"
-obp = "^0.4.2"
 pyieoe = "^0.1.0"
+obp = "^0.5.0"
 ```
 
 ## Files

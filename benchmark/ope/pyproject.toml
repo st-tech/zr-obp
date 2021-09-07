@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "benchmark/ope"
 version = "0.1.0"
-description = ""
+description = "benchmarking OPE estimators on Open Bandit Dataset"
 authors = ["usaito <ys552@cornell.edu>"]
 
 [tool.poetry.dependencies]
@@ -12,8 +12,8 @@ numpy = "^1.21.1"
 matplotlib = "^3.4.2"
 hydra-core = "^1.1.0"
 pingouin = "^0.4.0"
-obp = "^0.4.2"
 pyieoe = "^0.1.0"
+obp = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.2"
