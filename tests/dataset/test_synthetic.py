@@ -1,12 +1,11 @@
-import pytest
 import numpy as np
+import pytest
 
 from obp.dataset import SyntheticBanditDataset
-from obp.dataset.synthetic import (
-    logistic_reward_function,
-    linear_reward_function,
-    linear_behavior_policy,
-)
+from obp.dataset.synthetic import linear_behavior_policy
+from obp.dataset.synthetic import linear_reward_function
+from obp.dataset.synthetic import logistic_reward_function
+from obp.utils import softmax
 
 
 def test_synthetic_init():
@@ -14,19 +13,33 @@ def test_synthetic_init():
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         SyntheticBanditDataset(n_actions="3")
 
     # dim_context
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=2, dim_context=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         SyntheticBanditDataset(n_actions=2, dim_context="2")
 
     # reward_type
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=2, reward_type="aaa")
+
+    # reward_std
+    with pytest.raises(TypeError):
+        SyntheticBanditDataset(n_actions=2, reward_std="aaa")
+
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, reward_std=-1)
+
+    # tau
+    with pytest.raises(TypeError):
+        SyntheticBanditDataset(n_actions=2, tau="aaa")
+
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, tau=-1)
 
     # random_state
     with pytest.raises(ValueError):
@@ -52,25 +65,25 @@ def test_synthetic_init():
 
 # context, action, description
 invalid_input_of_sample_reward = [
-    ("3", np.ones(2, dtype=int), "context must be ndarray"),
-    (None, np.ones(2, dtype=int), "context must be ndarray"),
-    (np.ones((2, 3)), "3", "action must be ndarray"),
-    (np.ones((2, 3)), None, "action must be ndarray"),
+    ("3", np.ones(2, dtype=int), "context must be 2D array"),
+    (None, np.ones(2, dtype=int), "context must be 2D array"),
+    (np.ones((2, 3)), "3", "action must be 1D array"),
+    (np.ones((2, 3)), None, "action must be 1D array"),
     (
         np.ones((2, 3)),
         np.ones(2, dtype=np.float32),
         "the dtype of action must be a subdtype of int",
     ),
-    (np.ones(2), np.ones(2, dtype=int), "context must be 2-dimensional, but is 1."),
+    (np.ones(2), np.ones(2, dtype=int), "context must be 2D array"),
     (
         np.ones((2, 3)),
         np.ones((2, 3), dtype=int),
-        "action must be 1-dimensional, but is 2.",
+        "action must be 1D array",
     ),
     (
         np.ones((2, 3)),
         np.ones(3, dtype=int),
-        "the size of axis 0 of context must be the same as that of action",
+        "Expected `context.shape[0]",
     ),
 ]
 
@@ -114,7 +127,7 @@ def test_synthetic_obtain_batch_bandit_feedback():
         dataset = SyntheticBanditDataset(n_actions=2)
         dataset.obtain_batch_bandit_feedback(n_rounds=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         dataset = SyntheticBanditDataset(n_actions=2)
         dataset.obtain_batch_bandit_feedback(n_rounds="3")
 
@@ -157,18 +170,18 @@ invalid_input_of_calc_policy_value = [
     (
         np.ones((2, 3)),
         np.ones((3, 3, 3)),
-        "the size of axis 0 of expected_reward must be the same as that of action_dist",
+        "Expected `expected_reward.shape[0]",
     ),
     (
         np.ones((2, 3)),
         np.ones((2, 2, 3)),
-        "the size of axis 1 of expected_reward must be the same as that of action_dist",
+        "Expected `expected_reward.shape[1]",
     ),
-    ("3", np.ones((2, 2, 3)), "expected_reward must be ndarray"),
-    (None, np.ones((2, 2, 3)), "expected_reward must be ndarray"),
-    (np.ones((2, 3)), np.ones((2, 3)), "action_dist must be 3-dimensional, but is 2."),
-    (np.ones((2, 3)), "3", "action_dist must be ndarray"),
-    (np.ones((2, 3)), None, "action_dist must be ndarray"),
+    ("3", np.ones((2, 2, 3)), "expected_reward must be 2D array"),
+    (None, np.ones((2, 2, 3)), "expected_reward must be 2D array"),
+    (np.ones((2, 3)), np.ones((2, 3)), "action_dist must be 3D array"),
+    (np.ones((2, 3)), "3", "action_dist must be 3D array"),
+    (np.ones((2, 3)), None, "action_dist must be 3D array"),
 ]
 
 valid_input_of_calc_policy_value = [
@@ -310,6 +323,8 @@ def test_synthetic_linear_behavior_policy():
     n_actions = 5
     context = np.ones([n_rounds, dim_context])
     action_context = np.ones([n_actions, dim_action_context])
-    pscore = linear_behavior_policy(context=context, action_context=action_context)
-    assert pscore.shape[0] == n_rounds and pscore.shape[1] == n_actions
-    assert np.all(0 <= pscore) and np.all(pscore <= 1)
+    action_prob = softmax(
+        linear_behavior_policy(context=context, action_context=action_context)
+    )
+    assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
+    assert np.all(0 <= action_prob) and np.all(action_prob <= 1)

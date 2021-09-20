@@ -4,17 +4,26 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Dict, List, Optional, Tuple, Union
 from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame
 import seaborn as sns
+from sklearn.utils import check_scalar
 
-from .estimators import BaseOffPolicyEstimator
 from ..types import BanditFeedback
+from ..utils import check_array
 from ..utils import check_confidence_interval_arguments
+from .estimators import BaseOffPolicyEstimator
+from .estimators import DirectMethod as DM
+from .estimators import DoublyRobust as DR
+
 
 logger = getLogger(__name__)
 
@@ -84,8 +93,11 @@ class OffPolicyEvaluation:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
         self.ope_estimators_ = dict()
+        self.is_model_dependent = False
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
+            if isinstance(estimator, DM) or isinstance(estimator, DR):
+                self.is_model_dependent = True
 
     def _create_estimator_inputs(
         self,
@@ -95,29 +107,23 @@ class OffPolicyEvaluation:
         ] = None,
     ) -> Dict[str, Dict[str, np.ndarray]]:
         """Create input dictionary to estimate policy value using subclasses of `BaseOffPolicyEstimator`"""
-        if not isinstance(action_dist, np.ndarray):
-            raise ValueError("action_dist must be ndarray")
-        if action_dist.ndim != 3:
-            raise ValueError(
-                f"action_dist.ndim must be 3-dimensional, but is {action_dist.ndim}"
-            )
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         if estimated_rewards_by_reg_model is None:
-            logger.warning(
-                "`estimated_rewards_by_reg_model` is not given; model dependent estimators such as DM or DR cannot be used."
-            )
+            pass
         elif isinstance(estimated_rewards_by_reg_model, dict):
             for estimator_name, value in estimated_rewards_by_reg_model.items():
-                if not isinstance(value, np.ndarray):
+                check_array(
+                    array=value,
+                    name=f"estimated_rewards_by_reg_model[{estimator_name}]",
+                    expected_dim=3,
+                )
+                if value.shape != action_dist.shape:
                     raise ValueError(
-                        f"estimated_rewards_by_reg_model[{estimator_name}] must be ndarray"
-                    )
-                elif value.shape != action_dist.shape:
-                    raise ValueError(
-                        f"estimated_rewards_by_reg_model[{estimator_name}].shape must be the same as action_dist.shape"
+                        f"Expected `estimated_rewards_by_reg_model[{estimator_name}].shape == action_dist.shape`, but found it False."
                     )
         elif estimated_rewards_by_reg_model.shape != action_dist.shape:
             raise ValueError(
-                "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape"
+                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
             )
         estimator_inputs = {
             estimator_name: {
@@ -171,6 +177,12 @@ class OffPolicyEvaluation:
             Dictionary containing estimated policy values by OPE estimators.
 
         """
+        if self.is_model_dependent:
+            if estimated_rewards_by_reg_model is None:
+                raise ValueError(
+                    "When model dependent estimators such as DM or DR are used, `estimated_rewards_by_reg_model` must be given"
+                )
+
         policy_value_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
@@ -222,6 +234,12 @@ class OffPolicyEvaluation:
             using nonparametric bootstrap procedure.
 
         """
+        if self.is_model_dependent:
+            if estimated_rewards_by_reg_model is None:
+                raise ValueError(
+                    "When model dependent estimators such as DM or DR are used, `estimated_rewards_by_reg_model` must be given"
+                )
+
         check_confidence_interval_arguments(
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -448,11 +466,11 @@ class OffPolicyEvaluation:
             Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
 
         """
-
-        if not isinstance(ground_truth_policy_value, float):
-            raise ValueError(
-                f"ground_truth_policy_value must be a float, but {ground_truth_policy_value} is given"
-            )
+        check_scalar(
+            ground_truth_policy_value,
+            "ground_truth_policy_value",
+            float,
+        )
         if metric not in ["relative-ee", "se"]:
             raise ValueError(
                 f"metric must be either 'relative-ee' or 'se', but {metric} is given"

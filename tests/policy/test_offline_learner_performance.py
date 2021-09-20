@@ -1,29 +1,30 @@
+from dataclasses import dataclass
 from typing import Optional
 from typing import Tuple
 
+from joblib import delayed
+from joblib import Parallel
 import numpy as np
-from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 import pytest
-from dataclasses import dataclass
-from obp.policy.base import BaseOfflinePolicyLearner
-from sklearn.base import clone, ClassifierMixin, is_classifier
+from sklearn.base import ClassifierMixin
+from sklearn.base import clone
+from sklearn.base import is_classifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
-from obp.dataset import (
-    SyntheticBanditDataset,
-    linear_behavior_policy,
-    logistic_reward_function,
-)
-from obp.policy import IPWLearner, NNPolicyLearner
-from obp.ope import DoublyRobust, RegressionModel
+from obp.dataset import linear_behavior_policy
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDataset
+from obp.policy import IPWLearner
+from obp.policy import NNPolicyLearner
+from obp.policy.base import BaseOfflinePolicyLearner
 
 
 # hyperparameters of the regression model used in model dependent OPE estimators
 hyperparams = {
     "lightgbm": {
-        "max_iter": 500,
+        "n_estimators": 100,
         "learning_rate": 0.005,
         "max_depth": 5,
         "min_samples_leaf": 10,
@@ -44,7 +45,7 @@ hyperparams = {
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 
@@ -284,20 +285,11 @@ def test_offline_nn_policy_learner_performance(
             behavior_policy_function=linear_behavior_policy,
             random_state=i,
         )
-        # estimate the mean reward function of the train set of synthetic bandit feedback with ML model
-        regression_model = RegressionModel(
-            n_actions=dataset.n_actions,
-            action_context=dataset.action_context,
-            base_model=base_model_dict[base_model_for_reg_model](
-                **hyperparams[base_model_for_reg_model]
-            ),
-        )
-        ope_estimator = DoublyRobust()
         # define evaluation policy using NNPolicyLearner
         nn_policy = NNPolicyLearner(
             n_actions=dataset.n_actions,
             dim_context=dim_context,
-            off_policy_objective=ope_estimator.estimate_policy_value_tensor,
+            off_policy_objective="ipw",
         )
         # baseline method 1. RandomPolicy
         random_policy = RandomPolicy(n_actions=dataset.n_actions)
@@ -311,21 +303,12 @@ def test_offline_nn_policy_learner_performance(
         # sample new training and test sets of synthetic logged bandit feedback
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        # estimate the mean reward function of the train set of synthetic bandit feedback with ML model
-        estimated_rewards_by_reg_model = regression_model.fit_predict(
-            context=bandit_feedback_train["context"],
-            action=bandit_feedback_train["action"],
-            reward=bandit_feedback_train["reward"],
-            n_folds=3,  # 3-fold cross-fitting
-            random_state=12345,
-        )
         # train the evaluation policy on the training set of the synthetic logged bandit feedback
         nn_policy.fit(
             context=bandit_feedback_train["context"],
             action=bandit_feedback_train["action"],
             reward=bandit_feedback_train["reward"],
             pscore=bandit_feedback_train["pscore"],
-            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
         uniform_sample_weight_policy.fit(
             context=bandit_feedback_train["context"],

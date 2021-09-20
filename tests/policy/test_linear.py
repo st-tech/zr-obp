@@ -1,9 +1,9 @@
-import pytest
 import numpy as np
+import pytest
 
 from obp.policy.linear import LinEpsilonGreedy
-from obp.policy.linear import LinUCB
 from obp.policy.linear import LinTS
+from obp.policy.linear import LinUCB
 from obp.policy.policy_type import PolicyType
 
 
@@ -15,7 +15,7 @@ def test_linear_base_exception():
     with pytest.raises(ValueError):
         LinEpsilonGreedy(n_actions=2, dim=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         LinEpsilonGreedy(n_actions=2, dim="3")
 
     # invalid n_actions
@@ -25,7 +25,7 @@ def test_linear_base_exception():
     with pytest.raises(ValueError):
         LinEpsilonGreedy(n_actions=1, dim=2)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         LinEpsilonGreedy(n_actions="2", dim=2)
 
     # invalid len_list
@@ -35,7 +35,7 @@ def test_linear_base_exception():
     with pytest.raises(ValueError):
         LinEpsilonGreedy(n_actions=2, dim=2, len_list=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         LinEpsilonGreedy(n_actions=2, dim=2, len_list="3")
 
     # invalid batch_size
@@ -45,7 +45,7 @@ def test_linear_base_exception():
     with pytest.raises(ValueError):
         LinEpsilonGreedy(n_actions=2, dim=2, batch_size=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         LinEpsilonGreedy(n_actions=2, dim=2, batch_size="10")
 
     # invalid relationship between n_actions and len_list

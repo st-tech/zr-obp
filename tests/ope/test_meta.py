@@ -1,16 +1,18 @@
-from typing import Dict, Optional, Union
+from copy import deepcopy
 from dataclasses import dataclass
 import itertools
-from copy import deepcopy
+from typing import Dict
+from typing import Optional
 
-import pytest
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
-import torch
+import pytest
 
+from obp.ope import BaseOffPolicyEstimator
+from obp.ope import DirectMethod
+from obp.ope import OffPolicyEvaluation
 from obp.types import BanditFeedback
-from obp.ope import OffPolicyEvaluation, BaseOffPolicyEstimator
 from obp.utils import check_confidence_interval_arguments
 
 
@@ -30,11 +32,11 @@ class DirectMethodMock(BaseOffPolicyEstimator):
 
     def _estimate_round_rewards(
         self,
-        position: Union[np.ndarray, torch.Tensor],
-        action_dist: Union[np.ndarray, torch.Tensor],
-        estimated_rewards_by_reg_model: Union[np.ndarray, torch.Tensor],
+        position: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
-    ) -> Union[float, torch.Tensor]:
+    ) -> float:
         return 1
 
     def estimate_policy_value(
@@ -49,7 +51,7 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -62,33 +64,6 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         mock_policy_value: float
         """
         return mock_policy_value
-
-    def estimate_policy_value_tensor(
-        self,
-        position: torch.Tensor,
-        action_dist: torch.Tensor,
-        estimated_rewards_by_reg_model: torch.Tensor,
-        **kwargs,
-    ) -> torch.Tensor:
-        """Estimate the policy value of evaluation policy and return PyTorch Tensor.
-        This is intended for being used with NNPolicyLearner.
-
-        Parameters
-        ----------
-        position: Tensor, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
-
-        action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
-
-        estimated_rewards_by_reg_model: Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
-
-        Returns
-        ----------
-        mock_policy_value: Tensor
-        """
-        return torch.Tensor(mock_policy_value)
 
     def estimate_interval(
         self,
@@ -105,7 +80,7 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -171,7 +146,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
@@ -185,42 +160,6 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
 
         """
         return mock_policy_value + self.eps
-
-    def estimate_policy_value_tensor(
-        self,
-        reward: torch.Tensor,
-        action: torch.Tensor,
-        position: torch.Tensor,
-        pscore: torch.Tensor,
-        action_dist: torch.Tensor,
-        **kwargs,
-    ) -> torch.Tensor:
-        """Estimate the policy value of evaluation policy and return PyTorch Tensor.
-        This is intended for being used with NNPolicyLearner.
-
-        Parameters
-        ----------
-        reward: Tensor, shape (n_rounds,)
-            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
-
-        action: Tensor, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
-
-        position: Tensor, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
-
-        pscore: Tensor, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-
-        action_dist: Tensor, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
-
-        Returns
-        ----------
-        mock_policy_value: Tensor
-
-        """
-        return torch.Tensor(mock_policy_value + self.eps)
 
     def estimate_interval(
         self,
@@ -245,7 +184,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
@@ -310,26 +249,52 @@ def test_meta_post_init(synthetic_bandit_feedback: BanditFeedback) -> None:
                 )
 
 
+def test_meta_estimated_rewards_by_reg_model_inputs(
+    synthetic_bandit_feedback: BanditFeedback,
+) -> None:
+    """
+    Test the estimate_policy_values/estimate_intervals functions wrt estimated_rewards_by_reg_model
+    """
+    ope_ = OffPolicyEvaluation(
+        bandit_feedback=synthetic_bandit_feedback, ope_estimators=[DirectMethod()]
+    )
+
+    action_dist = np.zeros(
+        (synthetic_bandit_feedback["n_rounds"], synthetic_bandit_feedback["n_actions"])
+    )
+    with pytest.raises(ValueError):
+        ope_.estimate_policy_values(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=None,
+        )
+
+    with pytest.raises(ValueError):
+        ope_.estimate_intervals(
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=None,
+        )
+
+
 # action_dist, estimated_rewards_by_reg_model, description
 invalid_input_of_create_estimator_inputs = [
     (
         np.zeros((2, 3, 4)),
         np.zeros((2, 3, 3)),
-        "estimated_rewards_by_reg_model.shape must be the same as action_dist.shape",
+        "Expected `estimated_rewards_by_reg_model.shape",
     ),
     (
         np.zeros((2, 3, 4)),
         {"dm": np.zeros((2, 3, 3))},
-        r"estimated_rewards_by_reg_model\[dm\].shape must be the same as action_dist.shape",
+        r"Expected `estimated_rewards_by_reg_model\[dm\].shape",
     ),
     (
         np.zeros((2, 3, 4)),
         {"dm": None},
-        r"estimated_rewards_by_reg_model\[dm\] must be ndarray",
+        r"estimated_rewards_by_reg_model\[dm\] must be 3D array",
     ),
-    (np.zeros((2, 3)), None, "action_dist.ndim must be 3-dimensional"),
-    ("3", None, "action_dist must be ndarray"),
-    (None, None, "action_dist must be ndarray"),
+    (np.zeros((2, 3)), None, "action_dist must be 3D array"),
+    ("3", None, "action_dist must be 3D array"),
+    (None, None, "action_dist must be 3D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [
@@ -491,14 +456,32 @@ def test_meta_estimate_policy_values_using_valid_input_data(
     }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod, IPW]) returns a wrong value"
 
 
-# alpha, n_bootstrap_samples, random_state, description
+# alpha, n_bootstrap_samples, random_state, err, description
 invalid_input_of_estimate_intervals = [
-    (0.05, 100, "s", "random_state must be an integer"),
-    (0.05, -1, 1, "n_bootstrap_samples must be a positive integer"),
-    (0.05, "s", 1, "n_bootstrap_samples must be a positive integer"),
-    (0.0, 1, 1, "alpha must be a positive float (< 1)"),
-    (1.0, 1, 1, "alpha must be a positive float (< 1)"),
-    ("0", 1, 1, "alpha must be a positive float (< 1)"),
+    (
+        0.05,
+        100,
+        "s",
+        ValueError,
+        "'s' cannot be used to seed a numpy.random.RandomState instance",
+    ),
+    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (
+        0.05,
+        "s",
+        1,
+        TypeError,
+        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+    ),
+    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (
+        "0",
+        1,
+        1,
+        TypeError,
+        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+    ),
 ]
 
 valid_input_of_estimate_intervals = [
@@ -512,7 +495,7 @@ valid_input_of_estimate_intervals = [
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
-    "alpha, n_bootstrap_samples, random_state, description_2",
+    "alpha, n_bootstrap_samples, random_state, err, description_2",
     invalid_input_of_estimate_intervals,
 )
 def test_meta_estimate_intervals_using_invalid_input_data(
@@ -522,6 +505,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     alpha,
     n_bootstrap_samples,
     random_state,
+    err,
     description_2: str,
     synthetic_bandit_feedback: BanditFeedback,
 ) -> None:
@@ -531,7 +515,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[dm]
     )
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.estimate_intervals(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -540,7 +524,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
             random_state=random_state,
         )
     # estimate_intervals function is called in summarize_off_policy_estimates
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.summarize_off_policy_estimates(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -677,12 +661,23 @@ def test_meta_summarize_off_policy_estimates(
 
 
 invalid_input_of_evaluation_performance_of_estimators = [
-    ("foo", 0.3, "metric must be either 'relative-ee' or 'se'"),
-    ("se", 1, "ground_truth_policy_value must be a float"),
-    ("se", "a", "ground_truth_policy_value must be a float"),
+    ("foo", 0.3, ValueError, "metric must be either 'relative-ee' or 'se'"),
+    (
+        "se",
+        1,
+        TypeError,
+        "`ground_truth_policy_value` must be an instance of <class 'float'>, not <class 'int'>.",
+    ),
+    (
+        "se",
+        "a",
+        TypeError,
+        "`ground_truth_policy_value` must be an instance of <class 'float'>, not <class 'str'>.",
+    ),
     (
         "relative-ee",
         0.0,
+        ValueError,
         "ground_truth_policy_value must be non-zero when metric is relative-ee",
     ),
 ]
@@ -698,7 +693,7 @@ valid_input_of_evaluation_performance_of_estimators = [
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
-    "metric, ground_truth_policy_value, description_2",
+    "metric, ground_truth_policy_value, err, description_2",
     invalid_input_of_evaluation_performance_of_estimators,
 )
 def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
@@ -707,6 +702,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
     description_1: str,
     metric,
     ground_truth_policy_value,
+    err,
     description_2: str,
     synthetic_bandit_feedback: BanditFeedback,
 ) -> None:
@@ -716,7 +712,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[dm]
     )
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.evaluate_performance_of_estimators(
             ground_truth_policy_value=ground_truth_policy_value,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -724,7 +720,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
             metric=metric,
         )
     # estimate_intervals function is called in summarize_off_policy_estimates
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.summarize_estimators_comparison(
             ground_truth_policy_value=ground_truth_policy_value,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,

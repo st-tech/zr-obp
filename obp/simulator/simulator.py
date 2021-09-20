@@ -5,13 +5,14 @@
 from copy import deepcopy
 from typing import Callable
 
+import numpy as np
 from tqdm import tqdm
 
-import numpy as np
-
-from ..utils import check_bandit_feedback_inputs, convert_to_action_dist
-from ..types import BanditFeedback, BanditPolicy
 from ..policy.policy_type import PolicyType
+from ..types import BanditFeedback
+from ..types import BanditPolicy
+from ..utils import check_bandit_feedback_inputs
+from ..utils import convert_to_action_dist
 
 
 def run_bandit_simulation(

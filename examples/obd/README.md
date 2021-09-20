@@ -52,12 +52,10 @@ python evaluate_off_policy_estimators.py\
 # random_state=12345
 # ------------------------------
 #          mean       std
-# dm   0.180288  0.114694
+# dm   0.180269  0.114716
 # ipw  0.333113  0.350425
-# dr   0.304401  0.347842
+# dr   0.304422  0.347866
 # ==============================
 ```
 
-Please refer to [this page](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the evaluation of OPE protocol using our real-world data.
-Please visit [synthetic](../synthetic/) to try the evaluation of OPE estimators with synthetic bandit datasets.
-Moreover, in [benchmark/ope](https://github.com/st-tech/zr-obp/tree/master/benchmark/ope), we performed the benchmark experiments on several OPE estimators using the full size Open Bandit Dataset.
+Please refer to [this page](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the evaluation of OPE protocol using our real-world data. Please visit [synthetic](../synthetic/) to try the evaluation of OPE estimators with synthetic bandit datasets. Moreover, in [benchmark/ope](https://github.com/st-tech/zr-obp/tree/master/benchmark/ope), we performed the benchmark experiments on several OPE estimators using the full size Open Bandit Dataset.

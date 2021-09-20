@@ -1,13 +1,12 @@
 from typing import Set
 
+from conftest import generate_action_dist
 import numpy as np
 import pytest
-import torch
 
 from obp import ope
 from obp.ope import OffPolicyEvaluation
 from obp.types import BanditFeedback
-from conftest import generate_action_dist
 
 
 # action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description
@@ -19,7 +18,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 3)),
-        "action_dist must be ndarray",
+        "action_dist must be 3D array",
     ),
     (
         generate_action_dist(5, 4, 1)[:, :, 0],  #
@@ -28,7 +27,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 1)),
-        "action_dist.ndim must be 3-dimensional",
+        "action_dist must be 3D array",
     ),
     (
         np.ones((5, 4, 3)),  #
@@ -46,7 +45,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         "4",  #
         np.zeros((5, 4, 3)),
-        "position must be ndarray",
+        "position must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -55,7 +54,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros((5, 4), dtype=int),  #
         np.zeros((5, 4, 3)),
-        "position must be 1-dimensional",
+        "position must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -82,7 +81,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros(4, dtype=int),  #
         np.zeros((5, 4, 3)),
-        "the first dimension of position and the first dimension of action_dist must be the same.",
+        "Expected `position.shape[0]",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -91,7 +90,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.ones(5, dtype=int) * 8,  #
         np.zeros((5, 4, 3)),
-        "position elements must be smaller than the third dimension of action_dist",
+        "position elements must be smaller than",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -100,7 +99,7 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,  #
         np.zeros((5, 4, 3)),
-        "position elements must be given when the third dimension of action_dist is greater than 1",
+        "position elements must be given when",
     ),
 ]
 
@@ -272,221 +271,32 @@ def test_estimation_of_all_estimators_using_valid_input_data(
         )
 
 
-# action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description
-invalid_input_of_estimation_tensor = [
-    (
-        None,  #
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        None,
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "action_dist must be Tensor",
-    ),
-    (
-        torch.Tensor(generate_action_dist(5, 4, 1)[:, :, 0]),  #
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        None,
-        torch.from_numpy(np.zeros((5, 4, 1))),
-        "action_dist.ndim must be 3-dimensional",
-    ),
-    (
-        torch.from_numpy(np.ones((5, 4, 3))),  #
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        None,
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "action_dist must be a probability distribution",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        "4",  #
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "position must be Tensor",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros((5, 4), dtype=int)),  #
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "position must be 1-dimensional",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros(5)),  #
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "position elements must be non-negative integers",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros(5, dtype=int) - 1),  #
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "position elements must be non-negative integers",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros(4, dtype=int)),  #
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "the first dimension of position and the first dimension of action_dist must be the same.",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.ones(5, dtype=int) * 8),  #
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "position elements must be smaller than the third dimension of action_dist",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        None,  #
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "position elements must be given when the third dimension of action_dist is greater than 1",
-    ),
-]
-
-valid_input_of_estimation_tensor = [
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 3)),
-        torch.from_numpy(np.random.choice(4, size=5)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.random.choice(3, size=5)),
-        torch.from_numpy(np.zeros((5, 4, 3))),
-        "all arguments are given and len_list > 1",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 1)),
-        torch.from_numpy(np.random.choice(4, size=5)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.zeros((5, 4, 1))),
-        "all arguments are given and len_list == 1",
-    ),
-    (
-        torch.from_numpy(generate_action_dist(5, 4, 1)),
-        torch.from_numpy(np.random.choice(4, size=5)),
-        torch.from_numpy(np.zeros(5, dtype=int)),
-        torch.from_numpy(np.ones(5)),
-        None,
-        torch.from_numpy(np.zeros((5, 4, 1))),
-        "position argument is None",
-    ),
-]
-
-
-@pytest.mark.parametrize(
-    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description",
-    invalid_input_of_estimation_tensor,
-)
-def test_estimation_tensor_of_all_estimators_using_invalid_input_data(
-    action_dist: torch.Tensor,
-    action: torch.Tensor,
-    reward: torch.Tensor,
-    pscore: torch.Tensor,
-    position: torch.Tensor,
-    estimated_rewards_by_reg_model: torch.Tensor,
-    description: str,
-) -> None:
-    all_estimators = ope.__all_estimators__
-    estimators = [
-        getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
-    ]
-    # estimate_intervals function raises ValueError of all estimators
-    for estimator in estimators:
-        if estimator.estimator_name in ("rm", "switch-dr"):
-            with pytest.raises(NotImplementedError):
-                _ = estimator.estimate_policy_value_tensor(
-                    action_dist=action_dist,
-                    action=action,
-                    reward=reward,
-                    pscore=pscore,
-                    position=position,
-                    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                )
-        else:
-            with pytest.raises(ValueError, match=f"{description}*"):
-                est = estimator.estimate_policy_value_tensor(
-                    action_dist=action_dist,
-                    action=action,
-                    reward=reward,
-                    pscore=pscore,
-                    position=position,
-                    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                )
-                assert est == 0.0, f"policy value must be 0, but {est}"
-
-
-@pytest.mark.parametrize(
-    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description",
-    valid_input_of_estimation_tensor,
-)
-def test_estimation_tensor_of_all_estimators_using_valid_input_data(
-    action_dist: torch.Tensor,
-    action: torch.Tensor,
-    reward: torch.Tensor,
-    pscore: torch.Tensor,
-    position: torch.Tensor,
-    estimated_rewards_by_reg_model: torch.Tensor,
-    description: str,
-) -> None:
-    all_estimators = ope.__all_estimators__
-    estimators = [
-        getattr(ope.estimators, estimator_name)() for estimator_name in all_estimators
-    ]
-    # estimate_intervals function raises ValueError of all estimators
-    for estimator in estimators:
-        if estimator.estimator_name in ("rm", "switch-dr"):
-            with pytest.raises(NotImplementedError):
-                _ = estimator.estimate_policy_value_tensor(
-                    action_dist=action_dist,
-                    action=action,
-                    reward=reward,
-                    pscore=pscore,
-                    position=position,
-                    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                )
-        else:
-            _ = estimator.estimate_policy_value_tensor(
-                action_dist=action_dist,
-                action=action,
-                reward=reward,
-                pscore=pscore,
-                position=position,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            )
-
-
 # alpha, n_bootstrap_samples, random_state, description
 invalid_input_of_estimate_intervals = [
-    (0.05, 100, "s", "random_state must be an integer"),
-    (0.05, -1, 1, "n_bootstrap_samples must be a positive integer"),
-    (0.05, "s", 1, "n_bootstrap_samples must be a positive integer"),
-    (0.0, 1, 1, "alpha must be a positive float (< 1)"),
-    (1.0, 1, 1, "alpha must be a positive float (< 1)"),
-    ("0", 1, 1, "alpha must be a positive float (< 1)"),
+    (
+        0.05,
+        100,
+        "s",
+        ValueError,
+        "'s' cannot be used to seed a numpy.random.RandomState instance",
+    ),
+    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (
+        0.05,
+        "s",
+        1,
+        TypeError,
+        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+    ),
+    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (
+        "0",
+        1,
+        1,
+        TypeError,
+        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+    ),
 ]
 
 valid_input_of_estimate_intervals = [
@@ -496,7 +306,7 @@ valid_input_of_estimate_intervals = [
 
 
 @pytest.mark.parametrize(
-    "alpha, n_bootstrap_samples, random_state, description",
+    "alpha, n_bootstrap_samples, random_state, err, description",
     invalid_input_of_estimate_intervals,
 )
 def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
@@ -505,6 +315,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     random_state,
     description: str,
     synthetic_bandit_feedback: BanditFeedback,
+    err,
     random_action_dist: np.ndarray,
 ) -> None:
     """
@@ -525,7 +336,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
-        with pytest.raises(ValueError, match=f"{description}*"):
+        with pytest.raises(err, match=f"{description}*"):
             _ = estimator.estimate_interval(
                 reward=bandit_feedback["reward"],
                 action=bandit_feedback["action"],
@@ -538,7 +349,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
                 random_state=random_state,
             )
     for estimator_tuning in estimators_tuning:
-        with pytest.raises(ValueError, match=f"{description}*"):
+        with pytest.raises(err, match=f"{description}*"):
             _ = estimator_tuning.estimate_interval(
                 reward=bandit_feedback["reward"],
                 action=bandit_feedback["action"],

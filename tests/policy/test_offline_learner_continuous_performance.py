@@ -1,15 +1,18 @@
-from typing import Tuple, Union, Optional
-
-import numpy as np
-from joblib import Parallel, delayed
-import pytest
 from dataclasses import dataclass
-from obp.dataset import (
-    SyntheticContinuousBanditDataset,
-    linear_reward_funcion_continuous,
-    linear_behavior_policy_continuous,
-)
-from obp.policy import BaseContinuousOfflinePolicyLearner, ContinuousNNPolicyLearner
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
+from joblib import delayed
+from joblib import Parallel
+import numpy as np
+import pytest
+
+from obp.dataset import linear_behavior_policy_continuous
+from obp.dataset import linear_reward_funcion_continuous
+from obp.dataset import SyntheticContinuousBanditDataset
+from obp.policy import BaseContinuousOfflinePolicyLearner
+from obp.policy import ContinuousNNPolicyLearner
 
 
 # n_rounds, dim_context, action_noise, reward_noise, min_action_value, max_action_value, pg_method, bandwidth
@@ -87,7 +90,9 @@ def test_offline_nn_policy_learner_performance(
             output_space=(min_action_value, max_action_value),
             hidden_layer_size=(10, 10),
             learning_rate_init=0.001,
+            max_iter=200,
             solver="sgd",
+            q_func_estimator_hyperparams={"max_iter": 200},
         )
         # baseline method 1. RandomPolicy
         random_policy = RandomPolicy(output_space=(min_action_value, max_action_value))

@@ -1,19 +1,16 @@
-import pytest
 import numpy as np
+import pytest
 
-from obp.ope import (
-    SlateStandardIPS,
-    SlateIndependentIPS,
-    SlateRewardInteractionIPS,
-    SelfNormalizedSlateStandardIPS,
-    SelfNormalizedSlateIndependentIPS,
-    SelfNormalizedSlateRewardInteractionIPS,
-)
-from obp.dataset import (
-    logistic_reward_function,
-    linear_behavior_policy_logit,
-    SyntheticSlateBanditDataset,
-)
+from obp.dataset import linear_behavior_policy_logit
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticSlateBanditDataset
+from obp.ope import SelfNormalizedSlateIndependentIPS
+from obp.ope import SelfNormalizedSlateRewardInteractionIPS
+from obp.ope import SelfNormalizedSlateStandardIPS
+from obp.ope import SlateIndependentIPS
+from obp.ope import SlateRewardInteractionIPS
+from obp.ope import SlateStandardIPS
+
 
 # setting
 len_list = 3
@@ -36,7 +33,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         "4",  #
         np.ones(n_rounds * len_list),
-        "position must be ndarray",
+        "position must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -44,7 +41,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds).reshape((n_rounds, len_list)),  #
         np.ones(n_rounds * len_list),
-        "position must be 1-dimensional",
+        "position must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -60,7 +57,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -68,7 +65,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "reward must be 1-dimensional",
+        "reward must be 1D array",
     ),
     (
         "4",  #
@@ -76,7 +73,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "slate_id must be ndarray",
+        "slate_id must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list).reshape((n_rounds, len_list)),  #
@@ -84,7 +81,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "slate_id must be 1-dimensional",
+        "slate_id must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list) - 1,  #
@@ -324,7 +321,7 @@ invalid_input_of_sips = [
         "4",  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -332,7 +329,7 @@ invalid_input_of_sips = [
         np.ones((n_rounds, len_list)),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "pscore must be 1-dimensional",
+        "pscore must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -356,7 +353,7 @@ invalid_input_of_sips = [
         np.ones(n_rounds * len_list - 1),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "slate_id, position, reward, pscore, and evaluation_policy_pscore must be the same size",
+        "slate_id, position, reward, pscore, and evaluation_policy_pscore must have the same number of samples",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -372,7 +369,7 @@ invalid_input_of_sips = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         "4",  #
-        "evaluation_policy_pscore must be ndarray",
+        "evaluation_policy_pscore must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -380,7 +377,7 @@ invalid_input_of_sips = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones((n_rounds, len_list)),  #
-        "evaluation_policy_pscore must be 1-dimensional",
+        "evaluation_policy_pscore must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -456,7 +453,7 @@ invalid_input_of_iips = [
         "4",  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "pscore_item_position must be ndarray",
+        "pscore_item_position must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -464,7 +461,7 @@ invalid_input_of_iips = [
         np.ones((n_rounds, len_list)),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "pscore_item_position must be 1-dimensional",
+        "pscore_item_position must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -488,7 +485,7 @@ invalid_input_of_iips = [
         np.ones(n_rounds * len_list - 1),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "slate_id, position, reward, pscore_item_position, and evaluation_policy_pscore_item_position must be the same size",
+        "slate_id, position, reward, pscore_item_position, and evaluation_policy_pscore_item_position must have the same number of samples",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -496,7 +493,7 @@ invalid_input_of_iips = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         "4",  #
-        "evaluation_policy_pscore_item_position must be ndarray",
+        "evaluation_policy_pscore_item_position must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -504,7 +501,7 @@ invalid_input_of_iips = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones((n_rounds, len_list)),  #
-        "evaluation_policy_pscore_item_position must be 1-dimensional",
+        "evaluation_policy_pscore_item_position must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -577,7 +574,7 @@ invalid_input_of_rips = [
         "4",  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "pscore_cascade must be ndarray",
+        "pscore_cascade must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -585,7 +582,7 @@ invalid_input_of_rips = [
         np.ones((n_rounds, len_list)),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "pscore_cascade must be 1-dimensional",
+        "pscore_cascade must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -609,7 +606,7 @@ invalid_input_of_rips = [
         np.ones(n_rounds * len_list - 1),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
-        "slate_id, position, reward, pscore_cascade, and evaluation_policy_pscore_cascade must be the same size",
+        "slate_id, position, reward, pscore_cascade, and evaluation_policy_pscore_cascade must have the same number of samples",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -625,7 +622,7 @@ invalid_input_of_rips = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         "4",  #
-        "evaluation_policy_pscore_cascade must be ndarray",
+        "evaluation_policy_pscore_cascade must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -633,7 +630,7 @@ invalid_input_of_rips = [
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones((n_rounds, len_list)),  #
-        "evaluation_policy_pscore_cascade must be 1-dimensional",
+        "evaluation_policy_pscore_cascade must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -707,14 +704,32 @@ def test_rips_using_invalid_input_data(
 
 
 # --- confidence intervals ---
-# alpha, n_bootstrap_samples, random_state, description
+# alpha, n_bootstrap_samples, random_state, err, description
 invalid_input_of_estimate_intervals = [
-    (0.05, 100, "s", "random_state must be an integer"),
-    (0.05, -1, 1, "n_bootstrap_samples must be a positive integer"),
-    (0.05, "s", 1, "n_bootstrap_samples must be a positive integer"),
-    (0.0, 1, 1, "alpha must be a positive float (< 1)"),
-    (1.0, 1, 1, "alpha must be a positive float (< 1)"),
-    ("0", 1, 1, "alpha must be a positive float (< 1)"),
+    (
+        0.05,
+        100,
+        "s",
+        ValueError,
+        "'s' cannot be used to seed a numpy.random.RandomState instance",
+    ),
+    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (
+        0.05,
+        "s",
+        1,
+        TypeError,
+        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+    ),
+    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (
+        "0",
+        1,
+        1,
+        TypeError,
+        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+    ),
 ]
 
 valid_input_of_estimate_intervals = [
@@ -728,7 +743,7 @@ valid_input_of_estimate_intervals = [
     valid_input_of_slate_estimators,
 )
 @pytest.mark.parametrize(
-    "alpha, n_bootstrap_samples, random_state, description_2",
+    "alpha, n_bootstrap_samples, random_state, err, description_2",
     invalid_input_of_estimate_intervals,
 )
 def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
@@ -741,9 +756,10 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     alpha,
     n_bootstrap_samples,
     random_state,
+    err,
     description_2,
 ) -> None:
-    with pytest.raises(ValueError, match=f"{description_2}*"):
+    with pytest.raises(err, match=f"{description_2}*"):
         _ = sips.estimate_interval(
             slate_id=slate_id,
             reward=reward,

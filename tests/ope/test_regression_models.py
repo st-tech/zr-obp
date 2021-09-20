@@ -1,25 +1,26 @@
-from typing import Dict
 from pathlib import Path
-import yaml
+from typing import Dict
 
+from conftest import generate_action_dist
 import numpy as np
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.metrics import roc_auc_score
-from sklearn.base import BaseEstimator
 import pytest
+from sklearn.base import BaseEstimator
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import Ridge
+from sklearn.metrics import roc_auc_score
+import yaml
 
 from obp.ope import RegressionModel
 from obp.types import BanditFeedback
-from conftest import generate_action_dist
 
 
 np.random.seed(1)
 
 binary_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 
@@ -29,7 +30,7 @@ with open(cd_path / "hyperparams.yaml", "rb") as f:
     hyperparams = yaml.safe_load(f)
 
 
-# action_context, n_actions, len_list, fitting_method, base_model, description
+# action_context, n_actions, len_list, fitting_method, base_model, err, description
 n_rounds = 1000
 n_actions = 3
 len_list = 3
@@ -41,7 +42,8 @@ invalid_input_of_initializing_regression_models = [
         len_list,
         "normal",
         Ridge(**hyperparams["ridge"]),
-        "n_actions must be an integer larger than 1",
+        TypeError,
+        "`n_actions` must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -49,7 +51,8 @@ invalid_input_of_initializing_regression_models = [
         len_list,
         "normal",
         Ridge(**hyperparams["ridge"]),
-        "n_actions must be an integer larger than 1",
+        ValueError,
+        "`n_actions`= 1, must be >= 2",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -57,7 +60,8 @@ invalid_input_of_initializing_regression_models = [
         "a",  #
         "normal",
         Ridge(**hyperparams["ridge"]),
-        "len_list must be a positive integer",
+        TypeError,
+        "`len_list` must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -65,7 +69,8 @@ invalid_input_of_initializing_regression_models = [
         0,  #
         "normal",
         Ridge(**hyperparams["ridge"]),
-        "len_list must be a positive integer",
+        ValueError,
+        "`len_list`= 0, must be >= 1",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -73,6 +78,7 @@ invalid_input_of_initializing_regression_models = [
         len_list,
         1,  #
         Ridge(**hyperparams["ridge"]),
+        ValueError,
         "fitting_method must be one of",
     ),
     (
@@ -81,6 +87,7 @@ invalid_input_of_initializing_regression_models = [
         len_list,
         "awesome",  #
         Ridge(**hyperparams["ridge"]),
+        ValueError,
         "fitting_method must be one of",
     ),
     (
@@ -89,12 +96,13 @@ invalid_input_of_initializing_regression_models = [
         len_list,
         "normal",
         "RandomForest",  #
+        ValueError,
         "base_model must be BaseEstimator or a child class of BaseEstimator",
     ),
 ]
 
 
-# context, action, reward, pscore, position, action_context, n_actions, len_list, fitting_method, base_model, action_dist, description
+# context, action, reward, pscore, position, action_context, n_actions, len_list, fitting_method, base_model, action_dist, err, description
 invalid_input_of_fitting_regression_models = [
     (
         None,  #
@@ -110,7 +118,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context must be ndarray",
+        ValueError,
+        "context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -126,7 +135,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action must be ndarray",
+        ValueError,
+        "action must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -142,7 +152,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "reward must be ndarray",
+        ValueError,
+        "reward must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7, 3)),  #
@@ -158,7 +169,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context must be 2-dimensional",
+        ValueError,
+        "context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -174,7 +186,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action must be 1-dimensional",
+        ValueError,
+        "action must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -190,7 +203,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "reward must be 1-dimensional",
+        ValueError,
+        "reward must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -206,6 +220,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
+        ValueError,
         "action elements must be non-negative integers",
     ),
     (
@@ -222,6 +237,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
+        ValueError,
         "action elements must be non-negative integers",
     ),
     (
@@ -238,7 +254,8 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "pscore must be ndarray",
+        ValueError,
+        "pscore must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -254,7 +271,8 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "pscore must be 1-dimensional",
+        ValueError,
+        "pscore must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -270,7 +288,8 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "context, action, reward, and pscore must be the same size.",
+        ValueError,
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -286,6 +305,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
+        ValueError,
         "pscore must be positive",
     ),
     (
@@ -302,7 +322,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "position must be ndarray",
+        ValueError,
+        "position must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -318,7 +339,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "position must be 1-dimensional",
+        ValueError,
+        "position must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -334,7 +356,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context, action, reward, and position must be the same size.",
+        ValueError,
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -350,6 +373,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
+        ValueError,
         "position elements must be non-negative integers",
     ),
     (
@@ -366,6 +390,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
+        ValueError,
         "position elements must be non-negative integers",
     ),
     (
@@ -382,7 +407,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "context, action, and reward must be the same size",
+        ValueError,
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -398,7 +424,8 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
-        "context, action, reward, and pscore must be the same size",
+        ValueError,
+        "Expected `context.shape[0]",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -414,7 +441,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action_context must be ndarray",
+        ValueError,
+        "action_context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -430,7 +458,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action_context must be 2-dimensional",
+        ValueError,
+        "action_context must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -446,7 +475,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "action elements must be smaller than the size of the first dimension of action_context",
+        ValueError,
+        r"action elements must be smaller than",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -462,7 +492,8 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
-        "position must be 1-dimensional",
+        ValueError,
+        "position must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -478,6 +509,7 @@ invalid_input_of_fitting_regression_models = [
         None,
         3,
         1,
+        ValueError,
         "position elements must be smaller than len_list",
     ),
     (
@@ -494,6 +526,7 @@ invalid_input_of_fitting_regression_models = [
         None,  #
         3,
         1,
+        ValueError,
         "when fitting_method is either",
     ),
     (
@@ -510,6 +543,7 @@ invalid_input_of_fitting_regression_models = [
         None,  #
         3,
         1,
+        ValueError,
         "when fitting_method is either",
     ),
     (
@@ -526,6 +560,7 @@ invalid_input_of_fitting_regression_models = [
         np.zeros((n_rounds, n_actions, len_list - 1)),  #
         3,
         1,
+        ValueError,
         "shape of action_dist must be (n_rounds, n_actions, len_list)",
     ),
     (
@@ -542,7 +577,25 @@ invalid_input_of_fitting_regression_models = [
         np.zeros((n_rounds, n_actions, len_list)),  #
         3,
         1,
+        ValueError,
         "action_dist must be a probability distribution",
+    ),
+    (
+        np.random.uniform(size=(n_rounds, 7)),
+        np.arange(n_rounds) % n_actions,
+        np.random.uniform(size=n_rounds),
+        np.ones(n_rounds) * 2,
+        np.random.choice(len_list, size=n_rounds),
+        np.random.uniform(size=(n_actions, 8)),
+        n_actions,
+        len_list,
+        "normal",
+        Ridge(**hyperparams["ridge"]),
+        generate_action_dist(n_rounds, n_actions, len_list),
+        "a",  #
+        None,
+        TypeError,
+        "`n_folds` must be an instance of <class 'int'>, not <class 'str'>",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -558,23 +611,8 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         0,  #
         None,
-        "n_folds must be a positive integer",
-    ),
-    (
-        np.random.uniform(size=(n_rounds, 7)),
-        np.arange(n_rounds) % n_actions,
-        np.random.uniform(size=n_rounds),
-        np.ones(n_rounds) * 2,
-        np.random.choice(len_list, size=n_rounds),
-        np.random.uniform(size=(n_actions, 8)),
-        n_actions,
-        len_list,
-        "normal",
-        Ridge(**hyperparams["ridge"]),
-        generate_action_dist(n_rounds, n_actions, len_list),
-        "a",  #
-        None,
-        "n_folds must be a positive integer",
+        ValueError,
+        "`n_folds`= 0, must be >= 1.",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -590,7 +628,8 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         "a",  #
-        "random_state must be an integer",
+        ValueError,
+        "'a' cannot be used to seed a numpy.random.RandomState instance",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -606,6 +645,7 @@ invalid_input_of_fitting_regression_models = [
         generate_action_dist(n_rounds, n_actions, len_list),
         3,
         1,
+        ValueError,
         "No training data at position",
     ),
 ]
@@ -680,7 +720,7 @@ valid_input_of_regression_models = [
 
 
 @pytest.mark.parametrize(
-    "action_context, n_actions, len_list, fitting_method, base_model, description",
+    "action_context, n_actions, len_list, fitting_method, base_model, err, description",
     invalid_input_of_initializing_regression_models,
 )
 def test_initializing_regression_models_using_invalid_input_data(
@@ -689,10 +729,11 @@ def test_initializing_regression_models_using_invalid_input_data(
     len_list: int,
     fitting_method: str,
     base_model: BaseEstimator,
+    err,
     description: str,
 ) -> None:
     # initialization raises ValueError
-    with pytest.raises(ValueError, match=f"{description}*"):
+    with pytest.raises(err, match=f"{description}*"):
         _ = RegressionModel(
             n_actions=n_actions,
             len_list=len_list,
@@ -703,7 +744,7 @@ def test_initializing_regression_models_using_invalid_input_data(
 
 
 @pytest.mark.parametrize(
-    "context, action, reward, pscore, position, action_context, n_actions, len_list, fitting_method, base_model, action_dist, n_folds, random_state, description",
+    "context, action, reward, pscore, position, action_context, n_actions, len_list, fitting_method, base_model, action_dist, n_folds, random_state, err, description",
     invalid_input_of_fitting_regression_models,
 )
 def test_fitting_regression_models_using_invalid_input_data(
@@ -720,10 +761,11 @@ def test_fitting_regression_models_using_invalid_input_data(
     action_dist: np.ndarray,
     n_folds: int,
     random_state: int,
+    err,
     description: str,
 ) -> None:
     # fit_predict function raises ValueError
-    with pytest.raises(ValueError, match=f"{description}*"):
+    with pytest.raises(err, match=f"{description}*"):
         regression_model = RegressionModel(
             n_actions=n_actions,
             len_list=len_list,
@@ -825,8 +867,8 @@ def test_performance_of_binary_outcome_models(
     auc_scores: Dict[str, float] = {}
     # check ground truth
     print(f"gt_mean: {gt_mean}")
-    # check the performance of regression models using doubly robust criteria (|\hat{q} - q| <= |q| is satisfied with a high probability)
-    dr_criteria_pass_rate = 0.8
+    # check the performance of regression models using doubly robust criterion (|\hat{q} - q| <= |q| is satisfied with a high probability)
+    dr_criterion_pass_rate = 0.7
     fit_methods = ["normal", "iw", "mrdr"]
     for fit_method in fit_methods:
         for model_name, model in binary_model_dict.items():
@@ -864,16 +906,16 @@ def test_performance_of_binary_outcome_models(
                     np.zeros_like(bandit_feedback["action"], dtype=int),
                 ],
             )
-            # compare dr criteria
-            dr_criteria = np.abs((gt_mean - estimated_rewards_by_reg_model)) - np.abs(
+            # compare dr criterion
+            dr_criterion = np.abs((gt_mean - estimated_rewards_by_reg_model)) - np.abs(
                 gt_mean
             )
             print(
-                f"Dr criteria is satisfied with probability {np.mean(dr_criteria <= 0)} ------ model: {model_name} ({fit_method}),"
+                f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fit_method}),"
             )
             assert (
-                np.mean(dr_criteria <= 0) >= dr_criteria_pass_rate
-            ), f" should be satisfied with a probability at least {dr_criteria_pass_rate}"
+                np.mean(dr_criterion <= 0) >= dr_criterion_pass_rate
+            ), f" should be satisfied with a probability at least {dr_criterion_pass_rate}"
 
     for model_name in auc_scores:
         print(f"AUC of {model_name} is {auc_scores[model_name]}")

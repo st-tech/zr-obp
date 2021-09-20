@@ -1,9 +1,9 @@
-import pytest
 import numpy as np
+import pytest
 
+from obp.policy.contextfree import BernoulliTS
 from obp.policy.contextfree import EpsilonGreedy
 from obp.policy.contextfree import Random
-from obp.policy.contextfree import BernoulliTS
 from obp.policy.policy_type import PolicyType
 
 
@@ -12,21 +12,21 @@ def test_contextfree_base_exception():
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         EpsilonGreedy(n_actions="3")
 
     # invalid len_list
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=2, len_list=-1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         EpsilonGreedy(n_actions=2, len_list="5")
 
     # invalid batch_size
     with pytest.raises(ValueError):
         EpsilonGreedy(n_actions=2, batch_size=-3)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         EpsilonGreedy(n_actions=2, batch_size="3")
 
     # invalid relationship between n_actions and len_list

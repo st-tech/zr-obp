@@ -2,7 +2,8 @@
 # Licensed under the Apache 2.0 License.
 
 """Abstract Base Class for Logged Bandit Feedback."""
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+from abc import abstractmethod
 
 
 class BaseBanditDataset(metaclass=ABCMeta):

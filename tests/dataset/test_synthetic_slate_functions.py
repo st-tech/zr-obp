@@ -2,11 +2,9 @@ import numpy as np
 import pytest
 
 from obp.dataset.synthetic import logistic_reward_function
-from obp.dataset.synthetic_slate import (
-    linear_behavior_policy_logit,
-    action_interaction_reward_function,
-    generate_symmetric_matrix,
-)
+from obp.dataset.synthetic_slate import action_interaction_reward_function
+from obp.dataset.synthetic_slate import generate_symmetric_matrix
+from obp.dataset.synthetic_slate import linear_behavior_policy_logit
 
 
 def test_generate_symmetric_matrix():
@@ -22,28 +20,28 @@ invalid_input_of_linear_behavior_policy_logit = [
         np.ones([2, 2]),
         None,
         ValueError,
-        "context must be 2-dimensional ndarray",
+        "context must be 2D array",
     ),
     (
         [1.0, 1.0],
         np.ones([2, 2]),
         None,
         ValueError,
-        "context must be 2-dimensional ndarray",
+        "context must be 2D array",
     ),
     (
         np.ones([2, 2]),
         np.array([1.0, 1.0]),
         None,
         ValueError,
-        "action_context must be 2-dimensional ndarray",
+        "action_context must be 2D array",
     ),
     (
         np.ones([2, 2]),
         [1.0, 1.0],
         None,
         ValueError,
-        "action_context must be 2-dimensional ndarray",
+        "action_context must be 2D array",
     ),
     (np.ones([2, 2]), np.ones([2, 2]), np.array([1]), TypeError, ""),
     (np.ones([2, 2]), np.ones([2, 2]), -1, ValueError, ""),
@@ -102,7 +100,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "context must be 2-dimensional ndarray",
+        "context must be 2D array",
     ),
     (
         np.ones([5, 2]),
@@ -116,7 +114,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "action_context must be 2-dimensional ndarray",
+        "action_context must be 2D array",
     ),
     (
         np.ones([5, 2]),
@@ -130,7 +128,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "action must be 1-dimensional ndarray",
+        "action must be 1D array",
     ),
     (
         np.ones([5, 2]),
@@ -144,7 +142,7 @@ invalid_input_of_action_interaction_reward_function = [
         True,
         1,
         ValueError,
-        "the size of axis 0 of context times len_list must be multiple of that of action",
+        "Expected `action.shape[0]",
     ),
     (
         np.ones([5, 2]),
@@ -158,7 +156,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "the size of axis 0 of context times len_list must be same with that of action",
+        "Expected `action.shape[0]",
     ),
     (
         np.ones([5, 2]),

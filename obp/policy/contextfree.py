@@ -2,14 +2,15 @@
 # Licensed under the Apache 2.0 License.
 
 """Context-Free Bandit Algorithms."""
-import os
-
-# import pkg_resources
-import yaml
 from dataclasses import dataclass
+import os
 from typing import Optional
 
 import numpy as np
+from sklearn.utils import check_scalar
+
+# import pkg_resources
+import yaml
 
 from .base import BaseContextFreePolicy
 
@@ -51,10 +52,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
 
     def __post_init__(self) -> None:
         """Initialize Class."""
-        if not 0 <= self.epsilon <= 1:
-            raise ValueError(
-                f"epsilon must be between 0 and 1, but {self.epsilon} is given"
-            )
+        check_scalar(self.epsilon, "epsilon", float, min_val=0.0, max_val=1.0)
         self.policy_name = f"egreedy_{self.epsilon}"
         super().__post_init__()
 

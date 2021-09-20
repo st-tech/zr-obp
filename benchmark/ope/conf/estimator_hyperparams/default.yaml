@@ -1,0 +1,12 @@
+# @package _group_
+# a set of candidate hyperparams
+lambdas:
+ - 1
+ - 5
+ - 10
+ - 50
+ - 100
+ - 500
+ - 1000
+ - 5000
+ - 10000

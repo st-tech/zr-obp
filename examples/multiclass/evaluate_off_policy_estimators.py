@@ -1,27 +1,29 @@
 import argparse
-import yaml
 from pathlib import Path
 
+from joblib import delayed
+from joblib import Parallel
 import numpy as np
 from pandas import DataFrame
-from joblib import Parallel, delayed
-from sklearn.datasets import load_breast_cancer, load_digits, load_iris, load_wine
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_digits
+from sklearn.datasets import load_iris
+from sklearn.datasets import load_wine
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import yaml
 
 from obp.dataset import MultiClassToBanditReduction
-from obp.ope import (
-    RegressionModel,
-    OffPolicyEvaluation,
-    InverseProbabilityWeighting,
-    SelfNormalizedInverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust,
-    SelfNormalizedDoublyRobust,
-    SwitchDoublyRobust,
-    DoublyRobustWithShrinkage,
-)
+from obp.ope import DirectMethod
+from obp.ope import DoublyRobust
+from obp.ope import DoublyRobustWithShrinkage
+from obp.ope import InverseProbabilityWeighting
+from obp.ope import OffPolicyEvaluation
+from obp.ope import RegressionModel
+from obp.ope import SelfNormalizedDoublyRobust
+from obp.ope import SelfNormalizedInverseProbabilityWeighting
+from obp.ope import SwitchDoublyRobust
 
 
 # hyperparameters of the regression model used in model dependent OPE estimators
@@ -37,7 +39,7 @@ dataset_dict = dict(
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 
@@ -48,8 +50,8 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr (tau=1)"),
-    SwitchDoublyRobust(tau=100.0, estimator_name="switch-dr (tau=100)"),
+    SwitchDoublyRobust(lambda_=1.0, estimator_name="switch-dr (lambda=1)"),
+    SwitchDoublyRobust(lambda_=100.0, estimator_name="switch-dr (lambda=100)"),
     DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
     DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
 ]

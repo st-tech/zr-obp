@@ -1,21 +1,20 @@
+import copy
 import os
 from typing import Set
-import copy
 
 import numpy as np
 import pytest
 from sklearn.utils import check_random_state
 
+from obp.dataset import linear_behavior_policy
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDataset
+from obp.dataset import SyntheticContinuousBanditDataset
+from obp.dataset import SyntheticSlateBanditDataset
 from obp.policy import Random
 from obp.types import BanditFeedback
-from obp.dataset import (
-    SyntheticBanditDataset,
-    logistic_reward_function,
-    linear_behavior_policy,
-    SyntheticSlateBanditDataset,
-    SyntheticContinuousBanditDataset,
-)
 from obp.utils import sigmoid
+
 
 # resolve ImportMismatchError when using virtual environment
 os.environ["PY_IGNORE_IMPORTMISMATCH"] = "1"

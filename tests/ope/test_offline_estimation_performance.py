@@ -1,43 +1,40 @@
-import numpy as np
-from pandas import DataFrame
-from joblib import Parallel, delayed
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-import torch
-import pytest
 from dataclasses import dataclass
-from obp.ope.estimators import BaseOffPolicyEstimator
-
 from typing import Dict
 
-from obp.dataset import (
-    SyntheticBanditDataset,
-    linear_behavior_policy,
-    logistic_reward_function,
-)
+from joblib import delayed
+from joblib import Parallel
+import numpy as np
+from pandas import DataFrame
+import pytest
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+import torch
+
+from obp.dataset import linear_behavior_policy
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDataset
+from obp.ope import DirectMethod
+from obp.ope import DoublyRobust
+from obp.ope import DoublyRobustTuning
+from obp.ope import DoublyRobustWithShrinkage
+from obp.ope import DoublyRobustWithShrinkageTuning
+from obp.ope import InverseProbabilityWeighting
+from obp.ope import InverseProbabilityWeightingTuning
+from obp.ope import OffPolicyEvaluation
+from obp.ope import RegressionModel
+from obp.ope import SelfNormalizedDoublyRobust
+from obp.ope import SelfNormalizedInverseProbabilityWeighting
+from obp.ope import SwitchDoublyRobust
+from obp.ope import SwitchDoublyRobustTuning
+from obp.ope.estimators import BaseOffPolicyEstimator
 from obp.policy import IPWLearner
-from obp.ope import (
-    RegressionModel,
-    OffPolicyEvaluation,
-    InverseProbabilityWeighting,
-    InverseProbabilityWeightingTuning,
-    SelfNormalizedInverseProbabilityWeighting,
-    DirectMethod,
-    DoublyRobust,
-    DoublyRobustTuning,
-    SelfNormalizedDoublyRobust,
-    SwitchDoublyRobust,
-    SwitchDoublyRobustTuning,
-    DoublyRobustWithShrinkage,
-    DoublyRobustWithShrinkageTuning,
-)
 
 
 # hyperparameters of the regression model used in model dependent OPE estimators
 hyperparams = {
     "lightgbm": {
-        "max_iter": 500,
+        "n_estimators": 100,
         "learning_rate": 0.005,
         "max_depth": 5,
         "min_samples_leaf": 10,
@@ -58,7 +55,7 @@ hyperparams = {
 
 base_model_dict = dict(
     logistic_regression=LogisticRegression,
-    lightgbm=HistGradientBoostingClassifier,
+    lightgbm=GradientBoostingClassifier,
     random_forest=RandomForestClassifier,
 )
 
@@ -142,10 +139,10 @@ ope_estimators = [
     DoublyRobust(),
     DoublyRobustTuning(lambdas=[100, 1000, np.inf], estimator_name="dr (tuning)"),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(tau=1.0, estimator_name="switch-dr (tau=1)"),
-    SwitchDoublyRobust(tau=100.0, estimator_name="switch-dr (tau=100)"),
+    SwitchDoublyRobust(lambda_=1.0, estimator_name="switch-dr (lambda=1)"),
+    SwitchDoublyRobust(lambda_=100.0, estimator_name="switch-dr (lambda=100)"),
     SwitchDoublyRobustTuning(
-        taus=[100, 1000, np.inf], estimator_name="switch-dr (tuning)"
+        lambdas=[100, 1000, np.inf], estimator_name="switch-dr (tuning)"
     ),
     DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
     DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
@@ -249,8 +246,8 @@ def test_offline_estimation_performance(
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr (tuning)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["sndr"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tau=1)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tau=100)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda=1)"]
+    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda=100)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tuning)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=1)"]
     assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=100)"]

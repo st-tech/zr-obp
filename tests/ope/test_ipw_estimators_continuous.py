@@ -1,16 +1,12 @@
-import pytest
 import numpy as np
+import pytest
 
-from obp.ope import (
-    KernelizedInverseProbabilityWeighting,
-    KernelizedSelfNormalizedInverseProbabilityWeighting,
-)
-from obp.dataset import (
-    SyntheticContinuousBanditDataset,
-    linear_reward_funcion_continuous,
-    linear_behavior_policy_continuous,
-    linear_synthetic_policy_continuous,
-)
+from obp.dataset import linear_behavior_policy_continuous
+from obp.dataset import linear_reward_funcion_continuous
+from obp.dataset import linear_synthetic_policy_continuous
+from obp.dataset import SyntheticContinuousBanditDataset
+from obp.ope import KernelizedInverseProbabilityWeighting
+from obp.ope import KernelizedSelfNormalizedInverseProbabilityWeighting
 
 
 def test_synthetic_init():
@@ -68,77 +64,77 @@ invalid_input_of_ipw = [
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_evaluation_policy must be 1-dimensional ndarray",
+        "action_by_evaluation_policy must be 1D array",
     ),
     (
         np.ones((5, 1)),  #
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_evaluation_policy must be 1-dimensional ndarray",
+        "action_by_evaluation_policy must be 1D array",
     ),
     (
         np.ones(5),
         None,  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy must be ndarray",
+        "action_by_behavior_policy must be 1D array",
     ),
     (
         np.ones(5),
         np.ones((5, 1)),  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy must be 1-dimensional ndarray",
+        "action_by_behavior_policy must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         None,  #
         np.random.uniform(size=5),
-        "reward must be ndarray",
+        "reward must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones((5, 1)),  #
         np.random.uniform(size=5),
-        "reward must be 1-dimensional ndarray",
+        "reward must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(4),  #
         np.ones(3),  #
         np.random.uniform(size=5),
-        "action_by_behavior_policy and reward must be the same size",
+        "Expected `action_by_behavior_policy.shape[0]",
     ),
     (
         np.ones(4),  #
         np.ones(5),  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy and action_by_evaluation_policy must be the same size",
+        "Expected `action_by_behavior_policy.shape[0]",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones(5),
         None,  #
-        "pscore must be ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=(5, 1)),  #
-        "pscore must be 1-dimensional ndarray",
+        "pscore must be 1D array",
     ),
     (
         np.ones(5),
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=4),  #
-        "action_by_behavior_policy, reward, and pscore must be the same size",
+        "Expected `action_by_behavior_policy.shape[0]",
     ),
     (
         np.ones(5),
@@ -241,14 +237,32 @@ def test_ipw_continuous_using_valid_input_data(
 
 
 # --- confidence intervals ---
-# alpha, n_bootstrap_samples, random_state, description
+# alpha, n_bootstrap_samples, random_state, err, description
 invalid_input_of_estimate_intervals = [
-    (0.05, 100, "s", "random_state must be an integer"),
-    (0.05, -1, 1, "n_bootstrap_samples must be a positive integer"),
-    (0.05, "s", 1, "n_bootstrap_samples must be a positive integer"),
-    (0.0, 1, 1, "alpha must be a positive float (< 1)"),
-    (1.0, 1, 1, "alpha must be a positive float (< 1)"),
-    ("0", 1, 1, "alpha must be a positive float (< 1)"),
+    (
+        0.05,
+        100,
+        "s",
+        ValueError,
+        "'s' cannot be used to seed a numpy.random.RandomState instance",
+    ),
+    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (
+        0.05,
+        "s",
+        1,
+        TypeError,
+        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+    ),
+    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (
+        "0",
+        1,
+        1,
+        TypeError,
+        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+    ),
 ]
 
 valid_input_of_estimate_intervals = [
@@ -262,7 +276,7 @@ valid_input_of_estimate_intervals = [
     valid_input_of_ipw,
 )
 @pytest.mark.parametrize(
-    "alpha, n_bootstrap_samples, random_state, description",
+    "alpha, n_bootstrap_samples, random_state, err, description",
     invalid_input_of_estimate_intervals,
 )
 def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
@@ -273,9 +287,10 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     alpha,
     n_bootstrap_samples,
     random_state,
+    err,
     description,
 ) -> None:
-    with pytest.raises(ValueError, match=f"{description}*"):
+    with pytest.raises(err, match=f"{description}*"):
         _ = ipw.estimate_interval(
             action_by_evaluation_policy=action_by_evaluation_policy,
             action_by_behavior_policy=action_by_behavior_policy,

@@ -2,20 +2,22 @@
 # Licensed under the Apache 2.0 License.
 
 """Off-Policy Estimators with built-in hyperparameter tuning."""
-from dataclasses import dataclass, field
-from typing import Dict, Optional, List
+from dataclasses import dataclass
+from dataclasses import field
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
 
-from .estimators import (
-    BaseOffPolicyEstimator,
-    InverseProbabilityWeighting,
-    DoublyRobust,
-    SwitchDoublyRobust,
-    DoublyRobustWithShrinkage,
-)
+from ..utils import check_array
 from ..utils import check_ope_inputs
+from .estimators import BaseOffPolicyEstimator
+from .estimators import DoublyRobust
+from .estimators import DoublyRobustWithShrinkage
+from .estimators import InverseProbabilityWeighting
+from .estimators import SwitchDoublyRobust
 
 
 @dataclass
@@ -26,8 +28,15 @@ class BaseOffPolicyEstimatorTuning:
         An OPE estimator with a hyperparameter
         (such as IPW/DR with clipping, Switch-DR, and DR with Shrinkage).
 
-    candidate_hyperparameter_list: List[float]
+    lambdas: List[float]
         A list of candidate hyperparameter values.
+
+    use_bias_upper_bound: bool, default=True
+        Whether to use bias upper bound in hyperparameter tuning.
+        If False, direct bias estimator is used to estimate the MSE.
+
+    delta: float, default=0.05
+        A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
 
     References
     ----------
@@ -40,28 +49,39 @@ class BaseOffPolicyEstimatorTuning:
     """
 
     base_ope_estimator: BaseOffPolicyEstimator = field(init=False)
-    candidate_hyperparameter_list: List[float] = field(init=False)
+    lambdas: List[float] = None
+    use_bias_upper_bound: bool = True
+    delta: float = 0.05
 
     def __new__(cls, *args, **kwargs):
         dataclass(cls)
         return super().__new__(cls)
 
-    def _check_candidate_hyperparameter_list(self, hyperparam_name: str) -> None:
-        """Check type and value of candidate_hyperparameter_list."""
-        if isinstance(self.candidate_hyperparameter_list, list):
-            if len(self.candidate_hyperparameter_list) == 0:
-                raise ValueError(f"{hyperparam_name} must not be empty")
-            for hyperparam_ in self.candidate_hyperparameter_list:
+    def _check_lambdas(self) -> None:
+        """Check type and value of lambdas."""
+        if isinstance(self.lambdas, list):
+            if len(self.lambdas) == 0:
+                raise ValueError("lambdas must not be empty")
+            for hyperparam_ in self.lambdas:
                 check_scalar(
                     hyperparam_,
-                    name=f"an element of {hyperparam_name}",
+                    name="an element of lambdas",
                     target_type=(int, float),
                     min_val=0.0,
                 )
                 if hyperparam_ != hyperparam_:
-                    raise ValueError(f"an element of {hyperparam_name} must not be nan")
+                    raise ValueError("an element of lambdas must not be nan")
         else:
-            raise TypeError(f"{hyperparam_name} must be a list")
+            raise TypeError("lambdas must be a list")
+
+    def _check_init_inputs(self) -> None:
+        """Initialize Class."""
+        if not isinstance(self.use_bias_upper_bound, bool):
+            raise TypeError(
+                "`use_bias_upper_bound` must be a bool"
+                ", but {type(self.use_bias_upper_bound)} is given"
+            )
+        check_scalar(self.delta, "delta", (float), min_val=0.0, max_val=1.0)
 
     def _tune_hyperparam(
         self,
@@ -74,7 +94,7 @@ class BaseOffPolicyEstimatorTuning:
     ) -> None:
         """Find the best hyperparameter value from the given candidate set."""
         self.estimated_mse_score_dict = dict()
-        for hyperparam_ in self.candidate_hyperparameter_list:
+        for hyperparam_ in self.lambdas:
             estimated_mse_score = self.base_ope_estimator(
                 hyperparam_
             )._estimate_mse_score(
@@ -84,6 +104,8 @@ class BaseOffPolicyEstimatorTuning:
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 position=position,
+                use_bias_upper_bound=self.use_bias_upper_bound,
+                delta=self.delta,
             )
             self.estimated_mse_score_dict[hyperparam_] = estimated_mse_score
         self.best_hyperparam = min(
@@ -119,7 +141,7 @@ class BaseOffPolicyEstimatorTuning:
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -180,7 +202,7 @@ class BaseOffPolicyEstimatorTuning:
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -231,6 +253,13 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         The automatic hyperparameter tuning proposed by Su et al.(2020)
         will choose the best hyperparameter value from the data.
 
+    use_bias_upper_bound: bool, default=True
+        Whether to use bias upper bound in hyperparameter tuning.
+        If False, direct bias estimator is used to estimate the MSE.
+
+    delta: float, default=0.05
+        A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
+
     estimator_name: str, default='ipw'.
         Name of the estimator.
 
@@ -244,14 +273,13 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
 
     """
 
-    lambdas: List[float] = None
     estimator_name: str = "ipw"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = InverseProbabilityWeighting
-        self.candidate_hyperparameter_list = self.lambdas
-        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_lambdas()
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,
@@ -279,7 +307,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -287,13 +315,9 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Estimated policy value (performance) of a given evaluation policy.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -342,7 +366,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -359,13 +383,9 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -418,8 +438,8 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = DoublyRobust
-        self.candidate_hyperparameter_list = self.lambdas
-        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_lambdas()
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,
@@ -450,7 +470,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -458,15 +478,14 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Policy value estimated by the DR estimator.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -520,7 +539,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -537,15 +556,14 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -576,7 +594,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
 
     Parameters
     ----------
-    taus: List[float]
+    lambdas: List[float]
         A list of candidate switching hyperparameters.
         The automatic hyperparameter tuning proposed by Su et al.(2020)
         will choose the best hyperparameter value from the data.
@@ -594,14 +612,13 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
 
     """
 
-    taus: List[float] = None
     estimator_name: str = "switch-dr"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = SwitchDoublyRobust
-        self.candidate_hyperparameter_list = self.taus
-        super()._check_candidate_hyperparameter_list(hyperparam_name="taus")
+        super()._check_lambdas()
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,
@@ -632,7 +649,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -640,15 +657,14 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Policy value estimated by the DR estimator.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -702,7 +718,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -719,15 +735,14 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -776,14 +791,13 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
 
     """
 
-    lambdas: List[float] = None
     estimator_name: str = "dr-os"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         self.base_ope_estimator = DoublyRobustWithShrinkage
-        self.candidate_hyperparameter_list = self.lambdas
-        super()._check_candidate_hyperparameter_list(hyperparam_name="lambdas")
+        super()._check_lambdas()
+        super()._check_init_inputs()
 
     def estimate_policy_value(
         self,
@@ -814,7 +828,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         Returns
         ----------
@@ -822,15 +836,14 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Policy value estimated by the DR estimator.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
@@ -884,7 +897,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit feedback.
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
 
         alpha: float, default=0.05
             Significance level.
@@ -901,15 +914,14 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        if not isinstance(estimated_rewards_by_reg_model, np.ndarray):
-            raise ValueError("estimated_rewards_by_reg_model must be ndarray")
-        if not isinstance(reward, np.ndarray):
-            raise ValueError("reward must be ndarray")
-        if not isinstance(action, np.ndarray):
-            raise ValueError("action must be ndarray")
-        if not isinstance(pscore, np.ndarray):
-            raise ValueError("pscore must be ndarray")
-
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
         check_ope_inputs(
             action_dist=action_dist,
             position=position,

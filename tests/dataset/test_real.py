@@ -1,9 +1,9 @@
-import pytest
+from typing import Dict
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
-
-from typing import Tuple
-from typing import Dict
+import pytest
 
 from obp.dataset import OpenBanditDataset
 

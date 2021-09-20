@@ -3,16 +3,22 @@
 
 """Class for Multi-Class Classification to Bandit Reduction."""
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 import numpy as np
 from scipy.stats import rankdata
-from sklearn.base import ClassifierMixin, is_classifier, clone
+from sklearn.base import ClassifierMixin
+from sklearn.base import clone
+from sklearn.base import is_classifier
 from sklearn.model_selection import train_test_split
-from sklearn.utils import check_random_state, check_X_y
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
+from sklearn.utils import check_X_y
 
-from .base import BaseBanditDataset
 from ..types import BanditFeedback
+from ..utils import check_array
+from .base import BaseBanditDataset
 
 
 @dataclass
@@ -151,10 +157,9 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         """Initialize Class."""
         if not is_classifier(self.base_classifier_b):
             raise ValueError("base_classifier_b must be a classifier")
-        if not isinstance(self.alpha_b, float) or not (0.0 <= self.alpha_b < 1.0):
-            raise ValueError(
-                f"alpha_b must be a float in the [0,1) interval, but {self.alpha_b} is given"
-            )
+        check_scalar(self.alpha_b, "alpha_b", float, min_val=0.0)
+        if self.alpha_b >= 1.0:
+            raise ValueError(f"`alpha_b`= {self.alpha_b}, must be < 1.0.")
 
         self.X, y = check_X_y(X=self.X, y=self.y, ensure_2d=True, multi_output=False)
         self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index action
@@ -279,10 +284,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
             axis 2 represents the length of list; it is always 1 in the current implementation.
 
         """
-        if not isinstance(alpha_e, float) or not (0.0 <= alpha_e <= 1.0):
-            raise ValueError(
-                f"alpha_e must be a float in the [0,1] interval, but {alpha_e} is given"
-            )
+        check_scalar(alpha_e, "alpha_e", float, min_val=0.0, max_val=1.0)
         # train a base ML classifier
         if base_classifier_e is None:
             base_clf_e = clone(self.base_classifier_b)
@@ -318,10 +320,9 @@ class MultiClassToBanditReduction(BaseBanditDataset):
             policy value of a given action distribution (mostly evaluation policy).
 
         """
-        if not isinstance(action_dist, np.ndarray) or action_dist.ndim != 3:
-            raise ValueError("action_dist must be a 3-D np.ndarray")
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         if action_dist.shape[0] != self.n_rounds_ev:
             raise ValueError(
-                "the size of axis 0 of action_dist must be the same as the number of samples in the evaluation set"
+                "Expected `action_dist.shape[0] == self.n_rounds_ev`, but found it False"
             )
         return action_dist[np.arange(self.n_rounds_ev), self.y_ev].mean()

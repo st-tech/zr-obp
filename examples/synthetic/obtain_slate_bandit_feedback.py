@@ -1,10 +1,8 @@
 import argparse
 
-from obp.dataset import (
-    logistic_reward_function,
-    linear_behavior_policy_logit,
-    SyntheticSlateBanditDataset,
-)
+from obp.dataset import linear_behavior_policy_logit
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticSlateBanditDataset
 
 
 if __name__ == "__main__":
