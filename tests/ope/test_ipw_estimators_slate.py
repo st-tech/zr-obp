@@ -1,7 +1,14 @@
 import pytest
 import numpy as np
 
-from obp.ope import SlateStandardIPS, SlateIndependentIPS, SlateRewardInteractionIPS
+from obp.ope import (
+    SlateStandardIPS,
+    SlateIndependentIPS,
+    SlateRewardInteractionIPS,
+    SelfNormalizedSlateStandardIPS,
+    SelfNormalizedSlateIndependentIPS,
+    SelfNormalizedSlateRewardInteractionIPS,
+)
 from obp.dataset import (
     logistic_reward_function,
     linear_behavior_policy_logit,
@@ -13,6 +20,9 @@ len_list = 3
 sips = SlateStandardIPS(len_list=len_list)
 iips = SlateIndependentIPS(len_list=len_list)
 rips = SlateRewardInteractionIPS(len_list=len_list)
+snsips = SelfNormalizedSlateStandardIPS(len_list=len_list)
+sniips = SelfNormalizedSlateIndependentIPS(len_list=len_list)
+snrips = SelfNormalizedSlateRewardInteractionIPS(len_list=len_list)
 n_rounds = 5
 
 
@@ -145,6 +155,49 @@ def test_slate_estimators_using_invalid_input_data(
             position=position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore,
         )
+        # self normalized
+        _ = snsips.estimate_policy_value(
+            slate_id=slate_id,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            evaluation_policy_pscore=evaluation_policy_pscore,
+        )
+        _ = snsips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            evaluation_policy_pscore=evaluation_policy_pscore,
+        )
+        _ = sniips.estimate_policy_value(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_item_position=pscore,
+            position=position,
+            evaluation_policy_pscore_item_position=evaluation_policy_pscore,
+        )
+        _ = sniips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_item_position=pscore,
+            position=position,
+            evaluation_policy_pscore_item_position=evaluation_policy_pscore,
+        )
+        _ = snrips.estimate_policy_value(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_cascade=pscore,
+            position=position,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore,
+        )
+        _ = snrips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_cascade=pscore,
+            position=position,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore,
+        )
 
 
 # --- valid (all slate estimators) ---
@@ -212,6 +265,49 @@ def test_slate_estimators_using_valid_input_data(
         evaluation_policy_pscore_cascade=evaluation_policy_pscore,
     )
     _ = rips.estimate_interval(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore,
+        position=position,
+        evaluation_policy_pscore_cascade=evaluation_policy_pscore,
+    )
+    # self normalized
+    _ = snsips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=evaluation_policy_pscore,
+    )
+    _ = snsips.estimate_interval(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=evaluation_policy_pscore,
+    )
+    _ = sniips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore,
+        position=position,
+        evaluation_policy_pscore_item_position=evaluation_policy_pscore,
+    )
+    _ = sniips.estimate_interval(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore,
+        position=position,
+        evaluation_policy_pscore_item_position=evaluation_policy_pscore,
+    )
+    _ = snrips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore,
+        position=position,
+        evaluation_policy_pscore_cascade=evaluation_policy_pscore,
+    )
+    _ = snrips.estimate_interval(
         slate_id=slate_id,
         reward=reward,
         pscore_cascade=pscore,
@@ -335,6 +431,21 @@ def test_sips_using_invalid_input_data(
             position=position,
             evaluation_policy_pscore=evaluation_policy_pscore,
         )
+        # self normalized
+        _ = snsips.estimate_policy_value(
+            slate_id=slate_id,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            evaluation_policy_pscore=evaluation_policy_pscore,
+        )
+        _ = snsips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            evaluation_policy_pscore=evaluation_policy_pscore,
+        )
 
 
 # --- invalid (iips) ---
@@ -435,6 +546,21 @@ def test_iips_using_invalid_input_data(
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
         )
         _ = iips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_item_position=pscore_item_position,
+            position=position,
+            evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
+        )
+        # self normalized
+        _ = sniips.estimate_policy_value(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_item_position=pscore_item_position,
+            position=position,
+            evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
+        )
+        _ = sniips.estimate_interval(
             slate_id=slate_id,
             reward=reward,
             pscore_item_position=pscore_item_position,
@@ -563,6 +689,21 @@ def test_rips_using_invalid_input_data(
             position=position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
         )
+        # self normalized
+        _ = snrips.estimate_policy_value(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_cascade=pscore_cascade,
+            position=position,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+        )
+        _ = snrips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_cascade=pscore_cascade,
+            position=position,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+        )
 
 
 # --- confidence intervals ---
@@ -633,6 +774,37 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
+        # self normalized
+        _ = snsips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            evaluation_policy_pscore=evaluation_policy_pscore,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+        _ = sniips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_item_position=pscore,
+            position=position,
+            evaluation_policy_pscore_item_position=evaluation_policy_pscore,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+        _ = snrips.estimate_interval(
+            slate_id=slate_id,
+            reward=reward,
+            pscore_cascade=pscore,
+            position=position,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
 
 
 @pytest.mark.parametrize(
@@ -676,6 +848,37 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
         random_state=random_state,
     )
     _ = rips.estimate_interval(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore,
+        position=position,
+        evaluation_policy_pscore_cascade=evaluation_policy_pscore,
+        alpha=alpha,
+        n_bootstrap_samples=n_bootstrap_samples,
+        random_state=random_state,
+    )
+    # self normalized
+    _ = snsips.estimate_interval(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=evaluation_policy_pscore,
+        alpha=alpha,
+        n_bootstrap_samples=n_bootstrap_samples,
+        random_state=random_state,
+    )
+    _ = sniips.estimate_interval(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore,
+        position=position,
+        evaluation_policy_pscore_item_position=evaluation_policy_pscore,
+        alpha=alpha,
+        n_bootstrap_samples=n_bootstrap_samples,
+        random_state=random_state,
+    )
+    _ = snrips.estimate_interval(
         slate_id=slate_id,
         reward=reward,
         pscore_cascade=pscore,
@@ -758,6 +961,30 @@ def test_slate_ope_performance_using_cascade_additive_log():
         position=position,
         evaluation_policy_pscore_cascade=random_behavior_feedback["pscore_cascade"],
     )
+    # self normalized
+    snsips_estimated_policy_value = snsips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore"],
+    )
+    sniips_estimated_policy_value = sniips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore_item_position,
+        position=position,
+        evaluation_policy_pscore_item_position=random_behavior_feedback[
+            "pscore_item_position"
+        ],
+    )
+    snrips_estimated_policy_value = snrips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore_cascade,
+        position=position,
+        evaluation_policy_pscore_cascade=random_behavior_feedback["pscore_cascade"],
+    )
     # compute statistics of ground truth policy value
     q_pi_e = (
         random_behavior_feedback["reward"]
@@ -774,6 +1001,9 @@ def test_slate_ope_performance_using_cascade_additive_log():
         "sips": sips_estimated_policy_value,
         "iips": iips_estimated_policy_value,
         "rips": rips_estimated_policy_value,
+        "snsips": snsips_estimated_policy_value,
+        "sniips": sniips_estimated_policy_value,
+        "snrips": snrips_estimated_policy_value,
     }
     for key in estimated_policy_value:
         print(
@@ -856,6 +1086,30 @@ def test_slate_ope_performance_using_independent_log():
         position=position,
         evaluation_policy_pscore_cascade=random_behavior_feedback["pscore_cascade"],
     )
+    # self normalized
+    snsips_estimated_policy_value = snsips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore"],
+    )
+    sniips_estimated_policy_value = sniips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore_item_position,
+        position=position,
+        evaluation_policy_pscore_item_position=random_behavior_feedback[
+            "pscore_item_position"
+        ],
+    )
+    snrips_estimated_policy_value = snrips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore_cascade,
+        position=position,
+        evaluation_policy_pscore_cascade=random_behavior_feedback["pscore_cascade"],
+    )
     # compute statistics of ground truth policy value
     q_pi_e = (
         random_behavior_feedback["reward"]
@@ -872,6 +1126,9 @@ def test_slate_ope_performance_using_independent_log():
         "sips": sips_estimated_policy_value,
         "iips": iips_estimated_policy_value,
         "rips": rips_estimated_policy_value,
+        "snsips": snsips_estimated_policy_value,
+        "sniips": sniips_estimated_policy_value,
+        "snrips": snrips_estimated_policy_value,
     }
     for key in estimated_policy_value:
         print(
@@ -954,6 +1211,30 @@ def test_slate_ope_performance_using_standard_additive_log():
         position=position,
         evaluation_policy_pscore_cascade=random_behavior_feedback["pscore_cascade"],
     )
+    # self normalized
+    snsips_estimated_policy_value = snsips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore"],
+    )
+    sniips_estimated_policy_value = sniips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore_item_position,
+        position=position,
+        evaluation_policy_pscore_item_position=random_behavior_feedback[
+            "pscore_item_position"
+        ],
+    )
+    snrips_estimated_policy_value = snrips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore_cascade,
+        position=position,
+        evaluation_policy_pscore_cascade=random_behavior_feedback["pscore_cascade"],
+    )
     # compute statistics of ground truth policy value
     q_pi_e = (
         random_behavior_feedback["reward"]
@@ -970,6 +1251,9 @@ def test_slate_ope_performance_using_standard_additive_log():
         "sips": sips_estimated_policy_value,
         "iips": iips_estimated_policy_value,
         "rips": rips_estimated_policy_value,
+        "snsips": snsips_estimated_policy_value,
+        "sniips": sniips_estimated_policy_value,
+        "snrips": snrips_estimated_policy_value,
     }
     for key in estimated_policy_value:
         print(
@@ -979,3 +1263,91 @@ def test_slate_ope_performance_using_standard_additive_log():
         assert (
             np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
         ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
+
+
+def test_boundedness_of_slate_snipw_using_random_evaluation_policy() -> None:
+    """
+    Test the boundedness of snipw estimators using synthetic bandit data and random evaluation policy
+    """
+    # set parameters
+    n_unique_action = 10
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    random_state = 12345
+    n_rounds = 1000
+    reward_structure = "standard_additive"
+    click_model = None
+    behavior_policy_function = linear_behavior_policy_logit
+    reward_function = logistic_reward_function
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        random_state=random_state,
+        behavior_policy_function=behavior_policy_function,
+        base_reward_function=reward_function,
+    )
+    random_behavior_dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        reward_structure=reward_structure,
+        click_model=click_model,
+        random_state=random_state,
+        behavior_policy_function=None,
+        base_reward_function=reward_function,
+    )
+    # obtain feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    slate_id = bandit_feedback["slate_id"]
+    reward = bandit_feedback["reward"]
+    # make pscore too small (to check the boundedness of snipw)
+    pscore = bandit_feedback["pscore"] ** 3
+    pscore_item_position = bandit_feedback["pscore_item_position"] ** 3
+    pscore_cascade = bandit_feedback["pscore_cascade"] ** 3
+    position = bandit_feedback["position"]
+
+    # obtain random behavior feedback
+    random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
+        n_rounds=n_rounds
+    )
+
+    # self normalized
+    snsips_estimated_policy_value = snsips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore=pscore,
+        position=position,
+        evaluation_policy_pscore=random_behavior_feedback["pscore"],
+    )
+    sniips_estimated_policy_value = sniips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_item_position=pscore_item_position,
+        position=position,
+        evaluation_policy_pscore_item_position=random_behavior_feedback[
+            "pscore_item_position"
+        ],
+    )
+    snrips_estimated_policy_value = snrips.estimate_policy_value(
+        slate_id=slate_id,
+        reward=reward,
+        pscore_cascade=pscore_cascade,
+        position=position,
+        evaluation_policy_pscore_cascade=random_behavior_feedback["pscore_cascade"],
+    )
+
+    estimated_policy_value = {
+        "snsips": snsips_estimated_policy_value,
+        "sniips": sniips_estimated_policy_value,
+        "snrips": snrips_estimated_policy_value,
+    }
+    for key in estimated_policy_value:
+        assert (
+            estimated_policy_value[key] <= len_list
+        ), f"estimated policy value of snipw should be smaller than or equal to {len_list} (because of its 1-boundedness for each position), but the value is: {estimated_policy_value}"
