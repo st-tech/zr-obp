@@ -623,14 +623,14 @@ class BaseSlateSelfNormalizedInverseProbabilityWeighting(
 class SelfNormalizedSlateStandardIPS(
     SlateStandardIPS, BaseSlateSelfNormalizedInverseProbabilityWeighting
 ):
-    """Self-Normalized Standard Interaction Inverse Propensity Scoring (SNSIPS) Estimator.
+    """Self-Normalized Standard Inverse Propensity Scoring (SNSIPS) Estimator.
 
     Note
     -------
-    Self-Normalized Standard Interaction Inverse Propensity Scoring (SNSIPS) is our original estimator based on the SlateStandardIPS.
+    Self-Normalized Standard Inverse Propensity Scoring (SNSIPS) is our original estimator based on the SlateStandardIPS.
 
-    SNSIPS calculates the slot-level empirical average of importance weights
-    and re-weights the observed rewards of slot :math:`k` by the averaged weight of the slot.
+    SNSIPS calculates the empirical average of importance weights
+    and re-weights the observed rewards by the empirical average of the importance weights.
 
     A Self-Normalized estimator is not unbiased even when the behavior policy is known.
     However, it is still consistent for the true policy value and increases the stability in some senses.
@@ -703,7 +703,7 @@ class SelfNormalizedSlateIndependentIPS(
     Self-Normalized Independent Inverse Propensity Scoring (SNIIPS) is our original estimator based on the SlateIndependentIPS.
 
     SNIIPS calculates the slot-level empirical average of importance weights
-    and re-weights the observed rewards of slot :math:`k` by the averaged weight of the slot.
+    and re-weights the observed rewards of slot :math:`k` by the empirical average of the importance weights.
 
     A Self-Normalized estimator is not unbiased even when the behavior policy is known.
     However, it is still consistent for the true policy value and increases the stability in some senses.
@@ -741,10 +741,10 @@ class SelfNormalizedSlateRewardInteractionIPS(
 
     Note
     -------
-    Self-Normalized Reward Interaction Inverse Propensity Scoring (SNRIPS) is our original estimator based on the SlateRewardInteractionIPS.
+    Self-Normalized Reward Interaction Inverse Propensity Scoring (SNRIPS) is the self-normalized version of SlateRewardInteractionIPS.
 
     SNRIPS calculates the slot-level empirical average of importance weights
-    and re-weights the observed rewards of slot :math:`k` by the averaged weight of the slot.
+    and re-weights the observed rewards of slot :math:`k` by the empirical average of the importance weights.
 
     A Self-Normalized estimator is not unbiased even when the behavior policy is known.
     However, it is still consistent for the true policy value and increases the stability in some senses.
