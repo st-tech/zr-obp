@@ -564,3 +564,208 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
+
+
+@dataclass
+class BaseSlateSelfNormalizedInverseProbabilityWeighting(
+    BaseSlateInverseProbabilityWeighting
+):
+    """Base Class of Self-Normalized Inverse Probability Weighting Estimators for the slate contextual bandit setting.
+
+    len_list: int (> 1)
+        Length of a list of actions recommended in each impression.
+        When Open Bandit Dataset is used, `len_list=3`.
+
+    """
+
+    len_list: int
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        position: np.ndarray,
+        behavior_policy_pscore: np.ndarray,
+        evaluation_policy_pscore: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        """Self-Normalized estimated rewards given round (slate_id) and slot (position).
+
+        Parameters
+        ----------
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        Returns
+        ----------
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Self-Normalized rewards estimated by IPW given round (slate_id) and slot (position).
+
+        """
+        estimated_rewards = np.zeros_like(behavior_policy_pscore)
+        iw = np.zeros_like(behavior_policy_pscore)
+        for position_ in range(self.len_list):
+            idx = position == position_
+            iw[idx] = evaluation_policy_pscore[idx] / behavior_policy_pscore[idx]
+            estimated_rewards[idx] = reward[idx] * iw[idx] / iw[idx].mean()
+        return estimated_rewards
+
+
+@dataclass
+class SelfNormalizedSlateStandardIPS(
+    SlateStandardIPS, BaseSlateSelfNormalizedInverseProbabilityWeighting
+):
+    """Self-Normalized Standard Inverse Propensity Scoring (SNSIPS) Estimator.
+
+    Note
+    -------
+    Self-Normalized Standard Inverse Propensity Scoring (SNSIPS) is our original estimator based on the SlateStandardIPS.
+
+    SNSIPS calculates the empirical average of importance weights
+    and re-weights the observed rewards by the empirical average of the importance weights.
+
+    A Self-Normalized estimator is not unbiased even when the behavior policy is known.
+    However, it is still consistent for the true policy value and increases the stability in some senses.
+    See the references for the detailed discussions.
+
+    Parameters
+    ----------
+    estimator_name: str, default='snsips'.
+        Name of the estimator.
+
+    References
+    ----------
+    James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Ben Carterette.
+    "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions", 2020.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-normalized Estimator for Counterfactual Learning.", 2015.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    """
+
+    estimator_name: str = "snsips"
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        position: np.ndarray,
+        behavior_policy_pscore: np.ndarray,
+        evaluation_policy_pscore: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate rewards given round (slate_id) and slot (position).
+
+        Parameters
+        ----------
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        Returns
+        ----------
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by the SNSIPS estimator given round (slate_id) and slot (position).
+
+        """
+        estimated_rewards = np.zeros_like(behavior_policy_pscore)
+        iw = evaluation_policy_pscore / behavior_policy_pscore
+        estimated_rewards = reward * iw / iw.mean()
+        return estimated_rewards
+
+
+@dataclass
+class SelfNormalizedSlateIndependentIPS(
+    SlateIndependentIPS, BaseSlateSelfNormalizedInverseProbabilityWeighting
+):
+    """Self-Normalized Independent Inverse Propensity Scoring (SNIIPS) Estimator.
+
+    Note
+    -------
+    Self-Normalized Independent Inverse Propensity Scoring (SNIIPS) is our original estimator based on the SlateIndependentIPS.
+
+    SNIIPS calculates the slot-level empirical average of importance weights
+    and re-weights the observed rewards of slot :math:`k` by the empirical average of the importance weights.
+
+    A Self-Normalized estimator is not unbiased even when the behavior policy is known.
+    However, it is still consistent for the true policy value and increases the stability in some senses.
+    See the references for the detailed discussions.
+
+    Parameters
+    ----------
+    estimator_name: str, default='sniips'.
+        Name of the estimator.
+
+    References
+    ----------
+    Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S. Muthukrishnan, Vishwa Vinay, Zheng Wen.
+    "Offline Evaluation of Ranking Policies with Click Models", 2018.
+
+    James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Ben Carterette.
+    "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions", 2020.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-normalized Estimator for Counterfactual Learning.", 2015.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    """
+
+    estimator_name: str = "sniips"
+
+
+@dataclass
+class SelfNormalizedSlateRewardInteractionIPS(
+    SlateRewardInteractionIPS, BaseSlateSelfNormalizedInverseProbabilityWeighting
+):
+    """Self-Normalized Reward Interaction Inverse Propensity Scoring (SNRIPS) Estimator.
+
+    Note
+    -------
+    Self-Normalized Reward Interaction Inverse Propensity Scoring (SNRIPS) is the self-normalized version of SlateRewardInteractionIPS.
+
+    SNRIPS calculates the slot-level empirical average of importance weights
+    and re-weights the observed rewards of slot :math:`k` by the empirical average of the importance weights.
+
+    A Self-Normalized estimator is not unbiased even when the behavior policy is known.
+    However, it is still consistent for the true policy value and increases the stability in some senses.
+    See the references for the detailed discussions.
+
+    Parameters
+    ----------
+    estimator_name: str, default='snrips'.
+        Name of the estimator.
+
+    References
+    ----------
+    James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Ben Carterette.
+    "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions", 2020.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-normalized Estimator for Counterfactual Learning.", 2015.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    """
+
+    estimator_name: str = "snrips"
