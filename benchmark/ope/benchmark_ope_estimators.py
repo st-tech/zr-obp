@@ -175,7 +175,7 @@ def main(cfg: DictConfig) -> None:
             between="estimators",
         )
         .round(4)
-        .drop(["Contrast", "Parametric", "Tail"], axis=1)
+        .drop(["Contrast", "Parametric", "Paired"], axis=1)
     )
     nonparam_ttests.to_csv(log_path / "nonparam_ttests.csv")
     # save reg model metrics

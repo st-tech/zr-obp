@@ -28,7 +28,7 @@ We also use cross-fitting to avoid substantial bias from overfitting when obtain
 
 ## Requirements and Setup
 
-The Python environment is built using [poetry](https://github.com/python-poetry/poetry). You can build the same environment as in our benchmark experiment by cloning the repository and running `poetry install` directly under the folder (if you do not install poetry, please run `pip install poetry` first.).
+The Python environment is built using [poetry](https://github.com/python-poetry/poetry). You can build the same environment as in our benchmark experiment by cloning the repository and running `poetry install` directly under the folder (if you have not install poetry yet, please run `pip install poetry` first.).
 
 ```bash
 # clone the obp repository
@@ -42,7 +42,7 @@ poetry install
 poetry run python benchmark_off_policy_estimators.py ...
 ```
 
-The versions of Python and the used packages are as follows.
+The versions of Python and used packages are as follows.
 
 ```
 [tool.poetry.dependencies]
@@ -51,7 +51,7 @@ scikit-learn = "^0.24.2"
 pandas = "^1.3.1"
 numpy = "^1.21.1"
 matplotlib = "^3.4.2"
-hydra-core = "^1.1.0"
+hydra-core = "^1.0.7"
 pingouin = "^0.4.0"
 pyieoe = "^0.1.0"
 obp = "^0.5.0"
