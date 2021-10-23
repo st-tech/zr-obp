@@ -13,6 +13,7 @@ import numpy as np
 from ..utils import check_iips_inputs
 from ..utils import check_rips_inputs
 from ..utils import check_sips_inputs
+from ..utils import check_cascade_dr_inputs
 from ..utils import estimate_confidence_interval_by_bootstrap
 
 
@@ -556,6 +557,308 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             position=position,
             behavior_policy_pscore=pscore_cascade,
             evaluation_policy_pscore=evaluation_policy_pscore_cascade,
+        )
+        return self._estimate_slate_confidence_interval_by_bootstrap(
+            slate_id=slate_id,
+            estimated_rewards=estimated_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+
+@dataclass
+class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
+    """Cascade Doubly Robust (Cascade-DR) Estimator.
+
+    Note
+    -------
+    Slate Cascade Doubly Robust (Cascade-DR) estimates the policy value of evaluation policy :math:`\\pi_e`
+    assuming the cascade click model (users interact with actions from the top position to the bottom in a slate).
+    This estimator also uses control variate :math:`\\hat{Q}_k` as follows.
+
+    .. :math:
+        \\hat{V}_{\\mathrm{Cascade-DR}}(\\pi_e; \\mathcal{D})
+        := \\mathbb{E}_T [ \\sum_{k=1}^K ( w_{1:k} ( \\alpha(k) r(k) - \\hat{Q}_k ) + w_{1:k-1} \\mathbb{E}_{a'(k)} [ \\hat{Q}_k ] ) ]`
+
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. Both :math:`a_t` and :math:`r_t` vectors that :math:`a_t(k)` and :math:`r_t(k)` denote the action and the reward
+    presented at slot :math:`k` (where a slate consists of :math:`K` slots (slate size)). :math:`\\alpha(k)` is a non-negative weight at slot :math:`k`.
+    We denote :math:`w_{1:k} := \\prod_{k'=1}^k \\pi_e(a(k') | x, a(1), \\ldots, a(k'-1)) / \\pi_b(a(k') | x, a(1), \\ldots, a(k'-1))` and
+    :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k))`.
+    Finally, :math:`\\mathbb{E}_T [ \\cdot ]` is empirical average over :math:`\\mathcal{D}` and
+    :math:`\\mathbb{E}_{a'(k)} [ \\cdot ] := \\mathbb{E}_{a'(k) \\sim \\pi_e(a'(k) | x, a(1), \\ldots, a(k-1))} [ \\cdot ]`.
+
+    Note that :math:`\\hat{Q}_k` is derived in `ope.ope.regression_model.SlateRegressionModel`.
+
+    Parameters
+    ----------
+    len_list: int
+        Length of a list of actions recommended in each impression (slate size).
+        When Open Bandit Dataset is used, 3 should be set.
+
+    n_unique_action: int
+        Number of unique actions.
+
+    estimator_name: str, default='cascade-dr'.
+        Name of the estimator.
+
+    References
+    ------------
+    Haruka Kiyohara, Yuta Saito, Tatsuya Matsuhiro, Yusuke Narita, Nobuyuki Shimizu, and Yasuo Yamamoto.
+    "Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model.", 2021.
+
+    """
+
+    len_list: int
+    n_unique_action: int
+    estimator_name: str = "cascade-dr"
+
+    def __post_init__(self):
+        """Initialize Class."""
+        if self.n_unique_action is None:
+            raise ValueError("n_unique_action must be given")
+
+    def _estimate_round_rewards(
+        self,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        behavior_policy_pscore: np.ndarray,
+        evaluation_policy_pscore: np.ndarray,
+        q_hat_for_counterfactual_actions: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate rewards given round (slate_id) and slot (position).
+
+        Parameters
+        ----------
+        action: array-like, (<= n_rounds * len_list,)
+            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            which is chosen by the behavior policy :math:`\\pi_b`.
+
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+            Estimation of :math:`\\hat{Q}_k` for all possible actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+        evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+        Returns
+        ----------
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by Cascade-DR given round (slate_id) and slot (position).
+
+        """
+        # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action)
+        q_hat_for_counterfactual_actions_3d = q_hat_for_counterfactual_actions.reshape(
+            (-1, self.len_list, self.n_unique_action)
+        )
+        # \hat{Q} for the action taken by the behavior policy
+        # (n_rounds_, len_list, n_unique_action) -> (n_rounds_ * len_list, )
+        q_hat_for_taken_action = []
+        for i in range(self.n_rounds_):
+            for position_ in range(self.len_list):
+                q_hat_for_taken_action.append(
+                    q_hat_for_counterfactual_actions_3d[
+                        i, position_, action[i * self.len_list + position_]
+                    ]
+                )
+        q_hat_for_taken_action = np.array(q_hat_for_taken_action)
+        # baseline \hat{Q} by evaluation policy
+        # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action) -> (n_rounds_, len_list) -> (n_rounds_ * len_list, )
+        baseline_q_hat_by_eval_policy = (
+            (evaluation_policy_action_dist * q_hat_for_counterfactual_actions)
+            .reshape((-1, self.len_list, self.n_unique_action))
+            .sum(axis=2)
+            .flatten()
+        )
+        # importance weights
+        # (n_rounds * len_list, )
+        iw = evaluation_policy_pscore / behavior_policy_pscore
+        iw_prev = np.roll(iw, 1)
+        iw_prev[np.array([i * self.len_list for i in range(self.n_rounds_)])] = 1
+        # estimate policy value given each round and slot in a doubly robust manner
+        estimated_rewards = (
+            iw * (reward - q_hat_for_taken_action)
+            + iw_prev * baseline_q_hat_by_eval_policy
+        )
+        return estimated_rewards
+
+    def estimate_policy_value(
+        self,
+        slate_id: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        pscore_cascade: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
+        q_hat_for_counterfactual_actions: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        **kwargs,
+    ) -> float:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slates (i.e., rounds or lists of actions).
+
+        action: array-like, (<= n_rounds * len_list,)
+            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            which is chosen by the behavior policy :math:`\\pi_b`.
+
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+            Estimation of :math:`\\hat{Q}_k` for all possible actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+        evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+        Returns
+        ----------
+        V_hat: array-like, shape (<= n_rounds * len_list,)
+            Estimated policy value (performance) of a given evaluation policy.
+
+        """
+        check_cascade_dr_inputs(
+            n_unique_action=self.n_unique_action,
+            slate_id=slate_id,
+            action=action,
+            reward=reward,
+            position=position,
+            pscore_cascade=pscore_cascade,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        self.n_rounds_ = np.unique(slate_id).shape[0]
+        return (
+            self._estimate_round_rewards(
+                action=action,
+                reward=reward,
+                position=position,
+                behavior_policy_pscore=pscore_cascade,
+                evaluation_policy_pscore=evaluation_policy_pscore_cascade,
+                q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+                evaluation_policy_action_dist=evaluation_policy_action_dist,
+            ).sum()
+            / self.n_rounds_
+        )
+
+    def estimate_interval(
+        self,
+        slate_id: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        pscore_cascade: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
+        q_hat_for_counterfactual_actions: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slates (i.e., rounds or lists of actions).
+
+        action: array-like, (<= n_rounds * len_list,)
+            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            which is chosen by the behavior policy :math:`\\pi_b`.
+
+        reward: array-like, shape (<= n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+            Estimation of :math:`\\hat{Q}_k` for all possible actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+        evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_cascade_dr_inputs(
+            slate_id=slate_id,
+            action=action,
+            reward=reward,
+            position=position,
+            pscore_cascade=pscore_cascade,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        self.n_rounds_ = np.unique(slate_id).shape[0]
+        estimated_rewards = self._estimate_round_rewards(
+            action=action,
+            reward=reward,
+            position=position,
+            behavior_policy_pscore=pscore_cascade,
+            evaluation_policy_pscore=evaluation_policy_pscore_cascade,
+            q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
         return self._estimate_slate_confidence_interval_by_bootstrap(
             slate_id=slate_id,

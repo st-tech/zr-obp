@@ -1136,6 +1136,58 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
         return pscore, pscore_item_position, pscore_cascade
 
+    def calc_evaluation_policy_action_dist(
+        self,
+        bandit_feedback: BanditFeedback,
+        evaluation_policy_logit_: np.ndarray,
+        is_factorizable: bool,
+    ):
+        """Calculate action distribution at each slot given evaluation policy logit.
+
+        Parameters
+        ----------
+        evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
+            Evaluation policy logit values by given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        Returns
+        ----------
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+        """
+        n_rounds = bandit_feedback["n_rounds"]
+        len_list = int((bandit_feedback["slate_id"] == 0).sum())
+
+        action = bandit_feedback["action"]
+        # (n_rounds * len_list, ) -> (n_rounds, len_list)
+        action = action.reshape((n_rounds, len_list))
+        # (n_rounds, n_unique_action) -> (n_rounds, len_list, n_unique_action)
+        evaluation_policy_logit_ = np.array(
+            [
+                [evaluation_policy_logit_[i] for _ in range(len_list)]
+                for i in range(n_rounds)
+            ]
+        )
+        # calculate action probabilities for all the counterfactual actions at the position
+        # (n_rounds, len_list, n_unique_action)
+        evaluation_policy_action_dist = []
+        for i in range(n_rounds):
+            if not is_factorizable:
+                for position_ in range(len_list - 1):
+                    action_ = action[i][position_]
+                    # mask action choice probability of the previously chosen action
+                    # to avoid overflow in softmax function, set -1e4 instead of -np.inf
+                    # (make action choice probability 0 for the previously chosen action by softmax)
+                    evaluation_policy_logit_[i, position_ + 1 :, action_] = -1e4
+            # (len_list, n_unique_action)
+            evaluation_policy_action_dist.append(softmax(evaluation_policy_logit_[i]))
+        # (n_rounds, len_list, n_unique_action) -> (n_rounds * len_list * n_unique_action, )
+        evaluation_policy_action_dist = np.array(
+            evaluation_policy_action_dist
+        ).flatten()
+        return evaluation_policy_action_dist
+
     def _calc_epsilon_greedy_pscore(
         self,
         epsilon: float,

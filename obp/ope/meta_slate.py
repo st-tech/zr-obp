@@ -19,6 +19,7 @@ from sklearn.utils import check_scalar
 from ..types import BanditFeedback
 from ..utils import check_confidence_interval_arguments
 from .estimators_slate import BaseSlateOffPolicyEstimator
+from .regression_model_slate import SlateRegressionModel
 
 
 logger = getLogger(__name__)
@@ -36,6 +37,12 @@ class SlateOffPolicyEvaluation:
     ope_estimators: List[BaseSlateOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
         Estimators must follow the interface of `obp.ope.BaseSlateOffPolicyEstimator`.
+
+    base_regression_model: Optional[SlateRegressionModel] = None
+        Baseline regression model for :math:`\\hat{Q}_k` in Cascade-DR estimator.
+
+    is_factorizable: bool = False
+        If the behavior and evaluation policies are factorizable or not.
 
     Examples
     ----------
@@ -112,9 +119,15 @@ class SlateOffPolicyEvaluation:
 
     bandit_feedback: BanditFeedback
     ope_estimators: List[BaseSlateOffPolicyEstimator]
+    base_regression_model: Optional[SlateRegressionModel] = None
+    is_factorizable: bool = False
 
     def __post_init__(self) -> None:
         """Initialize class."""
+        self.n_rounds = self.bandit_feedback["n_rounds"]
+        self.len_list = int((self.bandit_feedback["slate_id"] == 0).sum())
+        self.n_unique_action = self.bandit_feedback["n_unique_action"]
+
         for key_ in ["slate_id", "position", "reward"]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
@@ -127,6 +140,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
     ) -> Dict[str, np.ndarray]:
         """Create input dictionary to estimate policy value by subclasses of `BaseSlateOffPolicyEstimator`"""
         if (
@@ -142,6 +156,8 @@ class SlateOffPolicyEvaluation:
             input_: self.bandit_feedback[input_]
             for input_ in [
                 "slate_id",
+                "context",
+                "action",
                 "reward",
                 "position",
                 "pscore",
@@ -157,6 +173,21 @@ class SlateOffPolicyEvaluation:
         estimator_inputs[
             "evaluation_policy_pscore_cascade"
         ] = evaluation_policy_pscore_cascade
+        estimator_inputs[
+            "evaluation_policy_action_dist"
+        ] = evaluation_policy_action_dist
+
+        q_hat_for_counterfactual_actions = self.base_regression_model.fit_predict(
+            context=self.bandit_feedback["context"],
+            action=self.bandit_feedback["action"],
+            reward=self.bandit_feedback["reward"],
+            pscore_cascade=self.bandit_feedback["pscore_cascade"],
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        estimator_inputs[
+            "q_hat_for_counterfactual_actions"
+        ] = q_hat_for_counterfactual_actions
 
         return estimator_inputs
 
@@ -165,6 +196,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
     ) -> Dict[str, float]:
         """Estimate the policy value of evaluation policy.
 
@@ -179,6 +211,10 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+             Action choice probabilities of evaluation policy for all possible actions
+             , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
         Returns
         ----------
         policy_value_dict: Dict[str, float]
@@ -190,6 +226,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore=evaluation_policy_pscore,
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_dict[estimator_name] = estimator.estimate_policy_value(
@@ -203,6 +240,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -219,6 +257,10 @@ class SlateOffPolicyEvaluation:
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
             Significance level.
@@ -246,6 +288,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore=evaluation_policy_pscore,
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_interval_dict[estimator_name] = estimator.estimate_interval(
@@ -262,6 +305,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -278,6 +322,10 @@ class SlateOffPolicyEvaluation:
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
             Significance level.
@@ -299,6 +347,7 @@ class SlateOffPolicyEvaluation:
                 evaluation_policy_pscore=evaluation_policy_pscore,
                 evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
                 evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+                evaluation_policy_action_dist=evaluation_policy_action_dist,
             ),
             index=["estimated_policy_value"],
         )
@@ -307,6 +356,7 @@ class SlateOffPolicyEvaluation:
                 evaluation_policy_pscore=evaluation_policy_pscore,
                 evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
                 evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+                evaluation_policy_action_dist=evaluation_policy_action_dist,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
@@ -333,6 +383,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -352,6 +403,10 @@ class SlateOffPolicyEvaluation:
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
             Significance level.
@@ -383,6 +438,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore=evaluation_policy_pscore,
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -428,6 +484,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
         """Evaluate estimation performance of OPE estimators.
@@ -462,6 +519,10 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be "relative-ee" or "se".
@@ -487,6 +548,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore=evaluation_policy_pscore,
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_policy_value = estimator.estimate_policy_value(**estimator_inputs)
@@ -505,6 +567,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> DataFrame:
         """Summarize performance comparisons of OPE estimators.
@@ -523,6 +586,10 @@ class SlateOffPolicyEvaluation:
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Action choice probabilities of evaluation policy for all possible actions
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.

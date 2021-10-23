@@ -792,6 +792,97 @@ def check_rips_inputs(
         )
 
 
+def check_cascade_dr_inputs(
+    n_unique_action: int,
+    slate_id: np.ndarray,
+    action: np.ndarray,
+    reward: np.ndarray,
+    position: np.ndarray,
+    pscore_cascade: np.ndarray,
+    evaluation_policy_pscore_cascade: np.ndarray,
+    q_hat_for_counterfactual_actions: np.ndarray,
+    evaluation_policy_action_dist: np.ndarray,
+) -> Optional[ValueError]:
+    """Check inputs of SlateCascadeDoublyRobust.
+
+    Parameters
+    -----------
+    n_unique_action: int
+        Number of unique actions.
+
+    slate_id: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slates (i.e., rounds or lists of actions).
+
+    action: array-like, (<= n_rounds * len_list,)
+        Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+        which is chosen by the behavior policy :math:`\\pi_b`.
+
+    reward: array-like, shape (<= n_rounds * len_list,)
+        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+    position: array-like, shape (<= n_rounds * len_list,)
+        IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+    pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+        Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+        , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+    evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+        Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+        , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+    q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+        Estimation of :math:`\\hat{Q}_k` for all possible actions
+        , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+    evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
+        Action choice probabilities of evaluation policy for all possible actions
+        , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+
+    """
+    check_rips_inputs(
+        slate_id=slate_id,
+        reward=reward,
+        position=position,
+        pscore_cascade=pscore_cascade,
+        evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+    )
+    check_array(array=action, name="action", expected_dim=1)
+    check_array(
+        array=q_hat_for_counterfactual_actions,
+        name="q_hat_for_counterfactual_actions",
+        expected_dim=1,
+    )
+    check_array(
+        array=evaluation_policy_action_dist,
+        name="evaluation_policy_action_dist",
+        expected_dim=1,
+    )
+    if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
+        raise ValueError("action elements must be non-negative integers")
+    if not (
+        slate_id.shape[0]
+        == action.shape[0]
+        == q_hat_for_counterfactual_actions.shape[0] // n_unique_action
+        == evaluation_policy_action_dist.shape[0] // n_unique_action
+    ):
+        raise ValueError(
+            f"slate_id, action q_hat_for_counterfactual_actions divided by n_unique_action, evaluation_policy_action_dist divided by n_unique_actions"
+            "must have the same."
+        )
+    evaluation_policy_action_dist_ = evaluation_policy_action_dist.reshape(
+        (-1, n_unique_action)
+    )
+    if not np.allclose(
+        np.ones(evaluation_policy_action_dist_.shape[0]),
+        evaluation_policy_action_dist_.sum(axis=1),
+    ):
+        raise ValueError(
+            f"evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action] "
+            "must sum up to one for all i."
+        )
+
+
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate sigmoid function."""
     return 1.0 / (1.0 + np.exp(-x))
