@@ -3,15 +3,10 @@
 
 """Regression Model Class for Estimating Baseline Values in Cascade-DR."""
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
-from sklearn.base import is_classifier
-from sklearn.model_selection import KFold
-from sklearn.utils import check_random_state
-from sklearn.utils import check_scalar
 
 
 @dataclass
