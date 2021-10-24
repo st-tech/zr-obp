@@ -867,7 +867,7 @@ def check_cascade_dr_inputs(
         == evaluation_policy_action_dist.shape[0] // n_unique_action
     ):
         raise ValueError(
-            f"slate_id, action q_hat_for_counterfactual_actions divided by n_unique_action, evaluation_policy_action_dist divided by n_unique_actions"
+            "slate_id, action q_hat_for_counterfactual_actions divided by n_unique_action, evaluation_policy_action_dist divided by n_unique_actions"
             "must have the same."
         )
     evaluation_policy_action_dist_ = evaluation_policy_action_dist.reshape(
@@ -878,7 +878,7 @@ def check_cascade_dr_inputs(
         evaluation_policy_action_dist_.sum(axis=1),
     ):
         raise ValueError(
-            f"evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action] "
+            "evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action] "
             "must sum up to one for all i."
         )
 
