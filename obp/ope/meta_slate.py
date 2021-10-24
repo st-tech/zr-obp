@@ -156,7 +156,6 @@ class SlateOffPolicyEvaluation:
             input_: self.bandit_feedback[input_]
             for input_ in [
                 "slate_id",
-                "context",
                 "action",
                 "reward",
                 "position",
