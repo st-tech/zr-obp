@@ -589,7 +589,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
     Finally, :math:`\\mathbb{E}_T [ \\cdot ]` is empirical average over :math:`\\mathcal{D}` and
     :math:`\\mathbb{E}_{a'(k)} [ \\cdot ] := \\mathbb{E}_{a'(k) \\sim \\pi_e(a'(k) | x, a(1), \\ldots, a(k-1))} [ \\cdot ]`.
 
-    Note that :math:`\\hat{Q}_k` is derived in `ope.ope.regression_model.SlateRegressionModel`.
+    Note that :math:`\\hat{Q}_k` is derived in `obp.ope.SlateRegressionModel`.
 
     Parameters
     ----------
