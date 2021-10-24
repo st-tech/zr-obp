@@ -21,19 +21,8 @@ class SlateRegressionModel(BaseEstimator):
 
     Note
     -------
-    :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k))` is recursively derived as follows.
-
-    .. :math:
-        \\hat{Q}_k \\leftarrow \\argmin_{Q_k} \\mathbb{E}_T [ w_{1:k} Q_k(x, a(1), \\ldots, a(k))
-            - ( \\alpha(k) r(k) + \\mathbb{E}_{a'(k+1)} \\hat{Q}_{k+1}(x, a(1), \\ldots, a(k), a'(k+1)) ) ]
-
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
-    a behavior policy :math:`\\pi_b`. Both :math:`a_t` and :math:`r_t` vectors that :math:`a_t(k)` and :math:`r_t(k)` denote the action and the reward
-    presented at slot :math:`k` (where a slate consists of :math:`K` slots (slate size)). :math:`\\alpha(k)` is a non-negative weight at slot :math:`k`.
-    We denote :math:`w_{1:k} := \\prod_{k'=1}^k \\pi_e(a(k') | x, a(1), \\ldots, a(k'-1)) / \\pi_b(a(k') | x, a(1), \\ldots, a(k'-1))` and
-    :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k))`.
-    Finally, :math:`\\mathbb{E}_T [ \\cdot ]` is empirical average over :math:`\\mathcal{D}` and
-    :math:`\\mathbb{E}_{a'(k)} [ \\cdot ] := \\mathbb{E}_{a'(k) \\sim \\pi_e(a'(k) | x, a(1), \\ldots, a(k-1))} [ \\cdot ]`.
+    :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k))` is recursively derived to construct Cascade-DR estimator.
+    Please refer to Section 3.1 of Kiyohara et al.(2022) for the detail.
 
     Parameters
     ------------
@@ -54,7 +43,7 @@ class SlateRegressionModel(BaseEstimator):
     Reference
     ------------
     Haruka Kiyohara, Yuta Saito, Tatsuya Matsuhiro, Yusuke Narita, Nobuyuki Shimizu, and Yasuo Yamamoto.
-    "Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model.", 2021.
+    "Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model.", 2022.
 
     """
 

@@ -41,7 +41,7 @@ class SlateOffPolicyEvaluation:
     base_regression_model: Optional[SlateRegressionModel] = None
         Baseline regression model for :math:`\\hat{Q}_k` in Cascade-DR estimator.
 
-    is_factorizable: bool = False
+    is_factorizable: bool, default=False
         If the behavior and evaluation policies are factorizable or not.
 
     Examples

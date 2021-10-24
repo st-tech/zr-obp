@@ -1146,8 +1146,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Parameters
         ----------
+        bandit_feedback: BanditFeedback
+        Logged bandit feedback data used for off-policy evaluation for the slate recommendation setting.
+
         evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
             Evaluation policy logit values by given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        is_factorizable: bool, default=False
+            If the behavior and evaluation policies are factorizable or not.
 
         Returns
         ----------
