@@ -5,6 +5,7 @@ from sklearn.linear_model import LogisticRegression
 import torch
 
 from obp.policy.offline import IPWLearner
+from obp.policy.offline import QLearner
 from obp.policy.offline import NNPolicyLearner
 from obp.policy.policy_type import PolicyType
 
@@ -143,7 +144,7 @@ def test_ipw_learner_fit():
         )
 
     # len_list > 2, but position is not set
-    desc = "When `self.len_list=1"
+    desc = "When `self.len_list > 1"
     with pytest.raises(ValueError, match=f"{desc}*"):
         learner = IPWLearner(n_actions=n_actions, len_list=len_list)
         learner.fit(context=context, action=action, reward=reward)
@@ -205,6 +206,213 @@ def test_ipw_learner_sample_action():
     reward = np.array([1.0, 0.0])
     position = np.array([0, 0])
     learner = IPWLearner(n_actions=n_actions, len_list=len_list)
+    learner.fit(context=context, action=action, reward=reward, position=position)
+
+    desc = "context must be 2D array"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        invalid_type_context = [1.0, 2.0]
+        learner.sample_action(context=invalid_type_context)
+
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        invalid_ndim_context = np.array([1.0, 2.0, 3.0, 4.0])
+        learner.sample_action(context=invalid_ndim_context)
+
+    context = np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, -1)
+    n_rounds = context.shape[0]
+    sampled_action = learner.sample_action(context=context)
+
+    assert sampled_action.shape[0] == n_rounds
+    assert sampled_action.shape[1] == n_actions
+    assert sampled_action.shape[2] == len_list
+
+
+# n_actions, len_list, base_model, fitting_method, description
+invalid_input_of_q_learner_init = [
+    (
+        0,  #
+        1,
+        base_classifier,
+        "normal",
+        "`n_actions`= 0, must be >= 1",
+    ),
+    (
+        10,
+        -1,  #
+        base_classifier,
+        "normal",
+        "`len_list`= -1, must be >= 0",
+    ),
+    (
+        10,
+        20,  #
+        base_classifier,
+        "normal",
+        "`len_list`= 20, must be <= 10",
+    ),
+    (10, 1, "base_regressor", "normal", "base_model must be BaseEstimator"),  #
+    (
+        10,
+        1,
+        base_classifier,
+        "None",  #
+        "fitting_method must be one of 'normal', 'iw', or 'mrdr', but",
+    ),
+]
+
+valid_input_of_q_learner_init = [
+    (
+        10,
+        1,
+        base_classifier,
+        "normal",
+        "valid input",
+    ),
+    (
+        10,
+        1,
+        base_classifier,
+        "iw",
+        "valid input",
+    ),
+    (
+        10,
+        1,
+        base_regressor,
+        "normal",
+        "valid input",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "n_actions, len_list, base_model, fitting_method, description",
+    invalid_input_of_q_learner_init,
+)
+def test_q_learner_init_using_invalid_inputs(
+    n_actions,
+    len_list,
+    base_model,
+    fitting_method,
+    description,
+):
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = QLearner(
+            n_actions=n_actions,
+            len_list=len_list,
+            base_model=base_model,
+            fitting_method=fitting_method,
+        )
+
+
+@pytest.mark.parametrize(
+    "n_actions, len_list, base_model, fitting_method, description",
+    valid_input_of_q_learner_init,
+)
+def test_q_learner_init_using_valid_inputs(
+    n_actions,
+    len_list,
+    base_model,
+    fitting_method,
+    description,
+):
+    q_learner = QLearner(
+        n_actions=n_actions,
+        len_list=len_list,
+        base_model=base_model,
+        fitting_method=fitting_method,
+    )
+    # policy_type
+    assert q_learner.policy_type == PolicyType.OFFLINE
+
+
+def test_q_learner_fit():
+    n_rounds = 1000
+    dim_context = 5
+    n_actions = 3
+    len_list = 2
+    context = np.ones((n_rounds, dim_context))
+    action = np.random.choice(np.arange(len_list, dtype=int), size=n_rounds)
+    reward = np.random.choice(np.arange(2), size=n_rounds)
+    position = np.random.choice(np.arange(len_list, dtype=int), size=n_rounds)
+
+    # inconsistency with the shape
+    desc = "Expected `context.shape[0]"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        learner = QLearner(
+            n_actions=n_actions, len_list=len_list, base_model=base_classifier
+        )
+        variant_context = np.random.normal(size=(n_rounds + 1, n_actions))
+        learner.fit(
+            context=variant_context,
+            action=action,
+            reward=reward,
+            position=position,
+        )
+
+    # len_list > 2, but position is not set
+    desc = "When `self.len_list > 1"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        learner = QLearner(
+            n_actions=n_actions, len_list=len_list, base_model=base_classifier
+        )
+        learner.fit(context=context, action=action, reward=reward)
+
+    # position must be non-negative
+    desc = "position elements must be non-negative integers"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        negative_position = position - 1
+        learner = QLearner(
+            n_actions=n_actions, len_list=len_list, base_model=base_classifier
+        )
+        learner.fit(
+            context=context, action=action, reward=reward, position=negative_position
+        )
+
+
+def test_q_learner_predict():
+    n_actions = 2
+    len_list = 1
+
+    # shape error
+    desc = "context must be 2D array"
+    with pytest.raises(ValueError, match=f"{desc}*"):
+        context = np.array([1.0, 1.0])
+        learner = QLearner(
+            n_actions=n_actions, len_list=len_list, base_model=base_classifier
+        )
+        learner.predict(context=context)
+
+    # shape consistency of action_dist
+    # n_rounds is 5, dim_context is 2
+    context = np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, -1)
+    action = np.array([0, 1])
+    reward = np.array([1.0, 0.0])
+    position = np.array([0, 0])
+    learner = QLearner(
+        n_actions=n_actions, len_list=len_list, base_model=base_classifier
+    )
+    learner.fit(context=context, action=action, reward=reward, position=position)
+
+    context_test = np.array([i for i in range(10)]).reshape(5, 2)
+    action_dist = learner.predict(context=context_test)
+    assert np.allclose(
+        action_dist.sum(1), np.ones_like((context_test.shape[0], len_list))
+    )
+    assert action_dist.shape[0] == 5
+    assert action_dist.shape[1] == n_actions
+    assert action_dist.shape[2] == len_list
+
+
+def test_q_learner_sample_action():
+    n_actions = 2
+    len_list = 1
+    context = np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, -1)
+    action = np.array([0, 1])
+    reward = np.array([1.0, 0.0])
+    position = np.array([0, 0])
+    learner = QLearner(
+        n_actions=n_actions, len_list=len_list, base_model=base_classifier
+    )
     learner.fit(context=context, action=action, reward=reward, position=position)
 
     desc = "context must be 2D array"

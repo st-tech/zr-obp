@@ -18,6 +18,7 @@ from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
 from obp.policy import IPWLearner
 from obp.policy import NNPolicyLearner
+from obp.policy import QLearner
 from obp.policy.base import BaseOfflinePolicyLearner
 
 
@@ -263,6 +264,78 @@ def test_offline_ipwlearner_performance(
 
     assert np.mean(list_gt_ipw) > np.mean(list_gt_random)
     assert np.mean(list_gt_ipw) > np.mean(list_gt_uniform)
+
+
+@pytest.mark.parametrize(
+    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
+    offline_experiment_configurations,
+)
+def test_offline_qlearner_performance(
+    n_rounds: int,
+    n_actions: int,
+    dim_context: int,
+    base_model_for_evaluation_policy: str,
+    base_model_for_reg_model: str,
+) -> None:
+    def process(i: int):
+        # synthetic data generator
+        dataset = SyntheticBanditDataset(
+            n_actions=n_actions,
+            dim_context=dim_context,
+            reward_function=logistic_reward_function,
+            behavior_policy_function=linear_behavior_policy,
+            random_state=i,
+        )
+        # define evaluation policy using IPWLearner
+        q_policy = QLearner(
+            n_actions=dataset.n_actions,
+            base_model=base_model_dict[base_model_for_evaluation_policy](
+                **hyperparams[base_model_for_evaluation_policy]
+            ),
+        )
+        # baseline method 1. RandomPolicy
+        random_policy = RandomPolicy(n_actions=dataset.n_actions)
+        # sample new training and test sets of synthetic logged bandit feedback
+        bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        # train the evaluation policy on the training set of the synthetic logged bandit feedback
+        q_policy.fit(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            pscore=bandit_feedback_train["pscore"],
+        )
+        # predict the action decisions for the test set of the synthetic logged bandit feedback
+        q_action_dist = q_policy.predict(
+            context=bandit_feedback_test["context"],
+        )
+        random_action_dist = random_policy.predict(
+            context=bandit_feedback_test["context"],
+        )
+        # get the ground truth policy value for each learner
+        gt_q_learner = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=q_action_dist,
+        )
+        gt_random_policy = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=random_action_dist,
+        )
+
+        return gt_q_learner, gt_random_policy
+
+    n_runs = 10
+    processed = Parallel(
+        n_jobs=-1,
+        verbose=0,
+    )([delayed(process)(i) for i in np.arange(n_runs)])
+    list_gt_q, list_gt_random = [], []
+    for i, ground_truth_policy_values in enumerate(processed):
+        gt_q, gt_random = ground_truth_policy_values
+        list_gt_q.append(gt_q)
+        list_gt_random.append(gt_random)
+
+    assert np.mean(list_gt_q) > np.mean(list_gt_random)
 
 
 @pytest.mark.parametrize(
