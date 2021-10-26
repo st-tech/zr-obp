@@ -4,15 +4,21 @@
 """Bandit Simulator."""
 from copy import deepcopy
 from typing import Callable
+from typing import Union
 
 import numpy as np
 from tqdm import tqdm
 
+from ..policy import BaseContextFreePolicy
+from ..policy import BaseContextualPolicy
 from ..policy.policy_type import PolicyType
 from ..types import BanditFeedback
-from ..types import BanditPolicy
 from ..utils import check_bandit_feedback_inputs
 from ..utils import convert_to_action_dist
+
+
+# bandit policy type
+BanditPolicy = Union[BaseContextFreePolicy, BaseContextualPolicy]
 
 
 def run_bandit_simulation(

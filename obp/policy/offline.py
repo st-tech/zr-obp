@@ -24,7 +24,8 @@ from torch.nn.functional import mse_loss
 import torch.optim as optim
 from tqdm import tqdm
 
-from ..ope import RegressionModel
+from obp.ope import RegressionModel
+
 from ..utils import check_array
 from ..utils import check_bandit_feedback_inputs
 from ..utils import check_tensor
@@ -165,7 +166,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
                 "and please use `obp.policy.NNPolicyLearner` instead."
             )
         if pscore is None:
-            n_actions = np.int(action.max() + 1)
+            n_actions = np.int32(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
         if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
@@ -439,7 +440,7 @@ class QLearner(BaseOfflinePolicyLearner):
             position=position,
         )
         if pscore is None:
-            n_actions = np.int(action.max() + 1)
+            n_actions = np.int32(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
         if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
