@@ -248,7 +248,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
                 min_val=0.0,
                 max_val=1.0,
             )
-            n_rounds_train = np.int(self.n_rounds * (1.0 - test_size))
+            n_rounds_train = np.int32(self.n_rounds * (1.0 - test_size))
             bandit_feedback_train = dict(
                 n_rounds=n_rounds_train,
                 n_actions=self.n_actions,
