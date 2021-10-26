@@ -11,7 +11,7 @@
 [[arXiv]](https://arxiv.org/abs/2008.07146)
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
 
-**[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](./slides/slides_EN.pdf)** | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd)** | **[日本語](./README_JN.md)**
+**[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Tutorial](https://sites.google.com/cornell.edu/recsys2021tutorial)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](./slides/slides_EN.pdf)** | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd)** | **[日本語](./README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -41,8 +41,8 @@
 
 ## Open Bandit Dataset (OBD)
 
-*Open Bandit Dataset* is a public real-world logged bandit feedback dataset.
-This dataset is provided by [ZOZO, Inc.](https://corp.zozo.com/en/about/profile/), the largest Japanese fashion e-commerce company with over 5 billion USD market capitalization (as of May 2020).
+*Open Bandit Dataset* is a public real-world logged bandit dataset.
+This dataset is provided by [ZOZO, Inc.](https://corp.zozo.com/en/about/profile/), the largest fashion e-commerce company in Japan.
 The company uses some multi-armed bandit algorithms to recommend fashion items to users in a large-scale fashion e-commerce platform called [ZOZOTOWN](https://zozo.jp/).
 The following figure presents examples of displayed fashion items as actions.
 The figure shows that there are three *positions* in the data.
@@ -56,7 +56,7 @@ The figure shows that there are three *positions* in the data.
 
 We collected the dataset in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
 Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection.
-This dataset is unique in that it contains a set of *multiple* logged bandit feedback datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see [our documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
+This dataset is unique in that it contains a set of *multiple* logged bandit datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see Section 5 of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/obd_stats.png" width="90%"/></div>
 
@@ -79,10 +79,10 @@ Please see [obd/README.md](./obd/README.md) for the dataset description.
 
 Open Bandit Pipeline consists of the following main modules.
 
-- [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit feedback. It also provides tools to generate synthetic bandit data and transform multi-class classification data to bandit data.
+- [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit data. It also provides tools to generate synthetic bandit data and transform multi-class classification data to bandit data.
 - [**policy module**](./obp/policy/): This module provides interfaces for implementing new online and offline bandit policies. It also implements several standard policy learning methods.
 - [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when we want to implement the ReplayMethod to evaluate the performance of online bandit policies with logged bandit data. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/st-tech/zr-obp/blob/master/examples/quickstart/online.ipynb) for the quickstart guide of implementing OPE of online bandit algorithms.
-- [**ope module**](./obp/ope/): This module provides interfaces for implementing OPE estimators. It also implements several standard and advanced OPE estimators.
+- [**ope module**](./obp/ope/): This module provides generic abstract interfaces to support custom implementations so that researchers can evaluate their own estimators easily. It also implements several basic and advanced OPE estimators.
 
 ### Supported Bandit Algorithms and OPE Estimators
 
@@ -134,15 +134,15 @@ Open Bandit Pipeline consists of the following main modules.
 
 </details>
 
-Please refer to to our [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of several OPE estimators.
+Please refer to Section 2/Appendix of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of supported OPE estimators.
 Note that, in addition to the above algorithms and estimators, Open Bandit Pipeline provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
-Moreover, Open Bandit Pipeline provides an interface for handling real-world logged bandit feedback data.
+Moreover, Open Bandit Pipeline provides an interface for handling real-world logged bandit data.
 Thus, practitioners can combine their own real-world data with Open Bandit Pipeline and easily evaluate bandit algorithms' performance in their settings with OPE.
 
 
 ## Topics and Tasks
-Currently, Open Bandit Dataset and Pipeline facilitate the following research topics or practical tasks.
+Open Bandit Dataset and Pipeline facilitate the following research topics or practical tasks.
 
 ### Research
 
@@ -151,11 +151,11 @@ Researchers can evaluate the performance of their bandit algorithms (in bandit p
 - **Evaluation of Bandit Algorithms with Synthetic/Classification/Open Bandit Data**
 - **Evaluation of OPE with Synthetic/Classification/Open Bandit Data**
 
-In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples](./examples/). One can learn how to implement the OPE experiments with Open Bandit Pipeline from the examples.
+In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples](./examples/).
 
 ### Practice
 
-Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit feedback data and OPE without A/B testing. Specifically, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
+Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit data and OPE without A/B testing. Specifically, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
 
 - **Implementing Online/Offline(Batch) Bandit Algorithms**
 - **Off-Policy Evaluation of Online Bandit Algorithms**
@@ -186,7 +186,7 @@ Open Bandit Pipeline supports Python 3.7 or newer. See [pyproject.toml](./pyproj
 Here is an example of conducting OPE of the performance of IPWLearner as an evaluation policy using Direct Method (DM), Inverse Probability Weighting (IPW), Doubly Robust (DR) as OPE estimators.
 
 ```python
-# a case for implementing OPE of the IPWLearner using synthetic bandit data
+# implementing OPE of the IPWLearner using synthetic bandit data
 from sklearn.linear_model import LogisticRegression
 # import open bandit pipeline (obp)
 from obp.dataset import SyntheticBanditDataset
@@ -250,7 +250,7 @@ Researchers often use multi-class classification data to evaluate the estimation
 Open Bandit Pipeline facilitates this kind of OPE experiments with multi-class classification data as follows.
 
 ```python
-# a case for implementing an experiment to evaluate the accuracy of OPE using classification data
+# implementing an experiment to evaluate the accuracy of OPE using classification data
 from sklearn.datasets import load_digits
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -258,7 +258,7 @@ from sklearn.linear_model import LogisticRegression
 from obp.dataset import MultiClassToBanditReduction
 from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
 
-# (1) Data loading and multi-class to bandit reduction
+# (1) Data Loading and Bandit Reduction
 X, y = load_digits(return_X_y=True)
 dataset = MultiClassToBanditReduction(X=X, y=y, base_classifier_b=LogisticRegression(random_state=12345))
 dataset.split_train_eval(eval_size=0.7, random_state=12345)
@@ -289,15 +289,15 @@ We also prepare a script to conduct the evaluation of OPE experiment with multi-
 
 ## Example with Open Bandit Dataset
 
-Here is an example of conducting OPE of the performance of BernoulliTS as an evaluation policy using Inverse Probability Weighting (IPW) and logged bandit feedback generated by the Random policy (behavior policy) on the ZOZOTOWN platform.
+Here is an example of conducting OPE of the performance of BernoulliTS as an evaluation policy using Inverse Probability Weighting (IPW) and logged bandit data generated by the Random policy (behavior policy) on the ZOZOTOWN platform.
 
 ```python
-# a case for implementing OPE of the BernoulliTS policy using log data generated by the Random policy
+# implementing OPE of the BernoulliTS policy using log data generated by the Random policy
 from obp.dataset import OpenBanditDataset
 from obp.policy import BernoulliTS
 from obp.ope import OffPolicyEvaluation, InverseProbabilityWeighting as IPW
 
-# (1) Data loading and preprocessing
+# (1) Data Loading and Preprocessing
 dataset = OpenBanditDataset(behavior_policy='random', campaign='all')
 bandit_feedback = dataset.obtain_batch_bandit_feedback()
 
@@ -355,9 +355,9 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 # Project Team
 
-- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Hanjuku-kaso Co., Ltd. / Cornell University)
-- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Technologies, Inc.)
-- Megumi Matsutani (ZOZO Technologies, Inc.)
+- [Yuta Saito](https://usaito.github.io/) (**Main Contributor**; Cornell University)
+- [Shunsuke Aihara](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO Research)
+- Megumi Matsutani (ZOZO Research)
 - [Yusuke Narita](https://www.yusuke-narita.com/) (Hanjuku-kaso Co., Ltd. / Yale University)
 
 ## Developers
@@ -367,7 +367,7 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (Tokyo Institute of Technology / Hanjuku-kaso Co., Ltd.)
 
 # Contact
-For any question about the paper, data, and pipeline, feel free to contact: saito@hanjuku-kaso.com
+For any question about the paper, data, and pipeline, feel free to contact: ys552@cornell.edu
 
 # References
 
