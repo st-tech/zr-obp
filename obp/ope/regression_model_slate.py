@@ -132,17 +132,16 @@ class SlateRegressionModel(BaseEstimator):
 
         Returns
         -----------
-        q_hat_for_counterfactual_actions: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
-            Estimated Q functions for new data by the regression model.
+        q_hat: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
+            Estimated Q functions for new data by the regression model
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         """
         n_rounds_of_new_data = len(context)
         # (n_rounds_of_new_data * len_list, ) -> (n_rounds_of_new_data, len_list)
         action = action.reshape((-1, self.len_list))
         # (n_rounds_, len_list, n_unique_action, )
-        q_hat_for_counterfactual_actions = np.zeros(
-            (n_rounds_of_new_data, self.len_list, self.n_unique_action)
-        )
+        q_hat = np.zeros((n_rounds_of_new_data, self.len_list, self.n_unique_action))
         for position_ in range(self.len_list)[::-1]:
             # the action vector shrinks every time as the position_ decreases
             # (n_rounds_of_new_data, position_ - 1)
@@ -158,13 +157,13 @@ class SlateRegressionModel(BaseEstimator):
             # (n_rounds_of_new_data * n_unique_action, dim_context + position_)
             X = np.concatenate([context_, action_], axis=1)
             # (n_rounds_of_new_data * n_unique_action, ) -> (n_rounds_of_new_data, n_unique_action)
-            q_hat_for_counterfactual_actions[:, position_, :] = (
+            q_hat[:, position_, :] = (
                 self.base_model_list[position_]
                 .predict(X)
                 .reshape((-1, self.n_unique_action))
             )
         # (n_rounds_of_new_data * len_list * n_unique_action, )
-        return q_hat_for_counterfactual_actions.flatten()
+        return q_hat.flatten()
 
     def fit_predict(
         self,
@@ -203,7 +202,7 @@ class SlateRegressionModel(BaseEstimator):
 
         Returns
         -----------
-        q_hat_for_counterfactual_actions: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
+        q_hat: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
             Estimated Q functions for new data by the regression model.
 
         """
@@ -286,15 +285,13 @@ class SlateRegressionModel(BaseEstimator):
                     action_.append(np.append(action[i], a_))
             X_ = np.concatenate([context_, action_], axis=1)
             # (n_rounds_ * n_unique_action, ) -> (n_rounds_, )
-            q_hat_for_counterfactual_actions_at_next_position = self.base_model_list[
-                position_ + 1
-            ].predict(X_)
-            # estimation of the marginalized Q function based on evaluation policy action dist
+            q_hat_at_next_position = self.base_model_list[position_ + 1].predict(X_)
+            # the expected Q function under the evaluation policy
             # (n_rounds_ * n_unique_action, ) -> (n_rounds_, n_unique_action) -> (n_rounds_, )
             q_hat_at_next_position = (
                 (
                     evaluation_policy_action_dist_at_next_position
-                    * q_hat_for_counterfactual_actions_at_next_position
+                    * q_hat_at_next_position
                 )
                 .reshape((-1, self.n_unique_action))
                 .sum(axis=1)

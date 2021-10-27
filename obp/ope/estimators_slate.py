@@ -613,7 +613,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         position: np.ndarray,
         behavior_policy_pscore: np.ndarray,
         evaluation_policy_pscore: np.ndarray,
-        q_hat_for_counterfactual_actions: np.ndarray,
+        q_hat: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
@@ -639,7 +639,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all possible actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
@@ -654,24 +654,20 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
         """
         # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action)
-        q_hat_for_counterfactual_actions_3d = q_hat_for_counterfactual_actions.reshape(
-            (-1, self.len_list, self.n_unique_action)
-        )
-        # Estimated Q functions for the action taken by the behavior policy
+        q_hat_3d = q_hat.reshape((-1, self.len_list, self.n_unique_action))
+        # the estimated Q functions for the action taken by the behavior policy
         # (n_rounds_, len_list, n_unique_action) -> (n_rounds_ * len_list, )
         q_hat_for_taken_action = []
         for i in range(self.n_rounds_):
             for position_ in range(self.len_list):
                 q_hat_for_taken_action.append(
-                    q_hat_for_counterfactual_actions_3d[
-                        i, position_, action[i * self.len_list + position_]
-                    ]
+                    q_hat_3d[i, position_, action[i * self.len_list + position_]]
                 )
         q_hat_for_taken_action = np.array(q_hat_for_taken_action)
-        # Estimated marginalized Q function based on evaluation policy action dist
+        # the expected Q function under the evaluation policy
         # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action) -> (n_rounds_, len_list) -> (n_rounds_ * len_list, )
         marginalized_q_hat_by_eval_policy = (
-            (evaluation_policy_action_dist * q_hat_for_counterfactual_actions)
+            (evaluation_policy_action_dist * q_hat)
             .reshape((-1, self.len_list, self.n_unique_action))
             .sum(axis=2)
             .flatten()
@@ -696,7 +692,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         position: np.ndarray,
         pscore_cascade: np.ndarray,
         evaluation_policy_pscore_cascade: np.ndarray,
-        q_hat_for_counterfactual_actions: np.ndarray,
+        q_hat: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         **kwargs,
     ) -> float:
@@ -725,7 +721,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all possible actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
@@ -747,7 +743,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             position=position,
             pscore_cascade=pscore_cascade,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
-            q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+            q_hat=q_hat,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
         self.n_rounds_ = np.unique(slate_id).shape[0]
@@ -758,7 +754,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
                 position=position,
                 behavior_policy_pscore=pscore_cascade,
                 evaluation_policy_pscore=evaluation_policy_pscore_cascade,
-                q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+                q_hat=q_hat,
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             ).sum()
             / self.n_rounds_
@@ -772,7 +768,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         position: np.ndarray,
         pscore_cascade: np.ndarray,
         evaluation_policy_pscore_cascade: np.ndarray,
-        q_hat_for_counterfactual_actions: np.ndarray,
+        q_hat: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
@@ -804,7 +800,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all possible actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
@@ -834,7 +830,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             position=position,
             pscore_cascade=pscore_cascade,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
-            q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+            q_hat=q_hat,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
         self.n_rounds_ = np.unique(slate_id).shape[0]
@@ -844,7 +840,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             position=position,
             behavior_policy_pscore=pscore_cascade,
             evaluation_policy_pscore=evaluation_policy_pscore_cascade,
-            q_hat_for_counterfactual_actions=q_hat_for_counterfactual_actions,
+            q_hat=q_hat,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
         return self._estimate_slate_confidence_interval_by_bootstrap(

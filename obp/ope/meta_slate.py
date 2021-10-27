@@ -176,7 +176,7 @@ class SlateOffPolicyEvaluation:
             "evaluation_policy_action_dist"
         ] = evaluation_policy_action_dist
 
-        q_hat_for_counterfactual_actions = self.base_regression_model.fit_predict(
+        q_hat = self.base_regression_model.fit_predict(
             context=self.bandit_feedback["context"],
             action=self.bandit_feedback["action"],
             reward=self.bandit_feedback["reward"],
@@ -184,9 +184,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
-        estimator_inputs[
-            "q_hat_for_counterfactual_actions"
-        ] = q_hat_for_counterfactual_actions
+        estimator_inputs["q_hat"] = q_hat
 
         return estimator_inputs
 

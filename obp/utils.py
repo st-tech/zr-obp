@@ -800,7 +800,7 @@ def check_cascade_dr_inputs(
     position: np.ndarray,
     pscore_cascade: np.ndarray,
     evaluation_policy_pscore_cascade: np.ndarray,
-    q_hat_for_counterfactual_actions: np.ndarray,
+    q_hat: np.ndarray,
     evaluation_policy_action_dist: np.ndarray,
 ) -> Optional[ValueError]:
     """Check inputs of SlateCascadeDoublyRobust.
@@ -831,7 +831,7 @@ def check_cascade_dr_inputs(
         Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
         , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-    q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
+    q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
         :math:`\\hat{Q}_k` used in Cascade-DR.
         , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
@@ -849,8 +849,8 @@ def check_cascade_dr_inputs(
     )
     check_array(array=action, name="action", expected_dim=1)
     check_array(
-        array=q_hat_for_counterfactual_actions,
-        name="q_hat_for_counterfactual_actions",
+        array=q_hat,
+        name="q_hat",
         expected_dim=1,
     )
     check_array(
@@ -863,12 +863,12 @@ def check_cascade_dr_inputs(
     if not (
         slate_id.shape[0]
         == action.shape[0]
-        == q_hat_for_counterfactual_actions.shape[0] // n_unique_action
+        == q_hat.shape[0] // n_unique_action
         == evaluation_policy_action_dist.shape[0] // n_unique_action
     ):
         raise ValueError(
             "Expected `slate_id.shape[0] == action.shape[0] == "
-            "q_hat_for_counterfactual_actions.shape[0] // n_unique_action == evaluation_policy_action_dist.shape[0] // n_unique_action`, "
+            "q_hat.shape[0] // n_unique_action == evaluation_policy_action_dist.shape[0] // n_unique_action`, "
             "but found it False"
         )
     evaluation_policy_action_dist_ = evaluation_policy_action_dist.reshape(
