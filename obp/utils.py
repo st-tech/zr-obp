@@ -832,12 +832,12 @@ def check_cascade_dr_inputs(
         , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
     q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
-        Estimation of :math:`\\hat{Q}_k` for all possible actions
-        , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+        :math:`\\hat{Q}_k` used in Cascade-DR.
+        , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
     evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
         Action choice probabilities of evaluation policy for all possible actions
-        , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+        , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
     """
     check_rips_inputs(
