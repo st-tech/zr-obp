@@ -1153,7 +1153,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Evaluation policy logit values by given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
         is_factorizable: bool, default=False
-            If the behavior and evaluation policies are factorizable or not.
+            Whether the behavior and evaluation policies are factorizable or not.
 
         Returns
         ----------

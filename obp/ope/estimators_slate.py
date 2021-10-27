@@ -325,10 +325,10 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that behavior policy selects each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
+            Probabilities of behavior policy selecting each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that evaluation policy selects each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
         Returns
         ----------
@@ -468,11 +468,11 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
 
         Returns
@@ -578,8 +578,6 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
     It also uses reward prediction :math:`\\hat{Q}_k` as a control variate, which is derived using `obp.ope.SlateRegressionModel`.
     Please refer to Section 3.1 of Kiyohara et al.(2022) for the detail.
 
-    Note that :math:`\\hat{Q}_k` is derived in `obp.ope.SlateRegressionModel`.
-
     Parameters
     ----------
     len_list: int
@@ -634,15 +632,15 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Estimation of :math:`\\hat{Q}_k` for all possible actions
+            :math:`\\hat{Q}_k` for all possible actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
@@ -659,7 +657,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         q_hat_for_counterfactual_actions_3d = q_hat_for_counterfactual_actions.reshape(
             (-1, self.len_list, self.n_unique_action)
         )
-        # \hat{Q} for the action taken by the behavior policy
+        # Estimated Q functions for the action taken by the behavior policy
         # (n_rounds_, len_list, n_unique_action) -> (n_rounds_ * len_list, )
         q_hat_for_taken_action = []
         for i in range(self.n_rounds_):
@@ -670,9 +668,9 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
                     ]
                 )
         q_hat_for_taken_action = np.array(q_hat_for_taken_action)
-        # baseline \hat{Q} by evaluation policy
+        # Estimated marginalized Q function based on evaluation policy action dist
         # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action) -> (n_rounds_, len_list) -> (n_rounds_ * len_list, )
-        baseline_q_hat_by_eval_policy = (
+        marginalized_q_hat_by_eval_policy = (
             (evaluation_policy_action_dist * q_hat_for_counterfactual_actions)
             .reshape((-1, self.len_list, self.n_unique_action))
             .sum(axis=2)
@@ -686,7 +684,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         # estimate policy value given each round and slot in a doubly robust manner
         estimated_rewards = (
             iw * (reward - q_hat_for_taken_action)
-            + iw_prev * baseline_q_hat_by_eval_policy
+            + iw_prev * marginalized_q_hat_by_eval_policy
         )
         return estimated_rewards
 
@@ -720,15 +718,15 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Estimation of :math:`\\hat{Q}_k` for all possible actions
+            :math:`\\hat{Q}_k` for all possible actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
@@ -799,15 +797,15 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Estimation of :math:`\\hat{Q}_k` for all possible actions
+            :math:`\\hat{Q}_k` for all possible actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), {a'}_t(k)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )

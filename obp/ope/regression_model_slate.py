@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Regression Model Class for Estimating Baseline Values in Cascade-DR."""
+"""Regression Model Class for Estimating the Q functions in Cascade-DR."""
 from dataclasses import dataclass
 
 import numpy as np
@@ -11,18 +11,20 @@ from sklearn.base import clone
 
 @dataclass
 class SlateRegressionModel(BaseEstimator):
-    """Machine learning model to estimate the baseline values
-        (:math:`\\hat{Q}_k(x, a(1), \\ldots, a(k)) \\approx \\mathbb{E}[ \sum_{k'=k}^K \\alpha_{k'} r(k') | x, a(1), \\ldots, a(k)]`).
+    """Machine learning model to estimate the Q functions
 
     Note
     -------
-    :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k))` is recursively derived to construct Cascade-DR estimator.
+    Q function at position k is defined as
+    :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k)) \\approx \\mathbb{E}[ \sum_{k'=k}^K \\alpha_{k'} r(k') | x, a(1), \\ldots, a(k)]`).
+
+    Q function is estimated recursively, and then used to construct Cascade-DR estimator.
     Please refer to Section 3.1 of Kiyohara et al.(2022) for the detail.
 
     Parameters
     ------------
     base_model: BaseEstimator
-        A machine learning model used to estimate the mean reward function.
+        A machine learning model used to estimate the Q function.
 
     len_list: int
         Length of a list of actions recommended in each impression (slate size).
@@ -76,11 +78,11 @@ class SlateRegressionModel(BaseEstimator):
             Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
@@ -118,7 +120,7 @@ class SlateRegressionModel(BaseEstimator):
         context: np.ndarray,
         action: np.ndarray,
     ):
-        """Predict the baseline values.
+        """Predict the Q functions.
 
         Parameters
         -----------
@@ -131,7 +133,7 @@ class SlateRegressionModel(BaseEstimator):
         Returns
         -----------
         q_hat_for_counterfactual_actions: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
-            Estimated baseline values for new data by the regression model.
+            Estimated Q functions for new data by the regression model.
 
         """
         n_rounds_of_new_data = len(context)
@@ -173,7 +175,7 @@ class SlateRegressionModel(BaseEstimator):
         evaluation_policy_pscore_cascade: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
     ):
-        """Fit the regression model on given logged bandit feedback data and predict the reward function of the same data.
+        """Fit the regression model on given logged bandit feedback data and predict the Q functions of the same data.
 
         Parameters
         ----------
@@ -188,11 +190,11 @@ class SlateRegressionModel(BaseEstimator):
             Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+            Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
@@ -202,7 +204,7 @@ class SlateRegressionModel(BaseEstimator):
         Returns
         -----------
         q_hat_for_counterfactual_actions: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
-            Estimated baseline values for new data by the regression model.
+            Estimated Q functions for new data by the regression model.
 
         """
         self.fit(
@@ -224,7 +226,7 @@ class SlateRegressionModel(BaseEstimator):
         evaluation_policy_action_dist: np.ndarray,
         position_: int,
     ):
-        """Preprocess feature vectors and estimation target to train a give regression model.
+        """Preprocess feature vectors and estimation target to train a given regression model.
 
         Note
         -----
@@ -263,7 +265,7 @@ class SlateRegressionModel(BaseEstimator):
         reward = reward[:, position_]
         # estimator input
         X = np.concatenate([context, action], axis=1)
-        # estimate baseline value at the next position
+        # estimate the Q function at the next position
         # (n_rounds_, )
         if position_ + 1 == self.len_list:
             q_hat_at_next_position = np.zeros(n_rounds_)
@@ -287,7 +289,7 @@ class SlateRegressionModel(BaseEstimator):
             q_hat_for_counterfactual_actions_at_next_position = self.base_model_list[
                 position_ + 1
             ].predict(X_)
-            # baseline estimation by evaluation policy
+            # estimation of the marginalized Q function based on evaluation policy action dist
             # (n_rounds_ * n_unique_action, ) -> (n_rounds_, n_unique_action) -> (n_rounds_, )
             q_hat_at_next_position = (
                 (
