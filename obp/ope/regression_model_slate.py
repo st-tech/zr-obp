@@ -18,7 +18,7 @@ class SlateRegressionModel(BaseEstimator):
     Q function at position k is defined as
     :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k)) \\approx \\mathbb{E}[ \sum_{k'=k}^K \\alpha_{k'} r(k') | x, a(1), \\ldots, a(k)]`).
 
-    Q function is estimated recursively, and then used to construct Cascade-DR estimator.
+    Q function is estimated recursively, and then used to construct Cascade-DR.
     Please refer to Section 3.1 of Kiyohara et al.(2022) for the detail.
 
     Parameters

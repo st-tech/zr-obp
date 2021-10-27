@@ -39,7 +39,7 @@ class SlateOffPolicyEvaluation:
         Estimators must follow the interface of `obp.ope.BaseSlateOffPolicyEstimator`.
 
     base_regression_model: Optional[SlateRegressionModel] = None
-        :math:`\\hat{Q}_k` used in Cascade-DR estimator.
+        :math:`\\hat{Q}_k` used in Cascade-DR.
 
     is_factorizable: bool, default=False
         Whether the behavior and evaluation policies are factorizable or not.
