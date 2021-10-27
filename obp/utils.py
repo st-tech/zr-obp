@@ -811,7 +811,7 @@ def check_cascade_dr_inputs(
         Number of unique actions.
 
     slate_id: array-like, shape (<= n_rounds * len_list,)
-            IDs to differentiate slates (i.e., rounds or lists of actions).
+        IDs to differentiate slates (i.e., rounds or lists of actions).
 
     action: array-like, (<= n_rounds * len_list,)
         Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
@@ -824,11 +824,11 @@ def check_cascade_dr_inputs(
         IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-        Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+        Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
         , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
     evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-        Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
+        Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
         , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
     q_hat_for_counterfactual_actions: array-like (<= n_rounds * len_list * n_unique_actions, )
@@ -867,8 +867,9 @@ def check_cascade_dr_inputs(
         == evaluation_policy_action_dist.shape[0] // n_unique_action
     ):
         raise ValueError(
-            "slate_id, action q_hat_for_counterfactual_actions divided by n_unique_action, evaluation_policy_action_dist divided by n_unique_actions"
-            "must have the same."
+            "Expected `slate_id.shape[0] == action.shape[0] == "
+            "q_hat_for_counterfactual_actions.shape[0] // n_unique_action == evaluation_policy_action_dist.shape[0] // n_unique_action`, "
+            "but found it False"
         )
     evaluation_policy_action_dist_ = evaluation_policy_action_dist.reshape(
         (-1, n_unique_action)
