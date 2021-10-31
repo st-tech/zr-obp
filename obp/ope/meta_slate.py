@@ -176,7 +176,8 @@ class SlateOffPolicyEvaluation:
             "evaluation_policy_action_dist"
         ] = evaluation_policy_action_dist
 
-        q_hat = self.base_regression_model.fit_predict(
+        if self.base_regression_model is not None:
+            q_hat = self.base_regression_model.fit_predict(
             context=self.bandit_feedback["context"],
             action=self.bandit_feedback["action"],
             reward=self.bandit_feedback["reward"],
