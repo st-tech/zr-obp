@@ -9,6 +9,7 @@ from typing import Dict
 from typing import Optional
 
 import numpy as np
+from sklearn.utils import check_scalar
 
 from ..utils import check_iips_inputs
 from ..utils import check_rips_inputs
@@ -603,8 +604,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
     def __post_init__(self):
         """Initialize Class."""
-       check_scalar(self.n_unique_action, "n_unique_action", int, min_val=1)
-            raise ValueError("n_unique_action must be given")
+        check_scalar(self.n_unique_action, "n_unique_action", int, min_val=1)
 
     def _estimate_round_rewards(
         self,
@@ -644,7 +644,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
@@ -726,7 +726,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
@@ -805,7 +805,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05

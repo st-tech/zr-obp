@@ -124,10 +124,6 @@ class SlateOffPolicyEvaluation:
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        self.n_rounds = self.bandit_feedback["n_rounds"]
-        self.len_list = int((self.bandit_feedback["slate_id"] == 0).sum())
-        self.n_unique_action = self.bandit_feedback["n_unique_action"]
-
         for key_ in ["slate_id", "position", "reward"]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
@@ -178,13 +174,13 @@ class SlateOffPolicyEvaluation:
 
         if self.base_regression_model is not None:
             q_hat = self.base_regression_model.fit_predict(
-            context=self.bandit_feedback["context"],
-            action=self.bandit_feedback["action"],
-            reward=self.bandit_feedback["reward"],
-            pscore_cascade=self.bandit_feedback["pscore_cascade"],
-            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
-        )
+                context=self.bandit_feedback["context"],
+                action=self.bandit_feedback["action"],
+                reward=self.bandit_feedback["reward"],
+                pscore_cascade=self.bandit_feedback["pscore_cascade"],
+                evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+                evaluation_policy_action_dist=evaluation_policy_action_dist,
+            )
         estimator_inputs["q_hat"] = q_hat
 
         return estimator_inputs
@@ -210,8 +206,8 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-             Action choice probabilities of evaluation policy for all possible actions
-             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
         ----------
@@ -257,7 +253,7 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
@@ -322,7 +318,7 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
@@ -403,7 +399,7 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
@@ -518,7 +514,7 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         metric: str, default="relative-ee"
@@ -586,7 +582,7 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         metric: str, default="relative-ee"

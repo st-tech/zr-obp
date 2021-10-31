@@ -1158,7 +1158,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Returns
         ----------
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Action choice probabilities of evaluation policy for all possible actions
+            Action choice probabilities of evaluation policy for all possible actions given the previous actions
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         """
