@@ -603,7 +603,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
     def __post_init__(self):
         """Initialize Class."""
-        if self.n_unique_action is None:
+       check_scalar(self.n_unique_action, "n_unique_action", int, min_val=1)
             raise ValueError("n_unique_action must be given")
 
     def _estimate_round_rewards(
