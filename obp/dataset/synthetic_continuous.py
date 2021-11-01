@@ -148,7 +148,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         Calculate context-free expected rewards given only continuous action values.
         This is just an example synthetic (expected) reward function.
         """
-        return 2 * np.power(action, 1.5) - (5 * action)
+        return 2 * np.power(np.abs(action), 1.5) - (5 * action)
 
     def obtain_batch_bandit_feedback(
         self,
