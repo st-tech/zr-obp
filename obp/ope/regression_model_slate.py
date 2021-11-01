@@ -15,7 +15,7 @@ class SlateRegressionModel(BaseEstimator):
 
     Note
     -------
-    Q function at position k is defined as
+    Q function at position :math:`k` is defined as
     :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k)) \\approx \\mathbb{E}[ \sum_{k'=k}^K \\alpha_{k'} r(k') | x, a(1), \\ldots, a(k)]`).
 
     Q function is estimated recursively, and then used to construct Cascade-DR.
@@ -86,7 +86,7 @@ class SlateRegressionModel(BaseEstimator):
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         """
@@ -133,7 +133,7 @@ class SlateRegressionModel(BaseEstimator):
         Returns
         -----------
         q_hat: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
-            Estimated Q functions for new data by the regression model
+            Estimated Q functions for new data.
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         """
@@ -197,7 +197,7 @@ class SlateRegressionModel(BaseEstimator):
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
@@ -245,7 +245,7 @@ class SlateRegressionModel(BaseEstimator):
             Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
         evaluation_policy_action_dist: array-like (n_rounds_ * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         position_: int

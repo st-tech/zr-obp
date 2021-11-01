@@ -574,7 +574,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
     Note
     -------
-    Slate Cascade Doubly Robust (Cascade-DR) estimates the policy value of evaluation policy :math:`\\pi_e`
+    Cascade Doubly Robust (Cascade-DR) estimates the policy value of evaluation (ranking) policy :math:`\\pi_e`
     assuming the cascade click model (users interact with actions from the top position to the bottom in a slate).
     It also uses reward prediction :math:`\\hat{Q}_k` as a control variate, which is derived using `obp.ope.SlateRegressionModel`.
     Please refer to Section 3.1 of Kiyohara et al.(2022) for the detail.
@@ -640,11 +640,11 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all possible actions
+            :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
@@ -657,16 +657,16 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         q_hat_3d = q_hat.reshape((-1, self.len_list, self.n_unique_action))
         # the estimated Q functions for the action taken by the behavior policy
         # (n_rounds_, len_list, n_unique_action) -> (n_rounds_ * len_list, )
-        q_hat_for_taken_action = []
+        q_hat_for_observed_action = []
         for i in range(self.n_rounds_):
             for position_ in range(self.len_list):
-                q_hat_for_taken_action.append(
+                q_hat_for_observed_action.append(
                     q_hat_3d[i, position_, action[i * self.len_list + position_]]
                 )
-        q_hat_for_taken_action = np.array(q_hat_for_taken_action)
+        q_hat_for_observed_action = np.array(q_hat_for_observed_action)
         # the expected Q function under the evaluation policy
         # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action) -> (n_rounds_, len_list) -> (n_rounds_ * len_list, )
-        marginalized_q_hat_by_eval_policy = (
+        expected_q_hat_under_eval_policy = (
             (evaluation_policy_action_dist * q_hat)
             .reshape((-1, self.len_list, self.n_unique_action))
             .sum(axis=2)
@@ -679,8 +679,8 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         iw_prev[np.array([i * self.len_list for i in range(self.n_rounds_)])] = 1
         # estimate policy value given each round and slot in a doubly robust manner
         estimated_rewards = (
-            iw * (reward - q_hat_for_taken_action)
-            + iw_prev * marginalized_q_hat_by_eval_policy
+            iw * (reward - q_hat_for_observed_action)
+            + iw_prev * expected_q_hat_under_eval_policy
         )
         return estimated_rewards
 
@@ -722,11 +722,11 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all possible actions
+            :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
@@ -801,11 +801,11 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all possible actions
+            :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
-            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         alpha: float, default=0.05

@@ -1142,7 +1142,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         evaluation_policy_logit_: np.ndarray,
         is_factorizable: bool,
     ):
-        """Calculate action distribution at each slot given evaluation policy logit.
+        """Calculate action distribution at each slot from a given evaluation policy logit.
 
         Parameters
         ----------
@@ -1158,7 +1158,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Returns
         ----------
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Action choice probabilities of evaluation policy for all possible actions given the previous actions
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         """
