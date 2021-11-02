@@ -35,7 +35,7 @@ from .base import BaseOfflinePolicyLearner
 
 @dataclass
 class IPWLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner with Inverse Probability Weighting.
+    """Off-policy learner based on Inverse Probability Weighting.
 
     Parameters
     -----------
@@ -220,7 +220,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         return action_dist
 
     def predict_score(self, context: np.ndarray) -> np.ndarray:
-        """Predict non-negative scores for all possible products of action and position.
+        """Predict non-negative scores for all possible action and position.
 
         Parameters
         -----------
@@ -265,7 +265,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a scoring function which is now implemented in the `predict_score` method.
         :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
-        By sorting the actions based on :math:`\\s (x,a)` for each context, we can sample a ranking from
+        By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
         the Plackett-Luce ranking distribution.
 
         Parameters
@@ -274,7 +274,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
+            A temperature parameter, controlling the randomness of the action choice by scaling thescores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None
@@ -283,7 +283,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Ranking of actions sampled by the Gumbel softmax trick as follows.
+            Ranking of actions sampled by the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -327,7 +327,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling thescores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         Returns
@@ -349,7 +350,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
 @dataclass
 class QLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner with Direct Method.
+    """Off-policy learner based on Direct Method.
 
     Parameters
     -----------
@@ -466,9 +467,7 @@ class QLearner(BaseOfflinePolicyLearner):
             \\hat{a}_i \\in \\arg \\max_{a \\in \\mathcal{A}} \\hat{q}(x_i, a)
 
         where :math:`\\hat{q}(x,a)` is an estimator for the q function :math:`\\q(x,a) := \\mathbb{E} [r \\mid x, a]`.
-        Note that the action set predicted by this `predict` method can contain duplicate items.
-
-        Action set predicted by this `predict` method can contain duplicate items.
+        Note that action sets predicted by this `predict` method can contain duplicate items.
         If you want a non-repetitive action set, then please use the `sample_action` method.
 
         Parameters
@@ -500,7 +499,7 @@ class QLearner(BaseOfflinePolicyLearner):
         return action_dist
 
     def predict_score(self, context: np.ndarray) -> np.ndarray:
-        """Predict the expected reward for all possible products of action and position.
+        """Predict the expected reward for all possible action and position.
 
         Parameters
         -----------
@@ -539,7 +538,7 @@ class QLearner(BaseOfflinePolicyLearner):
         :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a q function estimator, which is now implemented in the `predict_score` method.
         :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
-        By sorting the actions based on :math:`\\s (x,a)` for each context, we can sample a ranking from
+        By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
         the Plackett-Luce ranking distribution.
 
         Parameters
@@ -548,7 +547,8 @@ class QLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling thescores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None
@@ -557,7 +557,7 @@ class QLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         sampled_action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Ranking of action sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
+            Ranking of actions sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -598,7 +598,8 @@ class QLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling thescores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         Returns
@@ -1299,7 +1300,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a scoring function which is now implemented in the `predict_score` method.
         :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
-        By sorting the actions based on :math:`\\s (x,a)` for each context, we can sample a ranking from
+        By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
         the Plackett-Luce ranking distribution.
 
         Parameters
@@ -1308,7 +1309,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling thescores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None
@@ -1317,7 +1319,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         sampled_action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Ranking of action sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
+            Ranking of actions sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
