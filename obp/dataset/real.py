@@ -199,11 +199,13 @@ class OpenBanditDataset(BaseRealBanditDataset):
         self.context = pd.get_dummies(
             self.data.loc[:, user_cols], drop_first=True
         ).values
-        item_feature_0 = self.item_context["item_feature_0"]
-        item_feature_cat = self.item_context.drop("item_feature_0", 1).apply(
-            LabelEncoder().fit_transform
-        )
-        self.action_context = pd.concat([item_feature_cat, item_feature_0], 1).values
+        item_feature_0 = self.item_context["item_feature_0"].to_frame()
+        item_feature_cat = self.item_context.drop(
+            columns=["item_id", "item_feature_0"], axis=1
+        ).apply(LabelEncoder().fit_transform)
+        self.action_context = pd.concat(
+            objs=[item_feature_cat, item_feature_0], axis=1
+        ).values
 
     def obtain_batch_bandit_feedback(
         self, test_size: float = 0.3, is_timeseries_split: bool = False
