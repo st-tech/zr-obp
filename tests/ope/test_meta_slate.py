@@ -308,6 +308,8 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
     )
     assert set(estimator_inputs.keys()) == set(
         [
+            "slate_id",
+            "action",
             "reward",
             "pscore",
             "pscore_item_position",
@@ -317,7 +319,9 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
             "evaluation_policy_pscore_item_position",
             "evaluation_policy_pscore_cascade",
             "slate_id",
-        ]
+            "evaluation_policy_action_dist",
+            "q_hat",
+        ],
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
     # _create_estimator_inputs function is called in the following functions
     _ = ope_.estimate_policy_values(evaluation_policy_pscore=evaluation_policy_pscore)

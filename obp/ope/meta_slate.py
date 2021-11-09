@@ -181,7 +181,9 @@ class SlateOffPolicyEvaluation:
                 evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             )
-        estimator_inputs["q_hat"] = q_hat
+            estimator_inputs["q_hat"] = q_hat
+        else:
+            estimator_inputs["q_hat"] = None
 
         return estimator_inputs
 
