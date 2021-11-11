@@ -11,6 +11,7 @@ from typing import Tuple
 from typing import Union
 
 import numpy as np
+from scipy.special import logit
 from scipy.special import perm
 from scipy.stats import truncnorm
 from sklearn.utils import check_random_state
@@ -1365,9 +1366,7 @@ def action_interaction_reward_function(
         context=context, action_context=action_context, random_state=random_state
     )
     if reward_type == "binary":
-        expected_reward = np.log(expected_reward / (1 - expected_reward)).astype(
-            "float16"
-        )
+        expected_reward = logit(expected_reward)
     expected_reward_factual = np.zeros_like(action_2d, dtype="float16")
     for position_ in np.arange(len_list):
         tmp_fixed_reward = expected_reward[
@@ -1433,7 +1432,7 @@ def linear_behavior_policy_logit(
         Controls the random seed in sampling dataset.
 
     tau: int or float, default=1.0
-        A temperature parameter, controlling the randomness of the action choice.
+        A temperature parameter, controlling the randomness of the action choice by scaling the scores before applying softmax.
         As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
     Returns

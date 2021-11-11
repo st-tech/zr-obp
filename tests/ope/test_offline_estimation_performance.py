@@ -89,7 +89,7 @@ offline_experiment_configurations = [
         "random_forest",
     ),
     (
-        400,
+        800,
         10,
         10,
         "lightgbm",

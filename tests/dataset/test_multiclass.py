@@ -20,12 +20,12 @@ def test_invalid_initialization(raw_data):
     # invalid alpha_b
     with pytest.raises(ValueError):
         MultiClassToBanditReduction(
-            X=X, y=y, base_classifier_b=LogisticRegression(), alpha_b=-0.3
+            X=X, y=y, base_classifier_b=LogisticRegression(max_iter=10000), alpha_b=-0.3
         )
 
     with pytest.raises(ValueError):
         MultiClassToBanditReduction(
-            X=X, y=y, base_classifier_b=LogisticRegression(), alpha_b=1.3
+            X=X, y=y, base_classifier_b=LogisticRegression(max_iter=10000), alpha_b=1.3
         )
 
     # invalid classifier
@@ -40,7 +40,7 @@ def test_split_train_eval(raw_data):
 
     eval_size = 1000
     mcbr = MultiClassToBanditReduction(
-        X=X, y=y, base_classifier_b=LogisticRegression(), alpha_b=0.3
+        X=X, y=y, base_classifier_b=LogisticRegression(max_iter=10000), alpha_b=0.3
     )
     mcbr.split_train_eval(eval_size=eval_size)
 
@@ -51,7 +51,7 @@ def test_obtain_batch_bandit_feedback(raw_data):
     X, y = raw_data
 
     mcbr = MultiClassToBanditReduction(
-        X=X, y=y, base_classifier_b=LogisticRegression(), alpha_b=0.3
+        X=X, y=y, base_classifier_b=LogisticRegression(max_iter=10000), alpha_b=0.3
     )
     mcbr.split_train_eval()
     bandit_feedback = mcbr.obtain_batch_bandit_feedback()
@@ -70,7 +70,7 @@ def test_obtain_action_dist_by_eval_policy(raw_data):
 
     eval_size = 1000
     mcbr = MultiClassToBanditReduction(
-        X=X, y=y, base_classifier_b=LogisticRegression(), alpha_b=0.3
+        X=X, y=y, base_classifier_b=LogisticRegression(max_iter=10000), alpha_b=0.3
     )
     mcbr.split_train_eval(eval_size=eval_size)
 
@@ -95,7 +95,7 @@ def test_calc_ground_truth_policy_value(raw_data):
 
     eval_size = 1000
     mcbr = MultiClassToBanditReduction(
-        X=X, y=y, base_classifier_b=LogisticRegression(), alpha_b=0.3
+        X=X, y=y, base_classifier_b=LogisticRegression(max_iter=10000), alpha_b=0.3
     )
     mcbr.split_train_eval(eval_size=eval_size)
 

@@ -11,6 +11,7 @@ from typing import Union
 
 import numpy as np
 from scipy.special import softmax
+from sklearn.base import BaseEstimator
 from sklearn.base import ClassifierMixin
 from sklearn.base import clone
 from sklearn.base import is_classifier
@@ -23,15 +24,18 @@ from torch.nn.functional import mse_loss
 import torch.optim as optim
 from tqdm import tqdm
 
+from obp.ope import RegressionModel
+
 from ..utils import check_array
 from ..utils import check_bandit_feedback_inputs
 from ..utils import check_tensor
+from ..utils import softmax as softmax_axis1
 from .base import BaseOfflinePolicyLearner
 
 
 @dataclass
 class IPWLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner with Inverse Probability Weighting.
+    """Off-policy learner based on Inverse Probability Weighting.
 
     Parameters
     -----------
@@ -161,13 +165,13 @@ class IPWLearner(BaseOfflinePolicyLearner):
                 "and please use `obp.policy.NNPolicyLearner` instead."
             )
         if pscore is None:
-            n_actions = np.int(action.max() + 1)
+            n_actions = np.int32(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
         if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
         else:
             if position is None:
-                raise ValueError("When `self.len_list=1`, `position` must be given.")
+                raise ValueError("When `self.len_list > 1`, `position` must be given.")
 
         for position_ in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
@@ -216,7 +220,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         return action_dist
 
     def predict_score(self, context: np.ndarray) -> np.ndarray:
-        """Predict non-negative scores for all possible products of action and position.
+        """Predict non-negative scores for all possible action and position.
 
         Parameters
         -----------
@@ -246,25 +250,23 @@ class IPWLearner(BaseOfflinePolicyLearner):
         tau: Union[int, float] = 1.0,
         random_state: Optional[int] = None,
     ) -> np.ndarray:
-        """Sample (non-repetitive) actions based on scores predicted by a classifier.
+        """Sample a ranking of (non-repetitive) actions from the Plackett-Luce ranking distribution.
 
         Note
         --------
-        This `sample_action` method samples a **non-repetitive** set of actions for new data :math:`x \\in \\mathcal{X}`
-        by first computing non-negative scores for all possible candidate products of action and position
-        :math:`(a, k) \\in \\mathcal{A} \\times \\mathcal{K}` (where :math:`\\mathcal{A}` is an action set and
-        :math:`\\mathcal{K}` is a position set), and using softmax function as follows:
+        This `sample_action` method samples a **non-repetitive** ranking of actions for new data
+        :math:`x \\in \\mathcal{X}` via the so-colled "Gumbel Softmax trick" as follows.
 
         .. math::
 
-            & P (A_1 = a_1 | x) = \\frac{\\mathrm{exp}(f(x,a_1,1) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( f(x,a^{\\prime},1) / \\tau)} , \\\\
-            & P (A_2 = a_2 | A_1 = a_1, x) = \\frac{\\mathrm{exp}(f(x,a_2,2) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A} \\backslash \\{a_1\\}} \\mathrm{exp}(f(x,a^{\\prime},2) / \\tau )} ,
-            \\ldots
+            \\s (x,a) = \\hat{f}(x,a) / \\tau + \\gamma_{x,a}, \\quad \\gamma_{x,a} \\sim \\mathrm{Gumbel}(0,1)
 
-        where :math:`A_k` is a random variable representing an action at a position :math:`k`.
         :math:`\\tau` is a temperature hyperparameter.
         :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a scoring function which is now implemented in the `predict_score` method.
+        :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
+        By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
+        the Plackett-Luce ranking distribution.
 
         Parameters
         ----------------
@@ -272,7 +274,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
+            A temperature parameter, controlling the randomness of the action choice by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None
@@ -281,7 +283,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Action sampled by a trained classifier.
+            Ranking of actions sampled by the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -289,16 +291,13 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         n_rounds = context.shape[0]
         random_ = check_random_state(random_state)
-        action = np.zeros((n_rounds, self.n_actions, self.len_list))
-        score_predicted = self.predict_score(context=context)
-        for i in tqdm(np.arange(n_rounds), desc="[sample_action]", total=n_rounds):
-            action_set = np.arange(self.n_actions)
-            for position_ in np.arange(self.len_list):
-                score_ = softmax(score_predicted[i, action_set, position_] / tau)
-                action_sampled = random_.choice(action_set, p=score_, replace=False)
-                action[i, action_sampled, position_] = 1
-                action_set = np.delete(action_set, action_set == action_sampled)
-        return action
+        sampled_action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        scores = self.predict_score(context=context).mean(2) / tau
+        scores += random_.gumbel(size=scores.shape)
+        ranking = np.argsort(-scores, axis=1)
+        for position_ in np.arange(self.len_list):
+            sampled_action[np.arange(n_rounds), ranking[:, position_], position_] = 1
+        return sampled_action
 
     def predict_proba(
         self,
@@ -310,9 +309,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Note
         --------
         This `predict_proba` method obtains action choice probabilities for new data :math:`x \\in \\mathcal{X}`
-        by first computing non-negative scores for all possible candidate actions
-        :math:`a \\in \\mathcal{A}` (where :math:`\\mathcal{A}` is an action set),
-        and using a Plackett-Luce ranking model as follows:
+        by applying the softmax function as follows:
 
         .. math::
 
@@ -330,7 +327,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice.
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         Returns
@@ -351,12 +349,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
 
 @dataclass
-class NNPolicyLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner based on a neural network policy.
-
-    Note
-    --------
-    The neural network is implemented in PyTorch.
+class QLearner(BaseOfflinePolicyLearner):
+    """Off-policy learner based on Direct Method.
 
     Parameters
     -----------
@@ -366,7 +360,274 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     len_list: int, default=1
         Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
-        Currently, len_list > 1 is not supported.
+
+    base_model: BaseEstimator
+        Machine learning model used to estimate the q function (expected reward function).
+
+    fitting_method: str, default='normal'
+        Method to fit the regression model.
+        Must be one of ['normal', 'iw'] where 'iw' stands for importance weighting.
+
+    """
+
+    base_model: Optional[BaseEstimator] = None
+    fitting_method: str = "normal"
+
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        super().__post_init__()
+
+        self.q_estimator = RegressionModel(
+            n_actions=self.n_actions,
+            len_list=self.len_list,
+            base_model=self.base_model,
+            fitting_method=self.fitting_method,
+        )
+
+    def fit(
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+    ) -> None:
+        """Fits an offline bandit policy on the given logged bandit feedback data.
+
+        Note
+        --------
+        This `fit` method trains an estimator for the q function :math:`\\q(x,a) := \\mathbb{E} [r \\mid x, a]` as follows.
+
+        .. math::
+
+            \\hat{\\q} \\in \\arg \\min_{\\q \\in \\Q} \\mathbb{E}_{n} [ \\ell ( r_i, q (x_i,a_i) )  ]
+
+        where :math:`\\ell` is a loss function in training the q estimator.
+
+
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds, dim_context)
+            Context vectors in each round, i.e., :math:`x_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        reward: array-like, shape (n_rounds,)
+            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            If None is given, a learner assumes that there is only one position.
+            When `len_list` > 1, position has to be set.
+
+        """
+        check_bandit_feedback_inputs(
+            context=context,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+        if pscore is None:
+            n_actions = np.int32(action.max() + 1)
+            pscore = np.ones_like(action) / n_actions
+        if self.len_list == 1:
+            position = np.zeros_like(action, dtype=int)
+        else:
+            if position is None:
+                raise ValueError("When `self.len_list > 1`, `position` must be given.")
+
+        unif_action_dist = np.ones((context.shape[0], self.n_actions, self.len_list))
+        self.q_estimator.fit(
+            context=context,
+            action=action,
+            reward=reward,
+            position=position,
+            pscore=pscore,
+            action_dist=unif_action_dist,
+        )
+
+    def predict(
+        self,
+        context: np.ndarray,
+        tau: Union[int, float] = 1.0,
+    ) -> np.ndarray:
+        """Predict best actions for new data deterministically.
+
+        Note
+        --------
+        This `predict` method predicts the best actions for new data deterministically as follows.
+
+        .. math::
+
+            \\hat{a}_i \\in \\arg \\max_{a \\in \\mathcal{A}} \\hat{q}(x_i, a)
+
+        where :math:`\\hat{q}(x,a)` is an estimator for the q function :math:`\\q(x,a) := \\mathbb{E} [r \\mid x, a]`.
+        Note that action sets predicted by this `predict` method can contain duplicate items.
+        If you want a non-repetitive action set, then please use the `sample_action` method.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        Returns
+        -----------
+        action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Deterministic action choices by the QLearner.
+            The output can contain duplicate items (when `len_list > 2`).
+
+        """
+        check_array(array=context, name="context", expected_dim=2)
+        check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
+
+        q_hat = self.predict_score(context=context)
+        q_hat_argmax = np.argmax(q_hat, axis=1).astype(int)
+
+        n_rounds = context.shape[0]
+        action_dist = np.zeros_like(q_hat)
+        for p in np.arange(self.len_list):
+            action_dist[
+                np.arange(n_rounds),
+                q_hat_argmax[:, p],
+                np.ones(n_rounds, dtype=int) * p,
+            ] = 1
+        return action_dist
+
+    def predict_score(self, context: np.ndarray) -> np.ndarray:
+        """Predict the expected reward for all possible action and position.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        Returns
+        -----------
+        q_hat: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Expected reward for all possible pairs of action and position. :math:`\\hat{q}(x,a)`.
+
+        """
+        check_array(array=context, name="context", expected_dim=2)
+
+        q_hat = self.q_estimator.predict(context=context)
+        return q_hat
+
+    def sample_action(
+        self,
+        context: np.ndarray,
+        tau: Union[int, float] = 1.0,
+        random_state: Optional[int] = None,
+    ) -> np.ndarray:
+        """Sample a ranking of (non-repetitive) actions from the Plackett-Luce ranking distribution.
+
+        Note
+        --------
+        This `sample_action` method samples a ranking of (non-repetitive) actions for new data
+        based on :math:`\\hat{q}` and the so-colled "Gumbel Softmax trick" as follows.
+
+        .. math::
+
+            \\s (x,a) = \\hat{q}(x,a) / \\tau + \\gamma_{x,a}, \\quad \\gamma_{x,a} \\sim \\mathrm{Gumbel}(0,1)
+
+        :math:`\\tau` is a temperature hyperparameter.
+        :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
+        is a q function estimator, which is now implemented in the `predict_score` method.
+        :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
+        By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
+        the Plackett-Luce ranking distribution.
+
+        Parameters
+        ----------------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        tau: int or float, default=1.0
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling the scores before applying softmax.
+            As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
+
+        random_state: int, default=None
+            Controls the random seed in sampling actions.
+
+        Returns
+        -----------
+        sampled_action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Ranking of actions sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
+
+        """
+        check_array(array=context, name="context", expected_dim=2)
+        check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
+
+        n_rounds = context.shape[0]
+        random_ = check_random_state(random_state)
+        sampled_action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        scores = self.predict_score(context=context).mean(2) / tau
+        scores += random_.gumbel(size=scores.shape)
+        ranking = np.argsort(-scores, axis=1)
+        for position_ in np.arange(self.len_list):
+            sampled_action[np.arange(n_rounds), ranking[:, position_], position_] = 1
+        return sampled_action
+
+    def predict_proba(
+        self,
+        context: np.ndarray,
+        tau: Union[int, float] = 1.0,
+    ) -> np.ndarray:
+        """Obtains action choice probabilities for new data based on the estimated expected rewards.
+
+        Note
+        --------
+        This `predict_proba` method obtains action choice probabilities for new data based on :math:`\\hat{q}` as follows.
+
+        .. math::
+
+            \\pi (a | x) = \\frac{\\mathrm{exp}( \\hat{q}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}(x,a^{\\prime}) / \\tau)}
+
+        :math:`\\tau` is a temperature hyperparameter.
+        :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
+        is a q function estimator, which is now implemented in the `predict_score` method.
+
+        Parameters
+        ----------------
+        context: array-like, shape (n_rounds_of_new_data, dim_context)
+            Context vectors for new data.
+
+        tau: int or float, default=1.0
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling the scores before applying softmax.
+            As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
+
+        Returns
+        -----------
+        action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Action choice probabilities obtained from the estimated expected rewards.
+
+        """
+        check_array(array=context, name="context", expected_dim=2)
+        check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
+
+        q_hat = self.predict_score(context=context)
+        action_dist = softmax_axis1(q_hat / tau)
+        return action_dist
+
+
+@dataclass
+class NNPolicyLearner(BaseOfflinePolicyLearner):
+    """Off-policy learner based on a neural network policy.
+
+    Parameters
+    -----------
+    n_actions: int
+        Number of actions.
+
+    len_list: int, default=1
+        Length of a list of actions recommended in each impression.
+        When Open Bandit Dataset is used, 3 should be set.
 
     dim_context: int
         Number of dimensions of context vectors.
@@ -504,9 +765,6 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     def __post_init__(self) -> None:
         """Initialize class."""
         super().__post_init__()
-
-        if self.len_list != 1:
-            raise NotImplementedError("currently, len_list > 1 is not supported")
 
         check_scalar(self.dim_context, "dim_context", int, min_val=1)
 
@@ -779,8 +1037,6 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             pscore = np.ones_like(action) / self.n_actions
         if self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
-        else:
-            raise NotImplementedError("currently, len_list > 1 is not supported")
 
         # train q function estimator when it is needed to train NNPolicy
         if self.off_policy_objective != "ipw":
@@ -1026,25 +1282,48 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     def sample_action(
         self,
         context: np.ndarray,
+        tau: Union[int, float] = 1.0,
         random_state: Optional[int] = None,
     ) -> np.ndarray:
-        """Sample (non-repetitive) actions based on action choice probabilities.
+        """Sample a ranking of (non-repetitive) actions from the Plackett-Luce ranking distribution.
+
+        Note
+        --------
+        This `sample_action` method samples a **non-repetitive** ranking of actions for new data
+        :math:`x \\in \\mathcal{X}` via the so-colled "Gumbel Softmax trick" as follows.
+
+        .. math::
+
+            \\s (x,a) = \\hat{f}(x,a) / \\tau + \\gamma_{x,a}, \\quad \\gamma_{x,a} \\sim \\mathrm{Gumbel}(0,1)
+
+        :math:`\\tau` is a temperature hyperparameter.
+        :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
+        is a scoring function which is now implemented in the `predict_score` method.
+        :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
+        By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
+        the Plackett-Luce ranking distribution.
 
         Parameters
         ----------------
         context: array-like, shape (n_rounds_of_new_data, dim_context)
             Context vectors for new data.
 
+        tau: int or float, default=1.0
+            A temperature parameter, controlling the randomness of the action choice
+            by scaling the scores before applying softmax.
+            As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
+
         random_state: int, default=None
             Controls the random seed in sampling actions.
 
         Returns
         -----------
-        action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Action sampled by a trained classifier.
+        sampled_action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+            Ranking of actions sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
+        check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, but found it False"
@@ -1052,16 +1331,13 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         n_rounds = context.shape[0]
         random_ = check_random_state(random_state)
-        action = np.zeros((n_rounds, self.n_actions, self.len_list))
-        score_predicted = self.predict_proba(context=context)
-        for i in tqdm(np.arange(n_rounds), desc="[sample_action]", total=n_rounds):
-            action_set = np.arange(self.n_actions)
-            for position_ in np.arange(self.len_list):
-                score_ = score_predicted[i, action_set, position_]
-                action_sampled = random_.choice(action_set, p=score_, replace=False)
-                action[i, action_sampled, position_] = 1
-                action_set = np.delete(action_set, action_set == action_sampled)
-        return action
+        sampled_action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        scores = self.predict_proba(context=context).mean(2) / tau
+        scores += random_.gumbel(size=scores.shape)
+        ranking = np.argsort(-scores, axis=1)
+        for position_ in np.arange(self.len_list):
+            sampled_action[np.arange(n_rounds), ranking[:, position_], position_] = 1
+        return sampled_action
 
     def predict_proba(
         self,
