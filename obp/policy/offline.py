@@ -274,7 +274,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice by scaling thescores before applying softmax.
+            A temperature parameter, controlling the randomness of the action choice by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None
@@ -328,7 +328,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         tau: int or float, default=1.0
             A temperature parameter, controlling the randomness of the action choice
-            by scaling thescores before applying softmax.
+            by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         Returns
@@ -548,7 +548,7 @@ class QLearner(BaseOfflinePolicyLearner):
 
         tau: int or float, default=1.0
             A temperature parameter, controlling the randomness of the action choice
-            by scaling thescores before applying softmax.
+            by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None
@@ -599,7 +599,7 @@ class QLearner(BaseOfflinePolicyLearner):
 
         tau: int or float, default=1.0
             A temperature parameter, controlling the randomness of the action choice
-            by scaling thescores before applying softmax.
+            by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         Returns
@@ -1310,7 +1310,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         tau: int or float, default=1.0
             A temperature parameter, controlling the randomness of the action choice
-            by scaling thescores before applying softmax.
+            by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None

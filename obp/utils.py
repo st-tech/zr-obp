@@ -794,7 +794,7 @@ def check_rips_inputs(
 
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate sigmoid function."""
-    return np.exp(np.minimum(x, 0)) / 1.0 / (1.0 + np.exp(-np.abs(x)))
+    return np.exp(np.minimum(x, 0)) / (1.0 + np.exp(-np.abs(x)))
 
 
 def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:

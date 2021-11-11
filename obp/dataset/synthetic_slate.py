@@ -1433,7 +1433,7 @@ def linear_behavior_policy_logit(
         Controls the random seed in sampling dataset.
 
     tau: int or float, default=1.0
-        A temperature parameter, controlling the randomness of the action choice by scaling thescores before applying softmax.
+        A temperature parameter, controlling the randomness of the action choice by scaling the scores before applying softmax.
         As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
     Returns
