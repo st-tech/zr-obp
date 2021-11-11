@@ -18,6 +18,7 @@ from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
 from obp.policy import IPWLearner
 from obp.policy import NNPolicyLearner
+from obp.policy import QLearner
 from obp.policy.base import BaseOfflinePolicyLearner
 
 
@@ -80,7 +81,7 @@ offline_experiment_configurations = [
         "random_forest",
     ),
     (
-        400,
+        800,
         10,
         10,
         "lightgbm",
@@ -141,7 +142,7 @@ class UniformSampleWeightLearner(BaseOfflinePolicyLearner):
     ) -> None:
 
         if pscore is None:
-            n_actions = np.int(action.max() + 1)
+            n_actions = np.int32(action.max() + 1)
             pscore = np.ones_like(action) / n_actions
         if position is None or self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
@@ -175,7 +176,7 @@ class UniformSampleWeightLearner(BaseOfflinePolicyLearner):
     "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
     offline_experiment_configurations,
 )
-def test_offline_ipwlearner_performance(
+def test_offline_policy_learner_performance(
     n_rounds: int,
     n_actions: int,
     dim_context: int,
@@ -191,101 +192,23 @@ def test_offline_ipwlearner_performance(
             behavior_policy_function=linear_behavior_policy,
             random_state=i,
         )
-        # define evaluation policy using IPWLearner
+        # sample new training and test sets of synthetic logged bandit feedback
+        bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+
+        # defining policy learners
         ipw_policy = IPWLearner(
             n_actions=dataset.n_actions,
             base_classifier=base_model_dict[base_model_for_evaluation_policy](
                 **hyperparams[base_model_for_evaluation_policy]
             ),
         )
-        # baseline method 1. RandomPolicy
-        random_policy = RandomPolicy(n_actions=dataset.n_actions)
-        # baseline method 2. UniformSampleWeightLearner
-        uniform_sample_weight_policy = UniformSampleWeightLearner(
+        q_policy = QLearner(
             n_actions=dataset.n_actions,
-            base_classifier=base_model_dict[base_model_for_evaluation_policy](
+            base_model=base_model_dict[base_model_for_evaluation_policy](
                 **hyperparams[base_model_for_evaluation_policy]
             ),
         )
-        # sample new training and test sets of synthetic logged bandit feedback
-        bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        # train the evaluation policy on the training set of the synthetic logged bandit feedback
-        ipw_policy.fit(
-            context=bandit_feedback_train["context"],
-            action=bandit_feedback_train["action"],
-            reward=bandit_feedback_train["reward"],
-            pscore=bandit_feedback_train["pscore"],
-        )
-        uniform_sample_weight_policy.fit(
-            context=bandit_feedback_train["context"],
-            action=bandit_feedback_train["action"],
-            reward=bandit_feedback_train["reward"],
-            pscore=bandit_feedback_train["pscore"],
-        )
-        # predict the action decisions for the test set of the synthetic logged bandit feedback
-        ipw_action_dist = ipw_policy.predict(
-            context=bandit_feedback_test["context"],
-        )
-        random_action_dist = random_policy.predict(
-            context=bandit_feedback_test["context"],
-        )
-        uniform_sample_weight_action_dist = uniform_sample_weight_policy.predict(
-            context=bandit_feedback_test["context"],
-        )
-        # get the ground truth policy value for each learner
-        gt_ipw_learner = dataset.calc_ground_truth_policy_value(
-            expected_reward=bandit_feedback_test["expected_reward"],
-            action_dist=ipw_action_dist,
-        )
-        gt_random_policy = dataset.calc_ground_truth_policy_value(
-            expected_reward=bandit_feedback_test["expected_reward"],
-            action_dist=random_action_dist,
-        )
-        gt_uniform_sample_weight_learner = dataset.calc_ground_truth_policy_value(
-            expected_reward=bandit_feedback_test["expected_reward"],
-            action_dist=uniform_sample_weight_action_dist,
-        )
-
-        return gt_ipw_learner, gt_random_policy, gt_uniform_sample_weight_learner
-
-    n_runs = 10
-    processed = Parallel(
-        n_jobs=-1,
-        verbose=0,
-    )([delayed(process)(i) for i in np.arange(n_runs)])
-    list_gt_ipw, list_gt_random, list_gt_uniform = [], [], []
-    for i, ground_truth_policy_values in enumerate(processed):
-        gt_ipw, gt_random, gt_uniform = ground_truth_policy_values
-        list_gt_ipw.append(gt_ipw)
-        list_gt_random.append(gt_random)
-        list_gt_uniform.append(gt_uniform)
-
-    assert np.mean(list_gt_ipw) > np.mean(list_gt_random)
-    assert np.mean(list_gt_ipw) > np.mean(list_gt_uniform)
-
-
-@pytest.mark.parametrize(
-    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
-    offline_experiment_configurations,
-)
-def test_offline_nn_policy_learner_performance(
-    n_rounds: int,
-    n_actions: int,
-    dim_context: int,
-    base_model_for_evaluation_policy: str,
-    base_model_for_reg_model: str,
-) -> None:
-    def process(i: int):
-        # synthetic data generator
-        dataset = SyntheticBanditDataset(
-            n_actions=n_actions,
-            dim_context=dim_context,
-            reward_function=logistic_reward_function,
-            behavior_policy_function=linear_behavior_policy,
-            random_state=i,
-        )
-        # define evaluation policy using NNPolicyLearner
         nn_policy = NNPolicyLearner(
             n_actions=dataset.n_actions,
             dim_context=dim_context,
@@ -300,10 +223,20 @@ def test_offline_nn_policy_learner_performance(
                 **hyperparams[base_model_for_evaluation_policy]
             ),
         )
-        # sample new training and test sets of synthetic logged bandit feedback
-        bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        # train the evaluation policy on the training set of the synthetic logged bandit feedback
+
+        # policy training
+        ipw_policy.fit(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            pscore=bandit_feedback_train["pscore"],
+        )
+        q_policy.fit(
+            context=bandit_feedback_train["context"],
+            action=bandit_feedback_train["action"],
+            reward=bandit_feedback_train["reward"],
+            pscore=bandit_feedback_train["pscore"],
+        )
         nn_policy.fit(
             context=bandit_feedback_train["context"],
             action=bandit_feedback_train["action"],
@@ -316,8 +249,15 @@ def test_offline_nn_policy_learner_performance(
             reward=bandit_feedback_train["reward"],
             pscore=bandit_feedback_train["pscore"],
         )
-        # predict the action decisions for the test set of the synthetic logged bandit feedback
-        nn_policy_action_dist = nn_policy.predict(
+
+        # prediction/making decisions
+        ipw_action_dist = ipw_policy.predict(
+            context=bandit_feedback_test["context"],
+        )
+        q_action_dist = q_policy.predict(
+            context=bandit_feedback_test["context"],
+        )
+        nn_action_dist = nn_policy.predict(
             context=bandit_feedback_test["context"],
         )
         random_action_dist = random_policy.predict(
@@ -326,10 +266,19 @@ def test_offline_nn_policy_learner_performance(
         uniform_sample_weight_action_dist = uniform_sample_weight_policy.predict(
             context=bandit_feedback_test["context"],
         )
-        # get the ground truth policy value for each learner
-        gt_nn_policy_learner = dataset.calc_ground_truth_policy_value(
+
+        # evaluation
+        gt_ipw_learner = dataset.calc_ground_truth_policy_value(
             expected_reward=bandit_feedback_test["expected_reward"],
-            action_dist=nn_policy_action_dist,
+            action_dist=ipw_action_dist,
+        )
+        gt_q_learner = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=q_action_dist,
+        )
+        gt_nn_learner = dataset.calc_ground_truth_policy_value(
+            expected_reward=bandit_feedback_test["expected_reward"],
+            action_dist=nn_action_dist,
         )
         gt_random_policy = dataset.calc_ground_truth_policy_value(
             expected_reward=bandit_feedback_test["expected_reward"],
@@ -340,19 +289,46 @@ def test_offline_nn_policy_learner_performance(
             action_dist=uniform_sample_weight_action_dist,
         )
 
-        return gt_nn_policy_learner, gt_random_policy, gt_uniform_sample_weight_learner
+        return (
+            gt_ipw_learner,
+            gt_q_learner,
+            gt_nn_learner,
+            gt_random_policy,
+            gt_uniform_sample_weight_learner,
+        )
 
     n_runs = 10
     processed = Parallel(
-        n_jobs=1,  # PyTorch uses multiple threads
+        n_jobs=-1,
         verbose=0,
     )([delayed(process)(i) for i in np.arange(n_runs)])
-    list_gt_nn_policy, list_gt_random, list_gt_uniform = [], [], []
-    for i, ground_truth_policy_values in enumerate(processed):
-        gt_nn_policy, gt_random, gt_uniform = ground_truth_policy_values
-        list_gt_nn_policy.append(gt_nn_policy)
+    list_gt_ipw = list()
+    list_gt_q = list()
+    list_gt_nn = list()
+    list_gt_random = list()
+    list_gt_unif_ipw = list()
+    for i, gt_policy_values in enumerate(processed):
+        gt_ipw, gt_q, gt_nn, gt_random, gt_unif_ipw = gt_policy_values
+        list_gt_ipw.append(gt_ipw)
+        list_gt_q.append(gt_q)
+        list_gt_nn.append(gt_nn)
         list_gt_random.append(gt_random)
-        list_gt_uniform.append(gt_uniform)
+        list_gt_unif_ipw.append(gt_unif_ipw)
 
-    assert np.mean(list_gt_nn_policy) > np.mean(list_gt_random)
-    assert np.mean(list_gt_nn_policy) > np.mean(list_gt_uniform)
+    # baseline learner performance
+    print(f"Performance of Random is {np.mean(list_gt_random)}")
+    print(
+        f"Performance of IPWLearner with Uniform Weight is {np.mean(list_gt_unif_ipw)}"
+    )
+    # ipw learner performance
+    print(f"Performance of IPWLearner is {np.mean(list_gt_ipw)}")
+    assert np.mean(list_gt_ipw) > np.mean(list_gt_random)
+    assert np.mean(list_gt_ipw) > np.mean(list_gt_unif_ipw)
+    # q learner performance
+    print(f"Performance of QLearner is {np.mean(list_gt_q)}")
+    assert np.mean(list_gt_q) > np.mean(list_gt_random)
+    assert np.mean(list_gt_q) > np.mean(list_gt_unif_ipw)
+    # nn policy learner performance
+    print(f"Performance of NNPolicyLearner is {np.mean(list_gt_nn)}")
+    assert np.mean(list_gt_nn) > np.mean(list_gt_random)
+    assert np.mean(list_gt_nn) > np.mean(list_gt_unif_ipw)

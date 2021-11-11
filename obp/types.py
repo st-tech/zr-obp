@@ -7,12 +7,6 @@ from typing import Union
 
 import numpy as np
 
-from .policy import BaseContextFreePolicy
-from .policy import BaseContextualPolicy
-
 
 # dataset
 BanditFeedback = Dict[str, Union[int, np.ndarray]]
-
-# policy
-BanditPolicy = Union[BaseContextFreePolicy, BaseContextualPolicy]
