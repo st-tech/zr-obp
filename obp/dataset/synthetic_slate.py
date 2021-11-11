@@ -34,7 +34,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     we have different bandit samples with the same setting.
     This can be used to estimate confidence intervals of the performances of Slate OPE estimators.
 
-    If None is set as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
+    If None is given as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
 
     Parameters
     -----------
@@ -93,13 +93,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is set, context **independent** expected reward for each action will be
+        If None is given, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating logit value of each action in action space,
         i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
-        If None is set, context **independent** uniform distribution will be used (uniform behavior policy).
+        If None is given, context **independent** uniform distribution will be used (uniform behavior policy).
 
     is_factorizable: bool
         A boolean parameter whether to use factorizable evaluation policy (which choose slot actions independently) or not.
@@ -865,7 +865,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors characterizing each round (such as user information).
+            Context vectors characterizing each data (such as user information).
 
         evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
             Evaluation policy function generating logit value of each action in action space.
@@ -1029,7 +1029,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             When 'random' is given, we calculate the three variants of the propensity scores of the uniform random policy.
 
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors characterizing each round (such as user information).
+            Context vectors characterizing each data (such as user information).
 
         action: array-like, shape (n_rounds * len_list,), default=None
             Actions sampled by a behavior policy.
@@ -1257,10 +1257,10 @@ def action_interaction_reward_function(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     action_context: array-like, shape (n_unique_action, dim_action_context)
-        Vector representation for each action.
+        Vector representation of actions.
 
     action: array-like, shape (n_rounds * len_list, ) or (len(enumerated_slate_actions) * len_list, )
         When is_enumerated=False, action corresponds to actions sampled by a (often behavior) policy.
@@ -1270,7 +1270,7 @@ def action_interaction_reward_function(
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is set, context **independent** expected reward for each action will be
+        If None is given, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
     reward_type: str, default='binary'
@@ -1424,10 +1424,10 @@ def linear_behavior_policy_logit(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     action_context: array-like, shape (n_unique_action, dim_action_context)
-        Vector representation for each action.
+        Vector representation of actions.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
