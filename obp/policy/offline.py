@@ -255,7 +255,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Note
         --------
         This `sample_action` method samples a **non-repetitive** ranking of actions for new data
-        :math:`x \\in \\mathcal{X}` via the so-colled "Gumbel Softmax trick" as follows.
+        :math:`x \\in \\mathcal{X}` via the so-called "Gumbel Softmax trick" as follows.
 
         .. math::
 
@@ -264,6 +264,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         :math:`\\tau` is a temperature hyperparameter.
         :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a scoring function which is now implemented in the `predict_score` method.
+        When `len_list > 0`,  the expected rewards estimated at different positions will be averaged to form :math:`f(x,a)`.
         :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
         By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
         the Plackett-Luce ranking distribution.
@@ -282,7 +283,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         Returns
         -----------
-        action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+        sampled_ranking: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
             Ranking of actions sampled by the Gumbel softmax trick.
 
         """
@@ -291,13 +292,15 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         n_rounds = context.shape[0]
         random_ = check_random_state(random_state)
-        sampled_action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        sampled_ranking = np.zeros((n_rounds, self.n_actions, self.len_list))
         scores = self.predict_score(context=context).mean(2) / tau
         scores += random_.gumbel(size=scores.shape)
-        ranking = np.argsort(-scores, axis=1)
+        sampled_ranking_full = np.argsort(-scores, axis=1)
         for position_ in np.arange(self.len_list):
-            sampled_action[np.arange(n_rounds), ranking[:, position_], position_] = 1
-        return sampled_action
+            sampled_ranking[
+                np.arange(n_rounds), sampled_ranking_full[:, position_], position_
+            ] = 1
+        return sampled_ranking
 
     def predict_proba(
         self,
@@ -479,7 +482,7 @@ class QLearner(BaseOfflinePolicyLearner):
         -----------
         action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
             Deterministic action choices by the QLearner.
-            The output can contain duplicate items (when `len_list > 2`).
+            The output can contain duplicated items (when `len_list > 1`).
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -494,7 +497,7 @@ class QLearner(BaseOfflinePolicyLearner):
             action_dist[
                 np.arange(n_rounds),
                 q_hat_argmax[:, p],
-                np.ones(n_rounds, dtype=int) * p,
+                p,
             ] = 1
         return action_dist
 
@@ -528,7 +531,7 @@ class QLearner(BaseOfflinePolicyLearner):
         Note
         --------
         This `sample_action` method samples a ranking of (non-repetitive) actions for new data
-        based on :math:`\\hat{q}` and the so-colled "Gumbel Softmax trick" as follows.
+        based on :math:`\\hat{q}` and the so-called "Gumbel Softmax trick" as follows.
 
         .. math::
 
@@ -537,6 +540,7 @@ class QLearner(BaseOfflinePolicyLearner):
         :math:`\\tau` is a temperature hyperparameter.
         :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a q function estimator, which is now implemented in the `predict_score` method.
+        When `len_list > 0`,  the expected rewards estimated at different positions will be averaged to form :math:`f(x,a)`.
         :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
         By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
         the Plackett-Luce ranking distribution.
@@ -586,11 +590,12 @@ class QLearner(BaseOfflinePolicyLearner):
 
         .. math::
 
-            \\pi (a | x) = \\frac{\\mathrm{exp}( \\hat{q}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}(x,a^{\\prime}) / \\tau)}
+            \\pi_{k} (a | x) = \\frac{\\mathrm{exp}( \\hat{q}_{k}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}_{k}(x,a^{\\prime}) / \\tau)}
 
+        where :math:`\\pi_{k} (a | x)` is the resulting action choice probabilities at position :math:`k`.
         :math:`\\tau` is a temperature hyperparameter.
         :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
-        is a q function estimator, which is now implemented in the `predict_score` method.
+        is a q function estimator for position :math:`k`, which is now implemented in the `predict_score` method.
 
         Parameters
         ----------------
@@ -1290,7 +1295,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Note
         --------
         This `sample_action` method samples a **non-repetitive** ranking of actions for new data
-        :math:`x \\in \\mathcal{X}` via the so-colled "Gumbel Softmax trick" as follows.
+        :math:`x \\in \\mathcal{X}` via the so-called "Gumbel Softmax trick" as follows.
 
         .. math::
 
@@ -1299,6 +1304,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         :math:`\\tau` is a temperature hyperparameter.
         :math:`f: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a scoring function which is now implemented in the `predict_score` method.
+        When `len_list > 0`,  the expected rewards estimated at different positions will be averaged to form :math:`f(x,a)`.
         :math:`\\gamma_{x,a}` is a random variable sampled from the Gumbel distribution.
         By sorting the actions based on :math:`\\s (x,a)` for each context, we can efficiently sample a ranking from
         the Plackett-Luce ranking distribution.
