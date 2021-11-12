@@ -70,9 +70,11 @@ class SyntheticBanditDataset(BaseBanditDataset):
         while a small `beta` leads to a sub-optimal behavior policy.
 
     beta: float, default=1.0
-        Inverse temperature parameter, which controls the entropy of behavior policy.
+        Inverse temperature parameter, which controls the optimality and entropy of the behavior policy.
         A large value leads to a near-deterministic behavior policy,
         while a small value leads to a near-uniform behavior policy.
+        A positive value leads to a near-optimal behavior policy,
+        while a negative value leads to a sub-optimal behavior policy.
 
     random_state: int, default=12345
         Controls the random seed in sampling synthetic bandit dataset.
