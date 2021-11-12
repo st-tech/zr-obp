@@ -4,7 +4,10 @@ from obp.dataset.multiclass import MultiClassToBanditReduction
 from obp.dataset.real import OpenBanditDataset
 from obp.dataset.synthetic import linear_behavior_policy
 from obp.dataset.synthetic import linear_reward_function
+from obp.dataset.synthetic import logistic_polynomial_reward_function
 from obp.dataset.synthetic import logistic_reward_function
+from obp.dataset.synthetic import polynomial_behavior_policy
+from obp.dataset.synthetic import polynomial_reward_function
 from obp.dataset.synthetic import SyntheticBanditDataset
 from obp.dataset.synthetic_continuous import linear_behavior_policy_continuous
 from obp.dataset.synthetic_continuous import linear_reward_funcion_continuous
@@ -24,8 +27,11 @@ __all__ = [
     "OpenBanditDataset",
     "SyntheticBanditDataset",
     "logistic_reward_function",
+    "logistic_polynomial_reward_function",
     "linear_reward_function",
+    "polynomial_reward_function",
     "linear_behavior_policy",
+    "polynomial_behavior_policy",
     "MultiClassToBanditReduction",
     "SyntheticContinuousBanditDataset",
     "linear_reward_funcion_continuous",

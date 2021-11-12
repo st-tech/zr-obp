@@ -363,10 +363,9 @@ class SyntheticBanditDataset(BaseBanditDataset):
 def logistic_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    degree: int = 3,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
-    """Logistic mean reward function.
+    """Logistic mean reward function for binary rewards.
 
     Parameters
     -----------
@@ -375,10 +374,6 @@ def logistic_reward_function(
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
-
-    degree: int, default=3
-        Specifies the maximal degree of the polynomial feature transformations
-        applied to both `context` and `action_context`.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -390,28 +385,52 @@ def logistic_reward_function(
         i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
 
     """
-    check_scalar(degree, "degree", int, min_val=1)
-    check_array(array=context, name="context", expected_dim=2)
-    check_array(array=action_context, name="action_context", expected_dim=2)
-
-    poly = PolynomialFeatures(degree=degree)
-    context_ = poly.fit_transform(context)
-    action_context_ = poly.fit_transform(action_context)
-    datasize, context_dim = context_.shape
-    n_actions, action_context_dim = action_context_.shape
-
-    random_ = check_random_state(random_state)
-    context_coef_ = random_.uniform(-1, 1, size=context_dim)
-    action_coef_ = random_.uniform(-1, 1, size=action_context_dim)
-    context_action_coef_ = random_.uniform(
-        -1, 1, size=(context_dim, action_context_dim)
+    logits = _base_reward_function(
+        context=context,
+        action_context=action_context,
+        degree=1,
+        random_state=random_state,
     )
 
-    context_logits = np.tile(context_ @ context_coef_, (n_actions, 1)).T
-    action_logits = np.tile(action_coef_ @ action_context_.T, (datasize, 1))
-    context_action_logits = context_ @ context_action_coef_ @ action_context_.T
-    logits = context_logits + action_logits + context_action_logits
-    logits = degree * (logits - logits.mean()) / logits.std()
+    return sigmoid(logits)
+
+
+def logistic_polynomial_reward_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Logistic mean reward function for binary rewards.
+
+    Note
+    ------
+    Polynomial and interaction features will be used to calculate the expected rewards.
+    Feature transformation is based on `sklearn.preprocessing.PolynomialFeatures(degree=3)`
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    expected_reward: array-like, shape (n_rounds, n_actions)
+        Expected reward given context (:math:`x`) and action (:math:`a`),
+        i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+
+    """
+    logits = _base_reward_function(
+        context=context,
+        action_context=action_context,
+        degree=3,
+        random_state=random_state,
+    )
 
     return sigmoid(logits)
 
@@ -419,10 +438,106 @@ def logistic_reward_function(
 def linear_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Linear mean reward function for continuous rewards.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    expected_rewards: array-like, shape (n_rounds, n_actions)
+        Expected reward given context (:math:`x`) and action (:math:`a`),
+        i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+
+    """
+    return _base_reward_function(
+        context=context,
+        action_context=action_context,
+        degree=1,
+        random_state=random_state,
+    )
+
+
+def polynomial_reward_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Polynomial mean reward function for continuous rewards.
+
+    Note
+    ------
+    Polynomial and interaction features will be used to calculate the expected rewards.
+    Feature transformation is based on `sklearn.preprocessing.PolynomialFeatures(degree=3)`
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    expected_rewards: array-like, shape (n_rounds, n_actions)
+        Expected reward given context (:math:`x`) and action (:math:`a`),
+        i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+
+    """
+    return _base_reward_function(
+        context=context,
+        action_context=action_context,
+        degree=3,
+        random_state=random_state,
+    )
+
+
+def _base_reward_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
     degree: int = 3,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
-    """Linear mean reward function.
+    """Base function to define mean reward functions.
+
+    Note
+    ------
+    Given context :math:`x` and action_context :math:`a`, this function is used to define
+    mean reward function :math:`q(x,a) = \\mathbb{E}[r|x,a]` as follows.
+
+    .. math::
+
+        q(x,a) := \\tilde{x}^T M_{X,A} \\tilde{a} + \\theta_x^T \\tilde{x} + \\theta_a^T \\tilde{a},
+
+    where :math:`x` is a original context vector,
+    and :math:`a` is a original action_context vector representing actions.
+    Polynomial transformation is applied to original context and action vectors,
+    producing :math:`x \\in \\mathbb{R}^{d_X}` and :math:`\\tilde{a} \\in \\mathbb{R}^{d_A}`.
+    :math:`M_{X,A} \\mathbb{R}^{d_X \\times d_A}`, :math:`\\theta_x \\in \\mathbb{R}^{d_X}`,
+    and :math:`\\theta_a \\in \\mathbb{R}^{d_A}` are parameter matrix and vectors,
+    all sampled from the uniform distribution.
+    The logistic function will be applied to :math:`q(x,a)` in logistic reward functions
+    to adjust the range of the function output.
+
+    Currently, this function is used to define
+    `obp.dataset.linear_reward function` (degree=1),
+    `obp.dataset.polynomial_reward function` (degree=3),
+     `obp.dataset.logistic_reward function` (degree=1),
+     and `obp.dataset.logistic_polynomial_reward_function` (degree=3).
 
     Parameters
     -----------
@@ -442,7 +557,8 @@ def linear_reward_function(
     Returns
     ---------
     expected_rewards: array-like, shape (n_rounds, n_actions)
-        Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+        Expected reward given context (:math:`x`) and action (:math:`a`),
+        i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
 
     """
     check_scalar(degree, "degree", int, min_val=1)
@@ -476,10 +592,103 @@ def linear_reward_function(
 def linear_behavior_policy(
     context: np.ndarray,
     action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Linear behavior policy function.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    pi_b_logits: array-like, shape (n_rounds, n_actions)
+        Logit values given context (:math:`x`).
+        The softmax function will be applied to transform it to action choice probabilities.
+
+    """
+    return _base_behavior_policy_function(
+        context=context,
+        action_context=action_context,
+        degree=1,
+        random_state=random_state,
+    )
+
+
+def polynomial_behavior_policy(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Polynomial behavior policy function.
+
+    Note
+    ------
+    Polynomial and interaction features will be used to calculate the expected rewards.
+    Feature transformation is based on `sklearn.preprocessing.PolynomialFeatures(degree=3)`
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    pi_b_logits: array-like, shape (n_rounds, n_actions)
+        Logit values given context (:math:`x`).
+        The softmax function will be applied to transform it to action choice probabilities.
+
+    """
+    return _base_behavior_policy_function(
+        context=context,
+        action_context=action_context,
+        degree=3,
+        random_state=random_state,
+    )
+
+
+def _base_behavior_policy_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
     degree: int = 3,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
-    """Linear contextual behavior policy.
+    """Base function to define behavior policy functions.
+
+    Note
+    ------
+    Given context :math:`x` and action_context :math:`x_a`, this function generates
+    logit values for defining a behavior policy as follows.
+
+    .. math::
+
+        f_b(x,a) := \\tilde{x}^T M_{X,A} \\tilde{a} + \\theta_a^T \\tilde{a},
+
+    where :math:`x` is a original context vector,
+    and :math:`a` is a original action_context vector representing actions.
+    Polynomial transformation is applied to original context and action vectors,
+    producing :math:`x \\in \\mathbb{R}^{d_X}` and :math:`\\tilde{a} \\in \\mathbb{R}^{d_A}`.
+    :math:`M_{X,A} \\mathbb{R}^{d_X \\times d_A}` and :math:`\\theta_a \\in \\mathbb{R}^{d_A}` are
+    parameter matrix and vector, each sampled from the uniform distribution.
+    The softmax function will be applied to :math:`f_b(x,\\cdot)` in `obp.dataset.SyntheticDataset`
+    to generate distribution over actions (behavior policy).
+
+    Currently, this function is used to define
+    `obp.dataset.linear_behavior_policy` (degree=1)
+    and `obp.dataset.polynomial_behavior_policy` (degree=3).
 
     Parameters
     -----------
@@ -514,10 +723,11 @@ def linear_behavior_policy(
     action_context_dim = action_context_.shape[1]
 
     random_ = check_random_state(random_state)
-    coef = random_.uniform(size=(context_dim, action_context_dim))
     action_coef = random_.uniform(size=action_context_dim)
+    context_action_coef = random_.uniform(size=(context_dim, action_context_dim))
 
-    pi_b_logits = context_ @ coef @ action_context_.T + action_coef @ action_context_.T
+    pi_b_logits = context_ @ context_action_coef @ action_context_.T
+    pi_b_logits += action_coef @ action_context_.T
     pi_b_logits = degree * (pi_b_logits - pi_b_logits.mean()) / pi_b_logits.std()
 
     return pi_b_logits
