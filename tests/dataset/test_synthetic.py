@@ -4,7 +4,10 @@ import pytest
 from obp.dataset import SyntheticBanditDataset
 from obp.dataset.synthetic import linear_behavior_policy
 from obp.dataset.synthetic import linear_reward_function
+from obp.dataset.synthetic import logistic_polynomial_reward_function
 from obp.dataset.synthetic import logistic_reward_function
+from obp.dataset.synthetic import polynomial_behavior_policy
+from obp.dataset.synthetic import polynomial_reward_function
 from obp.utils import softmax
 
 
@@ -245,138 +248,125 @@ def test_synthetic_calc_policy_value_using_valid_inputs(
 
 
 def test_synthetic_logistic_reward_function():
-    # context
-    with pytest.raises(ValueError):
-        context = np.array([1.0, 1.0])
-        logistic_reward_function(context=context, action_context=np.eye(2))
+    for logistic_reward_function_ in [
+        logistic_reward_function,
+        logistic_polynomial_reward_function,
+    ]:
+        # context
+        with pytest.raises(ValueError):
+            context = np.array([1.0, 1.0])
+            logistic_reward_function_(context=context, action_context=np.eye(2))
 
-    with pytest.raises(ValueError):
-        context = [1.0, 1.0]
-        logistic_reward_function(context=context, action_context=np.eye(2))
+        with pytest.raises(ValueError):
+            context = [1.0, 1.0]
+            logistic_reward_function_(context=context, action_context=np.eye(2))
 
-    # action_context
-    with pytest.raises(ValueError):
-        action_context = np.array([1.0, 1.0])
-        logistic_reward_function(context=np.ones([2, 2]), action_context=action_context)
+        # action_context
+        with pytest.raises(ValueError):
+            action_context = np.array([1.0, 1.0])
+            logistic_reward_function_(
+                context=np.ones([2, 2]), action_context=action_context
+            )
 
-    with pytest.raises(ValueError):
-        action_context = [1.0, 1.0]
-        logistic_reward_function(context=np.ones([2, 2]), action_context=action_context)
+        with pytest.raises(ValueError):
+            action_context = [1.0, 1.0]
+            logistic_reward_function_(
+                context=np.ones([2, 2]), action_context=action_context
+            )
 
-    # degree
-    with pytest.raises(TypeError):
-        action_context = np.array([1.0, 1.0])
-        logistic_reward_function(
-            context=np.ones([2, 2]), action_context=np.eye(2), degree="1"
+        # expected_reward
+        n_rounds = 10
+        dim_context = 3
+        n_actions = 5
+        context = np.ones([n_rounds, dim_context])
+        action_context = np.eye(n_actions)
+        expected_reward = logistic_reward_function_(
+            context=context, action_context=action_context
+        )
+        assert (
+            expected_reward.shape[0] == n_rounds
+            and expected_reward.shape[1] == n_actions
+        )
+        assert np.all(0 <= expected_reward) and np.all(expected_reward <= 1)
+
+
+def test_synthetic_continuous_reward_function():
+    for continuous_reward_function in [
+        linear_reward_function,
+        polynomial_reward_function,
+    ]:
+        # context
+        with pytest.raises(ValueError):
+            context = np.array([1.0, 1.0])
+            continuous_reward_function(context=context, action_context=np.eye(2))
+
+        with pytest.raises(ValueError):
+            context = [1.0, 1.0]
+            continuous_reward_function(context=context, action_context=np.eye(2))
+
+        # action_context
+        with pytest.raises(ValueError):
+            action_context = np.array([1.0, 1.0])
+            continuous_reward_function(
+                context=np.ones([2, 2]), action_context=action_context
+            )
+
+        with pytest.raises(ValueError):
+            action_context = [1.0, 1.0]
+            continuous_reward_function(
+                context=np.ones([2, 2]), action_context=action_context
+            )
+
+        # expected_reward
+        n_rounds = 10
+        dim_context = 3
+        n_actions = 5
+        context = np.ones([n_rounds, dim_context])
+        action_context = np.eye(n_actions)
+        expected_reward = continuous_reward_function(
+            context=context, action_context=action_context
+        )
+        assert (
+            expected_reward.shape[0] == n_rounds
+            and expected_reward.shape[1] == n_actions
         )
 
-    with pytest.raises(ValueError):
-        action_context = [1.0, 1.0]
-        logistic_reward_function(
-            context=np.ones([2, 2]), action_context=np.eye(2), degree=0
+
+def test_synthetic_behavior_policy_function():
+    for behavior_policy_function in [
+        linear_behavior_policy,
+        polynomial_behavior_policy,
+    ]:
+        # context
+        with pytest.raises(ValueError):
+            context = np.array([1.0, 1.0])
+            behavior_policy_function(context=context, action_context=np.eye(2))
+
+        with pytest.raises(ValueError):
+            context = [1.0, 1.0]
+            behavior_policy_function(context=context, action_context=np.eye(2))
+
+        # action_context
+        with pytest.raises(ValueError):
+            action_context = np.array([1.0, 1.0])
+            behavior_policy_function(
+                context=np.ones([2, 2]), action_context=action_context
+            )
+
+        with pytest.raises(ValueError):
+            action_context = [1.0, 1.0]
+            behavior_policy_function(
+                context=np.ones([2, 2]), action_context=action_context
+            )
+
+        # pscore (action choice probabilities by behavior policy)
+        n_rounds = 10
+        dim_context = 3
+        n_actions = 5
+        context = np.ones([n_rounds, dim_context])
+        action_context = np.eye(n_actions)
+        action_prob = softmax(
+            behavior_policy_function(context=context, action_context=action_context)
         )
-
-    # expected_reward
-    n_rounds = 10
-    dim_context = 3
-    n_actions = 5
-    context = np.ones([n_rounds, dim_context])
-    action_context = np.eye(n_actions)
-    expected_reward = logistic_reward_function(
-        context=context, action_context=action_context
-    )
-    assert (
-        expected_reward.shape[0] == n_rounds and expected_reward.shape[1] == n_actions
-    )
-    assert np.all(0 <= expected_reward) and np.all(expected_reward <= 1)
-
-
-def test_synthetic_linear_reward_function():
-    # context
-    with pytest.raises(ValueError):
-        context = np.array([1.0, 1.0])
-        linear_reward_function(context=context, action_context=np.eye(2))
-
-    with pytest.raises(ValueError):
-        context = [1.0, 1.0]
-        linear_reward_function(context=context, action_context=np.eye(2))
-
-    # action_context
-    with pytest.raises(ValueError):
-        action_context = np.array([1.0, 1.0])
-        linear_reward_function(context=np.ones([2, 2]), action_context=action_context)
-
-    with pytest.raises(ValueError):
-        action_context = [1.0, 1.0]
-        linear_reward_function(context=np.ones([2, 2]), action_context=action_context)
-
-    # degree
-    with pytest.raises(TypeError):
-        action_context = np.array([1.0, 1.0])
-        linear_reward_function(
-            context=np.ones([2, 2]), action_context=np.eye(2), degree="1"
-        )
-
-    with pytest.raises(ValueError):
-        action_context = [1.0, 1.0]
-        linear_reward_function(
-            context=np.ones([2, 2]), action_context=np.eye(2), degree=0
-        )
-
-    # expected_reward
-    n_rounds = 10
-    dim_context = 3
-    n_actions = 5
-    context = np.ones([n_rounds, dim_context])
-    action_context = np.eye(n_actions)
-    expected_reward = linear_reward_function(
-        context=context, action_context=action_context
-    )
-    assert (
-        expected_reward.shape[0] == n_rounds and expected_reward.shape[1] == n_actions
-    )
-
-
-def test_synthetic_linear_behavior_policy():
-    # context
-    with pytest.raises(ValueError):
-        context = np.array([1.0, 1.0])
-        linear_behavior_policy(context=context, action_context=np.eye(2))
-
-    with pytest.raises(ValueError):
-        context = [1.0, 1.0]
-        linear_behavior_policy(context=context, action_context=np.eye(2))
-
-    # action_context
-    with pytest.raises(ValueError):
-        action_context = np.array([1.0, 1.0])
-        linear_behavior_policy(context=np.ones([2, 2]), action_context=action_context)
-
-    with pytest.raises(ValueError):
-        action_context = [1.0, 1.0]
-        linear_behavior_policy(context=np.ones([2, 2]), action_context=action_context)
-
-    # degree
-    with pytest.raises(TypeError):
-        action_context = np.array([1.0, 1.0])
-        linear_behavior_policy(
-            context=np.ones([2, 2]), action_context=np.eye(2), degree="1"
-        )
-
-    with pytest.raises(ValueError):
-        action_context = [1.0, 1.0]
-        linear_behavior_policy(
-            context=np.ones([2, 2]), action_context=np.eye(2), degree=0
-        )
-
-    # pscore (action choice probabilities by behavior policy)
-    n_rounds = 10
-    dim_context = 3
-    n_actions = 5
-    context = np.ones([n_rounds, dim_context])
-    action_context = np.eye(n_actions)
-    action_prob = softmax(
-        linear_behavior_policy(context=context, action_context=action_context)
-    )
-    assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
-    assert np.all(0 <= action_prob) and np.all(action_prob <= 1)
+        assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
+        assert np.all(0 <= action_prob) and np.all(action_prob <= 1)

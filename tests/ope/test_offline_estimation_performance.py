@@ -11,7 +11,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import torch
 
-from obp.dataset import linear_behavior_policy
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
 from obp.ope import DirectMethod
@@ -61,7 +60,7 @@ base_model_dict = dict(
 
 offline_experiment_configurations = [
     (
-        600,
+        800,
         10,
         5,
         "logistic_regression",
@@ -99,26 +98,25 @@ offline_experiment_configurations = [
 
 
 @dataclass
-class RandomOffPolicyEstimator(BaseOffPolicyEstimator):
-    """Estimate the policy value based on random predictions"""
+class NaiveEstimator(BaseOffPolicyEstimator):
+    """Estimate the policy value by just averaging observed rewards"""
 
-    estimator_name: str = "random"
+    estimator_name: str = "naive"
 
     def _estimate_round_rewards(
         self,
-        action_dist: np.ndarray,
+        reward: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        n_rounds = action_dist.shape[0]
-        return np.random.uniform(size=n_rounds)
+        return reward
 
     def estimate_policy_value(
         self,
-        action_dist: np.ndarray,
+        reward: np.ndarray,
         **kwargs,
     ) -> float:
         """Estimate the policy value of evaluation policy."""
-        return self._estimate_round_rewards(action_dist=action_dist).mean()
+        return self._estimate_round_rewards(reward=reward).mean()
 
     def estimate_policy_value_tensor(self, **kwargs) -> torch.Tensor:
         pass  # not used in this test
@@ -129,7 +127,7 @@ class RandomOffPolicyEstimator(BaseOffPolicyEstimator):
 
 # compared OPE estimators
 ope_estimators = [
-    RandomOffPolicyEstimator(),
+    NaiveEstimator(),
     DirectMethod(),
     InverseProbabilityWeighting(),
     InverseProbabilityWeightingTuning(
@@ -168,8 +166,8 @@ def test_offline_estimation_performance(
         dataset = SyntheticBanditDataset(
             n_actions=n_actions,
             dim_context=dim_context,
+            beta=-2.0,
             reward_function=logistic_reward_function,
-            behavior_policy_function=linear_behavior_policy,
             random_state=i,
         )
         # define evaluation policy using IPWLearner
@@ -239,16 +237,16 @@ def test_offline_estimation_performance(
     relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
     relative_ee_df_mean = relative_ee_df["mean"]
 
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dm"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["ipw"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["ipw (tuning)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["snipw"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr (tuning)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["sndr"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda=1)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (lambda=100)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["switch-dr (tuning)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=1)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (lambda=100)"]
-    assert relative_ee_df_mean["random"] > relative_ee_df_mean["dr-os (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dm"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["snipw"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sndr"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (lambda=1)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (lambda=100)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=1)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=100)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning)"]
