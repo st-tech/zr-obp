@@ -642,7 +642,8 @@ def _base_reward_function(
     effective_dim_ratio: int, default=1.0
         Propotion of context dimensions relevant to the expected rewards.
         Specifically, after the polynomial feature transformation is applied to the original context vectors,
-        only `dim_context * effective_dim_ratio` number of relevant dimensions will be used to generate expected rewards.
+        only `dim_context * effective_dim_ratio` fraction of randomly selected dimensions
+        will be used as relevant dimensions to generate expected rewards.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
