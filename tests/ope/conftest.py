@@ -4,6 +4,7 @@ from typing import Set
 
 import numpy as np
 import pytest
+from scipy import special
 from sklearn.utils import check_random_state
 
 from obp.dataset import linear_behavior_policy
@@ -88,10 +89,8 @@ def fixed_synthetic_bandit_feedback(synthetic_bandit_feedback) -> BanditFeedback
     random_ = check_random_state(random_state)
     # copy synthetic bandit feedback
     bandit_feedback = copy.deepcopy(synthetic_bandit_feedback)
-    # expected reward would be about 0.65%, which is close to that of ZOZO dataset
-    logit = np.log(
-        bandit_feedback["expected_reward"] / (1 - bandit_feedback["expected_reward"])
-    )
+    # expected reward would be about 0.65%, which is close to that of the ZOZO dataset
+    logit = special.logit(bandit_feedback["expected_reward"])
     bandit_feedback["expected_reward"] = sigmoid(logit - 4.0)
     expected_reward_factual = bandit_feedback["expected_reward"][
         np.arange(bandit_feedback["n_rounds"]), bandit_feedback["action"]
@@ -111,6 +110,7 @@ def feedback_key_set() -> Set[str]:
         "n_actions",
         "n_rounds",
         "position",
+        "pi_b",
         "pscore",
         "reward",
     }
@@ -121,16 +121,16 @@ def feedback_key_set() -> Set[str]:
 def expected_reward_0() -> np.ndarray:
     return np.array(
         [
-            0.80210203,
-            0.73828559,
-            0.83199558,
-            0.83412285,
-            0.7793723,
-            0.50544696,
-            0.7942911,
-            0.81190503,
-            0.70617705,
-            0.68985306,
+            0.816124,
+            0.625855,
+            0.386785,
+            0.301848,
+            0.726634,
+            0.218076,
+            0.482361,
+            0.625271,
+            0.586353,
+            0.386384,
         ]
     )
 
