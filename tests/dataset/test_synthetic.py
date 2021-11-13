@@ -6,8 +6,10 @@ from obp.dataset.synthetic import linear_behavior_policy
 from obp.dataset.synthetic import linear_reward_function
 from obp.dataset.synthetic import logistic_polynomial_reward_function
 from obp.dataset.synthetic import logistic_reward_function
+from obp.dataset.synthetic import logistic_sparse_reward_function
 from obp.dataset.synthetic import polynomial_behavior_policy
 from obp.dataset.synthetic import polynomial_reward_function
+from obp.dataset.synthetic import sparse_reward_function
 from obp.utils import softmax
 
 
@@ -251,6 +253,7 @@ def test_synthetic_logistic_reward_function():
     for logistic_reward_function_ in [
         logistic_reward_function,
         logistic_polynomial_reward_function,
+        logistic_sparse_reward_function,
     ]:
         # context
         with pytest.raises(ValueError):
@@ -294,6 +297,7 @@ def test_synthetic_continuous_reward_function():
     for continuous_reward_function in [
         linear_reward_function,
         polynomial_reward_function,
+        sparse_reward_function,
     ]:
         # context
         with pytest.raises(ValueError):

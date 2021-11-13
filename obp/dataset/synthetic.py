@@ -402,7 +402,7 @@ def logistic_polynomial_reward_function(
     action_context: np.ndarray,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
-    """Logistic mean reward function for binary rewards.
+    """Logistic mean reward function for binary rewards with polynomial feature transformations.
 
     Note
     ------
@@ -431,6 +431,48 @@ def logistic_polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
+        random_state=random_state,
+    )
+
+    return sigmoid(logits)
+
+
+def logistic_sparse_reward_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Logistic mean reward function for binary rewards with small effective feature dimension.
+
+    Note
+    ------
+    Polynomial and interaction features will be used to calculate the expected rewards.
+    `sklearn.preprocessing.PolynomialFeatures(degree=4)` is applied to generate high-dimensional feature vector.
+    After that, some dimensions will be dropped as irrelevant dimensions, producing sparse feature vector.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    expected_reward: array-like, shape (n_rounds, n_actions)
+        Expected reward given context (:math:`x`) and action (:math:`a`),
+        i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+
+    """
+    logits = _base_reward_function(
+        context=context,
+        action_context=action_context,
+        degree=4,
+        effective_dim_ratio=0.3,
         random_state=random_state,
     )
 
@@ -480,7 +522,7 @@ def polynomial_reward_function(
     Note
     ------
     Polynomial and interaction features will be used to calculate the expected rewards.
-    Feature transformation is based on `sklearn.preprocessing.PolynomialFeatures(degree=3)`
+    Feature transformation is based on `sklearn.preprocessing.PolynomialFeatures(degree=3)`.
 
     Parameters
     -----------
@@ -508,10 +550,51 @@ def polynomial_reward_function(
     )
 
 
+def sparse_reward_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Sparse mean reward function for continuous rewards.
+
+    Note
+    ------
+    Polynomial and interaction features will be used to calculate the expected rewards.
+    `sklearn.preprocessing.PolynomialFeatures(degree=4)` is applied to generate high-dimensional feature vector.
+    After that, some dimensions will be dropped as irrelevant dimensions, producing sparse feature vector.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    expected_rewards: array-like, shape (n_rounds, n_actions)
+        Expected reward given context (:math:`x`) and action (:math:`a`),
+        i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+
+    """
+    return _base_reward_function(
+        context=context,
+        action_context=action_context,
+        degree=4,
+        effective_dim_ratio=0.3,
+        random_state=random_state,
+    )
+
+
 def _base_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     degree: int = 3,
+    effective_dim_ratio: float = 1.0,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Base function to define mean reward functions.
@@ -528,7 +611,8 @@ def _base_reward_function(
     where :math:`x` is a original context vector,
     and :math:`a` is a original action_context vector representing actions.
     Polynomial transformation is applied to original context and action vectors,
-    producing :math:`x \\in \\mathbb{R}^{d_X}` and :math:`\\tilde{a} \\in \\mathbb{R}^{d_A}`.
+    producing :math:`\\tilde{x} \\in \\mathbb{R}^{d_X}` and :math:`\\tilde{a} \\in \\mathbb{R}^{d_A}`.
+    Moreover, some dimensions of context and action_context might be randomly dropped according to `effective_dim_ratio`.
     :math:`M_{X,A} \\mathbb{R}^{d_X \\times d_A}`, :math:`\\theta_x \\in \\mathbb{R}^{d_X}`,
     and :math:`\\theta_a \\in \\mathbb{R}^{d_A}` are parameter matrix and vectors,
     all sampled from the uniform distribution.
@@ -538,8 +622,10 @@ def _base_reward_function(
     Currently, this function is used to define
     `obp.dataset.linear_reward function` (degree=1),
     `obp.dataset.polynomial_reward function` (degree=3),
+    `obp.dataset.sparse_reward function` (degree=4, effective_dim_ratio=0.1),
      `obp.dataset.logistic_reward function` (degree=1),
-     and `obp.dataset.logistic_polynomial_reward_function` (degree=3).
+     `obp.dataset.logistic_polynomial_reward_function` (degree=3),
+     and `obp.dataset.logistic_sparse_reward_function` (degree=4, effective_dim_ratio=0.1).
 
     Parameters
     -----------
@@ -553,6 +639,11 @@ def _base_reward_function(
         Specifies the maximal degree of the polynomial feature transformations
         applied to both `context` and `action_context`.
 
+    effective_dim_ratio: int, default=1.0
+        Propotion of context dimensions relevant to the expected rewards.
+        Specifically, after the polynomial feature transformation is applied to the original context vectors,
+        only `dim_context * effective_dim_ratio` number of relevant dimensions will be used to generate expected rewards.
+
     random_state: int, default=None
         Controls the random seed in sampling dataset.
 
@@ -564,25 +655,52 @@ def _base_reward_function(
 
     """
     check_scalar(degree, "degree", int, min_val=1)
+    check_scalar(
+        effective_dim_ratio, "effective_dim_ratio", float, min_val=0, max_val=1
+    )
     check_array(array=context, name="context", expected_dim=2)
     check_array(array=action_context, name="action_context", expected_dim=2)
 
     poly = PolynomialFeatures(degree=degree)
     context_ = poly.fit_transform(context)
     action_context_ = poly.fit_transform(action_context)
-    datasize, context_dim = context_.shape
-    n_actions, action_context_dim = action_context_.shape
-
+    datasize, dim_context = context_.shape
+    n_actions, dim_action_context = action_context_.shape
     random_ = check_random_state(random_state)
-    context_coef_ = random_.uniform(-1, 1, size=context_dim)
-    action_coef_ = random_.uniform(-1, 1, size=action_context_dim)
+
+    if effective_dim_ratio < 1.0:
+        effective_dim_context = np.maximum(
+            np.int32(dim_context * effective_dim_ratio), 1
+        )
+        effective_dim_action_context = np.maximum(
+            np.int32(dim_action_context * effective_dim_ratio), 1
+        )
+        effective_context_ = context_[
+            :, random_.choice(dim_context, effective_dim_context, replace=False)
+        ]
+        effective_action_context_ = action_context_[
+            :,
+            random_.choice(
+                dim_action_context, effective_dim_action_context, replace=False
+            ),
+        ]
+    else:
+        effective_dim_context = dim_context
+        effective_dim_action_context = dim_action_context
+        effective_context_ = context_
+        effective_action_context_ = action_context_
+
+    context_coef_ = random_.uniform(-1, 1, size=effective_dim_context)
+    action_coef_ = random_.uniform(-1, 1, size=effective_dim_action_context)
     context_action_coef_ = random_.uniform(
-        -1, 1, size=(context_dim, action_context_dim)
+        -1, 1, size=(effective_dim_context, effective_dim_action_context)
     )
 
-    context_values = np.tile(context_ @ context_coef_, (n_actions, 1)).T
-    action_values = np.tile(action_coef_ @ action_context_.T, (datasize, 1))
-    context_action_values = context_ @ context_action_coef_ @ action_context_.T
+    context_values = np.tile(effective_context_ @ context_coef_, (n_actions, 1)).T
+    action_values = np.tile(action_coef_ @ effective_action_context_.T, (datasize, 1))
+    context_action_values = (
+        effective_context_ @ context_action_coef_ @ effective_action_context_.T
+    )
     expected_rewards = context_values + action_values + context_action_values
     expected_rewards = (
         degree * (expected_rewards - expected_rewards.mean()) / expected_rewards.std()
@@ -682,7 +800,7 @@ def _base_behavior_policy_function(
     where :math:`x` is a original context vector,
     and :math:`a` is a original action_context vector representing actions.
     Polynomial transformation is applied to original context and action vectors,
-    producing :math:`x \\in \\mathbb{R}^{d_X}` and :math:`\\tilde{a} \\in \\mathbb{R}^{d_A}`.
+    producing :math:`\\tilde{x} \\in \\mathbb{R}^{d_X}` and :math:`\\tilde{a} \\in \\mathbb{R}^{d_A}`.
     :math:`M_{X,A} \\mathbb{R}^{d_X \\times d_A}` and :math:`\\theta_a \\in \\mathbb{R}^{d_A}` are
     parameter matrix and vector, each sampled from the uniform distribution.
     The softmax function will be applied to :math:`f_b(x,\\cdot)` in `obp.dataset.SyntheticDataset`
@@ -721,12 +839,12 @@ def _base_behavior_policy_function(
     poly = PolynomialFeatures(degree=degree)
     context_ = poly.fit_transform(context)
     action_context_ = poly.fit_transform(action_context)
-    context_dim = context_.shape[1]
-    action_context_dim = action_context_.shape[1]
+    dim_context = context_.shape[1]
+    dim_action_context = action_context_.shape[1]
 
     random_ = check_random_state(random_state)
-    action_coef = random_.uniform(size=action_context_dim)
-    context_action_coef = random_.uniform(size=(context_dim, action_context_dim))
+    action_coef = random_.uniform(size=dim_action_context)
+    context_action_coef = random_.uniform(size=(dim_context, dim_action_context))
 
     pi_b_logits = context_ @ context_action_coef @ action_context_.T
     pi_b_logits += action_coef @ action_context_.T

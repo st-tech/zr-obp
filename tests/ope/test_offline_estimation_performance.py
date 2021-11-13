@@ -60,7 +60,7 @@ base_model_dict = dict(
 
 offline_experiment_configurations = [
     (
-        800,
+        600,
         10,
         5,
         "logistic_regression",
