@@ -1138,22 +1138,18 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     def calc_evaluation_policy_action_dist(
         self,
-        bandit_feedback: BanditFeedback,
+        action: np.ndarray,
         evaluation_policy_logit_: np.ndarray,
-        is_factorizable: bool,
     ):
         """Calculate action distribution at each slot from a given evaluation policy logit.
 
         Parameters
         ----------
-        bandit_feedback: BanditFeedback
-            Logged bandit feedback data used for off-policy evaluation for the slate recommendation setting.
+        action: array-like, shape (n_rounds * len_list, )
+            Action chosen by behavior policy.
 
         evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
             Logit values of evaluation policy given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
-
-        is_factorizable: bool, default=False
-            Whether the behavior and evaluation policies are factorizable or not.
 
         Returns
         ----------
@@ -1162,16 +1158,26 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         """
-        n_rounds = bandit_feedback["n_rounds"]
-        len_list = int((bandit_feedback["slate_id"] == 0).sum())
+        check_array(action, name="action", expected_dim=1)
+        check_array(
+            evaluation_policy_logit_, name="evaluation_policy_logit_", expected_dim=2
+        )
+        if evaluation_policy_logit_.shape[1] != self.n_unique_action:
+            raise ValueError(
+                "Expected `evaluation_policy_logit_.shape[1] == n_unique_action`, but found it False"
+            )
+        if len(action) != evaluation_policy_logit_.shape[0] * self.len_list:
+            raise ValueError(
+                "Expected `len(action) == evaluation_policy_logit_.shape[0] * len_list`, but found it False"
+            )
+        n_rounds = evaluation_policy_logit_.shape[0]
 
-        action = bandit_feedback["action"]
         # (n_rounds * len_list, ) -> (n_rounds, len_list)
-        action = action.reshape((n_rounds, len_list))
+        action = action.reshape((n_rounds, self.len_list))
         # (n_rounds, n_unique_action) -> (n_rounds, len_list, n_unique_action)
         evaluation_policy_logit_ = np.array(
             [
-                [evaluation_policy_logit_[i] for _ in range(len_list)]
+                [evaluation_policy_logit_[i] for _ in range(self.len_list)]
                 for i in range(n_rounds)
             ]
         )
@@ -1179,8 +1185,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         # (n_rounds, len_list, n_unique_action)
         evaluation_policy_action_dist = []
         for i in range(n_rounds):
-            if not is_factorizable:
-                for position_ in range(len_list - 1):
+            if not self.is_factorizable:
+                for position_ in range(self.len_list - 1):
                     action_ = action[i][position_]
                     # mask action choice probability of the previously chosen action
                     # to avoid overflow in softmax function, set -1e4 instead of -np.inf
