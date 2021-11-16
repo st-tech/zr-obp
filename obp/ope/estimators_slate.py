@@ -621,35 +621,35 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
         Parameters
         ----------
-        action: array-like, (<= n_rounds * len_list,)
+        action: array-like, (n_rounds * len_list,)
             Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
             which is chosen by the behavior policy :math:`\\pi_b`.
 
-        reward: array-like, shape (<= n_rounds * len_list,)
+        reward: array-like, shape (n_rounds * len_list,)
             Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
-        position: array-like, shape (<= n_rounds * len_list,)
+        position: array-like, shape (n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
-        behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+        behavior_policy_pscore: array-like, shape (n_rounds * len_list,)
             Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+        evaluation_policy_pscore: array-like, shape (n_rounds * len_list,)
             Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
+        evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
         ----------
-        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+        estimated_rewards: array-like, shape (n_rounds * len_list,)
             Rewards estimated by Cascade-DR given round (slate_id) and slot (position).
 
         """
@@ -700,38 +700,38 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
         Parameters
         ----------
-        slate_id: array-like, shape (<= n_rounds * len_list,)
+        slate_id: array-like, shape (n_rounds * len_list,)
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
-        action: array-like, (<= n_rounds * len_list,)
+        action: array-like, (n_rounds * len_list,)
             Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
             which is chosen by the behavior policy :math:`\\pi_b`.
 
-        reward: array-like, shape (<= n_rounds * len_list,)
+        reward: array-like, shape (n_rounds * len_list,)
             Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
-        position: array-like, shape (<= n_rounds * len_list,)
+        position: array-like, shape (n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
-        pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+        pscore_cascade: array-like, shape (n_rounds * len_list,)
             Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
             Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
+        evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         Returns
         ----------
-        V_hat: array-like, shape (<= n_rounds * len_list,)
+        V_hat: array-like, shape (n_rounds * len_list,)
             Estimated policy value (performance) of a given evaluation policy.
 
         """
@@ -779,32 +779,32 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
         Parameters
         ----------
-        slate_id: array-like, shape (<= n_rounds * len_list,)
+        slate_id: array-like, shape (n_rounds * len_list,)
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
-        action: array-like, (<= n_rounds * len_list,)
+        action: array-like, (n_rounds * len_list,)
             Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
             which is chosen by the behavior policy :math:`\\pi_b`.
 
-        reward: array-like, shape (<= n_rounds * len_list,)
+        reward: array-like, shape (n_rounds * len_list,)
             Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
-        position: array-like, shape (<= n_rounds * len_list,)
+        position: array-like, shape (n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
-        pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+        pscore_cascade: array-like, shape (n_rounds * len_list,)
             Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
             Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
+        evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
