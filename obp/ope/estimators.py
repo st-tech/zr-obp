@@ -9,7 +9,8 @@ from typing import Dict
 from typing import Optional
 
 import numpy as np
-from sklearn.utils import check_scalar
+from sklearn.utils import check_scalar, check_random_state
+from sklearn.base import BaseEstimator, clone
 
 from ..utils import check_array
 from ..utils import check_ope_inputs
@@ -1727,6 +1728,457 @@ class DoublyRobustWithShrinkage(DoublyRobust):
                 q_hat=estimated_rewards_by_reg_model[
                     np.arange(n_rounds), action, position
                 ],
+            )
+        estimated_mse_score = sample_variance + (bias_term ** 2)
+
+        return estimated_mse_score
+
+
+@dataclass
+class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
+    """Balanced Inverse Probability Weighting (IPW) Estimator.
+
+    Note (WIP)
+    -------
+    Inverse Probability Weighting (IPW) estimates the policy value of evaluation policy :math:`\\pi_e` by
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{IPW}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{\\mathcal{D}} [ w(x_t,a_t) r_t],
+
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
+    a behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
+    :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+    When the weight-clipping is applied, a large importance weight is clipped as :math:`\\hat{w}(x,a) := \\min \\{ \\lambda, w(x,a) \\}`
+    where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
+
+    IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy (importance weight).
+    When the behavior policy is known, IPW is unbiased and consistent for the true policy value.
+    However, it can have a large variance, especially when the evaluation policy significantly deviates from the behavior policy.
+
+    Parameters
+    ------------
+    lambda_: float, default=np.inf
+        A maximum possible value of the importance weight.
+        When a positive finite value is given, importance weights larger than `lambda_` will be clipped.
+
+    estimator_name: str, default='b-ipw'.
+        Name of the estimator.
+
+    References
+    ------------
+
+
+    """
+
+    len_list: int
+    n_actions: int
+    fit_random_state: int
+    base_model: BaseEstimator
+    lambda_: float = np.inf
+    estimator_name: str = "b-ipw"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        check_scalar(
+            self.lambda_,
+            name="lambda_",
+            target_type=(int, float),
+            min_val=0.0,
+        )
+        if self.lambda_ != self.lambda_:
+            raise ValueError("lambda_ must not be nan")
+        self.base_model_list = [
+            clone(self.base_model) for _ in np.arange(self.len_list)
+        ]
+
+    def fit(
+        self,
+        action: np.ndarray,
+        context: np.ndarray,
+        action_dist: np.ndarray,
+        evaluation_policy_sample_method: str,
+        position: Optional[np.ndarray] = None,
+        action_context: Optional[np.ndarray] = None,
+    ) -> None:
+        if position is None or self.len_list == 1:
+            position = np.zeros_like(action)
+        else:
+            if position.max() >= self.len_list:
+                raise ValueError(
+                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                )
+        if evaluation_policy_sample_method == "sample":
+            sampled_action_ranking = self._sample_action_ranking(
+                action_dist=action_dist
+            )
+        else:
+            sampled_action_ranking = action_dist
+        for position_ in np.arange(self.len_list):
+            idx = position == position_
+            action_dist_at_position = action_dist[idx][:, :, position_]
+            X, y, sample_weight = self._pre_process_for_clf_model(
+                context=context[idx],
+                action=action[idx],
+                action_context=action_context,
+                action_dist_at_position=action_dist_at_position,
+                evaluation_policy_sample_method=evaluation_policy_sample_method,
+                sampled_action_ranking_at_position=sampled_action_ranking[idx][
+                    :, :, position_
+                ],
+            )
+            if X.shape[0] == 0:
+                raise ValueError(f"No training data at position {position_}")
+            self.base_model_list[position_].fit(X, y, sample_weight=sample_weight)
+            # import pdb
+
+            # pdb.set_trace()
+
+    def _pre_process_for_clf_model(
+        self,
+        context: np.ndarray,
+        action: np.ndarray,
+        action_context: np.ndarray,
+        evaluation_policy_sample_method: str,
+        action_dist_at_position: Optional[np.ndarray] = None,
+        sampled_action_ranking_at_position: Optional[np.ndarray] = None,
+        is_fitting: bool = True,
+    ) -> np.ndarray:
+        """Preprocess feature vectors to train a regression model.
+
+        Note
+        -----
+        Please override this method if you want to use another feature enginnering
+        for training the regression model.
+
+        Parameters
+        -----------
+        context: array-like, shape (n_rounds,)
+            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        action_context: array-like, shape shape (n_actions, dim_action_context)
+            Context vector characterizing action (i.e., vector representation of each action).
+
+        """
+        if action_context is None:
+            action_context = np.eye(self.n_actions, dtype=int)
+        behavior_feature = np.c_[context, action_context[action]]
+        if not is_fitting:
+            return behavior_feature
+        if evaluation_policy_sample_method == "weighted_loss":
+            X = np.copy(behavior_feature)
+            y = np.zeros(X.shape[0], dtype=int)
+            sample_weight = np.ones(X.shape[0])
+            for action_idx in np.arange(self.n_actions):
+                tmp_action = np.ones(context.shape[0], dtype=int) * action_idx
+                evaluation_feature = np.c_[context, action_context[tmp_action]]
+                X = np.r_[X, evaluation_feature]
+                y = np.r_[y, np.ones(evaluation_feature.shape[0], dtype=int)]
+                sample_weight = np.r_[
+                    sample_weight, action_dist_at_position[:, action_idx]
+                ]
+        else:
+            if evaluation_policy_sample_method == "raw":
+                evaluation_feature = np.c_[context, action_dist_at_position]
+            elif evaluation_policy_sample_method == "sample":
+                evaluation_feature = np.c_[context, sampled_action_ranking_at_position]
+            X = np.copy(behavior_feature)
+            y = np.zeros(X.shape[0], dtype=int)
+            X = np.r_[X, evaluation_feature]
+            y = np.r_[y, np.ones(evaluation_feature.shape[0], dtype=int)]
+            sample_weight = None
+        return X, y, sample_weight
+
+    def _sample_action_ranking(self, action_dist: np.ndarray) -> np.ndarray:
+        random_ = check_random_state(self.fit_random_state)
+        n_rounds = action_dist.shape[0]
+        sampled_ranking = np.zeros((n_rounds, self.n_actions, self.len_list))
+        scores = np.log(action_dist.mean(2)) + random_.gumbel(
+            size=(n_rounds, self.len_list)
+        )
+        sampled_ranking_full = np.argsort(-scores, axis=1)
+        for position_ in np.arange(self.len_list):
+            sampled_ranking[
+                np.arange(n_rounds),
+                sampled_ranking_full[:, position_],
+                position_,
+            ] = 1
+        return sampled_ranking
+
+    def predict(
+        self,
+        action: np.ndarray,
+        context: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        action_context: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        balancing_weight = np.zeros(action.shape[0])
+        for position_ in np.arange(self.len_list):
+            idx = position == position_
+            X = self._pre_process_for_clf_model(
+                context=context[idx],
+                action=action[idx],
+                action_context=action_context,
+                evaluation_policy_sample_method="raw",
+                is_fitting=False,
+            )
+            # import pdb
+
+            # pdb.set_trace()
+            balancing_weight[idx] = self.base_model_list[position_].predict_proba(X)[
+                :, 1
+            ]
+        return balancing_weight / (1 - balancing_weight)
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        balancing_weight: np.ndarray,
+        action_dist: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate round-wise (or sample-wise) rewards.
+
+        Parameters
+        ----------
+        reward: array-like or Tensor, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like or Tensor, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like or Tensor, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like or Tensor, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        Returns
+        ----------
+        estimated_rewards: array-like or Tensor, shape (n_rounds,)
+            Rewards of each round estimated by IPW.
+
+        """
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+        iw = (
+            action_dist[np.arange(action.shape[0]), action, position] * balancing_weight
+        )
+        # weight clipping
+        if isinstance(iw, np.ndarray):
+            iw = np.minimum(iw, self.lambda_)
+        return reward * iw / iw.mean()
+
+    def estimate_policy_value(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        action_dist: np.ndarray,
+        context: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        action_context: Optional[np.ndarray] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        Returns
+        ----------
+        V_hat: float
+            Estimated policy value (performance) of a given evaluation policy.
+
+        """
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+        balancing_weight = self.predict(
+            context=context,
+            action=action,
+            action_context=action_context,
+            position=position,
+        )
+        return self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            balancing_weight=balancing_weight,
+            action_dist=action_dist,
+        ).mean()
+
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        estimated_round_rewards = self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+        )
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_round_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+    def _estimate_mse_score(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        use_bias_upper_bound: bool = True,
+        delta: float = 0.05,
+        **kwargs,
+    ) -> float:
+        """Estimate the MSE score of a given clipping hyperparameter to conduct hyperparameter tuning.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+
+        use_bias_upper_bound: bool, default=True
+            Whether to use bias upper bound in hyperparameter tuning.
+            If False, direct bias estimator is used to estimate the MSE.
+
+        delta: float, default=0.05
+            A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
+
+        Returns
+        ----------
+        estimated_mse_score: float
+            Estimated MSE score of a given clipping hyperparameter `lambda_`.
+            MSE score is the sum of (high probability) upper bound of bias and the sample variance.
+            This is estimated using the automatic hyperparameter tuning procedure
+            based on Section 5 of Su et al.(2020).
+
+        """
+        n_rounds = reward.shape[0]
+        # estimate the sample variance of IPW with clipping
+        sample_variance = np.var(
+            self._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                position=position,
+            )
+        )
+        sample_variance /= n_rounds
+
+        # estimate the (high probability) upper bound of the bias of IPW with clipping
+        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        if use_bias_upper_bound:
+            bias_term = estimate_high_probability_upper_bound_bias(
+                reward=reward, iw=iw, iw_hat=np.minimum(iw, self.lambda_), delta=delta
+            )
+        else:
+            bias_term = estimate_bias_in_ope(
+                reward=reward,
+                iw=iw,
+                iw_hat=np.minimum(iw, self.lambda_),
             )
         estimated_mse_score = sample_variance + (bias_term ** 2)
 

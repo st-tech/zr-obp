@@ -7,6 +7,7 @@ from obp.ope.estimators import ReplayMethod
 from obp.ope.estimators import SelfNormalizedDoublyRobust
 from obp.ope.estimators import SelfNormalizedInverseProbabilityWeighting
 from obp.ope.estimators import SwitchDoublyRobust
+from obp.ope.estimators import BalancedInverseProbabilityWeighting
 from obp.ope.estimators_continuous import (
     KernelizedSelfNormalizedInverseProbabilityWeighting,
 )
@@ -57,6 +58,7 @@ __all__ = [
     "SelfNormalizedSlateRewardInteractionIPS",
     "SelfNormalizedSlateIndependentIPS",
     "SelfNormalizedSlateStandardIPS",
+    "BalancedInverseProbabilityWeighting",
     "BaseContinuousOffPolicyEstimator",
     "KernelizedInverseProbabilityWeighting",
     "KernelizedSelfNormalizedInverseProbabilityWeighting",
