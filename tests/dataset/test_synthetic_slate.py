@@ -2301,19 +2301,19 @@ invalid_input_of_calc_evaluation_policy_action_dist = [
         np.ones((10 * 3 + 1)),  #
         np.ones((10, 3)),
         ValueError,
-        "Expected `len(action) == evaluation_policy_logit_.shape[0] * len_list`",
+        "Expected `len(action) ==",
     ),
     (
         np.ones((10 * 3)),
         np.ones((10, 2)),  #
         ValueError,
-        "Expected `evaluation_policy_logit_.shape[1] == n_unique_action`",
+        "Expected `evaluation_policy_logit_.shape[1] ==",
     ),
     (
         np.ones((10 * 3)),
         np.ones((15, 3)),  #
         ValueError,
-        "Expected `len(action) == evaluation_policy_logit_.shape[0] * len_list`",
+        "Expected `len(action) ==",
     ),
     (
         np.ones((10 * 3)),
@@ -2360,7 +2360,7 @@ def test_calc_evaluation_policy_action_dist_using_invalid_input_data(
 # action, evaluation_policy_logit_, description
 valid_input_of_calc_evaluation_policy_action_dist = [
     (
-        np.ones((10 * 3)),
+        np.ones((10 * 3), dtype=int),
         np.ones((10, 3)) * 10,
         "",
     ),
@@ -2407,6 +2407,10 @@ def test_calc_evaluation_policy_action_dist_using_valid_input_data_factorizable_
     )
 
 
+@pytest.mark.parametrize(
+    "action, evaluation_policy_logit_, description",
+    valid_input_of_calc_evaluation_policy_action_dist,
+)
 def test_calc_evaluation_policy_action_dist_using_valid_input_data_non_factorizable_case(
     action,
     evaluation_policy_logit_,

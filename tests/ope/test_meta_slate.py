@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from sklearn.linear_model import Ridge
+from obp.ope.regression_model_slate import SlateRegressionModel
 import pytest
 
 from obp.ope import SlateIndependentIPS
@@ -244,13 +245,16 @@ class SlateCascadeDoublyRobustMock(SlateCascadeDoublyRobust):
 
 
 # define Mock instances
-n_unique_action = 3
-sips = SlateStandardIPSMock(len_list=3)
-sips2 = SlateStandardIPSMock(len_list=3, eps=0.02)
-sips3 = SlateStandardIPSMock(len_list=3, estimator_name="sips3")
-iips = SlateIndependentIPSMock(len_list=3)
-rips = SlateRewardInteractionIPSMock(len_list=3)
-cascade_dr = SlateCascadeDoublyRobustMock(len_list=3, n_unique_action=n_unique_action)
+len_list = 3
+n_unique_action = 10
+sips = SlateStandardIPSMock(len_list=len_list)
+sips2 = SlateStandardIPSMock(len_list=len_list, eps=0.02)
+sips3 = SlateStandardIPSMock(len_list=len_list, estimator_name="sips3")
+iips = SlateIndependentIPSMock(len_list=len_list)
+rips = SlateRewardInteractionIPSMock(len_list=len_list)
+cascade_dr = SlateCascadeDoublyRobustMock(
+    len_list=len_list, n_unique_action=n_unique_action
+)
 
 
 def test_meta_post_init(synthetic_slate_bandit_feedback: BanditFeedback) -> None:
@@ -299,7 +303,7 @@ def test_meta_post_init(synthetic_slate_bandit_feedback: BanditFeedback) -> None
             bandit_feedback=synthetic_slate_bandit_feedback, ope_estimators=[cascade_dr]
         )
     # __post_init__ raise ValueError when base_regression_model is not a child class of SlateRegressionModel
-    with pytest.raises(RuntimeError, match=r"base_regression_model must be*"):
+    with pytest.raises(ValueError, match=r"base_regression_model must be*"):
         _ = SlateOffPolicyEvaluation(
             bandit_feedback=synthetic_slate_bandit_feedback,
             ope_estimators=[cascade_dr],
@@ -347,7 +351,13 @@ def test_meta_create_estimator_inputs_using_invalid_input_data(
     Test the _create_estimator_inputs using valid data and a sips estimator
     """
     ope_ = SlateOffPolicyEvaluation(
-        bandit_feedback=synthetic_slate_bandit_feedback, ope_estimators=[cascade_dr]
+        bandit_feedback=synthetic_slate_bandit_feedback,
+        ope_estimators=[cascade_dr],
+        base_regression_model=SlateRegressionModel(
+            base_model=Ridge(),
+            len_list=len_list,
+            n_unique_action=n_unique_action,
+        ),
     )
     # raise ValueError when the shape of two arrays are different
     with pytest.raises(ValueError, match=f"{description}*"):
@@ -437,7 +447,13 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
     )
     # check if the valid values are returned when using cascade-dr
     ope_ = SlateOffPolicyEvaluation(
-        bandit_feedback=synthetic_slate_bandit_feedback, ope_estimators=[cascade_dr]
+        bandit_feedback=synthetic_slate_bandit_feedback,
+        ope_estimators=[cascade_dr],
+        base_regression_model=SlateRegressionModel(
+            base_model=Ridge(),
+            len_list=len_list,
+            n_unique_action=n_unique_action,
+        ),
     )
     estimator_inputs = ope_._create_estimator_inputs(
         evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
@@ -475,6 +491,11 @@ def test_meta_estimate_policy_values_using_valid_input_data(
     ope_ = SlateOffPolicyEvaluation(
         bandit_feedback=synthetic_slate_bandit_feedback,
         ope_estimators=[iips, sips, rips, cascade_dr],
+        base_regression_model=SlateRegressionModel(
+            base_model=Ridge(),
+            len_list=len_list,
+            n_unique_action=n_unique_action,
+        ),
     )
     assert ope_.estimate_policy_values(
         evaluation_policy_pscore=evaluation_policy_pscore,
@@ -502,6 +523,7 @@ def test_meta_estimate_policy_values_using_various_pscores(
     synthetic_slate_bandit_feedback: BanditFeedback,
 ) -> None:
     necessary_keys = [
+        "slate_id",
         "context",
         "action",
         "reward",
@@ -509,7 +531,7 @@ def test_meta_estimate_policy_values_using_various_pscores(
         "evaluation_policy_pscore",
         "evaluation_policy_pscore_item_position",
         "evaluation_policy_pscore_cascade",
-        "evaluation_policy_action_dist" "slate_id",
+        "evaluation_policy_action_dist",
     ]
     pscore_keys = [
         "pscore",
@@ -530,6 +552,11 @@ def test_meta_estimate_policy_values_using_various_pscores(
                 ope_ = SlateOffPolicyEvaluation(
                     bandit_feedback=copied_feedback,
                     ope_estimators=[sips, iips, rips, cascade_dr],
+                    base_regression_model=SlateRegressionModel(
+                        base_model=Ridge(),
+                        len_list=len_list,
+                        n_unique_action=n_unique_action,
+                    ),
                 )
                 _ = ope_.estimate_policy_values(
                     evaluation_policy_pscore=evaluation_policy_pscore,
@@ -543,6 +570,11 @@ def test_meta_estimate_policy_values_using_various_pscores(
     ope_ = SlateOffPolicyEvaluation(
         bandit_feedback=copied_feedback,
         ope_estimators=[sips, rips, cascade_dr],
+        base_regression_model=SlateRegressionModel(
+            base_model=Ridge(),
+            len_list=len_list,
+            n_unique_action=n_unique_action,
+        ),
     )
     _ = ope_.estimate_policy_values(
         evaluation_policy_pscore=evaluation_policy_pscore,
@@ -557,7 +589,7 @@ def test_meta_estimate_policy_values_using_various_pscores(
     _ = ope_.estimate_policy_values(
         evaluation_policy_pscore=evaluation_policy_pscore,
         evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
-        evaluation_policy_pscore=evaluation_policy_pscore,
+        evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
     )
 
 
@@ -678,6 +710,11 @@ def test_meta_estimate_intervals_using_valid_input_data(
     ope_ = SlateOffPolicyEvaluation(
         bandit_feedback=synthetic_slate_bandit_feedback,
         ope_estimators=[iips, rips, cascade_dr, sips],
+        base_regression_model=SlateRegressionModel(
+            base_model=Ridge(),
+            len_list=len_list,
+            n_unique_action=n_unique_action,
+        ),
     )
     assert ope_.estimate_intervals(
         evaluation_policy_pscore=evaluation_policy_pscore,

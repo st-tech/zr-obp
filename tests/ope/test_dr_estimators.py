@@ -282,7 +282,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action elements must be non-negative integers",
+        "action elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -291,7 +291,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        "action elements must be non-negative integers",
+        "action elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -318,7 +318,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
-        r"action elements must be smaller than`",
+        "action elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),

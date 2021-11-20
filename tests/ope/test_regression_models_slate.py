@@ -9,7 +9,6 @@ import yaml
 
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
 
 from obp.dataset import linear_behavior_policy_logit
@@ -24,7 +23,7 @@ from obp.utils import softmax
 np.random.seed(1)
 
 model_dict = dict(
-    linear_regression=LinearRegression,
+    ridge=Ridge,
     lightgbm=GradientBoostingRegressor,
     random_forest=RandomForestRegressor,
 )
@@ -81,7 +80,7 @@ invalid_input_of_initializing_regression_models = [
         1,  #
         Ridge(**hyperparams["ridge"]),
         ValueError,
-        "fitting_method must be one of",
+        "fitting_method must be either",
     ),
     (
         n_unique_action,
@@ -89,7 +88,7 @@ invalid_input_of_initializing_regression_models = [
         "awesome",  #
         Ridge(**hyperparams["ridge"]),
         ValueError,
-        "fitting_method must be one of",
+        "fitting_method must be either",
     ),
     (
         n_unique_action,
@@ -110,7 +109,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
         "context must be 2D array",
     ),
@@ -120,7 +119,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
         "context must be 2D array",
     ),
@@ -130,7 +129,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
         "action must be 1D array",
     ),
@@ -140,19 +139,9 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
         "action must be 1D array",
-    ),
-    (
-        np.random.uniform(size=(n_rounds, 7)),
-        np.random.choice(["1", "a"], size=n_rounds * len_list),  #
-        np.random.uniform(size=n_rounds * len_list),
-        np.random.uniform(size=n_rounds * len_list),
-        np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
-        ValueError,
-        "action elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -160,19 +149,19 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "action elements must be non-negative integers",
+        "action elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
-        (np.arange(n_rounds) % n_unique_action) + 1,  #
+        (np.arange(n_rounds * len_list) % n_unique_action) + 1,  #
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "action elements must be smaller than",
+        "action elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -180,9 +169,9 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "Expected `context.shape[0]",
+        "Expected `action.shape ==",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -190,7 +179,7 @@ invalid_input_of_fitting_regression_models = [
         None,  #
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
         "reward must be 1D array",
     ),
@@ -200,7 +189,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=(n_rounds, len_list)),  #
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
         "reward must be 1D array",
     ),
@@ -210,39 +199,39 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         "3",  #
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "pscore must be 1D array",
+        "pscore_cascade must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
         np.random.choice(n_unique_action, size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones((n_rounds, 2)) * 2,  #
+        np.ones((n_rounds, len_list)),  #
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "pscore must be 1D array",
+        "pscore_cascade must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
         np.random.choice(n_unique_action, size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(n_rounds - 1) * 2,  #
+        np.ones(n_rounds * len_list - 1),  #
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "Expected `context.shape[0]",
+        "Expected `action.shape ==",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
         np.random.choice(n_unique_action, size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.arange(n_rounds),  #
+        np.arange(n_rounds * len_list),  #
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "pscore must be positive",
+        "pscore_cascade must be in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -250,39 +239,39 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         "3",  #
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "evaluation_policy_pscore must be 1D array",
+        "evaluation_policy_pscore_cascade must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
         np.random.choice(n_unique_action, size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones((n_rounds, 2)) * 2,  #
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones((n_rounds, len_list)),  #
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "evaluation_policy_pscore must be 1D array",
+        "evaluation_policy_pscore_cascade must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
         np.random.choice(n_unique_action, size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.ones(n_rounds - 1) * 2,  #
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.ones(n_rounds * len_list - 1),  #
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "Expected `context.shape[0]",
+        "Expected `action.shape ==",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
         np.random.choice(n_unique_action, size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
-        np.arange(n_rounds),  #
-        np.ones(size=n_rounds * len_list * n_unique_action),
+        np.arange(n_rounds * len_list),  #
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "evaluation_policy_pscore must be positive",
+        "evaluation_policy_pscore_cascade must be in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -291,6 +280,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         "4",  #
+        ValueError,
         "evaluation_policy_action_dist must be 1D array",
     ),
     (
@@ -300,6 +290,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.ones((n_rounds, len_list, n_unique_action)) / n_unique_action,  #
+        ValueError,
         "evaluation_policy_action_dist must be 1D array",
     ),
     (
@@ -309,6 +300,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.ones((n_rounds * len_list, n_unique_action)) / n_unique_action,  #
+        ValueError,
         "evaluation_policy_action_dist must be 1D array",
     ),
     (
@@ -318,6 +310,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),  #
+        ValueError,
         "evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action]",
     ),
 ]
@@ -327,10 +320,10 @@ valid_input_of_regression_models = [
     (
         np.random.uniform(size=(n_rounds, 7)),  #
         np.random.choice(n_unique_action, size=n_rounds * len_list),
-        np.random.ones(size=n_rounds * len_list),
-        np.random.ones(size=n_rounds * len_list),
-        np.random.ones(size=n_rounds * len_list),
-        np.ones(size=n_rounds * len_list * n_unique_action) / n_unique_action,
+        np.ones(n_rounds * len_list),
+        np.ones(n_rounds * len_list),
+        np.ones(n_rounds * len_list),
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         "",
     ),
 ]
@@ -726,7 +719,9 @@ def calc_ground_truth_mean_reward_function(
 ):
     n_rounds = len(context)
     action = action.reshape((n_rounds, dataset.len_list))
-    ground_truth_mean_reward_function = np.zeros_like(action, dtype=float)
+    ground_truth_mean_reward_function = np.zeros(
+        (n_rounds, dataset.len_list, dataset.n_unique_action), dtype=float
+    )
 
     for position in range(dataset.len_list):
         if position != dataset.len_list - 1:
@@ -742,7 +737,8 @@ def calc_ground_truth_mean_reward_function(
                 enumerated_slate_actions = [
                     _
                     for _ in permutations(
-                        np.arange(dataset.n_unique_action), dataset.len_list
+                        np.arange(dataset.n_unique_action),
+                        dataset.len_list - position - 1,
                     )
                 ]
             enumerated_slate_actions = np.array(enumerated_slate_actions).astype("int8")
@@ -753,100 +749,127 @@ def calc_ground_truth_mean_reward_function(
                 action_ = np.tile(
                     action[i][: position + 1], (n_enumerated_slate_actions, 1)
                 )
-                enumerated_slate_actions = np.concatenate(
-                    [action_, enumerated_slate_actions]
-                )
-            else:
-                enumerated_slate_actions = action[i]
-                n_enumerated_slate_actions = 1
-
-            pscores = []
-            if dataset.is_factorizable:
-                for action_list in enumerated_slate_actions:
-                    pscores.append(
-                        softmax(evaluation_policy_logit_)[:, action_list].prod(1)
+                for a_ in range(dataset.n_unique_action):
+                    action__ = action_.copy()
+                    action__[:, position] = a_
+                    enumerated_slate_actions_ = np.concatenate(
+                        [action_, enumerated_slate_actions], axis=1
                     )
-                pscores = np.array(pscores).T
-            else:
-                pscores = np.array(
-                    dataset._calc_pscore_given_policy_logit(
-                        all_slate_actions=enumerated_slate_actions,
-                        policy_logit_i_=evaluation_policy_logit_[i],
-                    )
-                )
-
-            # calculate expected slate-level reward for each combinatorial set of items (i.e., slate actions)
-            if dataset.base_reward_function is None:
-                expected_slot_reward = dataset.sample_contextfree_expected_reward(
-                    random_state=dataset.random_state
-                )
-                expected_slot_reward_tile = np.tile(
-                    expected_slot_reward, (n_rounds * n_enumerated_slate_actions, 1, 1)
-                )
-                expected_slate_rewards = np.array(
-                    [
-                        expected_slot_reward_tile[
-                            np.arange(n_enumerated_slate_actions)
-                            % n_enumerated_slate_actions,
-                            np.array(enumerated_slate_actions)[:, position_],
-                            position_,
-                        ]
-                        for position_ in np.arange(dataset.len_list)
-                    ]
-                ).T
-                policy_value = (pscores * expected_slate_rewards.sum(axis=1)).sum()
-            else:
-                n_batch = (
-                    n_rounds * n_enumerated_slate_actions * dataset.len_list - 1
-                ) // 10 ** 7 + 1
-                batch_size = (n_rounds - 1) // n_batch + 1
-                n_batch = (n_rounds - 1) // batch_size + 1
-
-                policy_value = 0.0
-                for batch_idx in range(n_batch):
-                    context_ = context[
-                        batch_idx * batch_size : (batch_idx + 1) * batch_size
-                    ]
-                    pscores_ = pscores[
-                        batch_idx * batch_size : (batch_idx + 1) * batch_size
-                    ]
-
-                    expected_slate_rewards_ = dataset.reward_function(
-                        context=context_,
-                        action_context=dataset.action_context,
-                        action=enumerated_slate_actions.flatten(),
-                        action_interaction_weight_matrix=dataset.action_interaction_weight_matrix,
-                        base_reward_function=dataset.base_reward_function,
-                        reward_type=dataset.reward_type,
-                        reward_structure=dataset.reward_structure,
-                        len_list=dataset.len_list,
-                        is_enumerated=True,
-                        random_state=dataset.random_state,
+                    ground_truth_mean_reward_function[
+                        i, position, a_
+                    ] = calc_ground_truth_mean_reward_function_given_enumerated_slate_actions(
+                        dataset=dataset,
+                        context=context,
+                        evaluation_policy_logit_=evaluation_policy_logit_,
+                        enumerated_slate_actions=enumerated_slate_actions_,
+                        i=i,
+                        position=position,
                     )
 
-                    # click models based on expected reward
-                    expected_slate_rewards_ *= dataset.exam_weight
-                    if dataset.reward_type == "binary":
-                        discount_factors = np.ones(expected_slate_rewards_.shape[0])
-                        previous_slot_expected_reward = np.zeros(
-                            expected_slate_rewards_.shape[0]
-                        )
-                        for position_ in np.arange(dataset.len_list):
-                            discount_factors *= (
-                                previous_slot_expected_reward
-                                * dataset.attractiveness[position_]
-                                + (1 - previous_slot_expected_reward)
-                            )
-                            expected_slate_rewards_[:, position_] = (
-                                discount_factors * expected_slate_rewards_[:, position_]
-                            )
-                            previous_slot_expected_reward = expected_slate_rewards_[
-                                :, position_
-                            ]
+            else:
+                action_ = action[i].reshape((1, dataset.len_list))
+                for a_ in range(dataset.n_unique_action):
+                    action__ = action_.copy()
+                    action__[:, position] = a_
+                    enumerated_slate_actions_ = action__
+                    n_enumerated_slate_actions = 1
+                    ground_truth_mean_reward_function[
+                        i, position, a_
+                    ] = calc_ground_truth_mean_reward_function_given_enumerated_slate_actions(
+                        dataset=dataset,
+                        context=context,
+                        evaluation_policy_logit_=evaluation_policy_logit_,
+                        enumerated_slate_actions=enumerated_slate_actions_,
+                        i=i,
+                        position=position,
+                    )
 
-                    policy_value += (
-                        pscores_.flatten() * expected_slate_rewards_.sum(axis=1)
-                    ).sum()
-            ground_truth_mean_reward_function[i, position] = policy_value
+    return ground_truth_mean_reward_function.flatten()
 
-    return ground_truth_mean_reward_function
+
+def calc_ground_truth_mean_reward_function_given_enumerated_slate_actions(
+    dataset,
+    context: np.ndarray,
+    evaluation_policy_logit_: np.ndarray,
+    enumerated_slate_actions: np.ndarray,
+    i: int,
+    position: int,
+):
+    pscores = []
+    evaluation_policy_logit_i = evaluation_policy_logit_[i].reshape(
+        (1, dataset.n_unique_action)
+    )
+    n_enumerated_slate_actions = len(enumerated_slate_actions)
+
+    if dataset.is_factorizable:
+        action_dist = softmax(evaluation_policy_logit_i)[0]
+
+        for action_list in enumerated_slate_actions:
+            pscore = 1
+
+            for position in range(dataset.len_list):
+                pscore *= action_dist[action_list[position]]
+
+            pscores.append(pscore)
+
+    else:
+        for action_list in enumerated_slate_actions:
+            pscore = 1
+            evaluation_policy_logit_i_ = evaluation_policy_logit_i.copy()
+
+            for position in range(dataset.len_list):
+                action_dist = softmax(evaluation_policy_logit_i_)[0]
+                pscore *= action_dist[action_list[position]]
+                evaluation_policy_logit_i_[0][action_list[position]] = -1e10
+
+            pscores.append(pscore)
+
+    pscores = np.array(pscores)
+
+    # calculate expected slate-level reward for each combinatorial set of items (i.e., slate actions)
+    if dataset.base_reward_function is None:
+        expected_slot_reward = dataset.sample_contextfree_expected_reward(
+            random_state=dataset.random_state
+        )
+        expected_slot_reward_tile = np.tile(
+            expected_slot_reward, (n_enumerated_slate_actions, 1, 1)
+        )
+        expected_slate_rewards = np.array(
+            [
+                expected_slot_reward_tile[
+                    np.arange(n_enumerated_slate_actions) % n_enumerated_slate_actions,
+                    np.array(enumerated_slate_actions)[:, position_],
+                    position_,
+                ]
+                for position_ in np.arange(dataset.len_list)
+            ]
+        ).T
+    else:
+        expected_slate_rewards = dataset.reward_function(
+            context=context[i].reshape((1, -1)),
+            action_context=dataset.action_context,
+            action=enumerated_slate_actions.flatten(),
+            action_interaction_weight_matrix=dataset.action_interaction_weight_matrix,
+            base_reward_function=dataset.base_reward_function,
+            reward_type=dataset.reward_type,
+            reward_structure=dataset.reward_structure,
+            len_list=dataset.len_list,
+            is_enumerated=True,
+            random_state=dataset.random_state,
+        )
+        # click models based on expected reward
+        expected_slate_rewards *= dataset.exam_weight
+        if dataset.reward_type == "binary":
+            discount_factors = np.ones(expected_slate_rewards.shape[0])
+            previous_slot_expected_reward = np.zeros(expected_slate_rewards.shape[0])
+            for position_ in np.arange(dataset.len_list):
+                discount_factors *= (
+                    previous_slot_expected_reward * dataset.attractiveness[position_]
+                    + (1 - previous_slot_expected_reward)
+                )
+                expected_slate_rewards[:, position_] = (
+                    discount_factors * expected_slate_rewards[:, position_]
+                )
+                previous_slot_expected_reward = expected_slate_rewards[:, position_]
+
+    return (pscores * expected_slate_rewards.sum(axis=1)).sum()

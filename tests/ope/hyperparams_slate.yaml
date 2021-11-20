@@ -4,10 +4,6 @@ lightgbm:
   max_depth: 5
   min_samples_leaf: 10
   random_state: 12345
-linear_regression:
-  max_iter: 10000
-  C: 1000
-  random_state: 12345
 random_forest:
   n_estimators: 100
   max_depth: 5

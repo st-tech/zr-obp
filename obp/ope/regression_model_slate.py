@@ -144,13 +144,21 @@ class SlateRegressionModel(BaseEstimator):
                 "Expected `evaluation_policy_action_dist.shape == (context.shape[0] * len_list * n_unique_action, )`"
                 ", but found it False"
             )
+        if not (
+            np.issubdtype(action.dtype, np.integer)
+            and action.min() >= 0
+            and action.max() < self.n_unique_action
+        ):
+            raise ValueError(
+                "action elements must be integers in the range of [0, n_unique_action)"
+            )
         if np.any(pscore_cascade <= 0) or np.any(pscore_cascade > 1):
-            raise ValueError("cascade_pscore must be in the range of (0, 1]")
+            raise ValueError("pscore_cascade must be in the range of (0, 1]")
         if np.any(evaluation_policy_pscore_cascade <= 0) or np.any(
             evaluation_policy_pscore_cascade > 1
         ):
             raise ValueError(
-                "evaluation_policy_cascade_pscore must be in the range of (0, 1]"
+                "evaluation_policy_pscore_cascade must be in the range of (0, 1]"
             )
         if not np.allclose(
             np.ones(

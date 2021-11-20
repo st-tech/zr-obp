@@ -824,6 +824,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
 
         """
         check_cascade_dr_inputs(
+            n_unique_action=self.n_unique_action,
             slate_id=slate_id,
             action=action,
             reward=reward,
@@ -846,6 +847,52 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         return self._estimate_slate_confidence_interval_by_bootstrap(
             slate_id=slate_id,
             estimated_rewards=estimated_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+    def _estimate_slate_confidence_interval_by_bootstrap(
+        self,
+        slate_id: np.ndarray,
+        estimated_rewards: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap-like procedure.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slates (i.e., rounds or lists of actions).
+
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by IPW given round (slate_id) and slot (position).
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        unique_slate = np.unique(slate_id)
+        # sum estimated_rewards in each slate
+        estimated_round_rewards = list()
+        for slate in unique_slate:
+            estimated_round_rewards.append(estimated_rewards[slate_id == slate].sum())
+        estimated_round_rewards = np.array(estimated_round_rewards)
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_round_rewards,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,

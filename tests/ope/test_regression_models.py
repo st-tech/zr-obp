@@ -476,7 +476,7 @@ invalid_input_of_fitting_regression_models = [
         3,
         1,
         ValueError,
-        r"action elements must be smaller than",
+        "action elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

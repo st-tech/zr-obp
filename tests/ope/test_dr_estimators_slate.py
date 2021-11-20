@@ -21,7 +21,6 @@ n_rounds = 5
 # --- invalid ---
 # slate_id, action, reward, pscore, position, evaluation_policy_pscore, q_hat, evaluation_policy_action_dist, description
 invalid_input_of_slate_estimators = [
-    # add pscore and evaluation_policy_pscore check, fix below
     (
         "4",  #
         np.zeros(n_rounds * len_list, dtype=int),
@@ -86,7 +85,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action elements must be non-negative integers",
+        "action elements must be integers in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -97,18 +96,18 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action elements must be non-negative integers",
+        "action elements must be integers in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
-        np.ones(n_rounds * len_list, dtype=float) * 10,  #
+        np.ones(n_rounds * len_list, dtype=int) * 10,  #
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action elements must be less than n_unique_actions",
+        "action elements must be integers in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -135,18 +134,18 @@ invalid_input_of_slate_estimators = [
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
-        np.zeros((n_rounds, len_list), dtype=int),
+        np.zeros((n_rounds * len_list), dtype=int),
         "4",  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "pscore must be 1D array",
+        "pscore_cascade must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
-        np.zeros((n_rounds, len_list), dtype=int),
+        np.zeros((n_rounds * len_list), dtype=int),
         np.ones((n_rounds, len_list)),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
@@ -157,7 +156,7 @@ invalid_input_of_slate_estimators = [
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
-        np.zeros((n_rounds, len_list), dtype=int),
+        np.zeros((n_rounds * len_list), dtype=int),
         np.ones(n_rounds * len_list) + 1,  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
@@ -168,7 +167,7 @@ invalid_input_of_slate_estimators = [
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
-        np.zeros((n_rounds, len_list), dtype=int),
+        np.zeros((n_rounds * len_list), dtype=int),
         np.ones(n_rounds * len_list) - 1,  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
@@ -179,7 +178,7 @@ invalid_input_of_slate_estimators = [
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
-        np.zeros((n_rounds, len_list), dtype=int),
+        np.zeros((n_rounds * len_list), dtype=int),
         np.hstack([[0.2], np.ones(n_rounds * len_list - 1)]),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
@@ -190,7 +189,7 @@ invalid_input_of_slate_estimators = [
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
-        np.zeros((n_rounds, len_list), dtype=int),
+        np.zeros((n_rounds * len_list), dtype=int),
         np.ones(n_rounds * len_list - 1),  #
         np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
@@ -296,12 +295,13 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         "evaluation_policy_pscore_cascade must be non-increasing sequence in each slate",
-    )(
+    ),
+    (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         None,  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
@@ -312,7 +312,7 @@ invalid_input_of_slate_estimators = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         "4",  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
@@ -323,7 +323,7 @@ invalid_input_of_slate_estimators = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones((n_rounds, len_list, n_unique_action)),  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
@@ -334,7 +334,7 @@ invalid_input_of_slate_estimators = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones((n_rounds * len_list, n_unique_action)),  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
@@ -345,7 +345,7 @@ invalid_input_of_slate_estimators = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         "4",  #
@@ -356,7 +356,7 @@ invalid_input_of_slate_estimators = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones((n_rounds, len_list, n_unique_action)) / n_unique_action,  #
@@ -367,7 +367,7 @@ invalid_input_of_slate_estimators = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones((n_rounds * len_list, n_unique_action)) / n_unique_action,  #
@@ -378,22 +378,11 @@ invalid_input_of_slate_estimators = [
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
         np.ones(n_rounds * len_list),
-        np.repeat(np.arange(n_rounds), len_list),
+        np.tile(np.arange(len_list), n_rounds),
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action),  #
         "evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action]",
-    ),
-    (
-        np.repeat(np.arange(n_rounds), len_list)[:-1],
-        np.zeros(n_rounds * len_list, dtype=int)[:-1],
-        np.zeros(n_rounds * len_list, dtype=int)[:-1],
-        np.ones(n_rounds * len_list)[:-1],
-        np.repeat(np.arange(n_rounds), len_list)[:-1],
-        np.ones(n_rounds * len_list)[:-1],
-        np.ones(n_rounds * len_list * n_unique_action)[:-1],
-        np.ones(n_rounds * len_list * n_unique_action)[:-1],
-        "last slate has data of 2 (len_list - 1) positions",
     ),
 ]
 
@@ -525,7 +514,7 @@ valid_input_of_estimate_intervals = [
 
 
 @pytest.mark.parametrize(
-    "slate_id, reward, pscore, position, evaluation_policy_pscore, description_1",
+    "slate_id, action, reward, pscore, position, evaluation_policy_pscore, q_hat, evaluation_policy_action_dist, description_1",
     valid_input_of_slate_estimators,
 )
 @pytest.mark.parametrize(
@@ -565,7 +554,7 @@ def test_estimate_interval_using_invalid_input_data(
 
 
 @pytest.mark.parametrize(
-    "slate_id, reward, pscore, position, evaluation_policy_pscore, description_1",
+    "slate_id, action, reward, pscore, position, evaluation_policy_pscore, q_hat, evaluation_policy_action_dist, description_1",
     valid_input_of_slate_estimators,
 )
 @pytest.mark.parametrize(
