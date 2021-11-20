@@ -1,5 +1,22 @@
 # Benchmarking Off-Policy Evaluation
 
+This directory includes the code to replicate the benchmark experiment done in the following paper.
+
+Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.<br>
+**Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation**<br>
+[https://arxiv.org/abs/2008.07146](https://arxiv.org/abs/2008.07146)
+
+
+If you find this code useful in your research then please cite:
+```
+@article{saito2020open,
+  title={Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation},
+  author={Saito, Yuta and Shunsuke, Aihara and Megumi, Matsutani and Yusuke, Narita},
+  journal={arXiv preprint arXiv:2008.07146},
+  year={2020}
+}
+```
+
 ## Description
 We use the (full size) open bandit dataset to evaluate and compare OPE estimators in a *realistic* and *reproducible* manner. Specifically, we evaluate the estimation performance of a wide variety of OPE estimators by comparing the policy values estimated by OPE with the on-policy policy value of an evaluation policy.
 
@@ -18,7 +35,7 @@ In the benchmark experiment, we evaluate the estimation performance of the follo
 - Switch Doubly Robust (Switch-DR)
 - Doubly Robust with Optimistic Shrinkage (DRos)
 
-See [documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details of these estimators.
+See Section 2 and Appendix B of [our paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details of these estimators.
 
 For Switch-DR and DRos, we use a data-driven hyperparameter tuning method described in [Su et al.](https://arxiv.org/abs/1907.09623).
 For estimators except for DM, we use the true action choice probability contained in Open Bandit Dataset.

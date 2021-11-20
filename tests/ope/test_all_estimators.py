@@ -447,7 +447,6 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
     q_pi_e = np.average(expected_reward[:, :, 0], weights=action_dist[:, :, 0], axis=1)
     # compute statistics of ground truth policy value
     gt_mean = q_pi_e.mean()
-    gt_std = q_pi_e.std(ddof=1)
     # test most of the estimators (ReplayMethod is not tested because it is out of scope)
     all_estimators = ope.__all_estimators__
     estimators_standard = [
@@ -469,16 +468,15 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
         action_dist=action_dist, estimated_rewards_by_reg_model=expected_reward
     )
     # check the performance of OPE
-    ci_bound = gt_std * 3 / np.sqrt(q_pi_e.shape[0])
-    print(f"gt_mean: {gt_mean}, 3 * gt_std / sqrt(n): {ci_bound}")
+    print(f"gt_mean: {gt_mean}")
     for key in estimated_policy_value:
         print(
             f"estimated_value: {estimated_policy_value[key]} ------ estimator: {key}, "
         )
         # test the performance of each estimator
         assert (
-            np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
-        ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
+            np.abs(gt_mean - estimated_policy_value[key]) / gt_mean <= 0.1
+        ), f"OPE of {key} did not work well (relative absolute error is greater than 10%)"
 
 
 def test_response_format_of_ope_estimators_using_random_evaluation_policy(

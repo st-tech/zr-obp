@@ -12,7 +12,7 @@
 
 # Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
 
-**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[スライド](./slides/slides_JN.pdf)**  | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd/README_JN.md)** | **[解説ブログ記事](https://techblog.zozo.com/entry/openbanditproject)**
+**[ドキュメント](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[チュートリアル](https://sites.google.com/cornell.edu/recsys2021tutorial)** | **[インストール](#インストール)** | **[使用方法](#使用方法)** | **[スライド](./slides/slides_JN.pdf)**  | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd/README_JN.md)** | **[解説ブログ記事](https://techblog.zozo.com/entry/openbanditproject)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -325,8 +325,8 @@ Open Bandit Pipelineへのどんな貢献も歓迎いたします. プロジェ�
 # プロジェクトチーム
 
 - [齋藤優太](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / コーネル大学)
-- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (株式会社ZOZOテクノロジーズ)
-- 松谷恵 (株式会社ZOZOテクノロジーズ)
+- [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO研究所)
+- 松谷恵 (ZOZO研究所)
 - [成田悠輔](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
 
 ## 開発メンバー
