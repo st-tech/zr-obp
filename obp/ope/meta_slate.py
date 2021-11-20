@@ -20,7 +20,7 @@ from ..types import BanditFeedback
 from ..utils import check_confidence_interval_arguments
 from .estimators_slate import BaseSlateOffPolicyEstimator
 from .regression_model_slate import SlateRegressionModel
-
+from .estimators_slate import SlateCascadeDoublyRobust as CascadeDR
 
 logger = getLogger(__name__)
 
@@ -124,12 +124,34 @@ class SlateOffPolicyEvaluation:
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        for key_ in ["slate_id", "position", "reward"]:
+        for key_ in [
+            "slate_id",
+            "context",
+            "action",
+            "reward",
+            "position",
+            "pscore",
+            "pscore_item_position",
+            "pscore_cascade",
+        ]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
+
         self.ope_estimators_ = dict()
+        self.use_cascade_dr = False
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
+            if isinstance(estimator, CascadeDR):
+                self.use_cascade_dr = True
+
+        if self.use_cascade_dr and self.base_regression_model is None:
+            raise RuntimeError(
+                "base_regression_model must be given when using SlateCascadeDoublyRobust"
+            )
+        if self.base_regression_model and not isinstance(self.base_regression_model, SlateRegressionModel):
+            raise ValueError(
+                "base_regression_model must be a SlateRegressionModel or a child class of SlateRegressionModel"
+            )
 
     def _create_estimator_inputs(
         self,
@@ -146,6 +168,10 @@ class SlateOffPolicyEvaluation:
         ):
             raise ValueError(
                 "one of evaluation_policy_pscore, evaluation_policy_pscore_item_position, or evaluation_policy_pscore_cascade must be given"
+            )
+        if self.use_cascade_dr and evaluation_policy_action_dist is None:
+            raise ValueError(
+                "evaluation_policy_action_dist must be given when using SlateCascadeDoublyRobust"
             )
 
         estimator_inputs = {

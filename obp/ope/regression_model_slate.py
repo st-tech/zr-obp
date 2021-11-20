@@ -5,8 +5,14 @@
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.core.fromnumeric import shape
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
+from sklearn.base import is_classifier
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
+
+from obp.utils import check_array
 
 
 @dataclass
@@ -51,6 +57,23 @@ class SlateRegressionModel(BaseEstimator):
 
     def __post_init__(self):
         """Initialize Class."""
+        check_scalar(self.n_unique_action, "n_unique_action", int, min_val=2)
+        check_scalar(self.len_list, "len_list", int, min_val=1)
+        if not (
+            isinstance(self.fitting_method, str)
+            and self.fitting_method in ["normal", "iw"]
+        ):
+            raise ValueError(
+                f"fitting_method must be either 'normal' or 'iw', but {self.fitting_method} is given"
+            )
+        if not isinstance(self.base_model, BaseEstimator):
+            raise ValueError(
+                "base_model must be BaseEstimator or a child class of BaseEstimator"
+            )
+        if is_classifier(self.base_model):
+            raise ValueError(
+                "base_model must be a regressor, not a classifier"
+            )
         self.base_model_list = [clone(self.base_model) for _ in range(self.len_list)]
         self.action_context = np.eye(self.n_unique_action)
 
@@ -90,6 +113,41 @@ class SlateRegressionModel(BaseEstimator):
             , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         """
+        check_array(array=context, name="context", expected_dim=2)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=pscore_cascade, name="pscore_cascade", expected_dim=1)
+        check_array(array=evaluation_policy_pscore_cascade, name="evaluation_policy_pscore_cascade", expected_dim=1)
+        check_array(array=evaluation_policy_action_dist, name="evaluation_policy_action_dist", expected_dim=1)
+        if not (
+            action.shape
+            == reward.shape
+            == pscore_cascade.shape
+            == evaluation_policy_pscore_cascade.shape
+            == (context.shape[0] * self.len_list, )
+        ):
+            raise ValueError(
+                "Expected `action.shape == reward.shape == pscore_cascade.shape == evaluation_policy_pscore_cascade.shape"
+                " == (context.shape[0] * len_list, )`"
+                ", but found it False"
+            )
+        if evaluation_policy_action_dist.shape != (context.shape[0] * self.len_list * self.n_unique_action, ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.shape == (context.shape[0] * len_list * n_unique_action, )`"
+                ", but found it False"
+            )
+        if np.any(pscore_cascade <= 0) or np.any(pscore_cascade > 1):
+            raise ValueError("cascade_pscore must be in the range of (0, 1]")
+        if np.any(evaluation_policy_pscore_cascade <= 0) or np.any(evaluation_policy_pscore_cascade > 1):
+            raise ValueError("evaluation_policy_cascade_pscore must be in the range of (0, 1]")
+        if not np.allclose(
+            np.ones(evaluation_policy_action_dist.reshape((-1, self.n_unique_action)).shape[0]),
+            evaluation_policy_action_dist.reshape((-1, self.n_unique_action)).sum(axis=1),
+        ):
+            raise ValueError(
+                "evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action] "
+                "must sum up to one for all i."
+            )
         # (n_rounds_ * len_list, ) -> (n_rounds_, len_list)
         action = action.reshape((-1, self.len_list))
         reward = reward.reshape((-1, self.len_list))
@@ -137,6 +195,13 @@ class SlateRegressionModel(BaseEstimator):
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
 
         """
+        check_array(array=context, name="context", expected_dim=2)
+        check_array(array=action, name="action", expected_dim=1)
+        if action.shape != (context.shape[0] * self.len_list, ):
+            raise ValueError(
+                "Expected `action.shape == (context.shape[0] * len_list, )`"
+                ", but found it False"
+            )
         n_rounds_of_new_data = len(context)
         # (n_rounds_of_new_data * len_list, ) -> (n_rounds_of_new_data, len_list)
         action = action.reshape((-1, self.len_list))
