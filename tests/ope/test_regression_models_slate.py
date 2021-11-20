@@ -1,6 +1,4 @@
 from pathlib import Path
-from typing import Dict
-
 from itertools import permutations
 from itertools import product
 import numpy as np
@@ -437,30 +435,14 @@ def test_slate_ope_performance_using_cascade_additive_log():
         behavior_policy_function=behavior_policy_function,
         base_reward_function=reward_function,
     )
-    random_behavior_dataset = SyntheticSlateBanditDataset(
-        n_unique_action=n_unique_action,
-        len_list=len_list,
-        dim_context=dim_context,
-        reward_type=reward_type,
-        reward_structure=reward_structure,
-        click_model=click_model,
-        random_state=random_state,
-        behavior_policy_function=None,
-        base_reward_function=reward_function,
-    )
     # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    slate_id = bandit_feedback["slate_id"]
     context = bandit_feedback["context"]
     action = bandit_feedback["action"]
     reward = bandit_feedback["reward"]
     pscore = bandit_feedback["pscore_cascade"]
-    position = bandit_feedback["position"]
 
-    # obtain random behavior feedback
-    random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds
-    )
+    # random evaluation policy
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
     evaluation_policy_action_dist = (
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
@@ -536,30 +518,14 @@ def test_slate_ope_performance_using_independent_log():
         behavior_policy_function=behavior_policy_function,
         base_reward_function=reward_function,
     )
-    random_behavior_dataset = SyntheticSlateBanditDataset(
-        n_unique_action=n_unique_action,
-        len_list=len_list,
-        dim_context=dim_context,
-        reward_type=reward_type,
-        reward_structure=reward_structure,
-        click_model=click_model,
-        random_state=random_state,
-        behavior_policy_function=None,
-        base_reward_function=reward_function,
-    )
     # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    slate_id = bandit_feedback["slate_id"]
     context = bandit_feedback["context"]
     action = bandit_feedback["action"]
     reward = bandit_feedback["reward"]
     pscore = bandit_feedback["pscore_cascade"]
-    position = bandit_feedback["position"]
 
-    # obtain random behavior feedback
-    random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds
-    )
+    # random evaluation policy
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
     evaluation_policy_action_dist = (
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
@@ -635,30 +601,14 @@ def test_slate_ope_performance_using_standard_additive_log():
         behavior_policy_function=behavior_policy_function,
         base_reward_function=reward_function,
     )
-    random_behavior_dataset = SyntheticSlateBanditDataset(
-        n_unique_action=n_unique_action,
-        len_list=len_list,
-        dim_context=dim_context,
-        reward_type=reward_type,
-        reward_structure=reward_structure,
-        click_model=click_model,
-        random_state=random_state,
-        behavior_policy_function=None,
-        base_reward_function=reward_function,
-    )
     # obtain feedback
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    slate_id = bandit_feedback["slate_id"]
     context = bandit_feedback["context"]
     action = bandit_feedback["action"]
     reward = bandit_feedback["reward"]
     pscore = bandit_feedback["pscore_cascade"]
-    position = bandit_feedback["position"]
 
-    # obtain random behavior feedback
-    random_behavior_feedback = random_behavior_dataset.obtain_batch_bandit_feedback(
-        n_rounds=n_rounds
-    )
+    # random evaluation policy
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
     evaluation_policy_action_dist = (
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action

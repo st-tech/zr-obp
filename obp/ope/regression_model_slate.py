@@ -5,11 +5,9 @@
 from dataclasses import dataclass
 
 import numpy as np
-from numpy.core.fromnumeric import shape
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
 from sklearn.base import is_classifier
-from sklearn.utils import check_random_state
 from sklearn.utils import check_scalar
 
 from obp.utils import check_array
