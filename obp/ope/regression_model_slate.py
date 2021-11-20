@@ -71,9 +71,7 @@ class SlateRegressionModel(BaseEstimator):
                 "base_model must be BaseEstimator or a child class of BaseEstimator"
             )
         if is_classifier(self.base_model):
-            raise ValueError(
-                "base_model must be a regressor, not a classifier"
-            )
+            raise ValueError("base_model must be a regressor, not a classifier")
         self.base_model_list = [clone(self.base_model) for _ in range(self.len_list)]
         self.action_context = np.eye(self.n_unique_action)
 
@@ -117,32 +115,52 @@ class SlateRegressionModel(BaseEstimator):
         check_array(array=action, name="action", expected_dim=1)
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=pscore_cascade, name="pscore_cascade", expected_dim=1)
-        check_array(array=evaluation_policy_pscore_cascade, name="evaluation_policy_pscore_cascade", expected_dim=1)
-        check_array(array=evaluation_policy_action_dist, name="evaluation_policy_action_dist", expected_dim=1)
+        check_array(
+            array=evaluation_policy_pscore_cascade,
+            name="evaluation_policy_pscore_cascade",
+            expected_dim=1,
+        )
+        check_array(
+            array=evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=1,
+        )
         if not (
             action.shape
             == reward.shape
             == pscore_cascade.shape
             == evaluation_policy_pscore_cascade.shape
-            == (context.shape[0] * self.len_list, )
+            == (context.shape[0] * self.len_list,)
         ):
             raise ValueError(
                 "Expected `action.shape == reward.shape == pscore_cascade.shape == evaluation_policy_pscore_cascade.shape"
                 " == (context.shape[0] * len_list, )`"
                 ", but found it False"
             )
-        if evaluation_policy_action_dist.shape != (context.shape[0] * self.len_list * self.n_unique_action, ):
+        if evaluation_policy_action_dist.shape != (
+            context.shape[0] * self.len_list * self.n_unique_action,
+        ):
             raise ValueError(
                 "Expected `evaluation_policy_action_dist.shape == (context.shape[0] * len_list * n_unique_action, )`"
                 ", but found it False"
             )
         if np.any(pscore_cascade <= 0) or np.any(pscore_cascade > 1):
             raise ValueError("cascade_pscore must be in the range of (0, 1]")
-        if np.any(evaluation_policy_pscore_cascade <= 0) or np.any(evaluation_policy_pscore_cascade > 1):
-            raise ValueError("evaluation_policy_cascade_pscore must be in the range of (0, 1]")
+        if np.any(evaluation_policy_pscore_cascade <= 0) or np.any(
+            evaluation_policy_pscore_cascade > 1
+        ):
+            raise ValueError(
+                "evaluation_policy_cascade_pscore must be in the range of (0, 1]"
+            )
         if not np.allclose(
-            np.ones(evaluation_policy_action_dist.reshape((-1, self.n_unique_action)).shape[0]),
-            evaluation_policy_action_dist.reshape((-1, self.n_unique_action)).sum(axis=1),
+            np.ones(
+                evaluation_policy_action_dist.reshape((-1, self.n_unique_action)).shape[
+                    0
+                ]
+            ),
+            evaluation_policy_action_dist.reshape((-1, self.n_unique_action)).sum(
+                axis=1
+            ),
         ):
             raise ValueError(
                 "evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action] "
@@ -197,7 +215,7 @@ class SlateRegressionModel(BaseEstimator):
         """
         check_array(array=context, name="context", expected_dim=2)
         check_array(array=action, name="action", expected_dim=1)
-        if action.shape != (context.shape[0] * self.len_list, ):
+        if action.shape != (context.shape[0] * self.len_list,):
             raise ValueError(
                 "Expected `action.shape == (context.shape[0] * len_list, )`"
                 ", but found it False"

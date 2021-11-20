@@ -148,7 +148,9 @@ class SlateOffPolicyEvaluation:
             raise RuntimeError(
                 "base_regression_model must be given when using SlateCascadeDoublyRobust"
             )
-        if self.base_regression_model and not isinstance(self.base_regression_model, SlateRegressionModel):
+        if self.base_regression_model and not isinstance(
+            self.base_regression_model, SlateRegressionModel
+        ):
             raise ValueError(
                 "base_regression_model must be a SlateRegressionModel or a child class of SlateRegressionModel"
             )

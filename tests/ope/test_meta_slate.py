@@ -243,7 +243,6 @@ class SlateCascadeDoublyRobustMock(SlateCascadeDoublyRobust):
         return {k: v for k, v in mock_confidence_interval.items()}
 
 
-
 # define Mock instances
 n_unique_action = 3
 sips = SlateStandardIPSMock(len_list=3)
@@ -304,7 +303,7 @@ def test_meta_post_init(synthetic_slate_bandit_feedback: BanditFeedback) -> None
         _ = SlateOffPolicyEvaluation(
             bandit_feedback=synthetic_slate_bandit_feedback,
             ope_estimators=[cascade_dr],
-            base_regression_model=Ridge()
+            base_regression_model=Ridge(),
         )
 
 
@@ -510,8 +509,7 @@ def test_meta_estimate_policy_values_using_various_pscores(
         "evaluation_policy_pscore",
         "evaluation_policy_pscore_item_position",
         "evaluation_policy_pscore_cascade",
-        "evaluation_policy_action_dist"
-        "slate_id",
+        "evaluation_policy_action_dist" "slate_id",
     ]
     pscore_keys = [
         "pscore",
@@ -609,7 +607,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
-    evaluation_policy_action_dist, 
+    evaluation_policy_action_dist,
     description_1: str,
     alpha,
     n_bootstrap_samples,
@@ -678,7 +676,8 @@ def test_meta_estimate_intervals_using_valid_input_data(
     }, "SlateOffPolicyEvaluation.estimate_intervals ([IIPS]) returns a wrong value"
     # multiple ope estimators
     ope_ = SlateOffPolicyEvaluation(
-        bandit_feedback=synthetic_slate_bandit_feedback, ope_estimators=[iips, rips, cascade_dr, sips]
+        bandit_feedback=synthetic_slate_bandit_feedback,
+        ope_estimators=[iips, rips, cascade_dr, sips],
     )
     assert ope_.estimate_intervals(
         evaluation_policy_pscore=evaluation_policy_pscore,
@@ -708,7 +707,7 @@ def test_meta_summarize_off_policy_estimates(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
-    evaluation_policy_action_dist, 
+    evaluation_policy_action_dist,
     description_1: str,
     alpha: float,
     n_bootstrap_samples: int,

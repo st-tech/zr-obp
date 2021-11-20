@@ -296,8 +296,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         "evaluation_policy_pscore_cascade must be non-increasing sequence in each slate",
-    )
-    (
+    )(
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros(n_rounds * len_list, dtype=int),
         np.zeros(n_rounds * len_list, dtype=int),
@@ -651,8 +650,14 @@ def test_slate_ope_performance_using_cascade_additive_log():
         n_rounds=n_rounds
     )
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
-    evaluation_policy_action_dist = np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
-    _, _, evaluation_policy_pscore = dataset.obtain_pscore_given_evaluation_policy_logit(
+    evaluation_policy_action_dist = (
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
+    )
+    (
+        _,
+        _,
+        evaluation_policy_pscore,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
         action=action,
         evaluation_policy_logit_=evaluation_policy_logit_,
         return_pscore_item_position=False,
@@ -712,7 +717,7 @@ def test_slate_ope_performance_using_cascade_additive_log():
         assert (
             np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
         ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
-    
+
     # check if q_hat = 0 case of cascade-dr coincides with rips
     cascade_dr_estimated_policy_value_ = dr.estimate_policy_value(
         slate_id=slate_id,
@@ -731,7 +736,10 @@ def test_slate_ope_performance_using_cascade_additive_log():
         position=position,
         evaluation_policy_pscore_cascade=evaluation_policy_pscore,
     )
-    assert np.allclose(np.array([cascade_dr_estimated_policy_value_]), np.array([rips_estimated_policy_value]))
+    assert np.allclose(
+        np.array([cascade_dr_estimated_policy_value_]),
+        np.array([rips_estimated_policy_value]),
+    )
 
 
 def test_slate_ope_performance_using_independent_log():
@@ -782,8 +790,14 @@ def test_slate_ope_performance_using_independent_log():
         n_rounds=n_rounds
     )
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
-    evaluation_policy_action_dist = np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
-    _, _, evaluation_policy_pscore = dataset.obtain_pscore_given_evaluation_policy_logit(
+    evaluation_policy_action_dist = (
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
+    )
+    (
+        _,
+        _,
+        evaluation_policy_pscore,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
         action=action,
         evaluation_policy_logit_=evaluation_policy_logit_,
         return_pscore_item_position=False,
@@ -843,7 +857,7 @@ def test_slate_ope_performance_using_independent_log():
         assert (
             np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
         ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
-    
+
     # check if q_hat = 0 case of cascade-dr coincides with rips
     cascade_dr_estimated_policy_value_ = dr.estimate_policy_value(
         slate_id=slate_id,
@@ -862,7 +876,10 @@ def test_slate_ope_performance_using_independent_log():
         position=position,
         evaluation_policy_pscore_cascade=evaluation_policy_pscore,
     )
-    assert np.allclose(np.array([cascade_dr_estimated_policy_value_]), np.array([rips_estimated_policy_value]))
+    assert np.allclose(
+        np.array([cascade_dr_estimated_policy_value_]),
+        np.array([rips_estimated_policy_value]),
+    )
 
 
 def test_slate_ope_performance_using_standard_additive_log():
@@ -913,8 +930,14 @@ def test_slate_ope_performance_using_standard_additive_log():
         n_rounds=n_rounds
     )
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
-    evaluation_policy_action_dist = np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
-    _, _, evaluation_policy_pscore = dataset.obtain_pscore_given_evaluation_policy_logit(
+    evaluation_policy_action_dist = (
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
+    )
+    (
+        _,
+        _,
+        evaluation_policy_pscore,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
         action=action,
         evaluation_policy_logit_=evaluation_policy_logit_,
         return_pscore_item_position=False,
@@ -974,7 +997,7 @@ def test_slate_ope_performance_using_standard_additive_log():
         assert (
             np.abs(gt_mean - estimated_policy_value[key]) <= ci_bound
         ), f"OPE of {key} did not work well (absolute error is greater than 3*sigma)"
-    
+
     # check if q_hat = 0 case of cascade-dr coincides with rips
     cascade_dr_estimated_policy_value_ = dr.estimate_policy_value(
         slate_id=slate_id,
@@ -993,4 +1016,7 @@ def test_slate_ope_performance_using_standard_additive_log():
         position=position,
         evaluation_policy_pscore_cascade=evaluation_policy_pscore,
     )
-    assert np.allclose(np.array([cascade_dr_estimated_policy_value_]), np.array([rips_estimated_policy_value]))
+    assert np.allclose(
+        np.array([cascade_dr_estimated_policy_value_]),
+        np.array([rips_estimated_policy_value]),
+    )

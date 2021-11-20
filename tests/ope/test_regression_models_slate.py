@@ -21,7 +21,6 @@ from obp.ope import SlateRegressionModel
 from obp.utils import softmax
 
 
-
 np.random.seed(1)
 
 model_dict = dict(
@@ -367,10 +366,10 @@ def test_fitting_regression_models_using_invalid_input_data(
     context,
     action,
     reward,
-    pscore, 
-    evaluation_policy_pscore, 
-    evaluation_policy_action_dist, 
-    err, 
+    pscore,
+    evaluation_policy_pscore,
+    evaluation_policy_action_dist,
+    err,
     description,
 ) -> None:
     # fit_predict function raises ValueError
@@ -389,7 +388,7 @@ def test_fitting_regression_models_using_invalid_input_data(
             evaluation_policy_pscore_cascade=evaluation_policy_pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
-        
+
 
 @pytest.mark.parametrize(
     "context, action, reward, pscore, evaluation_policy_pscore, evaluation_policy_action_dist, description",
@@ -399,9 +398,9 @@ def test_regression_models_using_valid_input_data(
     context,
     action,
     reward,
-    pscore, 
-    evaluation_policy_pscore, 
-    evaluation_policy_action_dist, 
+    pscore,
+    evaluation_policy_pscore,
+    evaluation_policy_action_dist,
     description,
 ) -> None:
     # fit_predict
@@ -420,6 +419,7 @@ def test_regression_models_using_valid_input_data(
             evaluation_policy_pscore_cascade=evaluation_policy_pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
+
 
 def test_slate_ope_performance_using_cascade_additive_log():
     # set parameters
@@ -469,8 +469,14 @@ def test_slate_ope_performance_using_cascade_additive_log():
         n_rounds=n_rounds
     )
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
-    evaluation_policy_action_dist = np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
-    _, _, evaluation_policy_pscore = dataset.obtain_pscore_given_evaluation_policy_logit(
+    evaluation_policy_action_dist = (
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
+    )
+    (
+        _,
+        _,
+        evaluation_policy_pscore,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
         action=action,
         evaluation_policy_logit_=evaluation_policy_logit_,
         return_pscore_item_position=False,
@@ -505,9 +511,7 @@ def test_slate_ope_performance_using_cascade_additive_log():
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             )
             # compare dr criterion
-            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(
-                q_hat
-            )
+            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
             print(
                 f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
             )
@@ -564,8 +568,14 @@ def test_slate_ope_performance_using_independent_log():
         n_rounds=n_rounds
     )
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
-    evaluation_policy_action_dist = np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
-    _, _, evaluation_policy_pscore = dataset.obtain_pscore_given_evaluation_policy_logit(
+    evaluation_policy_action_dist = (
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
+    )
+    (
+        _,
+        _,
+        evaluation_policy_pscore,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
         action=action,
         evaluation_policy_logit_=evaluation_policy_logit_,
         return_pscore_item_position=False,
@@ -600,9 +610,7 @@ def test_slate_ope_performance_using_independent_log():
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             )
             # compare dr criterion
-            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(
-                q_hat
-            )
+            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
             print(
                 f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
             )
@@ -659,8 +667,14 @@ def test_slate_ope_performance_using_standard_additive_log():
         n_rounds=n_rounds
     )
     evaluation_policy_logit_ = np.ones((n_rounds, n_unique_action)) / n_unique_action
-    evaluation_policy_action_dist = np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
-    _, _, evaluation_policy_pscore = dataset.obtain_pscore_given_evaluation_policy_logit(
+    evaluation_policy_action_dist = (
+        np.ones(n_rounds * len_list * n_unique_action) / n_unique_action
+    )
+    (
+        _,
+        _,
+        evaluation_policy_pscore,
+    ) = dataset.obtain_pscore_given_evaluation_policy_logit(
         action=action,
         evaluation_policy_logit_=evaluation_policy_logit_,
         return_pscore_item_position=False,
@@ -695,9 +709,7 @@ def test_slate_ope_performance_using_standard_additive_log():
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             )
             # compare dr criterion
-            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(
-                q_hat
-            )
+            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
             print(
                 f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
             )
@@ -721,19 +733,29 @@ def calc_ground_truth_mean_reward_function(
             if dataset.is_factorizable:
                 enumerated_slate_actions = [
                     _
-                    for _ in product(np.arange(dataset.n_unique_action), repeat=dataset.len_list - position - 1)
+                    for _ in product(
+                        np.arange(dataset.n_unique_action),
+                        repeat=dataset.len_list - position - 1,
+                    )
                 ]
             else:
                 enumerated_slate_actions = [
-                    _ for _ in permutations(np.arange(dataset.n_unique_action), dataset.len_list)
+                    _
+                    for _ in permutations(
+                        np.arange(dataset.n_unique_action), dataset.len_list
+                    )
                 ]
             enumerated_slate_actions = np.array(enumerated_slate_actions).astype("int8")
             n_enumerated_slate_actions = len(enumerated_slate_actions)
 
         for i in range(n_rounds):
             if position != dataset.len_list - 1:
-                action_ = np.tile(action[i][:position + 1], (n_enumerated_slate_actions, 1))
-                enumerated_slate_actions = np.concatenate([action_, enumerated_slate_actions])
+                action_ = np.tile(
+                    action[i][: position + 1], (n_enumerated_slate_actions, 1)
+                )
+                enumerated_slate_actions = np.concatenate(
+                    [action_, enumerated_slate_actions]
+                )
             else:
                 enumerated_slate_actions = action[i]
                 n_enumerated_slate_actions = 1
@@ -764,7 +786,8 @@ def calc_ground_truth_mean_reward_function(
                 expected_slate_rewards = np.array(
                     [
                         expected_slot_reward_tile[
-                            np.arange(n_enumerated_slate_actions) % n_enumerated_slate_actions,
+                            np.arange(n_enumerated_slate_actions)
+                            % n_enumerated_slate_actions,
                             np.array(enumerated_slate_actions)[:, position_],
                             position_,
                         ]
