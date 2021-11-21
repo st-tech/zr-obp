@@ -8,8 +8,6 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
-from sklearn.linear_model import Ridge
-from obp.ope.regression_model_slate import SlateRegressionModel
 import pytest
 
 from obp.ope import SlateIndependentIPS

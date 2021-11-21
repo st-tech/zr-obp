@@ -19,7 +19,6 @@ from sklearn.utils import check_scalar
 from ..types import BanditFeedback
 from ..utils import check_confidence_interval_arguments
 from .estimators_slate import BaseSlateOffPolicyEstimator
-from .regression_model_slate import SlateRegressionModel
 from .estimators_slate import SlateCascadeDoublyRobust as CascadeDR
 
 logger = getLogger(__name__)
