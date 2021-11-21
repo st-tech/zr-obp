@@ -38,12 +38,6 @@ class SlateOffPolicyEvaluation:
         List of OPE estimators used to evaluate the policy value of evaluation policy.
         Estimators must follow the interface of `obp.ope.BaseSlateOffPolicyEstimator`.
 
-    base_regression_model: Optional[SlateRegressionModel] = None
-        :math:`\\hat{Q}_k` used in Cascade-DR.
-
-    is_factorizable: bool, default=False
-        Whether the behavior and evaluation policies are factorizable or not.
-
     Examples
     ----------
 
@@ -119,8 +113,6 @@ class SlateOffPolicyEvaluation:
 
     bandit_feedback: BanditFeedback
     ope_estimators: List[BaseSlateOffPolicyEstimator]
-    base_regression_model: Optional[SlateRegressionModel] = None
-    is_factorizable: bool = False
 
     def __post_init__(self) -> None:
         """Initialize class."""
@@ -130,9 +122,6 @@ class SlateOffPolicyEvaluation:
             "action",
             "reward",
             "position",
-            "pscore",
-            "pscore_item_position",
-            "pscore_cascade",
         ]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
@@ -144,23 +133,13 @@ class SlateOffPolicyEvaluation:
             if isinstance(estimator, CascadeDR):
                 self.use_cascade_dr = True
 
-        if self.use_cascade_dr and self.base_regression_model is None:
-            raise RuntimeError(
-                "base_regression_model must be given when using SlateCascadeDoublyRobust"
-            )
-        if self.base_regression_model and not isinstance(
-            self.base_regression_model, SlateRegressionModel
-        ):
-            raise ValueError(
-                "base_regression_model must be a SlateRegressionModel or a child class of SlateRegressionModel"
-            )
-
     def _create_estimator_inputs(
         self,
         evaluation_policy_pscore: Optional[np.ndarray] = None,
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
+        q_hat: Optional[np.ndarray] = None,
     ) -> Dict[str, np.ndarray]:
         """Create input dictionary to estimate policy value by subclasses of `BaseSlateOffPolicyEstimator`"""
         if (
@@ -175,6 +154,8 @@ class SlateOffPolicyEvaluation:
             raise ValueError(
                 "evaluation_policy_action_dist must be given when using SlateCascadeDoublyRobust"
             )
+        if self.use_cascade_dr and q_hat is None:
+            raise ValueError("q_hat must be given when using SlateCascadeDoublyRobust")
 
         estimator_inputs = {
             input_: self.bandit_feedback[input_]
@@ -199,19 +180,7 @@ class SlateOffPolicyEvaluation:
         estimator_inputs[
             "evaluation_policy_action_dist"
         ] = evaluation_policy_action_dist
-
-        if self.base_regression_model is not None:
-            q_hat = self.base_regression_model.fit_predict(
-                context=self.bandit_feedback["context"],
-                action=self.bandit_feedback["action"],
-                reward=self.bandit_feedback["reward"],
-                pscore_cascade=self.bandit_feedback["pscore_cascade"],
-                evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
-                evaluation_policy_action_dist=evaluation_policy_action_dist,
-            )
-            estimator_inputs["q_hat"] = q_hat
-        else:
-            estimator_inputs["q_hat"] = None
+        estimator_inputs["q_hat"] = q_hat
 
         return estimator_inputs
 
@@ -221,6 +190,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
+        q_hat: Optional[np.ndarray] = None,
     ) -> Dict[str, float]:
         """Estimate the policy value of evaluation policy.
 
@@ -238,6 +208,12 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Required when using SlateCascadeDoublyRobust.
+
+        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Required when using SlateCascadeDoublyRobust.
 
         Returns
         ----------
@@ -251,6 +227,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_dict[estimator_name] = estimator.estimate_policy_value(
@@ -265,6 +242,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
+        q_hat: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -285,6 +263,11 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Required when using SlateCascadeDoublyRobust.
 
         alpha: float, default=0.05
             Significance level.
@@ -313,6 +296,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_interval_dict[estimator_name] = estimator.estimate_interval(
@@ -330,6 +314,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
+        q_hat: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -350,6 +335,11 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Required when using SlateCascadeDoublyRobust.
 
         alpha: float, default=0.05
             Significance level.
@@ -372,6 +362,7 @@ class SlateOffPolicyEvaluation:
                 evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
                 evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
+                q_hat=q_hat,
             ),
             index=["estimated_policy_value"],
         )
@@ -381,6 +372,7 @@ class SlateOffPolicyEvaluation:
                 evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
                 evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
+                q_hat=q_hat,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
@@ -408,6 +400,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
+        q_hat: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -431,6 +424,11 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Required when using SlateCascadeDoublyRobust.
 
         alpha: float, default=0.05
             Significance level.
@@ -463,6 +461,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -509,6 +508,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
+        q_hat: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
         """Evaluate estimation performance of OPE estimators.
@@ -547,6 +547,11 @@ class SlateOffPolicyEvaluation:
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
+        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Required when using SlateCascadeDoublyRobust.
+
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be "relative-ee" or "se".
@@ -573,6 +578,7 @@ class SlateOffPolicyEvaluation:
             evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
             evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_policy_value = estimator.estimate_policy_value(**estimator_inputs)
@@ -592,6 +598,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_item_position: Optional[np.ndarray] = None,
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
+        q_hat: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> DataFrame:
         """Summarize performance comparisons of OPE estimators.
@@ -615,6 +622,11 @@ class SlateOffPolicyEvaluation:
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
+        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Required when using SlateCascadeDoublyRobust.
+
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be either "relative-ee" or "se".
@@ -631,6 +643,8 @@ class SlateOffPolicyEvaluation:
                 evaluation_policy_pscore=evaluation_policy_pscore,
                 evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
                 evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+                evaluation_policy_action_dist=evaluation_policy_action_dist,
+                q_hat=q_hat,
                 metric=metric,
             ),
             index=[metric],

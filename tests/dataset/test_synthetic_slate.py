@@ -2301,19 +2301,19 @@ invalid_input_of_calc_evaluation_policy_action_dist = [
         np.ones((10 * 3 + 1)),  #
         np.ones((10, 3)),
         ValueError,
-        "Expected `len(action) ==",
+        "Expected `len(action)",
     ),
     (
         np.ones((10 * 3)),
         np.ones((10, 2)),  #
         ValueError,
-        "Expected `evaluation_policy_logit_.shape[1] ==",
+        "Expected `evaluation_policy_logit_.shape[1]",
     ),
     (
         np.ones((10 * 3)),
         np.ones((15, 3)),  #
         ValueError,
-        "Expected `len(action) ==",
+        "Expected `len(action)",
     ),
     (
         np.ones((10 * 3)),
