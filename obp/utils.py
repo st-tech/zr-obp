@@ -905,7 +905,7 @@ def check_cascade_dr_inputs(
 
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Calculate sigmoid function."""
-    return 1.0 / (1.0 + np.exp(-x))
+    return np.exp(np.minimum(x, 0)) / (1.0 + np.exp(-np.abs(x)))
 
 
 def softmax(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:

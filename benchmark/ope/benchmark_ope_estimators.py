@@ -9,7 +9,8 @@ from omegaconf import DictConfig
 from pandas import DataFrame
 import pingouin as pg
 from pyieoe.evaluator import InterpretableOPEEvaluator
-from sklearn.ensemble import GradientBoostingClassifier as LightGBM
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.ensemble import HistGradientBoostingClassifier as LightGBM
 from sklearn.ensemble import RandomForestClassifier as RandomForest
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression

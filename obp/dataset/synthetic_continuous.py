@@ -25,7 +25,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
     -----
     By calling the `obtain_batch_bandit_feedback` method several times, we have different bandit samples with the same setting.
     This can be used to estimate confidence intervals of the performances of OPE estimators for continuous actions.
-    If None is set as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
+    If None is given as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
 
     Parameters
     -----------
@@ -47,13 +47,13 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
         i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is set, context **independent** expected reward for each action will be
+        If None is given, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating the propensity score of continuous actions,
         i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
-        If None is set, context **independent** uniform distribution will be used (uniform behavior policy).
+        If None is given, context **independent** uniform distribution will be used (uniform behavior policy).
 
     random_state: int, default=12345
         Controls the random seed in sampling synthetic slate bandit dataset.
@@ -148,7 +148,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         Calculate context-free expected rewards given only continuous action values.
         This is just an example synthetic (expected) reward function.
         """
-        return 2 * np.power(action, 1.5) - (5 * action)
+        return 2 * np.power(np.abs(action), 1.5) - (5 * action)
 
     def obtain_batch_bandit_feedback(
         self,
@@ -274,7 +274,7 @@ def linear_reward_funcion_continuous(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     action: array-like, shape (n_rounds,)
         Continuous action values.
@@ -311,7 +311,7 @@ def quadratic_reward_funcion_continuous(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     action: array-like, shape (n_rounds,)
         Continuous action values.
@@ -353,7 +353,7 @@ def linear_behavior_policy_continuous(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     random_state: int, default=None
         Controls the random seed in sampling parameters.
@@ -381,7 +381,7 @@ def linear_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     Returns
     ---------
@@ -400,7 +400,7 @@ def threshold_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     Returns
     ---------
@@ -419,7 +419,7 @@ def sign_synthetic_policy_continuous(context: np.ndarray) -> np.ndarray:
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors characterizing each round (such as user information).
+        Context vectors characterizing each data (such as user information).
 
     Returns
     ---------

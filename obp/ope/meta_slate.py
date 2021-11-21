@@ -486,7 +486,7 @@ class SlateOffPolicyEvaluation:
         )
         plt.xlabel("OPE Estimators", fontsize=25)
         plt.ylabel(
-            f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20
+            f"Estimated Policy Value (± {np.int32(100*(1 - alpha))}% CI)", fontsize=20
         )
         plt.yticks(fontsize=15)
         plt.xticks(fontsize=25 - 2 * len(self.ope_estimators))
