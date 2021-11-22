@@ -209,7 +209,7 @@ class SlateOffPolicyEvaluation:
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
             Required when using SlateCascadeDoublyRobust.
 
-        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
             Required when using SlateCascadeDoublyRobust.
@@ -263,7 +263,7 @@ class SlateOffPolicyEvaluation:
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
             Required when using SlateCascadeDoublyRobust.
@@ -335,7 +335,7 @@ class SlateOffPolicyEvaluation:
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
             Required when using SlateCascadeDoublyRobust.
@@ -424,7 +424,7 @@ class SlateOffPolicyEvaluation:
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
             Required when using SlateCascadeDoublyRobust.
@@ -546,7 +546,7 @@ class SlateOffPolicyEvaluation:
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
             Required when using SlateCascadeDoublyRobust.
@@ -621,7 +621,7 @@ class SlateOffPolicyEvaluation:
             Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
             , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
 
-        q_hat: q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
             :math:`\\hat{Q}_k` for all unique actions
             , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
             Required when using SlateCascadeDoublyRobust.
