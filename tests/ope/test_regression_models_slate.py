@@ -412,7 +412,7 @@ def test_regression_models_using_valid_input_data(
         )
 
 
-def test_slate_ope_performance_using_cascade_additive_log():
+def test_cascade_dr_criterion_using_cascade_additive_log():
     # set parameters
     n_unique_action = 3
     len_list = 3
@@ -468,7 +468,7 @@ def test_slate_ope_performance_using_cascade_additive_log():
     )
 
     # obtain q_hat and check if q_hat is effective
-    dr_criterion_pass_rate = 0.7
+    cascade_dr_criterion_pass_rate = 0.7
     for fitting_method in ["normal", "iw"]:
         for model_name, model in model_dict.items():
             base_regression_model = SlateRegressionModel(
@@ -486,16 +486,16 @@ def test_slate_ope_performance_using_cascade_additive_log():
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             )
             # compare dr criterion
-            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
+            cascade_dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
             print(
-                f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
+                f"Dr criterion is satisfied with probability {np.mean(cascade_dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
             )
             assert (
-                np.mean(dr_criterion <= 0) >= dr_criterion_pass_rate
-            ), f" should be satisfied with a probability at least {dr_criterion_pass_rate}"
+                np.mean(cascade_dr_criterion <= 0) >= cascade_dr_criterion_pass_rate
+            ), f" should be satisfied with a probability at least {cascade_dr_criterion_pass_rate}"
 
 
-def test_slate_ope_performance_using_independent_log():
+def test_cascade_dr_criterion_using_independent_log():
     # set parameters
     n_unique_action = 3
     len_list = 3
@@ -551,7 +551,7 @@ def test_slate_ope_performance_using_independent_log():
     )
 
     # obtain q_hat and check if q_hat is effective
-    dr_criterion_pass_rate = 0.7
+    cascade_dr_criterion_pass_rate = 0.7
     for fitting_method in ["normal", "iw"]:
         for model_name, model in model_dict.items():
             base_regression_model = SlateRegressionModel(
@@ -569,16 +569,16 @@ def test_slate_ope_performance_using_independent_log():
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             )
             # compare dr criterion
-            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
+            cascade_dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
             print(
-                f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
+                f"Dr criterion is satisfied with probability {np.mean(cascade_dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
             )
             assert (
-                np.mean(dr_criterion <= 0) >= dr_criterion_pass_rate
-            ), f" should be satisfied with a probability at least {dr_criterion_pass_rate}"
+                np.mean(cascade_dr_criterion <= 0) >= cascade_dr_criterion_pass_rate
+            ), f" should be satisfied with a probability at least {cascade_dr_criterion_pass_rate}"
 
 
-def test_slate_ope_performance_using_standard_additive_log():
+def test_cascade_dr_criterion_using_standard_additive_log():
     # set parameters
     n_unique_action = 3
     len_list = 3
@@ -634,7 +634,7 @@ def test_slate_ope_performance_using_standard_additive_log():
     )
 
     # obtain q_hat and check if q_hat is effective
-    dr_criterion_pass_rate = 0.7
+    cascade_dr_criterion_pass_rate = 0.7
     for fitting_method in ["normal", "iw"]:
         for model_name, model in model_dict.items():
             base_regression_model = SlateRegressionModel(
@@ -652,13 +652,13 @@ def test_slate_ope_performance_using_standard_additive_log():
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
             )
             # compare dr criterion
-            dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
+            cascade_dr_criterion = np.abs((q_expected - q_hat)) - np.abs(q_hat)
             print(
-                f"Dr criterion is satisfied with probability {np.mean(dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
+                f"Dr criterion is satisfied with probability {np.mean(cascade_dr_criterion <= 0)} ------ model: {model_name} ({fitting_method}),"
             )
             assert (
-                np.mean(dr_criterion <= 0) >= dr_criterion_pass_rate
-            ), f" should be satisfied with a probability at least {dr_criterion_pass_rate}"
+                np.mean(cascade_dr_criterion <= 0) >= cascade_dr_criterion_pass_rate
+            ), f" should be satisfied with a probability at least {cascade_dr_criterion_pass_rate}"
 
 
 def calc_ground_truth_mean_reward_function(

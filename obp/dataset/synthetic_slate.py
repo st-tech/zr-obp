@@ -550,17 +550,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Actions sampled by a behavior policy.
             Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
 
-        pscore_cascade: array-like, shape (n_rounds * len_list)
-            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
-            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        pscore: array-like, shape (n_rounds * len_list)
-            Joint action choice probabilities of the slate given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            This parameter must be unique in each slate.
 
-        pscore_item_position: array-like, shape (n_rounds * len_list)
-            Marginal action choice probabilities of each slot given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
         """
         action = np.zeros(n_rounds * self.len_list, dtype=int)
@@ -1043,17 +1043,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        pscore: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities of the slate given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            This parameter must be unique in each slate.
 
-        pscore_item_position: array-like, shape (n_unique_action * len_list)
-            Marginal action choice probabilities of each slot given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
-        pscore_cascade: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
-            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -1239,17 +1239,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        pscore: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities of the slate given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            This parameter must be unique in each slate.
 
-        pscore_item_position: array-like, shape (n_unique_action * len_list)
-            Marginal action choice probabilities of each slot given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
-        pscore_cascade: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
-            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         """
         check_array(array=action_2d, name="action_2d", expected_dim=2)
