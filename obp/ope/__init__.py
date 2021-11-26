@@ -32,6 +32,7 @@ from obp.ope.meta import OffPolicyEvaluation
 from obp.ope.meta_continuous import ContinuousOffPolicyEvaluation
 from obp.ope.meta_slate import SlateOffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
+from obp.ope.classification_model import ImportanceSampler
 
 
 __all__ = [
@@ -59,6 +60,7 @@ __all__ = [
     "SelfNormalizedSlateIndependentIPS",
     "SelfNormalizedSlateStandardIPS",
     "BalancedInverseProbabilityWeighting",
+    "ImportanceSampler",
     "BaseContinuousOffPolicyEstimator",
     "KernelizedInverseProbabilityWeighting",
     "KernelizedSelfNormalizedInverseProbabilityWeighting",

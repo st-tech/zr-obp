@@ -1773,8 +1773,6 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     len_list: int
     n_actions: int
-    fit_random_state: int
-    base_model: BaseEstimator
     lambda_: float = np.inf
     estimator_name: str = "b-ipw"
 
@@ -1788,9 +1786,6 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         )
         if self.lambda_ != self.lambda_:
             raise ValueError("lambda_ must not be nan")
-        self.base_model_list = [
-            clone(self.base_model) for _ in np.arange(self.len_list)
-        ]
 
     def fit(
         self,
@@ -1985,6 +1980,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: np.ndarray,
         action_dist: np.ndarray,
         context: np.ndarray,
+        balancing_weight: np.ndarray,
         position: Optional[np.ndarray] = None,
         action_context: Optional[np.ndarray] = None,
         **kwargs,
@@ -2020,12 +2016,6 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         check_array(array=action, name="action", expected_dim=1)
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-        balancing_weight = self.predict(
-            context=context,
-            action=action,
-            action_context=action_context,
-            position=position,
-        )
         return self._estimate_round_rewards(
             reward=reward,
             action=action,
