@@ -555,7 +555,7 @@ class PropensityScoreEstimator(BaseEstimator):
             if context[idx].shape[0] == 0:
                 continue
             pscore[idx] = self.base_model_list[position_].predict_proba(context[idx])[
-                :, 1
+                np.arange(action[idx].shape[0]), action[idx]
             ]
         return pscore
 
@@ -658,9 +658,9 @@ class PropensityScoreEstimator(BaseEstimator):
                     idx = position[test_idx] == position_
                     if context[test_idx][idx].shape[0] == 0:
                         continue
-                    pscore_eval = self.base_model_list[position_].predict_proba(
+                    proba_eval = self.base_model_list[position_].predict_proba(
                         context[test_idx][idx]
-                    )[:, 1]
-                    self.eval_result["proba"].append(pscore_eval)
+                    )
+                    self.eval_result["proba"].append(proba_eval)
                     self.eval_result["y"].append(action[test_idx][idx])
         return pscore
