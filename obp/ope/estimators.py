@@ -1009,6 +1009,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
         estimated_pscore: Optional[np.ndarray] = None,
+        **kwargs,
     ) -> float:
         """Estimate the policy value of evaluation policy.
 
@@ -1904,7 +1905,6 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         reward: np.ndarray,
         action: np.ndarray,
         action_dist: np.ndarray,
-        context: np.ndarray,
         importance_sampling_ratio: np.ndarray,
         position: Optional[np.ndarray] = None,
         action_context: Optional[np.ndarray] = None,
