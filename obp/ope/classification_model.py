@@ -261,7 +261,7 @@ class ImportanceSampler(BaseEstimator):
             `random_state` affects the ordering of the indices, which controls the randomness of each fold.
             See https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html for the details.
 
-        is_eval_model: boolean, default=False
+        is_eval_model: bool, default=False
             Whether the performance of the classification model is evaluated or not.
             When True is given, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
 
@@ -309,6 +309,7 @@ class ImportanceSampler(BaseEstimator):
                 action=action,
                 position=position,
                 action_dist=action_dist,
+                random_state=random_state,
             )
             return self.predict(context=context, action=action, position=position)
         else:
@@ -323,6 +324,7 @@ class ImportanceSampler(BaseEstimator):
                 action=action[train_idx],
                 position=position[train_idx],
                 action_dist=action_dist[train_idx],
+                random_state=random_state,
             )
             importance_sampling_ratio[test_idx] = self.predict(
                 context=context[test_idx],
@@ -595,7 +597,7 @@ class PropensityScoreEstimator(BaseEstimator):
             `random_state` affects the ordering of the indices, which controls the randomness of each fold.
             See https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html for the details.
 
-        is_eval_model: boolean, default=False
+        is_eval_model: bool, default=False
             Whether the performance of the classification model is evaluated or not.
             When True is given, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
 
@@ -629,6 +631,7 @@ class PropensityScoreEstimator(BaseEstimator):
                 context=context,
                 action=action,
                 position=position,
+                random_state=random_state,
             )
             return self.predict(context=context, action=action, position=position)
         else:
@@ -642,6 +645,7 @@ class PropensityScoreEstimator(BaseEstimator):
                 context=context[train_idx],
                 action=action[train_idx],
                 position=position[train_idx],
+                random_state=random_state,
             )
 
             pscore[test_idx] = self.predict(

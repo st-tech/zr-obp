@@ -89,7 +89,7 @@ class OffPolicyEvaluation:
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        for key_ in ["action", "position", "reward", "pscore"]:
+        for key_ in ["action", "position", "reward"]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
         self.ope_estimators_ = dict()
@@ -105,6 +105,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
     ) -> Dict[str, Dict[str, np.ndarray]]:
         """Create input dictionary to estimate policy value using subclasses of `BaseOffPolicyEstimator`"""
         check_array(array=action_dist, name="action_dist", expected_dim=3)
@@ -125,15 +126,28 @@ class OffPolicyEvaluation:
             raise ValueError(
                 "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
             )
+        if estimated_pscore is not None:
+            check_array(estimated_pscore, "estimated_pscore", expected_dim=1)
+            if estimated_pscore.shape[0] != action_dist.shape[0]:
+                raise ValueError(
+                    "Expected `estimated_pscore.shape[0] == action_dist.shape[0]`, but found it False"
+                )
         estimator_inputs = {
             estimator_name: {
                 input_: self.bandit_feedback[input_]
-                for input_ in ["reward", "action", "position", "pscore"]
+                for input_ in ["reward", "action", "position"]
             }
             for estimator_name in self.ope_estimators_
         }
 
         for estimator_name in self.ope_estimators_:
+            if "pscore" in self.bandit_feedback:
+                estimator_inputs[estimator_name]["pscore"] = self.bandit_feedback[
+                    "pscore"
+                ]
+            else:
+                estimator_inputs[estimator_name]["pscore"] = None
+            estimator_inputs[estimator_name]["estimated_pscore"] = estimated_pscore
             estimator_inputs[estimator_name]["action_dist"] = action_dist
             if isinstance(estimated_rewards_by_reg_model, dict):
                 if estimator_name in estimated_rewards_by_reg_model:
@@ -157,6 +171,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
     ) -> Dict[str, float]:
         """Estimate the policy value of evaluation policy.
 
@@ -170,6 +185,9 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         Returns
         ----------
@@ -187,12 +205,12 @@ class OffPolicyEvaluation:
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_dict[estimator_name] = estimator.estimate_policy_value(
                 **estimator_inputs[estimator_name]
             )
-
         return policy_value_dict
 
     def estimate_intervals(
@@ -201,6 +219,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -217,6 +236,9 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -249,6 +271,7 @@ class OffPolicyEvaluation:
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_interval_dict[estimator_name] = estimator.estimate_interval(
@@ -266,6 +289,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -282,6 +306,9 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -302,6 +329,7 @@ class OffPolicyEvaluation:
             self.estimate_policy_values(
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
             ),
             index=["estimated_policy_value"],
         )
@@ -309,6 +337,7 @@ class OffPolicyEvaluation:
             self.estimate_intervals(
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
@@ -333,6 +362,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -352,6 +382,9 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -383,6 +416,7 @@ class OffPolicyEvaluation:
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_round_rewards_dict[
@@ -422,6 +456,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
         """Evaluate estimation performance of OPE estimators.
@@ -456,6 +491,9 @@ class OffPolicyEvaluation:
             When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
 
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be "relative-ee" or "se".
@@ -484,6 +522,7 @@ class OffPolicyEvaluation:
         estimator_inputs = self._create_estimator_inputs(
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_policy_value = estimator.estimate_policy_value(
@@ -505,6 +544,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> DataFrame:
         """Summarize performance comparisons of OPE estimators.
@@ -521,6 +561,9 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
@@ -550,6 +593,7 @@ class OffPolicyEvaluation:
         estimated_rewards_by_reg_model: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -572,6 +616,9 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of an estimator as a key, the corresponding value is used.
             When it is not given, model-dependent estimators such as DM and DR cannot be used.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -611,6 +658,7 @@ class OffPolicyEvaluation:
             estimator_inputs = self._create_estimator_inputs(
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
             )
             for estimator_name, estimator in self.ope_estimators_.items():
                 estimated_round_rewards_dict[estimator_name][

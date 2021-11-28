@@ -449,6 +449,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        **kwargs,
     ) -> float:
         """Estimate the policy value of evaluation policy with a tuned hyperparameter.
 
@@ -628,6 +629,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        **kwargs,
     ) -> float:
         """Estimate the policy value of evaluation policy with a tuned hyperparameter.
 
@@ -807,6 +809,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        **kwargs,
     ) -> float:
         """Estimate the policy value of evaluation policy with a tuned hyperparameter.
 

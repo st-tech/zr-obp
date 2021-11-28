@@ -256,6 +256,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
     estimator_name: str, default='ipw'.
         Name of the estimator.
 
+    use_estimated_pscore: bool, default=False.
+        If True, estimated_pscore is used to estimate policy values.
+        If False, pscore is used to estimate policy values.
+
     References
     ------------
     Alex Strehl, John Langford, Lihong Li, and Sham M Kakade.
@@ -271,6 +275,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     lambda_: float = np.inf
     estimator_name: str = "ipw"
+    use_estimated_pscore: bool = False
 
     def __post_init__(self) -> None:
         """Initialize Class."""
@@ -282,6 +287,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         )
         if self.lambda_ != self.lambda_:
             raise ValueError("lambda_ must not be nan")
+        if not isinstance(self.use_estimated_pscore, bool):
+            raise TypeError(
+                f"`use_estimated_pscore` must be a bool, but {type(self.use_estimated_pscore)} is given"
+            )
 
     def _estimate_round_rewards(
         self,
@@ -331,9 +340,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        pscore: np.ndarray,
+        pscore: Optional[np.ndarray],
         action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the policy value of evaluation policy.
@@ -346,8 +356,9 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,)
+        pscore: array-like, shape (n_rounds,), can be None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -357,6 +368,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             When None is given, the effect of position on the reward will be ignored.
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            If self.use_estimated_pscore is True, estimated_pscore must not be None.
+
         Returns
         ----------
         V_hat: float
@@ -365,13 +380,19 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         """
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=pscore, name="pscore", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
+
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
             action=action,
             reward=reward,
-            pscore=pscore,
+            pscore=pscore_,
         )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
@@ -380,7 +401,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             reward=reward,
             action=action,
             position=position,
-            pscore=pscore,
+            pscore=pscore_,
             action_dist=action_dist,
         ).mean()
 
@@ -391,6 +412,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         pscore: np.ndarray,
         action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -406,8 +428,9 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,)
+        pscore: array-like, shape (n_rounds,), can be None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -416,6 +439,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
             When None is given, the effect of position on the reward will be ignored.
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            If self.use_estimated_pscore is True, estimated_pscore must not be None.
 
         alpha: float, default=0.05
             Significance level.
@@ -434,13 +461,19 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         """
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=pscore, name="pscore", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
+
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
             action=action,
             reward=reward,
-            pscore=pscore,
+            pscore=pscore_,
         )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
@@ -449,7 +482,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             reward=reward,
             action=action,
             position=position,
-            pscore=pscore,
+            pscore=pscore_,
             action_dist=action_dist,
         )
         return estimate_confidence_interval_by_bootstrap(
@@ -488,6 +521,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            When None is given, the effect of position on the reward will be ignored.
+            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         use_bias_upper_bound: bool, default=True
             Whether to use bias upper bound in hyperparameter tuning.
@@ -859,6 +894,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
     estimator_name: str, default='dr'.
         Name of the estimator.
 
+    use_estimated_pscore: bool, default=False.
+        If True, estimated_pscore is used to estimate policy values.
+        If False, pscore is used to estimate policy values.
+
     References
     ----------
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
@@ -877,6 +916,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
     lambda_: float = np.inf
     estimator_name: str = "dr"
+    use_estimated_pscore: bool = False
 
     def __post_init__(self) -> None:
         """Initialize Class."""
@@ -888,6 +928,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
         )
         if self.lambda_ != self.lambda_:
             raise ValueError("lambda_ must not be nan")
+        if not isinstance(self.use_estimated_pscore, bool):
+            raise TypeError(
+                f"`use_estimated_pscore` must be a bool, but {type(self.use_estimated_pscore)} is given"
+            )
 
     def _estimate_round_rewards(
         self,
@@ -964,6 +1008,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
     ) -> float:
         """Estimate the policy value of evaluation policy.
 
@@ -975,8 +1020,9 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,)
+        pscore: array-like, shape (n_rounds,), can be None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -988,6 +1034,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
             When None is given, the effect of position on the reward will be ignored.
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            If self.use_estimated_pscore is True, estimated_pscore must not be None.
 
         Returns
         ----------
@@ -1002,13 +1052,18 @@ class DoublyRobust(BaseOffPolicyEstimator):
         )
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=pscore, name="pscore", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
             action=action,
             reward=reward,
-            pscore=pscore,
+            pscore=pscore_,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
         if position is None:
@@ -1018,7 +1073,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
             reward=reward,
             action=action,
             position=position,
-            pscore=pscore,
+            pscore=pscore_,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         ).mean()
@@ -1031,6 +1086,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -1046,8 +1102,9 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,)
+        pscore: array-like, shape (n_rounds,), can be None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -1059,6 +1116,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
             When None is given, the effect of position on the reward will be ignored.
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            If self.use_estimated_pscore is True, estimated_pscore must not be None.
 
         alpha: float, default=0.05
             Significance level.
@@ -1082,13 +1143,18 @@ class DoublyRobust(BaseOffPolicyEstimator):
         )
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=pscore, name="pscore", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
         check_ope_inputs(
             action_dist=action_dist,
             position=position,
             action=action,
             reward=reward,
-            pscore=pscore,
+            pscore=pscore_,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
         if position is None:
@@ -1098,7 +1164,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
             reward=reward,
             action=action,
             position=position,
-            pscore=pscore,
+            pscore=pscore_,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
