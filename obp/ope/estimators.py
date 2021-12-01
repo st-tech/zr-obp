@@ -340,8 +340,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        pscore: Optional[np.ndarray],
         action_dist: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         estimated_pscore: Optional[np.ndarray] = None,
         **kwargs,
@@ -356,12 +356,12 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,), can be None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
-
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -409,8 +409,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        pscore: np.ndarray,
         action_dist: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
@@ -428,12 +428,12 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,), can be None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
-
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -1004,9 +1004,9 @@ class DoublyRobust(BaseOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        pscore: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         estimated_pscore: Optional[np.ndarray] = None,
         **kwargs,
@@ -1021,15 +1021,15 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,), can be None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
-
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -1083,9 +1083,9 @@ class DoublyRobust(BaseOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        pscore: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
@@ -1103,15 +1103,15 @@ class DoublyRobust(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        pscore: array-like, shape (n_rounds,), can be None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
-
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            If self.use_estimated_pscore is False, pscore must not be None.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -1427,6 +1427,10 @@ class SwitchDoublyRobust(DoublyRobust):
         )
         if self.lambda_ != self.lambda_:
             raise ValueError("lambda_ must not be nan")
+        if not isinstance(self.use_estimated_pscore, bool):
+            raise TypeError(
+                f"`use_estimated_pscore` must be a bool, but {type(self.use_estimated_pscore)} is given"
+            )
 
     def _estimate_round_rewards(
         self,
@@ -1640,6 +1644,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         )
         if self.lambda_ != self.lambda_:
             raise ValueError("lambda_ must not be nan")
+        if not isinstance(self.use_estimated_pscore, bool):
+            raise TypeError(
+                f"`use_estimated_pscore` must be a bool, but {type(self.use_estimated_pscore)} is given"
+            )
 
     def _estimate_round_rewards(
         self,
