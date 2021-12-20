@@ -153,8 +153,12 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
@@ -192,9 +196,10 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
             assert hasattr(
                 estimator_tuning, "best_hyperparam"
             ), "estimator_tuning should have `best_hyperparam` attr"
-            assert hasattr(
-                estimator_tuning, "estimated_mse_score_dict"
-            ), "estimator_tuning should have `estimated_mse_score_dict` attr"
+            if estimator_tuning.tuning_method == "mse":
+                assert hasattr(
+                    estimator_tuning, "estimated_mse_score_dict"
+                ), "estimator_tuning should have `estimated_mse_score_dict` attr"
         with pytest.raises(ValueError, match=f"{description}*"):
             _ = estimator_tuning.estimate_interval(
                 action_dist=action_dist,
@@ -207,9 +212,10 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
             assert hasattr(
                 estimator_tuning, "best_hyperparam"
             ), "estimator_tuning should have `best_hyperparam` attr"
-            assert hasattr(
-                estimator_tuning, "estimated_mse_score_dict"
-            ), "estimator_tuning should have `estimated_mse_score_dict` attr"
+            if estimator_tuning.tuning_method == "mse":
+                assert hasattr(
+                    estimator_tuning, "estimated_mse_score_dict"
+                ), "estimator_tuning should have `estimated_mse_score_dict` attr"
 
 
 @pytest.mark.parametrize(
@@ -231,8 +237,12 @@ def test_estimation_of_all_estimators_using_valid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
@@ -331,8 +341,12 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
@@ -388,8 +402,12 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
@@ -456,8 +474,12 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
     estimators = estimators_standard + estimators_tuning
     # conduct OPE
@@ -494,8 +516,12 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
     estimators = estimators_standard + estimators_tuning
     # conduct OPE

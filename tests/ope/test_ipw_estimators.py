@@ -44,6 +44,7 @@ def test_ipw_init_using_invalid_inputs(
 invalid_input_of_ipw_tuning_init = [
     (
         "",  #
+        "mse",
         True,
         0.05,
         TypeError,
@@ -51,6 +52,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         None,  #
+        "slope",
         True,
         0.05,
         TypeError,
@@ -58,6 +60,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [""],  #
+        "mse",
         True,
         0.05,
         TypeError,
@@ -65,6 +68,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [None],  #
+        "slope",
         True,
         0.05,
         TypeError,
@@ -72,6 +76,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [],  #
+        "mse",
         True,
         0.05,
         ValueError,
@@ -79,14 +84,24 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [-1.0],  #
+        "slope",
         True,
         0.05,
         ValueError,
         "`an element of lambdas`= -1.0, must be >= 0.0.",
     ),
-    ([np.nan], True, 0.05, ValueError, "an element of lambdas must not be nan"),
+    ([np.nan], "mse", True, 0.05, ValueError, "an element of lambdas must not be nan"),
     (
         [1],
+        "",  #
+        True,
+        0.05,
+        ValueError,
+        "`tuning_method` must be either 'slope' or 'mse'",
+    ),
+    (
+        [1],
+        "mse",
         "",  #
         0.05,
         TypeError,
@@ -94,6 +109,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [1],
+        "slope",
         None,  #
         0.05,
         TypeError,
@@ -101,6 +117,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [1],
+        "mse",
         True,
         "",  #
         TypeError,
@@ -108,6 +125,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [1],
+        "slope",
         True,
         None,  #
         TypeError,
@@ -115,6 +133,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [1],
+        "mse",
         True,
         -1.0,  #
         ValueError,
@@ -122,6 +141,7 @@ invalid_input_of_ipw_tuning_init = [
     ),
     (
         [1],
+        "slope",
         True,
         1.1,  #
         ValueError,
@@ -131,11 +151,12 @@ invalid_input_of_ipw_tuning_init = [
 
 
 @pytest.mark.parametrize(
-    "lambdas, use_bias_upper_bound, delta, err, description",
+    "lambdas, tuning_method, use_bias_upper_bound, delta, err, description",
     invalid_input_of_ipw_tuning_init,
 )
 def test_ipw_tuning_init_using_invalid_inputs(
     lambdas,
+    tuning_method,
     use_bias_upper_bound,
     delta,
     err,
@@ -143,14 +164,22 @@ def test_ipw_tuning_init_using_invalid_inputs(
 ):
     with pytest.raises(err, match=f"{description}*"):
         _ = InverseProbabilityWeightingTuning(
-            use_bias_upper_bound=use_bias_upper_bound, delta=delta, lambdas=lambdas
+            use_bias_upper_bound=use_bias_upper_bound,
+            delta=delta,
+            lambdas=lambdas,
+            tuning_method=tuning_method,
         )
 
 
 # prepare ipw instances
 ipw = InverseProbabilityWeighting()
 snipw = SelfNormalizedInverseProbabilityWeighting()
-ipw_tuning = InverseProbabilityWeightingTuning(lambdas=[10, 1000])
+ipw_tuning_mse = InverseProbabilityWeightingTuning(
+    lambdas=[10, 1000], tuning_method="mse"
+)
+ipw_tuning_slope = InverseProbabilityWeightingTuning(
+    lambdas=[10, 1000], tuning_method="slope"
+)
 
 
 # action_dist, action, reward, pscore, position, description
@@ -323,7 +352,7 @@ def test_ipw_using_invalid_input_data(
             position=position,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
-        _ = ipw_tuning.estimate_policy_value(
+        _ = ipw_tuning_mse.estimate_policy_value(
             action_dist=action_dist,
             action=action,
             reward=reward,
@@ -331,7 +360,23 @@ def test_ipw_using_invalid_input_data(
             position=position,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
-        _ = ipw_tuning.estimate_interval(
+        _ = ipw_tuning_mse.estimate_interval(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = ipw_tuning_slope.estimate_policy_value(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = ipw_tuning_slope.estimate_interval(
             action_dist=action_dist,
             action=action,
             reward=reward,
@@ -355,7 +400,7 @@ def test_ipw_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     # ipw estimators can be used without estimated_rewards_by_reg_model
-    for estimator in [ipw, snipw, ipw_tuning]:
+    for estimator in [ipw, snipw, ipw_tuning_mse, ipw_tuning_slope]:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
         assert isinstance(
             estimated_policy_value, float

@@ -131,21 +131,51 @@ ope_estimators = [
     DirectMethod(),
     InverseProbabilityWeighting(),
     InverseProbabilityWeightingTuning(
-        lambdas=[100, 1000, np.inf], estimator_name="ipw (tuning)"
+        lambdas=[100, 1000, np.inf],
+        tuning_method="mse",
+        estimator_name="ipw (tuning-mse)",
+    ),
+    InverseProbabilityWeightingTuning(
+        lambdas=[100, 1000, np.inf],
+        tuning_method="slope",
+        estimator_name="ipw (tuning-slope)",
     ),
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
-    DoublyRobustTuning(lambdas=[100, 1000, np.inf], estimator_name="dr (tuning)"),
+    DoublyRobustTuning(
+        lambdas=[100, 1000, np.inf],
+        tuning_method="mse",
+        estimator_name="dr (tuning-mse)",
+    ),
+    DoublyRobustTuning(
+        lambdas=[100, 1000, np.inf],
+        tuning_method="slope",
+        estimator_name="dr (tuning-slope)",
+    ),
     SelfNormalizedDoublyRobust(),
     SwitchDoublyRobust(lambda_=1.0, estimator_name="switch-dr (lambda=1)"),
     SwitchDoublyRobust(lambda_=100.0, estimator_name="switch-dr (lambda=100)"),
     SwitchDoublyRobustTuning(
-        lambdas=[100, 1000, np.inf], estimator_name="switch-dr (tuning)"
+        lambdas=[100, 1000, np.inf],
+        tuning_method="mse",
+        estimator_name="switch-dr (tuning-mse)",
+    ),
+    SwitchDoublyRobustTuning(
+        lambdas=[100, 1000, np.inf],
+        tuning_method="slope",
+        estimator_name="switch-dr (tuning-slope)",
     ),
     DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
     DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
     DoublyRobustWithShrinkageTuning(
-        lambdas=[100, 1000, np.inf], estimator_name="dr-os (tuning)"
+        lambdas=[100, 1000, np.inf],
+        tuning_method="mse",
+        estimator_name="dr-os (tuning-mse)",
+    ),
+    DoublyRobustWithShrinkageTuning(
+        lambdas=[100, 1000, np.inf],
+        tuning_method="slope",
+        estimator_name="dr-os (tuning-slope)",
     ),
 ]
 
@@ -239,14 +269,20 @@ def test_offline_estimation_performance(
 
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dm"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning-mse)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning-slope)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["snipw"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr (tuning-mse)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr (tuning-slope)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sndr"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (lambda=1)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (lambda=100)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (tuning-mse)"]
+    assert (
+        relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (tuning-slope)"]
+    )
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=1)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=100)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning-mse)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning-slope)"]

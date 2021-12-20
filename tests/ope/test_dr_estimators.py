@@ -55,6 +55,7 @@ def test_dr_init_using_invalid_inputs(
 invalid_input_of_dr_tuning_init = [
     (
         "",  #
+        "mse",
         True,
         0.05,
         TypeError,
@@ -62,6 +63,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         None,  #
+        "slope",
         True,
         0.05,
         TypeError,
@@ -69,6 +71,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [""],  #
+        "mse",
         True,
         0.05,
         TypeError,
@@ -76,6 +79,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [None],  #
+        "slope",
         True,
         0.05,
         TypeError,
@@ -83,6 +87,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [],  #
+        "mse",
         True,
         0.05,
         ValueError,
@@ -90,14 +95,24 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [-1.0],  #
+        "slope",
         True,
         0.05,
         ValueError,
         "`an element of lambdas`= -1.0, must be >= 0.0.",
     ),
-    ([np.nan], True, 0.05, ValueError, "an element of lambdas must not be nan"),
+    ([np.nan], "mse", True, 0.05, ValueError, "an element of lambdas must not be nan"),
     (
         [1],
+        "",  #
+        True,
+        0.05,
+        ValueError,
+        "`tuning_method` must be either 'slope' or 'mse'",
+    ),
+    (
+        [1],
+        "mse",
         "",  #
         0.05,
         TypeError,
@@ -105,6 +120,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "slope",
         None,  #
         0.05,
         TypeError,
@@ -112,6 +128,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "mse",
         True,
         "",  #
         TypeError,
@@ -119,6 +136,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "slope",
         True,
         None,  #
         TypeError,
@@ -126,6 +144,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "mse",
         True,
         -1.0,  #
         ValueError,
@@ -133,6 +152,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "slope",
         True,
         1.1,  #
         ValueError,
@@ -142,11 +162,12 @@ invalid_input_of_dr_tuning_init = [
 
 
 @pytest.mark.parametrize(
-    "lambdas, use_bias_upper_bound, delta, err, description",
+    "lambdas, tuning_method, use_bias_upper_bound, delta, err, description",
     invalid_input_of_dr_tuning_init,
 )
 def test_dr_tuning_init_using_invalid_inputs(
     lambdas,
+    tuning_method,
     use_bias_upper_bound,
     delta,
     err,
@@ -154,7 +175,10 @@ def test_dr_tuning_init_using_invalid_inputs(
 ):
     with pytest.raises(err, match=f"{description}*"):
         _ = DoublyRobustTuning(
-            use_bias_upper_bound=use_bias_upper_bound, delta=delta, lambdas=lambdas
+            use_bias_upper_bound=use_bias_upper_bound,
+            delta=delta,
+            lambdas=lambdas,
+            tuning_method=tuning_method,
         )
 
     with pytest.raises(err, match=f"{description}*"):
@@ -162,6 +186,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             use_bias_upper_bound=use_bias_upper_bound,
             delta=delta,
             lambdas=lambdas,
+            tuning_method=tuning_method,
         )
 
     with pytest.raises(err, match=f"{description}*"):
@@ -169,6 +194,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             use_bias_upper_bound=use_bias_upper_bound,
             delta=delta,
             lambdas=lambdas,
+            tuning_method=tuning_method,
         )
 
 
@@ -190,49 +216,65 @@ def test_dr_init_using_valid_input_data(lambda_: float, description: str) -> Non
 
 
 valid_input_of_dr_tuning_init = [
-    ([3.0, np.inf, 100.0], "float lambda_"),
-    ([2], "integer lambda_"),
+    ([3.0, np.inf, 100.0], "slope", "float lambda_"),
+    ([2], "mse", "integer lambda_"),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas, description",
+    "lambdas, tuning_method, description",
     valid_input_of_dr_tuning_init,
 )
-def test_dr_tuning_init_using_valid_input_data(lambdas, description):
-    _ = DoublyRobustTuning(lambdas=lambdas)
+def test_dr_tuning_init_using_valid_input_data(lambdas, tuning_method, description):
+    _ = DoublyRobustTuning(lambdas=lambdas, tuning_method=tuning_method)
     _ = DoublyRobustWithShrinkageTuning(
         lambdas=lambdas,
+        tuning_method=tuning_method,
     )
     _ = SwitchDoublyRobustTuning(
         lambdas=lambdas,
+        tuning_method=tuning_method,
     )
 
 
 # prepare instances
 dm = DirectMethod()
 dr = DoublyRobust()
-dr_tuning = DoublyRobustTuning(lambdas=[1, 100], estimator_name="dr_tuning")
+dr_tuning_mse = DoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="mse", estimator_name="dr_tuning_mse"
+)
+dr_tuning_slope = DoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="slope", estimator_name="dr_tuning_slope"
+)
 dr_os_0 = DoublyRobustWithShrinkage(lambda_=0.0)
-dr_os_tuning = DoublyRobustWithShrinkageTuning(
-    lambdas=[1, 100], estimator_name="dr_os_tuning"
+dr_os_tuning_mse = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100], tuning_method="mse", estimator_name="dr_os_tuning_mse"
+)
+dr_os_tuning_slope = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100], tuning_method="slope", estimator_name="dr_os_tuning_slope"
 )
 dr_os_max = DoublyRobustWithShrinkage(lambda_=np.inf)
 sndr = SelfNormalizedDoublyRobust()
 switch_dr_0 = SwitchDoublyRobust(lambda_=0.0)
-switch_dr_tuning = SwitchDoublyRobustTuning(
-    lambdas=[1, 100], estimator_name="switch_dr_tuning"
+switch_dr_tuning_mse = SwitchDoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="mse", estimator_name="switch_dr_tuning_mse"
+)
+switch_dr_tuning_slope = SwitchDoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="slope", estimator_name="switch_dr_tuning_slope"
 )
 switch_dr_max = SwitchDoublyRobust(lambda_=np.inf)
 
 dr_estimators = [
     dr,
-    dr_tuning,
+    dr_tuning_mse,
+    dr_tuning_slope,
     dr_os_0,
-    dr_os_tuning,
+    dr_os_tuning_mse,
+    dr_os_tuning_slope,
     sndr,
     switch_dr_0,
-    switch_dr_tuning,
+    switch_dr_tuning_mse,
+    switch_dr_tuning_slope,
 ]
 
 
@@ -418,7 +460,7 @@ def test_dr_using_invalid_input_data(
     description: str,
 ) -> None:
     # estimate_intervals function raises ValueError of all estimators
-    for estimator in [dr, sndr, dr_tuning]:
+    for estimator in [dr, sndr, dr_tuning_mse, dr_tuning_slope]:
         with pytest.raises(ValueError, match=f"{description}*"):
             _ = estimator.estimate_policy_value(
                 action_dist=action_dist,
@@ -470,14 +512,31 @@ def test_dr_variants_using_valid_input_data(
 ) -> None:
     # check dr variants
     switch_dr = SwitchDoublyRobust(lambda_=hyperparameter)
-    switch_dr_tuning = SwitchDoublyRobustTuning(
-        lambdas=[hyperparameter, hyperparameter * 10]
+    switch_dr_tuning_mse = SwitchDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="mse",
+    )
+    switch_dr_tuning_slope = SwitchDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="slope",
     )
     dr_os = DoublyRobustWithShrinkage(lambda_=hyperparameter)
-    dr_os_tuning = DoublyRobustWithShrinkageTuning(
-        lambdas=[hyperparameter, hyperparameter * 10]
+    dr_os_tuning_mse = DoublyRobustWithShrinkageTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="mse",
     )
-    for estimator in [switch_dr, switch_dr_tuning, dr_os, dr_os_tuning]:
+    dr_os_tuning_slope = DoublyRobustWithShrinkageTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="slope",
+    )
+    for estimator in [
+        switch_dr,
+        switch_dr_tuning_mse,
+        switch_dr_tuning_slope,
+        dr_os,
+        dr_os_tuning_mse,
+        dr_os_tuning_slope,
+    ]:
         est = estimator.estimate_policy_value(
             action_dist=action_dist,
             action=action,
@@ -550,7 +609,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     ), f"estimated policy value of sndr should be smaller than or equal to 2 (because of its 2-boundedness), but the value is: {estimated_policy_value}"
 
 
-def test_dr_osage_using_random_evaluation_policy(
+def test_dr_os_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
