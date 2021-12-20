@@ -10,6 +10,8 @@ from obp.ope import DoublyRobustTuning
 from obp.ope import DoublyRobustWithShrinkage
 from obp.ope import DoublyRobustWithShrinkageTuning
 from obp.ope import SelfNormalizedDoublyRobust
+from obp.ope import SubGaussianDoublyRobust
+from obp.ope import SubGaussianDoublyRobustTuning
 from obp.ope import SwitchDoublyRobust
 from obp.ope import SwitchDoublyRobustTuning
 from obp.types import BanditFeedback
@@ -197,11 +199,19 @@ def test_dr_tuning_init_using_invalid_inputs(
             tuning_method=tuning_method,
         )
 
+    with pytest.raises(err, match=f"{description}*"):
+        _ = SubGaussianDoublyRobustTuning(
+            use_bias_upper_bound=use_bias_upper_bound,
+            delta=delta,
+            lambdas=lambdas,
+            tuning_method=tuning_method,
+        )
+
 
 valid_input_of_dr_init = [
     (np.inf, "infinite lambda_"),
-    (3.0, "float lambda_"),
-    (2, "integer lambda_"),
+    (0.3, "float lambda_"),
+    (1, "integer lambda_"),
 ]
 
 
@@ -213,11 +223,13 @@ def test_dr_init_using_valid_input_data(lambda_: float, description: str) -> Non
     _ = DoublyRobust(lambda_=lambda_)
     _ = DoublyRobustWithShrinkage(lambda_=lambda_)
     _ = SwitchDoublyRobust(lambda_=lambda_)
+    if lambda_ < np.inf:
+        _ = SubGaussianDoublyRobust(lambda_=lambda_)
 
 
 valid_input_of_dr_tuning_init = [
-    ([3.0, np.inf, 100.0], "slope", "float lambda_"),
-    ([2], "mse", "integer lambda_"),
+    ([0.3, 0.001], "slope", "float lambda_"),
+    ([1], "mse", "integer lambda_"),
 ]
 
 
@@ -232,6 +244,10 @@ def test_dr_tuning_init_using_valid_input_data(lambdas, tuning_method, descripti
         tuning_method=tuning_method,
     )
     _ = SwitchDoublyRobustTuning(
+        lambdas=lambdas,
+        tuning_method=tuning_method,
+    )
+    _ = SubGaussianDoublyRobustTuning(
         lambdas=lambdas,
         tuning_method=tuning_method,
     )
@@ -263,6 +279,14 @@ switch_dr_tuning_slope = SwitchDoublyRobustTuning(
     lambdas=[1, 100], tuning_method="slope", estimator_name="switch_dr_tuning_slope"
 )
 switch_dr_max = SwitchDoublyRobust(lambda_=np.inf)
+sg_dr_0 = SubGaussianDoublyRobust(lambda_=0.0)
+sg_dr_tuning_mse = SubGaussianDoublyRobustTuning(
+    lambdas=[0.01, 0.1], tuning_method="mse", estimator_name="sg_dr_tuning_mse"
+)
+sg_dr_tuning_slope = SubGaussianDoublyRobustTuning(
+    lambdas=[0.01, 0.1], tuning_method="slope", estimator_name="sg_dr_tuning_slope"
+)
+sg_dr_max = SubGaussianDoublyRobust(lambda_=1.0)
 
 dr_estimators = [
     dr,
@@ -271,10 +295,16 @@ dr_estimators = [
     dr_os_0,
     dr_os_tuning_mse,
     dr_os_tuning_slope,
+    dr_os_max,
     sndr,
     switch_dr_0,
     switch_dr_tuning_mse,
     switch_dr_tuning_slope,
+    switch_dr_max,
+    sg_dr_0,
+    sg_dr_tuning_mse,
+    sg_dr_tuning_slope,
+    sg_dr_max,
 ]
 
 
@@ -529,6 +559,15 @@ def test_dr_variants_using_valid_input_data(
         lambdas=[hyperparameter, hyperparameter * 10],
         tuning_method="slope",
     )
+    sg_dr = SubGaussianDoublyRobust(lambda_=hyperparameter)
+    sg_dr_tuning_mse = SubGaussianDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter / 10],
+        tuning_method="mse",
+    )
+    sg_dr_tuning_slope = SubGaussianDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter / 10],
+        tuning_method="slope",
+    )
     for estimator in [
         switch_dr,
         switch_dr_tuning_mse,
@@ -536,6 +575,9 @@ def test_dr_variants_using_valid_input_data(
         dr_os,
         dr_os_tuning_mse,
         dr_os_tuning_slope,
+        sg_dr,
+        sg_dr_tuning_mse,
+        sg_dr_tuning_slope,
     ]:
         est = estimator.estimate_policy_value(
             action_dist=action_dist,
@@ -663,3 +705,26 @@ def test_switch_dr_using_random_evaluation_policy(
     assert (
         dr_value == switch_dr_max_value
     ), "SwitchDR (lambda=1e10) should be the same as DoublyRobust"
+
+
+def test_sg_dr_using_random_evaluation_policy(
+    synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
+) -> None:
+    """
+    Test the switch_dr using synthetic bandit data and random evaluation policy
+    """
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
+    action_dist = random_action_dist
+    # prepare input dict
+    input_dict = {
+        k: v
+        for k, v in synthetic_bandit_feedback.items()
+        if k in ["reward", "action", "pscore", "position"]
+    }
+    input_dict["action_dist"] = action_dist
+    input_dict["estimated_rewards_by_reg_model"] = expected_reward
+    dr_value = dr.estimate_policy_value(**input_dict)
+    sg_dr_0_value = sg_dr_0.estimate_policy_value(**input_dict)
+    assert (
+        dr_value == sg_dr_0_value
+    ), "SG-DR (lambda=0) should be the same as DoublyRobust"

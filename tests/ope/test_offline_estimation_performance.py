@@ -24,6 +24,10 @@ from obp.ope import OffPolicyEvaluation
 from obp.ope import RegressionModel
 from obp.ope import SelfNormalizedDoublyRobust
 from obp.ope import SelfNormalizedInverseProbabilityWeighting
+from obp.ope import SubGaussianDoublyRobust
+from obp.ope import SubGaussianDoublyRobustTuning
+from obp.ope import SubGaussianInverseProbabilityWeighting
+from obp.ope import SubGaussianInverseProbabilityWeightingTuning
 from obp.ope import SwitchDoublyRobust
 from obp.ope import SwitchDoublyRobustTuning
 from obp.ope.estimators import BaseOffPolicyEstimator
@@ -140,6 +144,17 @@ ope_estimators = [
         tuning_method="slope",
         estimator_name="ipw (tuning-slope)",
     ),
+    SubGaussianInverseProbabilityWeighting(lambda_=0.01),
+    SubGaussianInverseProbabilityWeightingTuning(
+        lambdas=[0.01, 0.05, 0.1],
+        tuning_method="mse",
+        estimator_name="sg-ipw (tuning-mse)",
+    ),
+    SubGaussianInverseProbabilityWeightingTuning(
+        lambdas=[0.01, 0.05, 0.1],
+        tuning_method="slope",
+        estimator_name="sg-ipw (tuning-slope)",
+    ),
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     DoublyRobustTuning(
@@ -176,6 +191,17 @@ ope_estimators = [
         lambdas=[100, 1000, np.inf],
         tuning_method="slope",
         estimator_name="dr-os (tuning-slope)",
+    ),
+    SubGaussianDoublyRobust(lambda_=0.01),
+    SubGaussianDoublyRobustTuning(
+        lambdas=[0.01, 0.05, 0.1],
+        tuning_method="mse",
+        estimator_name="sg-dr (tuning-mse)",
+    ),
+    SubGaussianDoublyRobustTuning(
+        lambdas=[0.01, 0.05, 0.1],
+        tuning_method="slope",
+        estimator_name="sg-dr (tuning-slope)",
     ),
 ]
 
@@ -271,6 +297,9 @@ def test_offline_estimation_performance(
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning-mse)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning-slope)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sg-ipw"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sg-ipw (tuning-mse)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sg-ipw (tuning-slope)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["snipw"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr (tuning-mse)"]
@@ -286,3 +315,6 @@ def test_offline_estimation_performance(
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=100)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning-mse)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning-slope)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sg-dr"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sg-dr (tuning-mse)"]
+    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sg-dr (tuning-slope)"]

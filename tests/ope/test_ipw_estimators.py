@@ -7,6 +7,7 @@ import pytest
 from obp.ope import InverseProbabilityWeighting
 from obp.ope import InverseProbabilityWeightingTuning
 from obp.ope import SelfNormalizedInverseProbabilityWeighting
+from obp.ope import SubGaussianInverseProbabilityWeightingTuning
 from obp.types import BanditFeedback
 
 
@@ -179,6 +180,12 @@ ipw_tuning_mse = InverseProbabilityWeightingTuning(
 )
 ipw_tuning_slope = InverseProbabilityWeightingTuning(
     lambdas=[10, 1000], tuning_method="slope"
+)
+sgipw_tuning_mse = SubGaussianInverseProbabilityWeightingTuning(
+    lambdas=[0.01, 0.1], tuning_method="mse"
+)
+sgipw_tuning_slope = SubGaussianInverseProbabilityWeightingTuning(
+    lambdas=[0.01, 0.1], tuning_method="slope"
 )
 
 
@@ -377,6 +384,22 @@ def test_ipw_using_invalid_input_data(
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ipw_tuning_slope.estimate_interval(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = sgipw_tuning_slope.estimate_policy_value(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = sgipw_tuning_slope.estimate_interval(
             action_dist=action_dist,
             action=action,
             reward=reward,
