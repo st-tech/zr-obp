@@ -18,6 +18,7 @@ from .estimators import DoublyRobust
 from .estimators import DoublyRobustWithShrinkage
 from .estimators import InverseProbabilityWeighting
 from .estimators import SwitchDoublyRobust
+from .helper import estimate_student_t_lower_bound
 
 
 @dataclass
@@ -30,6 +31,12 @@ class BaseOffPolicyEstimatorTuning:
 
     lambdas: List[float]
         A list of candidate hyperparameter values.
+
+    tuning_method: str, default="slope".
+        A method used to tune the hyperparameter of an OPE estimator.
+        Must be either of "slope" or "mse".
+        Note that the implementation of "slope" is based on SLOPE++ proposed by Tucker and Lee.(2021),
+        which improves the original SLOPE proposed by Su et al.(2020).
 
     use_bias_upper_bound: bool, default=True
         Whether to use bias upper bound in hyperparameter tuning.
@@ -46,10 +53,17 @@ class BaseOffPolicyEstimatorTuning:
     Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
     "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
 
+    Yi Su, Pavithra Srinath, and Akshay Krishnamurthy.
+    "Adaptive Estimator Selection for Off-Policy Evaluation.", 2020.
+
+    George Tucker and Jonathan Lee.
+    "Improved Estimator Selection for Off-Policy Evaluation.", 2021.
+
     """
 
     base_ope_estimator: BaseOffPolicyEstimator = field(init=False)
     lambdas: List[float] = None
+    tuning_method: str = "slope"
     use_bias_upper_bound: bool = True
     delta: float = 0.05
 
@@ -76,14 +90,19 @@ class BaseOffPolicyEstimatorTuning:
 
     def _check_init_inputs(self) -> None:
         """Initialize Class."""
+        if self.tuning_method not in ["slope", "mse"]:
+            raise ValueError(
+                "`tuning_method` must be either 'slope' or 'mse'"
+                f", but {self.tuning_method} is given"
+            )
         if not isinstance(self.use_bias_upper_bound, bool):
             raise TypeError(
                 "`use_bias_upper_bound` must be a bool"
-                ", but {type(self.use_bias_upper_bound)} is given"
+                f", but {type(self.use_bias_upper_bound)} is given"
             )
         check_scalar(self.delta, "delta", (float), min_val=0.0, max_val=1.0)
 
-    def _tune_hyperparam(
+    def _tune_hyperparam_with_mse(
         self,
         reward: np.ndarray,
         action: np.ndarray,
@@ -91,8 +110,8 @@ class BaseOffPolicyEstimatorTuning:
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
-    ) -> None:
-        """Find the best hyperparameter value from the given candidate set."""
+    ) -> float:
+        """Find the best hyperparameter value from the candidate set by estimating the mse."""
         self.estimated_mse_score_dict = dict()
         for hyperparam_ in self.lambdas:
             estimated_mse_score = self.base_ope_estimator(
@@ -108,9 +127,55 @@ class BaseOffPolicyEstimatorTuning:
                 delta=self.delta,
             )
             self.estimated_mse_score_dict[hyperparam_] = estimated_mse_score
-        self.best_hyperparam = min(
-            self.estimated_mse_score_dict.items(), key=lambda x: x[1]
-        )[0]
+        return min(self.estimated_mse_score_dict.items(), key=lambda x: x[1])[0]
+
+    def _tune_hyperparam_with_slope(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+    ) -> float:
+        """Find the best hyperparameter value from the candidate set by SLOPE."""
+        C = np.sqrt(6) - 1
+        theta_list, cnf_list = [], []
+        theta_list_for_sort, cnf_list_for_sort = [], []
+        for hyperparam_ in self.lambdas:
+            estimated_round_rewards = self.base_ope_estimator(
+                hyperparam_
+            )._estimate_round_rewards(
+                reward=reward,
+                action=action,
+                pscore=pscore,
+                action_dist=action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                position=position,
+            )
+            theta_list_for_sort.append(estimated_round_rewards.mean())
+            cnf = estimated_round_rewards.mean()
+            cnf -= estimate_student_t_lower_bound(
+                x=estimated_round_rewards,
+                delta=self.delta,
+            )
+            cnf_list_for_sort.append(cnf)
+
+        sorted_idx_list = np.argsort(cnf_list_for_sort)[::-1]
+        for i, idx in enumerate(sorted_idx_list):
+            cnf_i = cnf_list_for_sort[idx]
+            theta_i = theta_list_for_sort[idx]
+            if len(theta_list) < 1:
+                theta_list.append(theta_i), cnf_list.append(cnf_i)
+            else:
+                theta_j, cnf_j = np.array(theta_list), np.array(cnf_list)
+                if (np.abs(theta_j - theta_i) <= cnf_i + C * cnf_j).all():
+                    theta_list.append(theta_i), cnf_list.append(cnf_i)
+                else:
+                    best_idx = sorted_idx_list[i - 1]
+                    return self.lambdas[best_idx]
+
+        return self.lambdas[sorted_idx_list[-1]]
 
     def estimate_policy_value_with_tuning(
         self,
@@ -151,14 +216,24 @@ class BaseOffPolicyEstimatorTuning:
         """
         # tune hyperparameter if necessary
         if not hasattr(self, "best_hyperparam"):
-            self._tune_hyperparam(
-                reward=reward,
-                action=action,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                position=position,
-            )
+            if self.tuning_method == "mse":
+                self.best_hyperparam = self._tune_hyperparam_with_mse(
+                    reward=reward,
+                    action=action,
+                    pscore=pscore,
+                    action_dist=action_dist,
+                    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                    position=position,
+                )
+            elif self.tuning_method == "slope":
+                self.best_hyperparam = self._tune_hyperparam_with_slope(
+                    reward=reward,
+                    action=action,
+                    pscore=pscore,
+                    action_dist=action_dist,
+                    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                    position=position,
+                )
 
         return self.base_ope_estimator(self.best_hyperparam).estimate_policy_value(
             reward=reward,
@@ -221,14 +296,24 @@ class BaseOffPolicyEstimatorTuning:
         """
         # tune hyperparameter if necessary
         if not hasattr(self, "best_hyperparam"):
-            self._tune_hyperparam(
-                reward=reward,
-                action=action,
-                pscore=pscore,
-                action_dist=action_dist,
-                estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-                position=position,
-            )
+            if self.tuning_method == "mse":
+                self.best_hyperparam = self._tune_hyperparam_with_mse(
+                    reward=reward,
+                    action=action,
+                    pscore=pscore,
+                    action_dist=action_dist,
+                    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                    position=position,
+                )
+            elif self.tuning_method == "slope":
+                self.best_hyperparam = self._tune_hyperparam_with_slope(
+                    reward=reward,
+                    action=action,
+                    pscore=pscore,
+                    action_dist=action_dist,
+                    estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                    position=position,
+                )
 
         return self.base_ope_estimator(self.best_hyperparam).estimate_interval(
             reward=reward,
@@ -250,8 +335,14 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
     ----------
     lambdas: List[float]
         A list of candidate clipping hyperparameters.
-        The automatic hyperparameter tuning proposed by Su et al.(2020)
-        will choose the best hyperparameter value from the data.
+        The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
+        or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+
+    tuning_method: str, default="slope".
+        A method used to tune the hyperparameter of an OPE estimator.
+        Must be either of "slope" or "mse".
+        Note that the implementation of "slope" is based on SLOPE++ proposed by Tucker and Lee.(2021),
+        which improves the original SLOPE proposed by Su et al.(2020).
 
     use_bias_upper_bound: bool, default=True
         Whether to use bias upper bound in hyperparameter tuning.
@@ -416,8 +507,14 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
     ----------
     lambdas: List[float]
         A list of candidate clipping hyperparameters.
-        The automatic hyperparameter tuning proposed by Su et al.(2020)
-        will choose the best hyperparameter value from the data.
+        The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
+        or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+
+    tuning_method: str, default="slope".
+        A method used to tune the hyperparameter of an OPE estimator.
+        Must be either of "slope" or "mse".
+        Note that the implementation of "slope" is based on SLOPE++ proposed by Tucker and Lee.(2021),
+        which improves the original SLOPE proposed by Su et al.(2020).
 
     estimator_name: str, default='dr'.
         Name of the estimator.
@@ -596,8 +693,14 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
     ----------
     lambdas: List[float]
         A list of candidate switching hyperparameters.
-        The automatic hyperparameter tuning proposed by Su et al.(2020)
-        will choose the best hyperparameter value from the data.
+        The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
+        or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+
+    tuning_method: str, default="slope".
+        A method used to tune the hyperparameter of an OPE estimator.
+        Must be either of "slope" or "mse".
+        Note that the implementation of "slope" is based on SLOPE++ proposed by Tucker and Lee.(2021),
+        which improves the original SLOPE proposed by Su et al.(2020).
 
     estimator_name: str, default='switch-dr'.
         Name of the estimator.
@@ -775,8 +878,14 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
     ----------
     lambdas: List[float]
         A list of candidate shrinkage hyperparameters.
-        The automatic hyperparameter tuning proposed by Su et al.(2020)
-        will choose the best hyperparameter value from the data.
+        The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
+        or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+
+    tuning_method: str, default="slope".
+        A method used to tune the hyperparameter of an OPE estimator.
+        Must be either of "slope" or "mse".
+        Note that the implementation of "slope" is based on SLOPE++ proposed by Tucker and Lee.(2021),
+        which improves the original SLOPE proposed by Su et al.(2020).
 
     estimator_name: str, default='dr-os'.
         Name of the estimator.
