@@ -95,3 +95,9 @@ __all_estimators_tuning__ = [
     "SwitchDoublyRobustTuning",
     "DoublyRobustWithShrinkageTuning",
 ]
+
+
+__all_estimators_tuning_sg__ = [
+    "SubGaussianInverseProbabilityWeightingTuning",
+    "SubGaussianDoublyRobustTuning",
+]
