@@ -6,6 +6,8 @@ from obp.ope.estimators import InverseProbabilityWeighting
 from obp.ope.estimators import ReplayMethod
 from obp.ope.estimators import SelfNormalizedDoublyRobust
 from obp.ope.estimators import SelfNormalizedInverseProbabilityWeighting
+from obp.ope.estimators import SubGaussianDoublyRobust
+from obp.ope.estimators import SubGaussianInverseProbabilityWeighting
 from obp.ope.estimators import SwitchDoublyRobust
 from obp.ope.estimators_continuous import (
     KernelizedSelfNormalizedInverseProbabilityWeighting,
@@ -26,6 +28,8 @@ from obp.ope.estimators_slate import SlateStandardIPS
 from obp.ope.estimators_tuning import DoublyRobustTuning
 from obp.ope.estimators_tuning import DoublyRobustWithShrinkageTuning
 from obp.ope.estimators_tuning import InverseProbabilityWeightingTuning
+from obp.ope.estimators_tuning import SubGaussianDoublyRobustTuning
+from obp.ope.estimators_tuning import SubGaussianInverseProbabilityWeightingTuning
 from obp.ope.estimators_tuning import SwitchDoublyRobustTuning
 from obp.ope.meta import OffPolicyEvaluation
 from obp.ope.meta_continuous import ContinuousOffPolicyEvaluation
@@ -43,10 +47,14 @@ __all__ = [
     "SelfNormalizedDoublyRobust",
     "SwitchDoublyRobust",
     "DoublyRobustWithShrinkage",
+    "SubGaussianInverseProbabilityWeighting",
+    "SubGaussianDoublyRobust",
     "InverseProbabilityWeightingTuning",
     "DoublyRobustTuning",
     "SwitchDoublyRobustTuning",
     "DoublyRobustWithShrinkageTuning",
+    "SubGaussianInverseProbabilityWeightingTuning",
+    "SubGaussianDoublyRobustTuning",
     "OffPolicyEvaluation",
     "SlateOffPolicyEvaluation",
     "ContinuousOffPolicyEvaluation",
@@ -76,6 +84,8 @@ __all_estimators__ = [
     "DoublyRobustWithShrinkage",
     "SwitchDoublyRobust",
     "SelfNormalizedDoublyRobust",
+    "SubGaussianInverseProbabilityWeighting",
+    "SubGaussianDoublyRobust",
 ]
 
 

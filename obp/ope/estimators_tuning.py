@@ -17,6 +17,8 @@ from .estimators import BaseOffPolicyEstimator
 from .estimators import DoublyRobust
 from .estimators import DoublyRobustWithShrinkage
 from .estimators import InverseProbabilityWeighting
+from .estimators import SubGaussianDoublyRobust
+from .estimators import SubGaussianInverseProbabilityWeighting
 from .estimators import SwitchDoublyRobust
 from .helper import estimate_student_t_lower_bound
 
@@ -71,7 +73,7 @@ class BaseOffPolicyEstimatorTuning:
         dataclass(cls)
         return super().__new__(cls)
 
-    def _check_lambdas(self) -> None:
+    def _check_lambdas(self, min_val: float = 0.0, max_val: float = np.inf) -> None:
         """Check type and value of lambdas."""
         if isinstance(self.lambdas, list):
             if len(self.lambdas) == 0:
@@ -81,7 +83,8 @@ class BaseOffPolicyEstimatorTuning:
                     hyperparam_,
                     name="an element of lambdas",
                     target_type=(int, float),
-                    min_val=0.0,
+                    min_val=min_val,
+                    max_val=max_val,
                 )
                 if hyperparam_ != hyperparam_:
                     raise ValueError("an element of lambdas must not be nan")
@@ -906,6 +909,368 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         """Initialize Class."""
         self.base_ope_estimator = DoublyRobustWithShrinkage
         super()._check_lambdas()
+        super()._check_init_inputs()
+
+    def estimate_policy_value(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+    ) -> float:
+        """Estimate the policy value of evaluation policy with a tuned hyperparameter.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+
+        Returns
+        ----------
+        V_hat: float
+            Policy value estimated by the DR estimator.
+
+        """
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        return super().estimate_policy_value_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        return super().estimate_interval_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+
+class SubGaussianInverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
+    """Sub-Gaussian Inverse Probability Weighting (SG-IPW) with built-in hyperparameter tuning.
+
+    Parameters
+    ----------
+    lambdas: List[float]
+        A list of candidate hyperparameter values, which should be in the range of [0.0, 1.0].
+        The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
+        or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+
+    tuning_method: str, default="slope".
+        A method used to tune the hyperparameter of an OPE estimator.
+        Must be either of "slope" or "mse".
+        Note that the implementation of "slope" is based on SLOPE++ proposed by Tucker and Lee.(2021),
+        which improves the original SLOPE proposed by Su et al.(2020).
+
+    use_bias_upper_bound: bool, default=True
+        Whether to use bias upper bound in hyperparameter tuning.
+        If False, direct bias estimator is used to estimate the MSE.
+
+    delta: float, default=0.05
+        A confidence delta to construct a high probability upper bound based on the Bernstein’s inequality.
+
+    estimator_name: str, default='sg-ipw'.
+        Name of the estimator.
+
+    References
+    ----------
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
+    Alberto Maria Metelli, Alessio Russo, and Marcello Restelli.
+    "Subgaussian and Differentiable Importance Sampling for Off-Policy Evaluation and Learning.", 2021.
+
+    """
+
+    estimator_name: str = "sg-ipw"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        self.base_ope_estimator = SubGaussianInverseProbabilityWeighting
+        super()._check_lambdas(max_val=1.0)
+        super()._check_init_inputs()
+
+    def estimate_policy_value(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+
+        Returns
+        ----------
+        V_hat: float
+            Estimated policy value (performance) of a given evaluation policy.
+
+        """
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        return super().estimate_policy_value_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+        )
+
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        action_dist: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+
+        action: array-like, shape (n_rounds,)
+            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities
+            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=pscore, name="pscore", expected_dim=1)
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        return super().estimate_interval_with_tuning(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore,
+            action_dist=action_dist,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+
+@dataclass
+class SubGaussianDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
+    """Sub-Gaussian Doubly Robust (SG-DR) with built-in hyperparameter tuning.
+
+    Parameters
+    ----------
+    lambdas: List[float]
+        A list of candidate hyperparameter values, which should be in the range of [0.0, 1.0].
+        The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
+        or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+
+    tuning_method: str, default="slope".
+        A method used to tune the hyperparameter of an OPE estimator.
+        Must be either of "slope" or "mse".
+        Note that the implementation of "slope" is based on SLOPE++ proposed by Tucker and Lee.(2021),
+        which improves the original SLOPE proposed by Su et al.(2020).
+
+    estimator_name: str, default='sg-dr'.
+        Name of the estimator.
+
+    References
+    ----------
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
+    Alberto Maria Metelli, Alessio Russo, and Marcello Restelli.
+    "Subgaussian and Differentiable Importance Sampling for Off-Policy Evaluation and Learning.", 2021.
+
+    """
+
+    estimator_name: str = "sg-dr"
+
+    def __post_init__(self) -> None:
+        """Initialize Class."""
+        self.base_ope_estimator = SubGaussianDoublyRobust
+        super()._check_lambdas(max_val=1.0)
         super()._check_init_inputs()
 
     def estimate_policy_value(
