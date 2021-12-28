@@ -257,8 +257,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Name of the estimator.
 
     use_estimated_pscore: bool, default=False.
-        If True, estimated_pscore is used to estimate policy values.
-        If False, pscore is used to estimate policy values.
+        If True, estimated_pscore is used to estimate the policy value, otherwise, pscore (the true propensity scores) is used.
 
     References
     ------------
@@ -361,7 +360,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
+            If self.use_estimated_pscore is False, pscore must be given.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -370,7 +369,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
-            If self.use_estimated_pscore is True, estimated_pscore must not be None.
+            If self.use_estimated_pscore is True, estimated_pscore must be given.
 
         Returns
         ----------
@@ -433,7 +432,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
+            If self.use_estimated_pscore is False, pscore must be given.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -441,8 +440,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
-            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
-            If self.use_estimated_pscore is True, estimated_pscore must not be None.
+            Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            If self.use_estimated_pscore is True, estimated_pscore must be given.
 
         alpha: float, default=0.05
             Significance level.
@@ -522,7 +521,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
             When None is given, the effect of position on the reward will be ignored.
-            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+            (If only a single action is chosen at each round, you can just ignore this argument.)
 
         use_bias_upper_bound: bool, default=True
             Whether to use bias upper bound in hyperparameter tuning.
@@ -895,8 +894,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
         Name of the estimator.
 
     use_estimated_pscore: bool, default=False.
-        If True, estimated_pscore is used to estimate policy values.
-        If False, pscore is used to estimate policy values.
+        If True, estimated_pscore is used to estimate the policy value, otherwise, pscore (the true propensity scores) is used.
 
     References
     ----------
@@ -1029,7 +1027,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
+            If self.use_estimated_pscore is False, pscore must be given.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -1038,7 +1036,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
-            If self.use_estimated_pscore is True, estimated_pscore must not be None.
+            If self.use_estimated_pscore is True, estimated_pscore must be given.
 
         Returns
         ----------
@@ -1111,7 +1109,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            If self.use_estimated_pscore is False, pscore must not be None.
+            If self.use_estimated_pscore is False, pscore must be given.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -1120,7 +1118,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
-            If self.use_estimated_pscore is True, estimated_pscore must not be None.
+            If self.use_estimated_pscore is True, estimated_pscore must be given.
 
         alpha: float, default=0.05
             Significance level.
@@ -1864,7 +1862,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        importance_sampling_ratio: np.ndarray,
+        estimated_importance_weights: np.ndarray,
         action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
         **kwargs,
@@ -1873,15 +1871,14 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         Parameters
         ----------
-        reward: array-like or Tensor, shape (n_rounds,)
+        reward: array-like, shape (n_rounds,)
             Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
 
         action: array-like or Tensor, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        importance_sampling_ratio: array-like or Tensor, shape (n_rounds,)
-            Ratio of probability that the action is sampled by evaluation policy divided by probability that the action is sampled by behavior policy,
-            i.e., :math:`\\hat{\\rho}(x_t, a_t)`.
+        estimated_importance_weights: array-like, shape (n_rounds,)
+            Importance weights estimated via supervised classification implemented in `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         action_dist: array-like or Tensor, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -1893,16 +1890,13 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         Returns
         ----------
-        estimated_rewards: array-like or Tensor, shape (n_rounds,)
+        estimated_rewards: array-like, shape (n_rounds,)
             Rewards of each round estimated by Balanced IPW.
 
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-        iw = (
-            action_dist[np.arange(action.shape[0]), action, position]
-            * importance_sampling_ratio
-        )
+        iw = estimated_importance_weights
         # weight clipping
         if isinstance(iw, np.ndarray):
             iw = np.minimum(iw, self.lambda_)
@@ -1913,7 +1907,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         reward: np.ndarray,
         action: np.ndarray,
         action_dist: np.ndarray,
-        importance_sampling_ratio: np.ndarray,
+        estimated_importance_weights: np.ndarray,
         position: Optional[np.ndarray] = None,
         action_context: Optional[np.ndarray] = None,
         **kwargs,
@@ -1928,9 +1922,8 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        importance_sampling_ratio: array-like or Tensor, shape (n_rounds,)
-            Ratio of probability that the action is sampled by evaluation policy divided by probability that the action is sampled by behavior policy,
-            i.e., :math:`\\hat{\\rho}(x_t, a_t)`.
+        estimated_importance_weights: array-like, shape (n_rounds,)
+            Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -1938,7 +1931,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
             When None is given, the effect of position on the reward will be ignored.
-            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+            (If only a single action is chosen at each round, you can just ignore this argument.)
 
         Returns
         ----------
@@ -1967,7 +1960,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        importance_sampling_ratio: np.ndarray,
+        estimated_importance_weights: np.ndarray,
         action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
         alpha: float = 0.05,
@@ -1985,9 +1978,8 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        importance_sampling_ratio: array-like or Tensor, shape (n_rounds,)
-            Ratio of probability that the action is sampled by evaluation policy divided by probability that the action is sampled by behavior policy,
-            i.e., :math:`\\hat{\\rho}(x_t, a_t)`.
+        estimated_importance_weights: array-like, shape (n_rounds,)
+            Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -1995,7 +1987,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
             When None is given, the effect of position on the reward will be ignored.
-            (If only one action is chosen and there is no posion, then you can just ignore this argument.)
+            (If only a single action is chosen at each round, you can just ignore this argument.)
 
         alpha: float, default=0.05
             Significance level.

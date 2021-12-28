@@ -156,7 +156,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
-            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         Returns
         ----------
@@ -199,7 +199,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
-            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -402,7 +402,7 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
             "action_dist",
             "estimated_rewards_by_reg_model",
             "estimated_pscore",
-            "importance_sampling_ratio",
+            "estimated_importance_weights",
         ]
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
     # _create_estimator_inputs function is called in the following functions

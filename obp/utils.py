@@ -305,7 +305,7 @@ def check_ope_inputs(
     reward: Optional[np.ndarray] = None,
     pscore: Optional[np.ndarray] = None,
     estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
-    importance_sampling_ratio: Optional[np.ndarray] = None,
+    estimated_importance_weights: Optional[np.ndarray] = None,
 ) -> Optional[ValueError]:
     """Check inputs for ope.
 
@@ -330,9 +330,8 @@ def check_ope_inputs(
     estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
         Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-    importance_sampling_ratio: array-like or Tensor, shape (n_rounds,), default=None
-        Ratio of probability that the action is sampled by evaluation policy divided by probability that the action is sampled by behavior policy,
-        i.e., :math:`\\hat{\\rho}(x_t, a_t)`.
+    estimated_importance_weights: array-like or Tensor, shape (n_rounds,), default=None
+        Importance weights estimated via supervised classification, i.e., :math:`\\hat{ww}(x_t, a_t)`.
     """
     # action_dist
     check_array(array=action_dist, name="action_dist", expected_dim=3)
@@ -364,13 +363,13 @@ def check_ope_inputs(
                 "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
             )
 
-    if importance_sampling_ratio is not None:
-        if not (action.shape[0] == importance_sampling_ratio.shape[0]):
+    if estimated_importance_weights is not None:
+        if not (action.shape[0] == estimated_importance_weights.shape[0]):
             raise ValueError(
-                "Expected `action.shape[0] == importance_sampling_ratio.shape[0]`, but found it False"
+                "Expected `action.shape[0] == estimated_importance_weights.shape[0]`, but found it False"
             )
-        if np.any(importance_sampling_ratio < 0):
-            raise ValueError("importance_sampling_ratio must be non-negative")
+        if np.any(estimated_importance_weights < 0):
+            raise ValueError("estimated_importance_weights must be non-negative")
 
     # action, reward
     if action is not None or reward is not None:

@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Classification Model Class for Estimating Propensity Score or Importance Sampling Ratio."""
+"""Classification Model Class for Estimating Propensity Score and Importance Weight."""
 from dataclasses import dataclass
 from typing import Optional
 
@@ -17,14 +17,14 @@ from ..utils import check_array, sample_action_fast
 
 
 @dataclass
-class ImportanceSampler(BaseEstimator):
+class ImportancWeightEstimator(BaseEstimator):
     """Machine learning model to distinguish between the behavior and evaluation policy (:math:`\\Pr[C = 1 | x, a]`),
     where :math:`\\Pr[C=1|x,a]` is the probability that the action :math:`a` is sampled by evaluation policy given :math:`x`.
 
     Parameters
     ------------
     base_model: BaseEstimator
-        A machine learning model used to estimate the mean reward function.
+        A machine learning model used to estimate the importance weights.
 
     n_actions: int
         Number of actions.
@@ -114,7 +114,6 @@ class ImportanceSampler(BaseEstimator):
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
-            When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -122,13 +121,12 @@ class ImportanceSampler(BaseEstimator):
             When `len_list` > 1, this position argument has to be set.
 
         random_state: int, default=None
-            `random_state` affects the ordering of the indices, which controls the randomness of each fold.
-            See https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html for the details.
+            `random_state` affects the sampling of actions from the evaluation policy.
 
         """
         check_array(array=context, name="context", expected_dim=2)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=action_dist, name="reward", expected_dim=3)
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
             raise ValueError("action elements must be non-negative integers")
 
@@ -137,7 +135,7 @@ class ImportanceSampler(BaseEstimator):
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            check_array(array=position, name="position", expected_dim=3)
+            check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
@@ -183,7 +181,7 @@ class ImportanceSampler(BaseEstimator):
         action: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Predict the importance sampling ratio.
+        """Predict the importance weights.
 
         Parameters
         ----------
@@ -200,9 +198,8 @@ class ImportanceSampler(BaseEstimator):
 
         Returns
         ----------
-        importance_sampling_ratio: array-like, shape (n_rounds_of_new_data, )
-            Ratio of probability that the action is sampled by evaluation policy divided by probability that the action is sampled by behavior policy,
-            i.e., :math:`\\hat{\\rho}(x_t, a_t)`.
+        estimated_importance_weights: array-like, shape (n_rounds_of_new_data, )
+            Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         """
         proba_of_evaluation_policy = np.zeros(action.shape[0])
@@ -226,9 +223,9 @@ class ImportanceSampler(BaseEstimator):
         position: Optional[np.ndarray] = None,
         n_folds: int = 1,
         random_state: Optional[int] = None,
-        is_eval_model: bool = False,
+        evaluate_model_performance: bool = False,
     ) -> np.ndarray:
-        """Fit the classification model on given logged bandit feedback data and predict the importance sampling ratio of the same data.
+        """Fit the classification model on given logged bandit feedback data and predict the importance weights of the same data.
 
         Note
         ------
@@ -245,7 +242,6 @@ class ImportanceSampler(BaseEstimator):
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
-            When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
@@ -261,20 +257,19 @@ class ImportanceSampler(BaseEstimator):
             `random_state` affects the ordering of the indices, which controls the randomness of each fold.
             See https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html for the details.
 
-        is_eval_model: bool, default=False
+        evaluate_model_performance: bool, default=False
             Whether the performance of the classification model is evaluated or not.
             When True is given, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
 
         Returns
         -----------
-        importance_sampling_ratio: array-like, shape (n_rounds_of_new_data, )
-            Ratio of probability that the action is sampled by evaluation policy divided by probability that the action is sampled by behavior policy,
-            i.e., :math:`\\hat{\\rho}(x_t, a_t)`.
+        estimated_importance_weights: array-like, shape (n_rounds_of_new_data, )
+            Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=action_dist, name="reward", expected_dim=3)
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
             raise ValueError("action elements must be non-negative integers")
 
@@ -283,7 +278,7 @@ class ImportanceSampler(BaseEstimator):
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            check_array(array=position, name="position", expected_dim=3)
+            check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
@@ -292,10 +287,6 @@ class ImportanceSampler(BaseEstimator):
         check_scalar(n_folds, "n_folds", int, min_val=1)
         check_random_state(random_state)
 
-        if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
-            raise ValueError(
-                "when fitting_method is either 'iw' or 'mrdr', action_dist (a 3-dimensional ndarray) must be given"
-            )
         if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
             raise ValueError(
                 f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
@@ -313,7 +304,7 @@ class ImportanceSampler(BaseEstimator):
             )
             return self.predict(context=context, action=action, position=position)
         else:
-            importance_sampling_ratio = np.zeros(n_rounds)
+            estimated_importance_weights = np.zeros(n_rounds)
         kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         kf.get_n_splits(context)
         if is_eval_model:
@@ -326,7 +317,7 @@ class ImportanceSampler(BaseEstimator):
                 action_dist=action_dist[train_idx],
                 random_state=random_state,
             )
-            importance_sampling_ratio[test_idx] = self.predict(
+            estimated_importance_weights[test_idx] = self.predict(
                 context=context[test_idx],
                 action=action[test_idx],
                 position=position[test_idx],
@@ -363,7 +354,7 @@ class ImportanceSampler(BaseEstimator):
                     ].predict_proba(X)[:, 1]
                     self.eval_result["proba"].append(proba_of_evaluation_policy)
                     self.eval_result["y"].append(y)
-        return importance_sampling_ratio
+        return estimated_importance_weights
 
     def _pre_process_for_clf_model(
         self,
@@ -398,11 +389,11 @@ class ImportanceSampler(BaseEstimator):
             One-hot encoding of actions sampled by evaluation policy of each position.
 
         """
-        behavior_feature = np.c_[context, self.action_context[action]]
+        behavior_policy_feature = np.c_[context, self.action_context[action]]
         if is_prediction:
             return behavior_feature, None
         if self.fitting_method == "raw":
-            evaluation_feature = np.c_[context, action_dist_at_position]
+            evaluation_policy_feature = np.c_[context, action_dist_at_position]
         elif self.fitting_method == "sample":
             evaluation_feature = np.c_[context, sampled_action_at_position]
         X = np.copy(behavior_feature)
@@ -414,7 +405,7 @@ class ImportanceSampler(BaseEstimator):
 
 @dataclass
 class PropensityScoreEstimator(BaseEstimator):
-    """Machine learning model to estimate propensity scores given context (:math:`\\pi_{b}(a|x)`).
+    """Machine learning model to estimate propensity scores (:math:`\\pi_{b}(a|x)`).
 
     Parameters
     ------------
@@ -510,7 +501,7 @@ class PropensityScoreEstimator(BaseEstimator):
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            check_array(array=position, name="position", expected_dim=3)
+            check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
@@ -528,7 +519,7 @@ class PropensityScoreEstimator(BaseEstimator):
         action: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Predict the importance sampling ratio.
+        """Predict the propensity scores.
 
         Parameters
         ----------
@@ -545,19 +536,19 @@ class PropensityScoreEstimator(BaseEstimator):
 
         Returns
         ----------
-        pscore: array-like, shape (n_rounds_of_new_data, )
-            Estimated propensity score given context.
+        estimated_pscore: array-like, shape (n_rounds_of_new_data, )
+            Estimated propensity scores, i.e., :math:`\\hat{\\pi}_b (a \\mid x)`.
 
         """
-        pscore = np.zeros(action.shape[0])
+        estimated_pscore = np.zeros(action.shape[0])
         for position_ in np.arange(self.len_list):
             idx = position == position_
             if context[idx].shape[0] == 0:
                 continue
-            pscore[idx] = self.base_model_list[position_].predict_proba(context[idx])[
+            estimated_pscore[idx] = self.base_model_list[position_].predict_proba(context[idx])[
                 np.arange(action[idx].shape[0]), action[idx]
             ]
-        return pscore
+        return estimated_pscore
 
     def fit_predict(
         self,
@@ -566,7 +557,7 @@ class PropensityScoreEstimator(BaseEstimator):
         position: Optional[np.ndarray] = None,
         n_folds: int = 1,
         random_state: Optional[int] = None,
-        is_eval_model: bool = False,
+        evaluate_model_performance: bool = False,
     ) -> np.ndarray:
         """Fit the classification model on given logged bandit feedback data and predict the propensity score of the same data.
 
@@ -597,14 +588,14 @@ class PropensityScoreEstimator(BaseEstimator):
             `random_state` affects the ordering of the indices, which controls the randomness of each fold.
             See https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html for the details.
 
-        is_eval_model: bool, default=False
+        evaluate_model_performance: bool, default=False
             Whether the performance of the classification model is evaluated or not.
             When True is given, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
 
         Returns
         -----------
-        pscore: array-like, shape (n_rounds_of_new_data, )
-            Estimated propensity score given context.
+        estimated_pscore: array-like, shape (n_rounds_of_new_data, )
+            Estimated propensity score, i.e., :math:`\\hat{\\pi}_b (a \\mid x)`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -617,7 +608,7 @@ class PropensityScoreEstimator(BaseEstimator):
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            check_array(array=position, name="position", expected_dim=3)
+            check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
@@ -635,7 +626,7 @@ class PropensityScoreEstimator(BaseEstimator):
             )
             return self.predict(context=context, action=action, position=position)
         else:
-            pscore = np.zeros(n_rounds)
+            estimated_pscore = np.zeros(n_rounds)
         kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         kf.get_n_splits(context)
         if is_eval_model:
@@ -648,7 +639,7 @@ class PropensityScoreEstimator(BaseEstimator):
                 random_state=random_state,
             )
 
-            pscore[test_idx] = self.predict(
+            estimated_pscore[test_idx] = self.predict(
                 context=context[test_idx],
                 action=action[test_idx],
                 position=position[test_idx],
@@ -663,4 +654,4 @@ class PropensityScoreEstimator(BaseEstimator):
                     )
                     self.eval_result["proba"].append(proba_eval)
                     self.eval_result["y"].append(action[test_idx][idx])
-        return pscore
+        return estimated_pscore
