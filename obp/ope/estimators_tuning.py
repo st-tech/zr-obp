@@ -153,7 +153,7 @@ class BaseOffPolicyEstimatorTuning:
             (If only one action is chosen and there is no posion, then you can just ignore this argument.)
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
-            Estimated value of action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+            Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
             If self.use_estimated_pscore is True, estimated_pscore must be given.
 
         Returns
@@ -960,7 +960,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
-            If self.use_estimated_pscore is True, estimated_pscore must be given.       
+            If self.use_estimated_pscore is True, estimated_pscore must be given.
 
         Returns
         ----------

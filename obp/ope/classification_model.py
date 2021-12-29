@@ -17,9 +17,9 @@ from ..utils import check_array, sample_action_fast
 
 
 @dataclass
-class ImportancWeightEstimator(BaseEstimator):
+class ImportanceWeightEstimator(BaseEstimator):
     """Machine learning model to distinguish between the behavior and evaluation policy (:math:`\\Pr[C = 1 | x, a]`),
-    where :math:`\\Pr[C=1|x,a]` is the probability that the action :math:`a` is sampled by evaluation policy given :math:`x`.
+    where :math:`\\Pr[C=1|x,a]` is the probability that the data coming from the evaluation policy given action :math:`a` and :math:`x`.
 
     Parameters
     ------------
@@ -307,7 +307,7 @@ class ImportancWeightEstimator(BaseEstimator):
             estimated_importance_weights = np.zeros(n_rounds)
         kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         kf.get_n_splits(context)
-        if is_eval_model:
+        if evaluate_model_performance:
             self.eval_result = {"y": [], "proba": []}
         for train_idx, test_idx in kf.split(context):
             self.fit(
@@ -322,7 +322,7 @@ class ImportancWeightEstimator(BaseEstimator):
                 action=action[test_idx],
                 position=position[test_idx],
             )
-            if is_eval_model:
+            if evaluate_model_performance:
                 sampled_action = np.zeros(
                     (test_idx.shape[0], self.n_actions, self.len_list)
                 )
@@ -391,15 +391,15 @@ class ImportancWeightEstimator(BaseEstimator):
         """
         behavior_policy_feature = np.c_[context, self.action_context[action]]
         if is_prediction:
-            return behavior_feature, None
+            return behavior_policy_feature, None
         if self.fitting_method == "raw":
             evaluation_policy_feature = np.c_[context, action_dist_at_position]
         elif self.fitting_method == "sample":
-            evaluation_feature = np.c_[context, sampled_action_at_position]
-        X = np.copy(behavior_feature)
+            evaluation_policy_feature = np.c_[context, sampled_action_at_position]
+        X = np.copy(behavior_policy_feature)
         y = np.zeros(X.shape[0], dtype=int)
-        X = np.r_[X, evaluation_feature]
-        y = np.r_[y, np.ones(evaluation_feature.shape[0], dtype=int)]
+        X = np.r_[X, evaluation_policy_feature]
+        y = np.r_[y, np.ones(evaluation_policy_feature.shape[0], dtype=int)]
         return X, y
 
 
@@ -471,7 +471,6 @@ class PropensityScoreEstimator(BaseEstimator):
         context: np.ndarray,
         action: np.ndarray,
         position: Optional[np.ndarray] = None,
-        random_state: Optional[int] = None,
     ) -> None:
         """Fit the classification model on given logged bandit feedback data.
 
@@ -487,10 +486,6 @@ class PropensityScoreEstimator(BaseEstimator):
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
             If None is given, a classification model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
-
-        random_state: int, default=None
-            `random_state` affects the ordering of the indices, which controls the randomness of each fold.
-            See https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html for the details.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -545,9 +540,9 @@ class PropensityScoreEstimator(BaseEstimator):
             idx = position == position_
             if context[idx].shape[0] == 0:
                 continue
-            estimated_pscore[idx] = self.base_model_list[position_].predict_proba(context[idx])[
-                np.arange(action[idx].shape[0]), action[idx]
-            ]
+            estimated_pscore[idx] = self.base_model_list[position_].predict_proba(
+                context[idx]
+            )[np.arange(action[idx].shape[0]), action[idx]]
         return estimated_pscore
 
     def fit_predict(
@@ -622,21 +617,19 @@ class PropensityScoreEstimator(BaseEstimator):
                 context=context,
                 action=action,
                 position=position,
-                random_state=random_state,
             )
             return self.predict(context=context, action=action, position=position)
         else:
             estimated_pscore = np.zeros(n_rounds)
         kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         kf.get_n_splits(context)
-        if is_eval_model:
+        if evaluate_model_performance:
             self.eval_result = {"y": [], "proba": []}
         for train_idx, test_idx in kf.split(context):
             self.fit(
                 context=context[train_idx],
                 action=action[train_idx],
                 position=position[train_idx],
-                random_state=random_state,
             )
 
             estimated_pscore[test_idx] = self.predict(
@@ -644,7 +637,7 @@ class PropensityScoreEstimator(BaseEstimator):
                 action=action[test_idx],
                 position=position[test_idx],
             )
-            if is_eval_model:
+            if evaluate_model_performance:
                 for position_ in np.arange(self.len_list):
                     idx = position[test_idx] == position_
                     if context[test_idx][idx].shape[0] == 0:

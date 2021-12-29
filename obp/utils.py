@@ -330,7 +330,7 @@ def check_ope_inputs(
     estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
         Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
-    estimated_importance_weights: array-like or Tensor, shape (n_rounds,), default=None
+    estimated_importance_weights: array-like, shape (n_rounds,), default=None
         Importance weights estimated via supervised classification, i.e., :math:`\\hat{ww}(x_t, a_t)`.
     """
     # action_dist
