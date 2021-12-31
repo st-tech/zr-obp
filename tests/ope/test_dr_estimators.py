@@ -263,6 +263,27 @@ switch_dr_tuning = SwitchDoublyRobustTuning(
     lambdas=[1, 100], estimator_name="switch_dr_tuning"
 )
 switch_dr_max = SwitchDoublyRobust(lambda_=np.inf)
+# estimated pscore
+dr_estimated_pscore = DoublyRobust(use_estimated_pscore=True)
+dr_os_estimated_pscore = DoublyRobustWithShrinkage(use_estimated_pscore=True)
+dr_tuning_estimated_pscore = DoublyRobustTuning(
+    lambdas=[1, 100],
+    estimator_name="dr_tuning_estimated_pscore",
+    use_estimated_pscore=True,
+)
+dr_os_tuning_estimated_pscore = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100],
+    estimator_name="dr_os_tuning_estimated_pscore",
+    use_estimated_pscore=True,
+)
+sndr_estimated_pscore = SelfNormalizedDoublyRobust(use_estimated_pscore=True)
+switch_dr_estimated_pscore = SwitchDoublyRobust(use_estimated_pscore=True)
+switch_dr_tuning_estimated_pscore = SwitchDoublyRobustTuning(
+    lambdas=[1, 100],
+    estimator_name="switch_dr_tuning_estimated_pscore",
+    use_estimated_pscore=True,
+)
+
 
 dr_estimators = [
     dr,
@@ -272,6 +293,13 @@ dr_estimators = [
     sndr,
     switch_dr_0,
     switch_dr_tuning,
+    dr_estimated_pscore,
+    dr_os_estimated_pscore,
+    dr_tuning_estimated_pscore,
+    dr_os_tuning_estimated_pscore,
+    sndr_estimated_pscore,
+    switch_dr_estimated_pscore,
+    switch_dr_tuning_estimated_pscore,
 ]
 
 
@@ -556,6 +584,7 @@ valid_input_of_dr_variants = [
         np.random.uniform(low=0.5, high=1.0, size=5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        np.random.uniform(low=0.5, high=1.0, size=5),
         0.5,
         "all arguments are given and len_list > 1",
     )
@@ -563,7 +592,7 @@ valid_input_of_dr_variants = [
 
 
 @pytest.mark.parametrize(
-    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, hyperparameter, description",
+    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, estimated_pscore, hyperparameter, description",
     valid_input_of_dr_variants,
 )
 def test_dr_variants_using_valid_input_data(
@@ -573,6 +602,7 @@ def test_dr_variants_using_valid_input_data(
     pscore: np.ndarray,
     position: np.ndarray,
     estimated_rewards_by_reg_model: np.ndarray,
+    estimated_pscore: np.ndarray,
     hyperparameter: float,
     description: str,
 ) -> None:
@@ -585,7 +615,28 @@ def test_dr_variants_using_valid_input_data(
     dr_os_tuning = DoublyRobustWithShrinkageTuning(
         lambdas=[hyperparameter, hyperparameter * 10]
     )
-    for estimator in [switch_dr, switch_dr_tuning, dr_os, dr_os_tuning]:
+    switch_dr_estimated_pscore = SwitchDoublyRobust(
+        lambda_=hyperparameter, use_estimated_pscore=True
+    )
+    switch_dr_tuning_estimated_pscore = SwitchDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter * 10], use_estimated_pscore=True
+    )
+    dr_os_estimated_pscore = DoublyRobustWithShrinkage(
+        lambda_=hyperparameter, use_estimated_pscore=True
+    )
+    dr_os_tuning_estimated_pscore = DoublyRobustWithShrinkageTuning(
+        lambdas=[hyperparameter, hyperparameter * 10], use_estimated_pscore=True
+    )
+    for estimator in [
+        switch_dr,
+        switch_dr_tuning,
+        dr_os,
+        dr_os_tuning,
+        switch_dr_estimated_pscore,
+        switch_dr_tuning_estimated_pscore,
+        dr_os_estimated_pscore,
+        dr_os_tuning_estimated_pscore,
+    ]:
         est = estimator.estimate_policy_value(
             action_dist=action_dist,
             action=action,
@@ -593,6 +644,7 @@ def test_dr_variants_using_valid_input_data(
             pscore=pscore,
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
         assert est == 0.0, f"policy value must be 0, but {est}"
 
@@ -613,6 +665,7 @@ def test_dr_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
+    input_dict["estimated_pscore"] = input_dict["pscore"]
     # dr estimators require all arguments
     for estimator in dr_estimators:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
@@ -651,7 +704,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     input_dict["action_dist"] = action_dist
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
     # make pscore too small (to check the boundedness of sndr)
-    input_dict["pscore"] = input_dict["pscore"] ** 3
+    input_dict["estimated_pscore"] = input_dict["pscore"]
     estimated_policy_value = sndr.estimate_policy_value(**input_dict)
     assert (
         estimated_policy_value <= 2

@@ -13,7 +13,7 @@ from sklearn.utils import check_random_state
 from sklearn.utils import check_scalar
 from sklearn.calibration import CalibratedClassifierCV
 
-from ..utils import check_array, sample_action_fast
+from ..utils import check_array, sample_action_fast, check_bandit_feedback_inputs
 
 
 @dataclass
@@ -36,12 +36,14 @@ class ImportanceWeightEstimator(BaseEstimator):
     action_context: array-like, shape (n_actions, dim_action_context), default=None
         Context vector characterizing action (i.e., vector representation of each action).
         If not given, one-hot encoding of the action variable is used as default.
+        If fitting_method is 'raw', action_context must be None.
 
     fitting_method: str, default='sample'
         Method to fit the classification model.
         Must be one of ['sample', 'raw']. Each method is defined as follows:
             - sample: actions are sampled by applying Gumbel-softmax trick to action_dist_at_position, and action features are represented by one-hot encoding of the sampled action.
             - raw: action_dist_at_position are directly encoded as action features.
+        If fitting_method is 'raw', action_context must be None.
 
     calibration_cv: int, default=2
         Number of folds in the calibration procedure.
@@ -73,6 +75,12 @@ class ImportanceWeightEstimator(BaseEstimator):
             raise ValueError(
                 f"fitting_method must be either 'sample' or 'raw', but {self.fitting_method} is given"
             )
+        if self.fitting_method == "raw" and self.action_context is not None:
+            check_array(array=self.action_context, name="action_context", expected_dim=2)
+            if self.action_context.shape != (self.n_actions, self.n_actions) or not np.allclose(self.action_context, np.eye(self.n_actions)):
+                raise ValueError(
+                    "If fitting_method == 'raw', action_context must be None or identity matrix of size (n_actions, n_actions)."
+                )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
                 "base_model must be BaseEstimator or a child class of BaseEstimator"
@@ -124,12 +132,14 @@ class ImportanceWeightEstimator(BaseEstimator):
             `random_state` affects the sampling of actions from the evaluation policy.
 
         """
-        check_array(array=context, name="context", expected_dim=2)
-        check_array(array=action, name="action", expected_dim=1)
+        check_bandit_feedback_inputs(
+            context=context,
+            action=action,
+            reward=np.zeros_like(action),  # use dummy reward
+            position=position,
+            action_context=self.action_context,
+        )
         check_array(array=action_dist, name="action_dist", expected_dim=3)
-        if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
-            raise ValueError("action elements must be non-negative integers")
-
         n_rounds = context.shape[0]
 
         if position is None or self.len_list == 1:
@@ -148,7 +158,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             raise ValueError("action_dist must be a probability distribution")
 
         # If self.fitting_method != "sample", `sampled_action` has no information
-        sampled_action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        sampled_action = np.zeros(n_rounds, dtype=int)
         if self.fitting_method == "sample":
             for position_ in np.arange(self.len_list):
                 idx = position == position_
@@ -156,11 +166,7 @@ class ImportanceWeightEstimator(BaseEstimator):
                     action_dist=action_dist[idx][:, :, position_],
                     random_state=random_state,
                 )
-                sampled_action[
-                    idx,
-                    sampled_action_at_position,
-                    position_,
-                ] = 1
+                sampled_action[idx] = sampled_action_at_position
 
         for position_ in np.arange(self.len_list):
             idx = position == position_
@@ -169,7 +175,7 @@ class ImportanceWeightEstimator(BaseEstimator):
                 context=context[idx],
                 action=action[idx],
                 action_dist_at_position=action_dist_at_position,
-                sampled_action_at_position=sampled_action[idx][:, :, position_],
+                sampled_action_at_position=sampled_action[idx],
             )
             if X.shape[0] == 0:
                 raise ValueError(f"No training data at position {position_}")
@@ -267,11 +273,14 @@ class ImportanceWeightEstimator(BaseEstimator):
             Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         """
-        check_array(array=context, name="context", expected_dim=2)
-        check_array(array=action, name="action", expected_dim=1)
+        check_bandit_feedback_inputs(
+            context=context,
+            action=action,
+            reward=np.zeros_like(action),  # use dummy reward
+            position=position,
+            action_context=self.action_context,
+        )
         check_array(array=action_dist, name="action_dist", expected_dim=3)
-        if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
-            raise ValueError("action elements must be non-negative integers")
 
         n_rounds = context.shape[0]
 
@@ -323,9 +332,7 @@ class ImportanceWeightEstimator(BaseEstimator):
                 position=position[test_idx],
             )
             if evaluate_model_performance:
-                sampled_action = np.zeros(
-                    (test_idx.shape[0], self.n_actions, self.len_list)
-                )
+                sampled_action = np.zeros(test_idx.shape[0], dtype=int)
                 if self.fitting_method == "sample":
                     for position_ in np.arange(self.len_list):
                         idx = position[test_idx] == position_
@@ -333,11 +340,7 @@ class ImportanceWeightEstimator(BaseEstimator):
                             action_dist=action_dist[test_idx][idx][:, :, position_],
                             random_state=random_state,
                         )
-                        sampled_action[
-                            idx,
-                            sampled_action_at_position,
-                            position_,
-                        ] = 1
+                        sampled_action[idx] = sampled_action_at_position
                 for position_ in np.arange(self.len_list):
                     idx = position[test_idx] == position_
                     action_dist_at_position = action_dist[test_idx][idx][
@@ -347,7 +350,7 @@ class ImportanceWeightEstimator(BaseEstimator):
                         context=context[test_idx][idx],
                         action=action[test_idx][idx],
                         action_dist_at_position=action_dist_at_position,
-                        sampled_action_at_position=sampled_action[idx][:, :, position_],
+                        sampled_action_at_position=sampled_action[idx],
                     )
                     proba_of_evaluation_policy = self.base_model_list[
                         position_
@@ -395,7 +398,9 @@ class ImportanceWeightEstimator(BaseEstimator):
         if self.fitting_method == "raw":
             evaluation_policy_feature = np.c_[context, action_dist_at_position]
         elif self.fitting_method == "sample":
-            evaluation_policy_feature = np.c_[context, sampled_action_at_position]
+            evaluation_policy_feature = np.c_[
+                context, self.action_context[sampled_action_at_position]
+            ]
         X = np.copy(behavior_policy_feature)
         y = np.zeros(X.shape[0], dtype=int)
         X = np.r_[X, evaluation_policy_feature]

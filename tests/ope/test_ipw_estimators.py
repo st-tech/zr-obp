@@ -461,6 +461,26 @@ def test_ipw_using_random_evaluation_policy(
         assert isinstance(
             estimated_policy_value, float
         ), f"invalid type response: {estimator}"
+
+    # ipw with estimated pscore
+    ipw_estimated_pscore = InverseProbabilityWeighting(use_estimated_pscore=True)
+    snipw_estimated_pscore = SelfNormalizedInverseProbabilityWeighting(
+        use_estimated_pscore=True
+    )
+    ipw_tuning_estimated_pscore = InverseProbabilityWeightingTuning(
+        lambdas=[10, 1000], use_estimated_pscore=True
+    )
+    input_dict["estimated_pscore"] = input_dict["pscore"]
+    for estimator in [
+        ipw_estimated_pscore,
+        snipw_estimated_pscore,
+        ipw_tuning_estimated_pscore,
+    ]:
+        estimated_policy_value = estimator.estimate_policy_value(**input_dict)
+        assert isinstance(
+            estimated_policy_value, float
+        ), f"invalid type response: {estimator}"
+
     # remove necessary keys
     del input_dict["reward"]
     del input_dict["action"]
@@ -493,6 +513,16 @@ def test_boundedness_of_snipw_using_random_evaluation_policy(
     # make pscore too small (to check the boundedness of snipw)
     input_dict["pscore"] = input_dict["pscore"] ** 3
     estimated_policy_value = snipw.estimate_policy_value(**input_dict)
+    assert (
+        estimated_policy_value <= 1
+    ), f"estimated policy value of snipw should be smaller than or equal to 1 (because of its 1-boundedness), but the value is: {estimated_policy_value}"
+
+    # ipw with estimated pscore
+    snipw_estimated_pscore = SelfNormalizedInverseProbabilityWeighting(
+        use_estimated_pscore=True
+    )
+    input_dict["estimated_pscore"] = input_dict["pscore"]
+    estimated_policy_value = snipw_estimated_pscore.estimate_policy_value(**input_dict)
     assert (
         estimated_policy_value <= 1
     ), f"estimated policy value of snipw should be smaller than or equal to 1 (because of its 1-boundedness), but the value is: {estimated_policy_value}"
