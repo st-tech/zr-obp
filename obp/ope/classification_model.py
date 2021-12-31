@@ -287,7 +287,6 @@ class ImportanceWeightEstimator(BaseEstimator):
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
@@ -424,10 +423,6 @@ class PropensityScoreEstimator(BaseEstimator):
         Length of a list of actions recommended in each impression.
         When Open Bandit Dataset is used, 3 should be set.
 
-    action_context: array-like, shape (n_actions, dim_action_context), default=None
-        Context vector characterizing action (i.e., vector representation of each action).
-        If not given, one-hot encoding of the action variable is used as default.
-
     calibration_cv: int, default=2
         Number of folds in the calibration procedure.
         If calibration_cv <= 1, classification model is not calibrated.
@@ -442,7 +437,6 @@ class PropensityScoreEstimator(BaseEstimator):
     base_model: BaseEstimator
     n_actions: int
     len_list: int = 1
-    action_context: Optional[np.ndarray] = None
     calibration_cv: int = 2
 
     def __post_init__(self) -> None:
@@ -468,8 +462,6 @@ class PropensityScoreEstimator(BaseEstimator):
             self.base_model_list = [
                 clone(self.base_model) for _ in np.arange(self.len_list)
             ]
-        if self.action_context is None:
-            self.action_context = np.eye(self.n_actions, dtype=int)
 
     def fit(
         self,
@@ -493,15 +485,17 @@ class PropensityScoreEstimator(BaseEstimator):
             When `len_list` > 1, this position argument has to be set.
 
         """
-        check_array(array=context, name="context", expected_dim=2)
-        check_array(array=action, name="action", expected_dim=1)
-        if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
-            raise ValueError("action elements must be non-negative integers")
+        check_bandit_feedback_inputs(
+            context=context,
+            action=action,
+            reward=np.zeros_like(action),  # use dummy reward
+            position=position,
+            action_context=np.eye(self.n_actions, dtype=int),
+        )
 
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
@@ -598,17 +592,19 @@ class PropensityScoreEstimator(BaseEstimator):
             Estimated propensity score, i.e., :math:`\\hat{\\pi}_b (a \\mid x)`.
 
         """
-        check_array(array=context, name="context", expected_dim=2)
-        check_array(array=action, name="action", expected_dim=1)
-        if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
-            raise ValueError("action elements must be non-negative integers")
+        check_bandit_feedback_inputs(
+            context=context,
+            action=action,
+            reward=np.zeros_like(action),  # use dummy reward
+            position=position,
+            action_context=np.eye(self.n_actions, dtype=int),
+        )
 
         n_rounds = context.shape[0]
 
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
-            check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
                     f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
