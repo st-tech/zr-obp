@@ -1810,13 +1810,13 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     """Balanced Inverse Probability Weighting (IPW) Estimator.
 
-    Note (WIP)
+    Note
     -------
     Balanced Inverse Probability Weighting (IPW) estimates the policy value of evaluation policy :math:`\\pi_e` by
 
     .. math::
 
-        \\hat{V}_{\\mathrm{B-IPW}} (\\pi_e; \\mathcal{D}) := \\frac{\\mathbb{E}_{\\mathcal{D}} [\\pi_e (a_t|x_t) \\hat{w}(x_t,a_t) r_t]}{\\mathbb{E}_{\\mathcal{D}} [\\pi_e (a_t|x_t) \\hat{w}(x_t,a_t)},
+        \\hat{V}_{\\mathrm{B-IPW}} (\\pi_e; \\mathcal{D}) := \\frac{\\mathbb{E}_{\\mathcal{D}} [\\hat{w}(x_t,a_t) r_t]}{\\mathbb{E}_{\\mathcal{D}} [\\hat{w}(x_t,a_t)},
 
     where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by
     a behavior policy :math:`\\pi_b`.
@@ -1828,6 +1828,15 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     Balanced IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy (importance sampling ratio).
     Balanced IPW can be used even when the behavior policy (or the propensity score of the behavior policy) is not known or the behavior policy is deterministic.
     When the evaluation policy is stochastic, it is not well known whether the balanced IPW performs well.
+
+
+    Please note that the original estimator of B-IPW is defined as follows (only when the evaluation policy is deterministic):
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{B-IPW}} (\\pi_e; \\mathcal{D}) := \\frac{\\mathbb{E}_{\\mathcal{D}} [\\pi_e (a_t|x_t) \\hat{w}(x_t,a_t) r_t]}{\\mathbb{E}_{\\mathcal{D}} [\\pi_e (a_t|x_t) \\hat{w}(x_t,a_t)},
+
+    where :math:`\\pi_e` is the evaluation policy, and our estimator is a bit different from the original estimator.
 
     Parameters
     ------------
@@ -1910,7 +1919,6 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         action_dist: np.ndarray,
         estimated_importance_weights: np.ndarray,
         position: Optional[np.ndarray] = None,
-        action_context: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the policy value of evaluation policy.
@@ -1946,6 +1954,13 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             array=estimated_importance_weights,
             name="estimated_importance_weights",
             expected_dim=1,
+        )
+        check_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            estimated_importance_weights=estimated_importance_weights,
         )
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)

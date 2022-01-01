@@ -674,7 +674,6 @@ def test_dr_using_random_evaluation_policy(
         ), f"invalid type response: {estimator}"
     # remove necessary keys
     del input_dict["reward"]
-    del input_dict["pscore"]
     del input_dict["action"]
     del input_dict["estimated_rewards_by_reg_model"]
     for estimator in dr_estimators:
@@ -704,7 +703,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     input_dict["action_dist"] = action_dist
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
     # make pscore too small (to check the boundedness of sndr)
-    input_dict["estimated_pscore"] = input_dict["pscore"]
+    input_dict["pscore"] = input_dict["pscore"] ** 3
     estimated_policy_value = sndr.estimate_policy_value(**input_dict)
     assert (
         estimated_policy_value <= 2
@@ -765,3 +764,9 @@ def test_switch_dr_using_random_evaluation_policy(
     assert (
         dr_value == switch_dr_max_value
     ), "SwitchDR (lambda=1e10) should be the same as DoublyRobust"
+    input_dict["estimated_pscore"] = input_dict["pscore"]
+    del input_dict["pscore"]
+    dr_value_estimated_pscore = dr_estimated_pscore.estimate_policy_value(**input_dict)
+    assert (
+        dr_value == dr_value_estimated_pscore
+    ), "DoublyRobust with estimated_pscore (which is the same as pscore) should be the same as DoublyRobust"

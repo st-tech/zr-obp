@@ -471,6 +471,7 @@ def test_ipw_using_random_evaluation_policy(
         lambdas=[10, 1000], use_estimated_pscore=True
     )
     input_dict["estimated_pscore"] = input_dict["pscore"]
+    del input_dict["pscore"]
     for estimator in [
         ipw_estimated_pscore,
         snipw_estimated_pscore,
@@ -522,6 +523,7 @@ def test_boundedness_of_snipw_using_random_evaluation_policy(
         use_estimated_pscore=True
     )
     input_dict["estimated_pscore"] = input_dict["pscore"]
+    del input_dict["pscore"]
     estimated_policy_value = snipw_estimated_pscore.estimate_policy_value(**input_dict)
     assert (
         estimated_policy_value <= 1
