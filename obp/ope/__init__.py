@@ -82,6 +82,7 @@ __all_estimators__ = [
     "DoublyRobustWithShrinkage",
     "SwitchDoublyRobust",
     "SelfNormalizedDoublyRobust",
+    "BalancedInverseProbabilityWeighting",
 ]
 
 

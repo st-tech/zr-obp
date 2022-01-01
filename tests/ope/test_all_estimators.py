@@ -9,7 +9,7 @@ from obp.ope import OffPolicyEvaluation
 from obp.types import BanditFeedback
 
 
-# action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description
+# action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, estimated_pscore, estimated_importance_weights, description
 invalid_input_of_estimation = [
     (
         None,  #
@@ -18,6 +18,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "action_dist must be 3D array",
     ),
     (
@@ -27,6 +29,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 1)),
+        np.ones(5),
+        np.ones(5),
         "action_dist must be 3D array",
     ),
     (
@@ -36,6 +40,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "action_dist must be a probability distribution",
     ),
     (
@@ -45,6 +51,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         "4",  #
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "position must be 1D array",
     ),
     (
@@ -54,6 +62,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros((5, 4), dtype=int),  #
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "position must be 1D array",
     ),
     (
@@ -63,6 +73,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros(5),  #
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "position elements must be non-negative integers",
     ),
     (
@@ -72,6 +84,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros(5, dtype=int) - 1,  #
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "position elements must be non-negative integers",
     ),
     (
@@ -81,6 +95,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.zeros(4, dtype=int),  #
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "Expected `position.shape[0]",
     ),
     (
@@ -90,6 +106,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         np.ones(5, dtype=int) * 8,  #
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "position elements must be smaller than",
     ),
     (
@@ -99,6 +117,8 @@ invalid_input_of_estimation = [
         np.ones(5),
         None,  #
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "position elements must be given when",
     ),
 ]
@@ -111,6 +131,8 @@ valid_input_of_estimation = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        np.ones(5),
+        np.ones(5),
         "all arguments are given and len_list > 1",
     ),
     (
@@ -120,6 +142,8 @@ valid_input_of_estimation = [
         np.ones(5),
         np.zeros(5, dtype=int),
         np.zeros((5, 4, 1)),
+        np.ones(5),
+        np.ones(5),
         "all arguments are given and len_list == 1",
     ),
     (
@@ -129,13 +153,15 @@ valid_input_of_estimation = [
         np.ones(5),
         None,
         np.zeros((5, 4, 1)),
+        np.ones(5),
+        np.ones(5),
         "position argument is None",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description",
+    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, estimated_pscore, estimated_importance_weights, description",
     invalid_input_of_estimation,
 )
 def test_estimation_of_all_estimators_using_invalid_input_data(
@@ -145,6 +171,8 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
     pscore: np.ndarray,
     position: np.ndarray,
     estimated_rewards_by_reg_model: np.ndarray,
+    estimated_pscore: np.ndarray,
+    estimated_importance_weights: np.ndarray,
     description: str,
 ) -> None:
     all_estimators = ope.__all_estimators__
@@ -166,6 +194,8 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
                 pscore=pscore,
                 position=position,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
+                estimated_importance_weights=estimated_importance_weights,
             )
             assert est == 0.0, f"policy value must be 0, but {est}"
         with pytest.raises(ValueError, match=f"{description}*"):
@@ -176,6 +206,8 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
                 pscore=pscore,
                 position=position,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
+                estimated_importance_weights=estimated_importance_weights,
             )
 
     for estimator_tuning in estimators_tuning:
@@ -187,6 +219,7 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
                 pscore=pscore,
                 position=position,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
             )
             assert est == 0.0, f"policy value must be 0, but {est}"
             assert hasattr(
@@ -203,6 +236,7 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
                 pscore=pscore,
                 position=position,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
             )
             assert hasattr(
                 estimator_tuning, "best_hyperparam"
@@ -213,7 +247,7 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
 
 
 @pytest.mark.parametrize(
-    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description",
+    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, estimated_pscore, estimated_importance_weights, description",
     valid_input_of_estimation,
 )
 def test_estimation_of_all_estimators_using_valid_input_data(
@@ -223,6 +257,8 @@ def test_estimation_of_all_estimators_using_valid_input_data(
     pscore: np.ndarray,
     position: np.ndarray,
     estimated_rewards_by_reg_model: np.ndarray,
+    estimated_pscore: np.ndarray,
+    estimated_importance_weights: np.ndarray,
     description: str,
 ) -> None:
     all_estimators = ope.__all_estimators__
@@ -243,6 +279,8 @@ def test_estimation_of_all_estimators_using_valid_input_data(
             pscore=pscore,
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
+            estimated_importance_weights=estimated_importance_weights,
         )
         _ = estimator.estimate_interval(
             action_dist=action_dist,
@@ -251,6 +289,8 @@ def test_estimation_of_all_estimators_using_valid_input_data(
             pscore=pscore,
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
+            estimated_importance_weights=estimated_importance_weights,
         )
     for estimator_tuning in estimators_tuning:
         _ = estimator_tuning.estimate_policy_value(
@@ -260,6 +300,7 @@ def test_estimation_of_all_estimators_using_valid_input_data(
             pscore=pscore,
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
         _ = estimator_tuning.estimate_interval(
             action_dist=action_dist,
@@ -268,6 +309,7 @@ def test_estimation_of_all_estimators_using_valid_input_data(
             pscore=pscore,
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
 
 
@@ -334,6 +376,9 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
         getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
         for estimator_name in all_estimators_tuning
     ]
+    # TODO
+    estimated_pscore = None
+    estimated_importance_weights = np.ones(bandit_feedback["action"].shape[0])
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
         with pytest.raises(err, match=f"{description}*"):
@@ -344,6 +389,8 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
                 pscore=bandit_feedback["pscore"],
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=expected_reward,
+                estimated_pscore=estimated_pscore,
+                estimated_importance_weights=estimated_importance_weights,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
@@ -357,6 +404,7 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
                 pscore=bandit_feedback["pscore"],
                 action_dist=action_dist,
                 estimated_rewards_by_reg_model=expected_reward,
+                estimated_pscore=estimated_pscore,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
@@ -391,6 +439,9 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
         getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
         for estimator_name in all_estimators_tuning
     ]
+    # TODO
+    estimated_pscore = None
+    estimated_importance_weights = np.ones(bandit_feedback["action"].shape[0])
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
         _ = estimator.estimate_interval(
@@ -400,6 +451,8 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
             pscore=bandit_feedback["pscore"],
             action_dist=action_dist,
             estimated_rewards_by_reg_model=expected_reward,
+            estimated_pscore=estimated_pscore,
+            estimated_importance_weights=estimated_importance_weights,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -412,6 +465,7 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
             pscore=bandit_feedback["pscore"],
             action_dist=action_dist,
             estimated_rewards_by_reg_model=expected_reward,
+            estimated_pscore=estimated_pscore,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -460,12 +514,27 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
         for estimator_name in all_estimators_tuning
     ]
     estimators = estimators_standard + estimators_tuning
+    # skip estimation
+    estimated_pscore = None
+    estimated_importance_weights = (
+        random_action_dist[
+            np.arange(synthetic_bandit_feedback["action"].shape[0]),
+            synthetic_bandit_feedback["action"],
+            np.zeros(
+                synthetic_bandit_feedback["action"].shape[0], dtype=int
+            ),  # position is None
+        ]
+        / synthetic_bandit_feedback["pscore"]
+    )
     # conduct OPE
     ope_instance = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=estimators
     )
     estimated_policy_value = ope_instance.estimate_policy_values(
-        action_dist=action_dist, estimated_rewards_by_reg_model=expected_reward
+        action_dist=action_dist,
+        estimated_rewards_by_reg_model=expected_reward,
+        estimated_pscore=estimated_pscore,
+        estimated_importance_weights=estimated_importance_weights,
     )
     # check the performance of OPE
     print(f"gt_mean: {gt_mean}")
@@ -498,16 +567,33 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
         for estimator_name in all_estimators_tuning
     ]
     estimators = estimators_standard + estimators_tuning
+    # skip estimation
+    estimated_pscore = None
+    estimated_importance_weights = (
+        random_action_dist[
+            np.arange(synthetic_bandit_feedback["action"].shape[0]),
+            synthetic_bandit_feedback["action"],
+            np.zeros(
+                synthetic_bandit_feedback["action"].shape[0], dtype=int
+            ),  # position is None
+        ]
+        / synthetic_bandit_feedback["pscore"]
+    )
     # conduct OPE
     ope_instance = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=estimators
     )
     estimated_policy_value = ope_instance.estimate_policy_values(
-        action_dist=action_dist, estimated_rewards_by_reg_model=expected_reward
+        action_dist=action_dist,
+        estimated_rewards_by_reg_model=expected_reward,
+        estimated_pscore=estimated_pscore,
+        estimated_importance_weights=estimated_importance_weights,
     )
     estimated_intervals = ope_instance.estimate_intervals(
         action_dist=action_dist,
         estimated_rewards_by_reg_model=expected_reward,
+        estimated_pscore=estimated_pscore,
+        estimated_importance_weights=estimated_importance_weights,
         random_state=12345,
     )
     # check the format of OPE

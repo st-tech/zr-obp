@@ -9,10 +9,12 @@ import pytest
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 import torch
 
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
+from obp.ope import BalancedInverseProbabilityWeighting
 from obp.ope import DirectMethod
 from obp.ope import DoublyRobust
 from obp.ope import DoublyRobustTuning
@@ -20,7 +22,9 @@ from obp.ope import DoublyRobustWithShrinkage
 from obp.ope import DoublyRobustWithShrinkageTuning
 from obp.ope import InverseProbabilityWeighting
 from obp.ope import InverseProbabilityWeightingTuning
+from obp.ope import ImportanceWeightEstimator
 from obp.ope import OffPolicyEvaluation
+from obp.ope import PropensityScoreEstimator
 from obp.ope import RegressionModel
 from obp.ope import SelfNormalizedDoublyRobust
 from obp.ope import SelfNormalizedInverseProbabilityWeighting
@@ -28,7 +32,6 @@ from obp.ope import SwitchDoublyRobust
 from obp.ope import SwitchDoublyRobustTuning
 from obp.ope.estimators import BaseOffPolicyEstimator
 from obp.policy import IPWLearner
-
 
 # hyperparameters of the regression model used in model dependent OPE estimators
 hyperparams = {
@@ -50,6 +53,7 @@ hyperparams = {
         "min_samples_leaf": 10,
         "random_state": 12345,
     },
+    "svc": {"gamma": 2, "C": 5, "probability": True, "random_state": 12345},
 }
 
 base_model_dict = dict(
@@ -65,6 +69,7 @@ offline_experiment_configurations = [
         5,
         "logistic_regression",
         "logistic_regression",
+        "logistic_regression",
     ),
     (
         300,
@@ -72,11 +77,13 @@ offline_experiment_configurations = [
         2,
         "lightgbm",
         "lightgbm",
+        "lightgbm",
     ),
     (
         500,
         5,
         3,
+        "random_forest",
         "random_forest",
         "random_forest",
     ),
@@ -85,6 +92,7 @@ offline_experiment_configurations = [
         3,
         5,
         "logistic_regression",
+        "random_forest",
         "random_forest",
     ),
     (
@@ -93,8 +101,28 @@ offline_experiment_configurations = [
         10,
         "lightgbm",
         "logistic_regression",
+        "logistic_regression",
     ),
 ]
+
+bipw_model_configurations = {
+    "bipw (random_forest raw)": dict(
+        fitting_method="raw",
+        base_model=RandomForestClassifier(**hyperparams["random_forest"]),
+    ),
+    "bipw (random_forest sample)": dict(
+        fitting_method="sample",
+        base_model=RandomForestClassifier(**hyperparams["random_forest"]),
+    ),
+    "bipw (svc raw)": dict(
+        fitting_method="raw",
+        base_model=SVC(**hyperparams["svc"]),
+    ),
+    "bipw (svc sample)": dict(
+        fitting_method="sample",
+        base_model=SVC(**hyperparams["svc"]),
+    ),
+}
 
 
 @dataclass
@@ -147,11 +175,37 @@ ope_estimators = [
     DoublyRobustWithShrinkageTuning(
         lambdas=[100, 1000, np.inf], estimator_name="dr-os (tuning)"
     ),
+    InverseProbabilityWeighting(
+        lambda_=100,
+        estimator_name="cipw (estimated pscore)",
+        use_estimated_pscore=True,
+    ),
+    SelfNormalizedInverseProbabilityWeighting(
+        estimator_name="snipw (estimated pscore)", use_estimated_pscore=True
+    ),
+    DoublyRobust(estimator_name="dr (estimated pscore)", use_estimated_pscore=True),
+    DoublyRobustWithShrinkage(
+        lambda_=500,
+        estimator_name="dr-os (estimated pscore)",
+        use_estimated_pscore=True,
+    ),
+    BalancedInverseProbabilityWeighting(
+        estimator_name="bipw (svc raw)", lambda_=np.inf
+    ),
+    BalancedInverseProbabilityWeighting(
+        estimator_name="bipw (svc sample)", lambda_=np.inf
+    ),
+    BalancedInverseProbabilityWeighting(
+        estimator_name="bipw (random_forest raw)", lambda_=np.inf
+    ),
+    BalancedInverseProbabilityWeighting(
+        estimator_name="bipw (random_forest sample)", lambda_=np.inf
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
+    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model, base_model_for_treatment_model",
     offline_experiment_configurations,
 )
 def test_offline_estimation_performance(
@@ -160,6 +214,7 @@ def test_offline_estimation_performance(
     dim_context: int,
     base_model_for_evaluation_policy: str,
     base_model_for_reg_model: str,
+    base_model_for_treatment_model: str,
 ) -> None:
     def process(i: int):
         # synthetic data generator
@@ -206,6 +261,41 @@ def test_offline_estimation_performance(
             n_folds=3,  # 3-fold cross-fitting
             random_state=12345,
         )
+        # fit propensity score estimators
+        classification_model_for_action = PropensityScoreEstimator(
+            len_list=1,
+            n_actions=n_actions,
+            base_model=base_model_dict[base_model_for_treatment_model](
+                **hyperparams[base_model_for_treatment_model]
+            ),
+            calibration_cv=2,
+        )
+        estimated_pscore = classification_model_for_action.fit_predict(
+            action=bandit_feedback_test["action"],
+            position=bandit_feedback_test["position"],
+            context=bandit_feedback_test["context"],
+            n_folds=3,
+            evaluate_model_performance=True,
+            random_state=12345,
+        )
+        # fit importance weight estimators
+        estimated_importance_weights_dict = {}
+        for clf_name, clf_arguments in bipw_model_configurations.items():
+            clf = ImportanceWeightEstimator(
+                len_list=1,
+                n_actions=n_actions,
+                fitting_method=clf_arguments["fitting_method"],
+                base_model=clf_arguments["base_model"],
+            )
+            estimated_importance_weights_dict[clf_name] = clf.fit_predict(
+                action=bandit_feedback_test["action"],
+                context=bandit_feedback_test["context"],
+                action_dist=action_dist,
+                position=bandit_feedback_test["position"],
+                n_folds=2,
+                evaluate_model_performance=False,
+                random_state=12345,
+            )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback_test,
@@ -218,6 +308,8 @@ def test_offline_estimation_performance(
             ),
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
+            estimated_importance_weights=estimated_importance_weights_dict,
         )
 
         return relative_ee_i
@@ -250,3 +342,20 @@ def test_offline_estimation_performance(
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=1)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=100)"]
     assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning)"]
+    # test estimated_pscore and bipw
+    estimated_pscore_and_bipw_estimators = [
+        "cipw (estimated pscore)",
+        "snipw (estimated pscore)",
+        "dr (estimated pscore)",
+        "dr-os (estimated pscore)",
+        "bipw (svc raw)",
+        "bipw (svc sample)",
+        "bipw (random_forest raw)",
+        "bipw (random_forest sample)",
+    ]
+    for estimator_name in estimated_pscore_and_bipw_estimators:
+        assert (
+            relative_ee_df_mean["naive"] > relative_ee_df_mean[estimator_name]
+        ), f"{estimator_name} is worse than naive estimator"
+    #     print(estimator_name, relative_ee_df_mean[estimator_name])
+    # print(relative_ee_df_mean["naive"])
