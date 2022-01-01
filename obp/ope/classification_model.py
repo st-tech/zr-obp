@@ -76,8 +76,17 @@ class ImportanceWeightEstimator(BaseEstimator):
                 f"fitting_method must be either 'sample' or 'raw', but {self.fitting_method} is given"
             )
         if self.fitting_method == "raw" and self.action_context is not None:
-            check_array(array=self.action_context, name="action_context", expected_dim=2)
-            if self.action_context.shape != (self.n_actions, self.n_actions) or not np.allclose(self.action_context, np.eye(self.n_actions)):
+            check_array(
+                array=self.action_context, name="action_context", expected_dim=2
+            )
+            if (
+                self.action_context.shape
+                != (
+                    self.n_actions,
+                    self.n_actions,
+                )
+                or not np.allclose(self.action_context, np.eye(self.n_actions))
+            ):
                 raise ValueError(
                     "If fitting_method == 'raw', action_context must be None or identity matrix of size (n_actions, n_actions)."
                 )
