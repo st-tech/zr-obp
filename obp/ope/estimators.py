@@ -1830,7 +1830,7 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
         """
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = iw / 1 - self.lambda_ + self.lambda_ * iw
+        iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
         estimated_rewards = iw_hat * reward
 
         return estimated_rewards
@@ -1899,7 +1899,7 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
 
         # estimate the (high probability) upper bound of the bias of SGIPW
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = iw / 1 - self.lambda_ + self.lambda_ * iw
+        iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
         if use_bias_upper_bound:
             bias_term = estimate_high_probability_upper_bound_bias(
                 reward=reward,
@@ -2022,7 +2022,7 @@ class SubGaussianDoublyRobust(DoublyRobust):
         """
         n_rounds = action.shape[0]
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = iw / 1 - self.lambda_ + self.lambda_ * iw
+        iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
         q_hat_at_position = estimated_rewards_by_reg_model[
             np.arange(n_rounds), :, position
         ]
@@ -2109,7 +2109,7 @@ class SubGaussianDoublyRobust(DoublyRobust):
 
         # estimate the (high probability) upper bound of the bias of SGDR
         iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        iw_hat = iw / 1 - self.lambda_ + self.lambda_ * iw
+        iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
         if use_bias_upper_bound:
             bias_term = estimate_high_probability_upper_bound_bias(
                 reward=reward,
