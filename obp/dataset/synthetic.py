@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Class for Generating Synthetic Logged Bandit Feedback."""
+"""Class for Generating Synthetic Logged Bandit Data."""
 from dataclasses import dataclass
 from typing import Callable
 from typing import Optional
@@ -23,7 +23,7 @@ from .reward_type import RewardType
 
 @dataclass
 class SyntheticBanditDataset(BaseBanditDataset):
-    """Class for generating synthetic bandit dataset.
+    """Class for generating synthetic bandit data.
 
     Note
     -----
@@ -69,7 +69,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         If `beta` is large, the behavior policy becomes near-deterministic/near-optimal,
         while a small or negative value of `beta` leads to a sub-optimal behavior policy.
 
-    beta: float, default=1.0
+    beta: int or float, default=1.0
         Inverse temperature parameter, which controls the optimality and entropy of the behavior policy.
         A large value leads to a near-deterministic behavior policy,
         while a small value leads to a near-uniform behavior policy.
@@ -79,8 +79,8 @@ class SyntheticBanditDataset(BaseBanditDataset):
     n_deficient_actions: int, default=0
         Number of deficient actions having zero probability of being selected in the logged bandit data.
         If there are some deficient actions, the full/common support assumption is very likely to be violated,
-        leading to some bias for IPW-type estimators. See  Sachdeva et al.(2020) for details.
-        `n_deficient_actions` should be an integer smaller than `n_actions - 1` so that there exists at least one actions
+        leading to some bias for IPW-type estimators. See Sachdeva et al.(2020) for details.
+        `n_deficient_actions` should be an integer smaller than `n_actions - 1` so that there exists at least one action
         that have a positive probability of being selected by the behavior policy.
 
     random_state: int, default=12345
@@ -179,6 +179,19 @@ class SyntheticBanditDataset(BaseBanditDataset):
         """Initialize Class."""
         check_scalar(self.n_actions, "n_actions", int, min_val=2)
         check_scalar(self.dim_context, "dim_context", int, min_val=1)
+        check_scalar(self.beta, "beta", (int, float))
+        check_scalar(
+            self.n_deficient_actions,
+            "n_deficient_actions",
+            int,
+            min_val=0,
+            max_val=self.n_actions - 1,
+        )
+
+        if self.random_state is None:
+            raise ValueError("`random_state` must be given")
+        self.random_ = check_random_state(self.random_state)
+
         if RewardType(self.reward_type) not in [
             RewardType.BINARY,
             RewardType.CONTINUOUS,
@@ -187,24 +200,14 @@ class SyntheticBanditDataset(BaseBanditDataset):
                 f"`reward_type` must be either '{RewardType.BINARY.value}' or '{RewardType.CONTINUOUS.value}',"
                 f"but {self.reward_type} is given.'"
             )
-        check_scalar(self.beta, "beta", (int, float))
         check_scalar(self.reward_std, "reward_std", (int, float), min_val=0)
-        check_scalar(
-            self.n_deficient_actions,
-            "n_deficient_actions",
-            int,
-            min_val=0,
-            max_val=self.n_actions - 1,
-        )
-        if self.random_state is None:
-            raise ValueError("`random_state` must be given")
-        self.random_ = check_random_state(self.random_state)
         if self.reward_function is None:
             self.expected_reward = self.sample_contextfree_expected_reward()
         if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             self.reward_min = 0
             self.reward_max = 1e10
-        # one-hot encoding representations characterizing actions.
+
+        # one-hot encoding characterizing actions.
         if self.action_context is None:
             self.action_context = np.eye(self.n_actions, dtype=int)
         else:
@@ -213,7 +216,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             )
             if self.action_context.shape[0] != self.n_actions:
                 raise ValueError(
-                    "Expected `action_context.shape[0] == n_actions`, but found it False.'"
+                    "Expected `action_context.shape[0] == n_actions`, but found it False."
                 )
 
     @property
@@ -305,7 +308,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            Generated synthetic logged bandit dataset.
+            Synthesized logged bandit data.
 
         """
         check_scalar(n_rounds, "n_rounds", int, min_val=1)

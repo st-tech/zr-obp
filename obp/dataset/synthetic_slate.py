@@ -287,7 +287,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             self.reward_min = 0
             self.reward_max = 1e10
             self.reward_std = 1.0
-        # one-hot encoding representations characterizing each action
+        # one-hot encoding characterizing each action
         self.action_context = np.eye(self.n_unique_action, dtype=int)
 
     def obtain_standard_decay_action_interaction_weight_matrix(
