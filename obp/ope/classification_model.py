@@ -18,8 +18,7 @@ from ..utils import check_array, sample_action_fast, check_bandit_feedback_input
 
 @dataclass
 class ImportanceWeightEstimator(BaseEstimator):
-    """Machine learning model to distinguish between the behavior and evaluation policy (:math:`\\Pr[C = 1 | x, a]`),
-    where :math:`\\Pr[C=1|x,a]` is the probability that the data coming from the evaluation policy given action :math:`a` and :math:`x`.
+    """Machine learning model to estimate the importance weights induced by behavior and evaluation policies leveraging  classifier-based density ratio estimation.
 
     Parameters
     ------------
@@ -36,14 +35,14 @@ class ImportanceWeightEstimator(BaseEstimator):
     action_context: array-like, shape (n_actions, dim_action_context), default=None
         Context vector characterizing action (i.e., vector representation of each action).
         If not given, one-hot encoding of the action variable is used as default.
-        If fitting_method is 'raw', action_context must be None.
+        If fitting_method is 'raw', one-hot encoding will be used as action_context.
 
     fitting_method: str, default='sample'
         Method to fit the classification model.
         Must be one of ['sample', 'raw']. Each method is defined as follows:
-            - sample: actions are sampled by applying Gumbel-softmax trick to action_dist_at_position, and action features are represented by one-hot encoding of the sampled action.
+            - sample: actions are sampled from behavior and evaluation policies, respectively, and action features are represented by one-hot encoding of the sampled actions.
             - raw: action_dist_at_position are directly encoded as action features.
-        If fitting_method is 'raw', action_context must be None.
+        If fitting_method is 'raw', one-hot encoding will be used as action_context.
 
     calibration_cv: int, default=2
         Number of folds in the calibration procedure.
@@ -75,21 +74,6 @@ class ImportanceWeightEstimator(BaseEstimator):
             raise ValueError(
                 f"fitting_method must be either 'sample' or 'raw', but {self.fitting_method} is given"
             )
-        if self.fitting_method == "raw" and self.action_context is not None:
-            check_array(
-                array=self.action_context, name="action_context", expected_dim=2
-            )
-            if (
-                self.action_context.shape
-                != (
-                    self.n_actions,
-                    self.n_actions,
-                )
-                or not np.allclose(self.action_context, np.eye(self.n_actions))
-            ):
-                raise ValueError(
-                    "If fitting_method == 'raw', action_context must be None or identity matrix of size (n_actions, n_actions)."
-                )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
                 "base_model must be BaseEstimator or a child class of BaseEstimator"
@@ -108,7 +92,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             self.base_model_list = [
                 clone(self.base_model) for _ in np.arange(self.len_list)
             ]
-        if self.action_context is None:
+        if self.action_context is None or self.fitting_method == "raw":
             self.action_context = np.eye(self.n_actions, dtype=int)
 
     def fit(
@@ -134,7 +118,7 @@ class ImportanceWeightEstimator(BaseEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a classification model assumes that there is only one position.
+            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         random_state: int, default=None
@@ -208,7 +192,7 @@ class ImportanceWeightEstimator(BaseEstimator):
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a classification model assumes that there is only one position.
+            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         Returns
@@ -240,12 +224,11 @@ class ImportanceWeightEstimator(BaseEstimator):
         random_state: Optional[int] = None,
         evaluate_model_performance: bool = False,
     ) -> np.ndarray:
-        """Fit the classification model on given logged bandit feedback data and predict the importance weights of the same data.
+        """Fit the classification model on given logged bandit feedback data and predict the importance weights on the same data, possibly using cross-fitting to avoid over-fitting.
 
         Note
         ------
-        When `n_folds` is larger than 1, then the cross-fitting procedure is applied.
-        See the reference for the details about the cross-fitting technique.
+        When `n_folds` is larger than 1, the cross-fitting procedure is applied.
 
         Parameters
         ----------
@@ -260,7 +243,7 @@ class ImportanceWeightEstimator(BaseEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a classification model assumes that there is only one position.
+            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         n_folds: int, default=1
@@ -274,7 +257,7 @@ class ImportanceWeightEstimator(BaseEstimator):
 
         evaluate_model_performance: bool, default=False
             Whether the performance of the classification model is evaluated or not.
-            When True is given, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
+            If True, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
 
         Returns
         -----------
@@ -390,14 +373,12 @@ class ImportanceWeightEstimator(BaseEstimator):
         action: array-like, shape (n_rounds,)
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
-        action_context: array-like, shape shape (n_actions, dim_action_context)
-            Context vector characterizing action (i.e., vector representation of each action).
 
         action_dist_at_position: array-like, shape (n_rounds, n_actions,)
             Action choice probabilities of evaluation policy of each position (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
         sampled_action_at_position: array-like, shape (n_rounds, n_actions,)
-            One-hot encoding of actions sampled by evaluation policy of each position.
+            Actions sampled by evaluation policy for each data at each position.
 
         """
         behavior_policy_feature = np.c_[context, self.action_context[action]]
@@ -434,7 +415,7 @@ class PropensityScoreEstimator(BaseEstimator):
 
     calibration_cv: int, default=2
         Number of folds in the calibration procedure.
-        If calibration_cv <= 1, classification model is not calibrated.
+        If calibration_cv <= 1, calibration will not be applied.
 
     References
     -----------
@@ -490,7 +471,7 @@ class PropensityScoreEstimator(BaseEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a classification model assumes that there is only one position.
+            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         """
@@ -534,7 +515,7 @@ class PropensityScoreEstimator(BaseEstimator):
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a classification model assumes that there is only one position.
+            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         Returns
@@ -562,12 +543,11 @@ class PropensityScoreEstimator(BaseEstimator):
         random_state: Optional[int] = None,
         evaluate_model_performance: bool = False,
     ) -> np.ndarray:
-        """Fit the classification model on given logged bandit feedback data and predict the propensity score of the same data.
+        """Fit the classification model on given logged bandit feedback data and predict the propensity score on the same data, possibly using the cross-fitting procedure to avoid over-fitting.
 
         Note
         ------
-        When `n_folds` is larger than 1, then the cross-fitting procedure is applied.
-        See the reference for the details about the cross-fitting technique.
+        When `n_folds` is larger than 1, the cross-fitting procedure is applied.
 
         Parameters
         ----------
@@ -579,7 +559,7 @@ class PropensityScoreEstimator(BaseEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a classification model assumes that there is only one position.
+            If None is given, a classification model assumes that there is only a single position.
             When `len_list` > 1, this position argument has to be set.
 
         n_folds: int, default=1
@@ -593,7 +573,7 @@ class PropensityScoreEstimator(BaseEstimator):
 
         evaluate_model_performance: bool, default=False
             Whether the performance of the classification model is evaluated or not.
-            When True is given, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
+            If True, the predicted probability of the classification model and the true label of each fold is saved in `self.eval_result[fold]`
 
         Returns
         -----------

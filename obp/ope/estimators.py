@@ -1808,11 +1808,11 @@ class DoublyRobustWithShrinkage(DoublyRobust):
 
 @dataclass
 class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
-    """Balanced Inverse Probability Weighting (IPW) Estimator.
+    """Balanced Inverse Probability Weighting (B-IPW) Estimator.
 
     Note
     -------
-    Balanced Inverse Probability Weighting (IPW) estimates the policy value of evaluation policy :math:`\\pi_e` by
+    Balanced Inverse Probability Weighting (B-IPW) estimates the policy value of evaluation policy :math:`\\pi_e` by
 
     .. math::
 
@@ -1822,21 +1822,19 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     a behavior policy :math:`\\pi_b`.
     :math:`\\hat{w}(x,a):=\\Pr[C=1|x,a] / \\Pr[C=0|x,a]`, where :math:`\\Pr[C=1|x,a]` is the probability that the data coming from the evaluation policy given action :math:`a` and :math:`x`.
     :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
-    When the weight-clipping is applied, a large importance sampling ratio is clipped as :math:`\\hat{w_c}(x,a) := \\min \\{ \\lambda, \\hat{w}(x,a) \\}`
-    where :math:`\\lambda (>0)` is a hyperparameter that decides a maximum allowed importance weight.
+    When the weight-clipping is applied, large importance weights are clipped as :math:`\\hat{w_c}(x,a) := \\min \\{ \\lambda, \\hat{w}(x,a) \\}`
+    where :math:`\\lambda (>0)` is a hyperparameter to define a maximum value allowed for importance weights.
 
-    Balanced IPW re-weights the rewards by the ratio of the evaluation policy and behavior policy (importance sampling ratio).
-    Balanced IPW can be used even when the behavior policy (or the propensity score of the behavior policy) is not known or the behavior policy is deterministic.
-    When the evaluation policy is stochastic, it is not well known whether the balanced IPW performs well.
+    B-IPW re-weights the rewards by the importance weights estimated via a supervised classification procedure, and thus can be used even when the behavior policy (or the propensity score of the behavior policy) is not known. `obp.ope.ImportanceWeightEstimator` can be used to estimate the importance weights for B-IPW.
 
 
-    Please note that the original estimator of B-IPW is defined as follows (only when the evaluation policy is deterministic):
+    Note that, in the reference paper, B-IPW is defined as follows (only when the evaluation policy is deterministic):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{B-IPW}} (\\pi_e; \\mathcal{D}) := \\frac{\\mathbb{E}_{\\mathcal{D}} [\\pi_e (a_t|x_t) \\hat{w}(x_t,a_t) r_t]}{\\mathbb{E}_{\\mathcal{D}} [\\pi_e (a_t|x_t) \\hat{w}(x_t,a_t)},
+        \\hat{V}_{\\mathrm{B-IPW}} (\\pi_e; \\mathcal{D}) := \\frac{\\mathbb{E}_{\\mathcal{D}} [ \\hat{w}(x_t,\\pi_e (x_t)) r_t]}{\\mathbb{E}_{\\mathcal{D}} [ \\hat{w}(x_t,\\pi_e (x_t))},
 
-    where :math:`\\pi_e` is the evaluation policy, and our estimator is a bit different from the original estimator.
+    where :math:`\\pi_e` is a deterministic evaluation policy. We modify this original definition to adjust to stochastic evaluation policies.
 
     Parameters
     ------------
@@ -1888,7 +1886,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         estimated_importance_weights: array-like, shape (n_rounds,)
-            Importance weights estimated via supervised classification implemented in `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
+            Importance weights estimated via supervised classification using `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -1932,7 +1930,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         estimated_importance_weights: array-like, shape (n_rounds,)
-            Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
+            Importance weights estimated via supervised classification using `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
@@ -1995,7 +1993,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         estimated_importance_weights: array-like, shape (n_rounds,)
-            Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
+            Importance weights estimated via supervised classification using `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.

@@ -227,12 +227,12 @@ class OffPolicyEvaluation:
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         estimated_importance_weights: array-like, shape (n_rounds,)  or Dict[str, array-like], default=None
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
 
         Returns
@@ -290,12 +290,12 @@ class OffPolicyEvaluation:
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         estimated_importance_weights: array-like, shape (n_rounds,)  or Dict[str, array-like], default=None
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         alpha: float, default=0.05
             Significance level.
@@ -578,12 +578,12 @@ class OffPolicyEvaluation:
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         estimated_importance_weights: array-like, shape (n_rounds,)  or Dict[str, array-like], default=None
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
@@ -660,12 +660,12 @@ class OffPolicyEvaluation:
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         estimated_importance_weights: array-like, shape (n_rounds,)  or Dict[str, array-like], default=None
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
@@ -727,12 +727,12 @@ class OffPolicyEvaluation:
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         estimated_importance_weights: array-like, shape (n_rounds,)  or Dict[str, array-like], default=None
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`, i.e., :math:`\\hat{w}(x_t, a_t)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
         alpha: float, default=0.05
             Significance level.

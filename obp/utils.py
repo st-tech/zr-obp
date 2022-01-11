@@ -331,7 +331,7 @@ def check_ope_inputs(
         Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
 
     estimated_importance_weights: array-like, shape (n_rounds,), default=None
-        Importance weights estimated via supervised classification, i.e., :math:`\\hat{ww}(x_t, a_t)`.
+        Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
     """
     # action_dist
     check_array(array=action_dist, name="action_dist", expected_dim=3)

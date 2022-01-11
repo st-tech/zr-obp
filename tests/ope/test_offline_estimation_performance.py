@@ -212,9 +212,9 @@ def test_offline_estimation_performance(
     n_rounds: int,
     n_actions: int,
     dim_context: int,
-    base_model_for_evaluation_policy: str,
+    base_model_for_iw_estimator: str,
     base_model_for_reg_model: str,
-    base_model_for_treatment_model: str,
+    base_model_for_pscore_estimator: str,
 ) -> None:
     def process(i: int):
         # synthetic data generator
