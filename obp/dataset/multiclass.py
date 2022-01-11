@@ -18,6 +18,7 @@ from sklearn.utils import check_X_y
 
 from ..types import BanditFeedback
 from ..utils import check_array
+from ..utils import sample_action_fast
 from .base import BaseBanditDataset
 
 
@@ -68,6 +69,13 @@ class MultiClassToBanditReduction(BaseBanditDataset):
     alpha_b: float, default=0.9
         Ratio of a uniform random policy when constructing a **behavior** policy.
         Must be in the [0, 1) interval to make the behavior policy stochastic.
+
+    n_deficient_actions: int, default=0
+        Number of deficient actions having zero probability of being selected in the logged bandit data.
+        If there are some deficient actions, the full/common support assumption is very likely to be violated,
+        leading to some bias for IPW-type estimators. See  Sachdeva et al.(2020) for details.
+        `n_deficient_actions` should be an integer smaller than `n_actions - 1` so that there exists at least one actions
+        that have a positive probability of being selected by the behavior policy.
 
     dataset_name: str, default=None
         Name of the dataset.
@@ -144,12 +152,16 @@ class MultiClassToBanditReduction(BaseBanditDataset):
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
+    Noveen Sachdeva, Yi Su, and Thorsten Joachims.
+    "Off-policy Bandits with Deficient Support.", 2020.
+
     """
 
     X: np.ndarray
     y: np.ndarray
     base_classifier_b: ClassifierMixin
     alpha_b: float = 0.8
+    n_deficient_actions: int = 0
     dataset_name: Optional[str] = None
 
     def __post_init__(self) -> None:
@@ -157,12 +169,19 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         if not is_classifier(self.base_classifier_b):
             raise ValueError("`base_classifier_b` must be a classifier")
         check_scalar(self.alpha_b, "alpha_b", float, min_val=0.0)
+        check_scalar(
+            self.n_deficient_actions,
+            "n_deficient_actions",
+            int,
+            min_val=0,
+            max_val=self.n_actions - 1,
+        )
         if self.alpha_b >= 1.0:
             raise ValueError(f"`alpha_b`= {self.alpha_b}, must be < 1.0.")
 
         self.X, y = check_X_y(X=self.X, y=self.y, ensure_2d=True, multi_output=False)
-        self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index action
-        # fully observed labels
+        self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index actions
+        # fully observed labels (full bandit feedback)
         self.y_full = np.zeros((self.n_rounds, self.n_actions))
         self.y_full[np.arange(self.n_rounds), y] = 1
 
@@ -242,22 +261,31 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         pi_b[np.arange(self.n_rounds_ev), preds] = (
             self.alpha_b + (1.0 - self.alpha_b) / self.n_actions
         )
-        # sample action and factual reward based on the behavior policy
-        action = np.zeros(self.n_rounds_ev, dtype=int)
-        for i, p in enumerate(pi_b):
-            action[i] = random_.choice(
-                np.arange(self.n_actions, dtype=int), p=p, replace=False
+        if self.n_deficient_actions > 0:
+            deficient_actions = np.argsort(
+                random_.gumbel(size=(self.n_rounds_ev, self.n_actions)), axis=1
+            )[:, ::-1][:, : self.n_deficient_actions]
+            deficient_actions_idx = (
+                np.tile(np.arange(self.n_rounds_ev), (self.n_deficient_actions, 1)).T,
+                deficient_actions,
             )
-        reward = self.y_full_ev[np.arange(self.n_rounds_ev), action]
+            pi_b[deficient_actions_idx] = 0.0  # create some deficient actions
+            pi_b /= pi_b.sum(1)[
+                :, np.newaxis
+            ]  # re-normalize the probability distribution
+        # sample actions and factual rewards
+        actions = sample_action_fast(pi_b, random_state=random_state)
+        rewards = self.y_full_ev[np.arange(self.n_rounds_ev), actions]
 
         return dict(
             n_actions=self.n_actions,
             n_rounds=self.n_rounds_ev,
             context=self.X_ev,
-            action=action,
-            reward=reward,
+            action=actions,
+            reward=rewards,
             position=None,  # position effect is not considered in classification data
-            pscore=pi_b[np.arange(self.n_rounds_ev), action],
+            pi_b=pi_b[:, :, np.newaxis],
+            pscore=pi_b[np.arange(self.n_rounds_ev), actions],
         )
 
     def obtain_action_dist_by_eval_policy(

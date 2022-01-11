@@ -76,6 +76,13 @@ class SyntheticBanditDataset(BaseBanditDataset):
         A positive value leads to a near-optimal behavior policy,
         while a negative value leads to a sub-optimal behavior policy.
 
+    n_deficient_actions: int, default=0
+        Number of deficient actions having zero probability of being selected in the logged bandit data.
+        If there are some deficient actions, the full/common support assumption is very likely to be violated,
+        leading to some bias for IPW-type estimators. See  Sachdeva et al.(2020) for details.
+        `n_deficient_actions` should be an integer smaller than `n_actions - 1` so that there exists at least one actions
+        that have a positive probability of being selected by the behavior policy.
+
     random_state: int, default=12345
         Controls the random seed in sampling synthetic bandit data.
 
@@ -144,6 +151,14 @@ class SyntheticBanditDataset(BaseBanditDataset):
                     0.14065505])
         }
 
+    References
+    ------------
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+
+    Noveen Sachdeva, Yi Su, and Thorsten Joachims.
+    "Off-policy Bandits with Deficient Support.", 2020.
+
     """
 
     n_actions: int
@@ -156,6 +171,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         Callable[[np.ndarray, np.ndarray], np.ndarray]
     ] = None
     beta: float = 1.0
+    n_deficient_actions: int = 0
     random_state: int = 12345
     dataset_name: str = "synthetic_bandit_dataset"
 
@@ -173,6 +189,13 @@ class SyntheticBanditDataset(BaseBanditDataset):
             )
         check_scalar(self.beta, "beta", (int, float))
         check_scalar(self.reward_std, "reward_std", (int, float), min_val=0)
+        check_scalar(
+            self.n_deficient_actions,
+            "n_deficient_actions",
+            int,
+            min_val=0,
+            max_val=self.n_actions - 1,
+        )
         if self.random_state is None:
             raise ValueError("`random_state` must be given")
         self.random_ = check_random_state(self.random_state)
@@ -195,7 +218,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
     @property
     def len_list(self) -> int:
-        """Length of recommendation lists."""
+        """Length of recommendation lists, slate size."""
         return 1
 
     def sample_contextfree_expected_reward(self) -> np.ndarray:
@@ -286,10 +309,10 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
         """
         check_scalar(n_rounds, "n_rounds", int, min_val=1)
-        context = self.random_.normal(size=(n_rounds, self.dim_context))
+        contexts = self.random_.normal(size=(n_rounds, self.dim_context))
 
         # calc expected reward given context and action
-        expected_reward_ = self.calc_expected_reward(context)
+        expected_reward_ = self.calc_expected_reward(contexts)
         if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             # correct expected_reward_, as we use truncated normal distribution here
             mean = expected_reward_
@@ -299,33 +322,48 @@ class SyntheticBanditDataset(BaseBanditDataset):
                 a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
             )
 
-        # sample actions for each round based on the behavior policy
+        # calculate the action choice probabilities of the behavior policy
         if self.behavior_policy_function is None:
-            pi_b = softmax(self.beta * expected_reward_)
+            pi_b_logits = expected_reward_
         else:
             pi_b_logits = self.behavior_policy_function(
-                context=context,
+                context=contexts,
                 action_context=self.action_context,
                 random_state=self.random_state,
             )
+        # create some deficient actions based on the value of `n_deficient_actions`
+        if self.n_deficient_actions > 0:
+            pi_b = np.zeros_like(pi_b_logits)
+            n_supported_actions = self.n_actions - self.n_deficient_actions
+            supported_actions = np.argsort(
+                self.random_.gumbel(size=(n_rounds, self.n_actions)), axis=1
+            )[:, ::-1][:, :n_supported_actions]
+            supported_actions_idx = (
+                np.tile(np.arange(n_rounds), (n_supported_actions, 1)).T,
+                supported_actions,
+            )
+            pi_b[supported_actions_idx] = softmax(
+                self.beta * pi_b_logits[supported_actions_idx]
+            )
+        else:
             pi_b = softmax(self.beta * pi_b_logits)
-        action = sample_action_fast(pi_b, random_state=self.random_state)
-        pscore = pi_b[np.arange(n_rounds), action]
+        # sample actions for each round based on the behavior policy
+        actions = sample_action_fast(pi_b, random_state=self.random_state)
 
-        # sample reward based on the context and action
-        reward = self.sample_reward_given_expected_reward(expected_reward_, action)
+        # sample rewards based on the context and action
+        rewards = self.sample_reward_given_expected_reward(expected_reward_, actions)
 
         return dict(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
-            context=context,
+            context=contexts,
             action_context=self.action_context,
-            action=action,
+            action=actions,
             position=None,  # position effect is not considered in synthetic data
-            reward=reward,
+            reward=rewards,
             expected_reward=expected_reward_,
             pi_b=pi_b[:, :, np.newaxis],
-            pscore=pscore,
+            pscore=pi_b[np.arange(n_rounds), actions],
         )
 
     def calc_ground_truth_policy_value(
