@@ -96,16 +96,6 @@ invalid_input_of_initializing_importance_weight_estimator = [
         "fitting_method must be either 'sample' or 'raw', but awesome is given",
     ),
     (
-        np.random.uniform(size=(n_actions, 8)),  #
-        n_actions,
-        len_list,
-        "raw",  #
-        RandomForestClassifier(**hyperparams["random_forest"]),
-        2,
-        ValueError,
-        "If fitting_method == 'raw', action_context must be None or identity matrix",
-    ),
-    (
         np.random.uniform(size=(n_actions, 8)),
         n_actions,
         len_list,
