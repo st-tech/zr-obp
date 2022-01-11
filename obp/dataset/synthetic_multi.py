@@ -21,12 +21,12 @@ from .synthetic import SyntheticBanditDataset
 
 @dataclass
 class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
-    """Class for generating synthetic bandit data with multiple logging/behavior policies.
+    """Class for synthesizing bandit data with multiple logging/behavior policies.
 
     Note
     -----
     By calling the `obtain_batch_bandit_feedback` method several times,
-    we sample different sets of synthetic logged bandit data with different random sampling under the same setting.
+    we can resample logged bandit data from the same data generating distribution.
     This can be used to estimate confidence intervals of the performances of OPE estimators.
 
     If None is given as `behavior_policy_function`, the behavior policy will be generated from the true expected reward function. See the description of the `beta` argument, which controls the behavior policy.
@@ -59,14 +59,14 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
 
     reward_type: str, default='binary'
         Type of reward variable, which must be either 'binary' or 'continuous'.
-        When 'binary' is given, rewards are sampled from the Bernoulli distribution.
-        When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
+        When 'binary', rewards are sampled from the Bernoulli distribution.
+        When 'continuous', rewards are sampled from the truncated Normal distribution with `scale=1`.
         The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function defining the expected reward for each given action-context pair,
         i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is given, context **independent** expected reward for each action will be
+        If None, context **independent** expected rewards will be
         sampled from the uniform distribution automatically.
 
     reward_std: float, default=1.0
@@ -76,7 +76,7 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
 
     action_context: np.ndarray, default=None
          Vector representation of (discrete) actions.
-         If None is given, one-hot representation will be used.
+         If None, one-hot representation will be used.
 
     n_deficient_actions: int, default=0
         Number of deficient actions having zero probability of being selected in the logged bandit data.
@@ -96,62 +96,55 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
 
     .. code-block:: python
 
-        >>> import numpy as np
         >>> from obp.dataset import (
-            SyntheticBanditDataset,
-            linear_reward_function,
-            linear_behavior_policy
+            SyntheticBanditDatasetWithMultiLoggers,
+            logistic_reward_function
         )
 
         # generate synthetic contextual bandit feedback with 10 actions.
         >>> dataset = SyntheticBanditDataset(
-                n_actions=10,
+                n_actions=3,
                 dim_context=5,
                 reward_function=logistic_reward_function,
-                beta=3,
+                betas=[-3, 0, 3],
+                rhos=[0.2, 0.5, 0.3],
                 random_state=12345
             )
         >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=100000)
         >>> bandit_feedback
-        {
-            'n_rounds': 100000,
-            'n_actions': 10,
-            'context': array([[-0.20470766,  0.47894334, -0.51943872, -0.5557303 ,  1.96578057],
-                    [ 1.39340583,  0.09290788,  0.28174615,  0.76902257,  1.24643474],
-                    [ 1.00718936, -1.29622111,  0.27499163,  0.22891288,  1.35291684],
-                    ...,
-                    [ 1.36946256,  0.58727761, -0.69296769, -0.27519988, -2.10289159],
-                    [-0.27428715,  0.52635353,  1.02572168, -0.18486381,  0.72464834],
-                    [-1.25579833, -1.42455203, -0.26361242,  0.27928604,  1.21015571]]),
-            'action_context': array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]),
-            'action': array([7, 4, 0, ..., 7, 9, 6]),
-            'position': None,
-            'reward': array([0, 1, 1, ..., 0, 1, 0]),
-            'expected_reward': array([[0.80210203, 0.73828559, 0.83199558, ..., 0.81190503, 0.70617705,
-                    0.68985306],
-                    [0.94119582, 0.93473317, 0.91345213, ..., 0.94140688, 0.93152449,
-                    0.90132868],
-                    [0.87248862, 0.67974991, 0.66965669, ..., 0.79229752, 0.82712978,
-                    0.74923536],
-                    ...,
-                    [0.64856003, 0.38145901, 0.84476094, ..., 0.40962057, 0.77114661,
-                    0.65752798],
-                    [0.73208527, 0.82012699, 0.78161352, ..., 0.72361416, 0.8652249 ,
-                    0.82571751],
-                    [0.40348366, 0.24485417, 0.24037926, ..., 0.49613133, 0.30714854,
-                    0.5527749 ]]),
-            'pscore': array([0.05423855, 0.10339675, 0.09756788, ..., 0.05423855, 0.07250876,
-                    0.14065505])
-        }
+            {
+                'n_rounds': 10000,
+                'n_actions': 5,
+                'n_strata': 3,
+                'context': array([[-0.20470766,  0.47894334, -0.51943872, -0.5557303 ,  1.96578057],
+                        [ 1.39340583,  0.09290788,  0.28174615,  0.76902257,  1.24643474],
+                        [ 1.00718936, -1.29622111,  0.27499163,  0.22891288,  1.35291684],
+                        ...,
+                        [-1.27028221,  0.80914602, -0.45084222,  0.47179511,  1.89401115],
+                        [-0.68890924,  0.08857502, -0.56359347, -0.41135069,  0.65157486],
+                        [ 0.51204121,  0.65384817, -1.98849253, -2.14429131, -0.34186901]]),
+                'action_context': array([[1, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0],
+                        [0, 0, 1, 0, 0],
+                        [0, 0, 0, 1, 0],
+                        [0, 0, 0, 0, 1]]),
+                'action': array([4, 0, 0, ..., 0, 2, 3]),
+                'position': None,
+                'reward': array([1, 0, 0, ..., 1, 1, 0]),
+                'expected_reward': array([[0.43166951, 0.46506373, 0.62424214, 0.71722648, 0.74364688],
+                        [0.45615482, 0.67859997, 0.68074447, 0.74845979, 0.70857809],
+                        [0.49314956, 0.54930546, 0.66069967, 0.71459597, 0.84417897],
+                        ...,
+                        [0.25147493, 0.49371688, 0.56138603, 0.73893432, 0.6977549 ],
+                        [0.38629307, 0.39534047, 0.56645931, 0.62379871, 0.70810635],
+                        [0.7394717 , 0.39578418, 0.82279914, 0.65471639, 0.73325977]]),
+                        [0.19032729],
+                        [0.1965272 ]]]),
+                'pscore': array([0.11948302, 0.34389468, 0.3018088 , ..., 0.07281752, 0.20415909,
+                        0.17634078]),
+                'pscore_star': array([0.21089116, 0.20053648, 0.19505875, ..., 0.20616291, 0.19524095,
+                        0.19032729])
+            }
 
     References
     ------------

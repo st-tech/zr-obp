@@ -114,7 +114,7 @@ class RegressionModel(BaseEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a regression model assumes that there is only one position.
+            If None, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
@@ -258,7 +258,7 @@ class RegressionModel(BaseEstimator):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a regression model assumes that there is only one position.
+            If None, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None

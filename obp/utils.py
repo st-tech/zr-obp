@@ -553,7 +553,7 @@ def _check_slate_ope_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit data.
@@ -624,7 +624,7 @@ def check_sips_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit data.
@@ -683,16 +683,16 @@ def check_iips_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit data.
 
     pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-        Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
+        Marginal action choice probabilities of the slot (:math:`l`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
 
     evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-        Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+        Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
     """
     _check_slate_ope_inputs(
@@ -727,7 +727,7 @@ def check_rips_inputs(
         Slate id observed in each round of the logged bandit feedback.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
         Positions of each round and slot in the given logged bandit data.
@@ -736,7 +736,7 @@ def check_rips_inputs(
         Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
     evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+        Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
     """
     _check_slate_ope_inputs(

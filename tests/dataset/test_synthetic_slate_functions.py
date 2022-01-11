@@ -170,7 +170,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "reward_type must be either",
+        "`reward_type` must be either",
     ),
     (
         np.ones([5, 2]),
@@ -184,7 +184,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "reward_structure must be either",
+        "`reward_structure` must be either",
     ),
     (
         np.ones([5, 2]),
@@ -198,7 +198,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "the shape of action_interaction_weight_matrix must be",
+        "the shape of `action_interaction_weight_matrix` must be",
     ),
     (
         np.ones([5, 2]),
@@ -212,7 +212,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "the shape of action_interaction_weight_matrix must be",
+        "the shape of `action_interaction_weight_matrix` must be",
     ),
     (
         np.ones([5, 2]),
@@ -226,7 +226,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "the shape of action_interaction_weight_matrix must be",
+        "the shape of `action_interaction_weight_matrix` must be",
     ),
     (
         np.ones([5, 2]),
@@ -240,7 +240,7 @@ invalid_input_of_action_interaction_reward_function = [
         False,
         1,
         ValueError,
-        "the shape of action_interaction_weight_matrix must be",
+        "the shape of `action_interaction_weight_matrix` must be",
     ),
 ]
 

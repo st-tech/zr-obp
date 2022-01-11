@@ -147,7 +147,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a learner assumes that there is only one position.
+            If None, a learner assumes that there is only one position.
             When `len_list` > 1, position has to be set.
 
         """
@@ -424,7 +424,7 @@ class QLearner(BaseOfflinePolicyLearner):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a learner assumes that there is only one position.
+            If None, a learner assumes that there is only one position.
             When `len_list` > 1, position has to be set.
 
         """
@@ -932,7 +932,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a learner assumes that there is only one position.
+            If None, a learner assumes that there is only one position.
 
         Returns
         --------
@@ -1022,7 +1022,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         position: array-like, shape (n_rounds,), default=None
             Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None is given, a learner assumes that there is only one position.
+            If None, a learner assumes that there is only one position.
             When `len_list` > 1, position has to be set.
             Currently, this feature is not supported.
 

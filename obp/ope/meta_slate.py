@@ -174,10 +174,10 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         Returns
         ----------
@@ -215,10 +215,10 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -274,10 +274,10 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -348,10 +348,10 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -457,10 +457,10 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
@@ -519,10 +519,10 @@ class SlateOffPolicyEvaluation:
             Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.

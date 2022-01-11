@@ -11,7 +11,6 @@ from obp.dataset.synthetic import polynomial_behavior_policy
 from obp.dataset.synthetic import polynomial_reward_function
 from obp.dataset.synthetic import sparse_reward_function
 from obp.dataset.synthetic import SyntheticBanditDataset
-from obp.dataset.synthetic_multi import SyntheticBanditDatasetWithMultiLoggers
 from obp.dataset.synthetic_continuous import linear_behavior_policy_continuous
 from obp.dataset.synthetic_continuous import linear_reward_funcion_continuous
 from obp.dataset.synthetic_continuous import linear_synthetic_policy_continuous
@@ -19,6 +18,7 @@ from obp.dataset.synthetic_continuous import quadratic_reward_funcion_continuous
 from obp.dataset.synthetic_continuous import sign_synthetic_policy_continuous
 from obp.dataset.synthetic_continuous import SyntheticContinuousBanditDataset
 from obp.dataset.synthetic_continuous import threshold_synthetic_policy_continuous
+from obp.dataset.synthetic_multi import SyntheticBanditDatasetWithMultiLoggers
 from obp.dataset.synthetic_slate import action_interaction_reward_function
 from obp.dataset.synthetic_slate import linear_behavior_policy_logit
 from obp.dataset.synthetic_slate import SyntheticSlateBanditDataset

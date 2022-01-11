@@ -61,7 +61,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
@@ -170,7 +170,7 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
@@ -225,7 +225,7 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
@@ -318,7 +318,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
@@ -372,16 +372,16 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t, k}|x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -461,7 +461,7 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
@@ -518,16 +518,16 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slates (i.e., rounds or lists of actions).
 
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -593,7 +593,7 @@ class BaseSlateSelfNormalizedInverseProbabilityWeighting(
         Parameters
         ----------
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
@@ -669,7 +669,7 @@ class SelfNormalizedSlateStandardIPS(
         Parameters
         ----------
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(k)`.
 
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
