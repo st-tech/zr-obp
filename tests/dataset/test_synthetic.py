@@ -46,6 +46,19 @@ def test_synthetic_init():
     with pytest.raises(TypeError):
         SyntheticBanditDataset(n_actions=2, beta=None)
 
+    # n_deficient_actions
+    with pytest.raises(TypeError):
+        SyntheticBanditDataset(n_actions=2, n_deficient_actions="aaa")
+
+    with pytest.raises(TypeError):
+        SyntheticBanditDataset(n_actions=2, n_deficient_actions=None)
+
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, n_deficient_actions=-1)
+
+    with pytest.raises(ValueError):
+        SyntheticBanditDataset(n_actions=2, n_deficient_actions=2)
+
     # action_context
     with pytest.raises(ValueError):
         SyntheticBanditDataset(n_actions=2, action_context="aaa")
@@ -145,42 +158,48 @@ def test_synthetic_obtain_batch_bandit_feedback():
     # bandit feedback
     n_rounds = 10
     n_actions = 5
-    dataset = SyntheticBanditDataset(n_actions=n_actions, beta=0)
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    assert bandit_feedback["n_rounds"] == n_rounds
-    assert bandit_feedback["n_actions"] == n_actions
-    assert (
-        bandit_feedback["context"].shape[0] == n_rounds  # n_rounds
-        and bandit_feedback["context"].shape[1] == 1  # default dim_context
-    )
-    assert (
-        bandit_feedback["action_context"].shape[0] == n_actions
-        and bandit_feedback["action_context"].shape[1] == n_actions
-    )
-    assert (
-        bandit_feedback["action"].ndim == 1
-        and len(bandit_feedback["action"]) == n_rounds
-    )
-    assert bandit_feedback["position"] is None
-    assert (
-        bandit_feedback["reward"].ndim == 1
-        and len(bandit_feedback["reward"]) == n_rounds
-    )
-    assert (
-        bandit_feedback["expected_reward"].shape[0] == n_rounds
-        and bandit_feedback["expected_reward"].shape[1] == n_actions
-    )
-    assert (
-        bandit_feedback["pi_b"].shape[0] == n_rounds
-        and bandit_feedback["pi_b"].shape[1] == n_actions
-    )
-    # when `beta=0`, behavior_policy should be uniform
-    uniform_policy = np.ones_like(bandit_feedback["pi_b"]) / dataset.n_actions
-    assert np.allclose(bandit_feedback["pi_b"], uniform_policy)
-    assert (
-        bandit_feedback["pscore"].ndim == 1
-        and len(bandit_feedback["pscore"]) == n_rounds
-    )
+    for n_deficient_actions in [0, 2]:
+        dataset = SyntheticBanditDataset(
+            n_actions=n_actions, beta=0, n_deficient_actions=n_deficient_actions
+        )
+        bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+        assert bandit_feedback["n_rounds"] == n_rounds
+        assert bandit_feedback["n_actions"] == n_actions
+        assert (
+            bandit_feedback["context"].shape[0] == n_rounds  # n_rounds
+            and bandit_feedback["context"].shape[1] == 1  # default dim_context
+        )
+        assert (
+            bandit_feedback["action_context"].shape[0] == n_actions
+            and bandit_feedback["action_context"].shape[1] == n_actions
+        )
+        assert (
+            bandit_feedback["action"].ndim == 1
+            and len(bandit_feedback["action"]) == n_rounds
+        )
+        assert bandit_feedback["position"] is None
+        assert (
+            bandit_feedback["reward"].ndim == 1
+            and len(bandit_feedback["reward"]) == n_rounds
+        )
+        assert (
+            bandit_feedback["expected_reward"].shape[0] == n_rounds
+            and bandit_feedback["expected_reward"].shape[1] == n_actions
+        )
+        assert (
+            bandit_feedback["pi_b"].shape[0] == n_rounds
+            and bandit_feedback["pi_b"].shape[1] == n_actions
+        )
+        # when `beta=0`, behavior_policy should be uniform
+        if n_deficient_actions == 0:
+            uniform_policy = np.ones_like(bandit_feedback["pi_b"]) / n_actions
+            assert np.allclose(bandit_feedback["pi_b"], uniform_policy)
+        assert np.allclose(bandit_feedback["pi_b"][:, :, 0].sum(1), np.ones(n_rounds))
+        assert (bandit_feedback["pi_b"] == 0).sum() == n_deficient_actions * n_rounds
+        assert (
+            bandit_feedback["pscore"].ndim == 1
+            and len(bandit_feedback["pscore"]) == n_rounds
+        )
 
 
 # expected_reward, action_dist, description
