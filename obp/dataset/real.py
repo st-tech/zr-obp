@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Dataset Class for Real-World Logged Bandit Feedback."""
+"""Dataset Class for Real-World Logged Bandit Data."""
 from dataclasses import dataclass
 from logging import basicConfig
 from logging import getLogger
@@ -37,7 +37,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     Parameters
     -----------
     behavior_policy: str
-        Name of the behavior policy that generated the logged bandit feedback data.
+        Name of the behavior policy that generated the logged bandit data.
         Must be either 'random' or 'bts'.
 
     campaign: str
@@ -70,7 +70,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             "random",
         ]:
             raise ValueError(
-                f"behavior_policy must be either of 'bts' or 'random', but {self.behavior_policy} is given"
+                f"`behavior_policy` must be either of 'bts' or 'random', but {self.behavior_policy} is given"
             )
 
         if self.campaign not in [
@@ -79,12 +79,12 @@ class OpenBanditDataset(BaseRealBanditDataset):
             "women",
         ]:
             raise ValueError(
-                f"campaign must be one of 'all', 'men', or 'women', but {self.campaign} is given"
+                f"`campaign` must be one of 'all', 'men', or 'women', but {self.campaign} is given"
             )
 
         if self.data_path is None:
             logger.info(
-                "When `data_path` is not given, this class downloads the example small-sized version of the Open Bandit Dataset."
+                "When `data_path` is not given, this class downloads the small-sized version of Open Bandit Dataset."
             )
             self.data_path = Path(__file__).parent / "obd"
         else:
@@ -93,7 +93,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             elif isinstance(self.data_path, str):
                 self.data_path = Path(self.data_path)
             else:
-                raise ValueError("data_path must be a string or Path")
+                raise ValueError("`data_path` must be a string or Path")
         self.data_path = self.data_path / self.behavior_policy / self.campaign
         self.raw_data_file = f"{self.campaign}.csv"
 
@@ -102,7 +102,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     @property
     def n_rounds(self) -> int:
-        """Total number of rounds contained in the logged bandit dataset."""
+        """Size of the logged bandit data."""
         return self.data.shape[0]
 
     @property
@@ -117,7 +117,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
 
     @property
     def len_list(self) -> int:
-        """Length of recommendation lists."""
+        """Length of recommendation lists, slate size."""
         return int(self.position.max() + 1)
 
     @classmethod
@@ -129,12 +129,12 @@ class OpenBanditDataset(BaseRealBanditDataset):
         test_size: float = 0.3,
         is_timeseries_split: bool = False,
     ) -> float:
-        """Calculate on-policy policy value estimate (used as a ground-truth policy value).
+        """Calculate the on-policy policy value estimate (used as a ground-truth policy value).
 
         Parameters
         ----------
         behavior_policy: str
-            Name of the behavior policy that generated the log data.
+            Name of the behavior policy that generated the logged bandit data.
             Must be either 'random' or 'bts'.
 
         campaign: str
@@ -150,14 +150,14 @@ class OpenBanditDataset(BaseRealBanditDataset):
             This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged bandit feedback data by time series.
+            If true, split the original logged bandit data by time series.
 
         Returns
         ---------
         on_policy_policy_value_estimate: float
-            Policy value of the behavior policy estimated by on-policy estimation, i.e., :math:`\\mathbb{E}_{\\mathcal{D}} [r_t]`.
-            where :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
-            This parameter is used as a ground-truth policy value in the evaluation of OPE estimators.
+            Policy value of the behavior policy estimated by on-policy estimation, i.e., :math:`\\mathbb{E}_{n} [r_i]`.
+            where :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`n` observations in :math:`\\mathcal{D}`.
+            This is used as a ground-truth policy value in the evaluation of OPE estimators.
 
         """
         bandit_feedback = cls(
@@ -210,7 +210,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
     def obtain_batch_bandit_feedback(
         self, test_size: float = 0.3, is_timeseries_split: bool = False
     ) -> Union[BanditFeedback, Tuple[BanditFeedback, BanditFeedback]]:
-        """Obtain batch logged bandit feedback.
+        """Obtain batch logged bandit data.
 
         Parameters
         -----------
@@ -220,19 +220,19 @@ class OpenBanditDataset(BaseRealBanditDataset):
             This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged bandit feedback data into train and test sets based on time series.
+            If true, split the original logged bandit data into train and test sets based on time series.
 
         Returns
         --------
         bandit_feedback: BanditFeedback
-            A dictionary containing batch logged bandit feedback data collected by a behavior policy.
+            A dictionary containing batch logged bandit data collected by the behavior policy.
             The keys of the dictionary are as follows.
-            - n_rounds: number of rounds (size) of the logged bandit data
+            - n_rounds: number of rounds, data size of the logged bandit data
             - n_actions: number of actions (:math:`|\mathcal{A}|`)
-            - action: action variables sampled by a behavior policy
-            - position: positions where actions are recommended
-            - reward: reward variables
-            - pscore: action choice probabilities by a behavior policy
+            - action: action variables sampled by the behavior policy
+            - position: positions where actions are recommended, there are three positions in the ZOZOTOWN rec interface
+            - reward: binary reward variables, click indicators
+            - pscore: action choice probabilities by the behavior policy, propensity scores
             - context: context vectors such as user-related features and user-item affinity scores
             - action_context: item-related context vectors
 
@@ -306,7 +306,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             This argument matters only when `is_timeseries_split=True` (the out-sample case).
 
         is_timeseries_split: bool, default=False
-            If true, split the original logged bandit feedback data into train and test sets based on time series.
+            If true, split the original logged bandit data into train and test sets based on time series.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -314,14 +314,14 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         --------
         bandit_feedback: BanditFeedback
-            A dictionary containing logged bandit feedback data sampled independently from the original data with replacement.
+            A dictionary containing logged bandit data collected by the behavior policy.
             The keys of the dictionary are as follows.
-            - n_rounds: number of rounds (size) of the logged bandit data
-            - n_actions: number of actions
-            - action: action variables sampled by a behavior policy
-            - position: positions where actions are recommended by a behavior policy
-            - reward: reward variables
-            - pscore: action choice probabilities by a behavior policy
+            - n_rounds: number of rounds, data size of the logged bandit data
+            - n_actions: number of actions (:math:`|\mathcal{A}|`)
+            - action: action variables sampled by the behavior policy
+            - position: positions where actions are recommended, there are three positions in the ZOZOTOWN rec interface
+            - reward: binary reward variables, click indicators
+            - pscore: action choice probabilities by the behavior policy, propensity scores
             - context: context vectors such as user-related features and user-item affinity scores
             - action_context: item-related context vectors
 

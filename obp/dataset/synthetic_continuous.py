@@ -46,7 +46,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+        i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None is given, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
@@ -154,17 +154,17 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         self,
         n_rounds: int,
     ) -> BanditFeedback:
-        """Obtain batch logged bandit feedback.
+        """Obtain batch logged bandit data.
 
         Parameters
         ----------
         n_rounds: int
-            Number of rounds for synthetic bandit feedback data.
+            Number of rounds for synthetic logged bandit data.
 
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            Generated synthetic bandit feedback dataset with continuous actions.
+            Generated synthetic logged bandit dataset with continuous actions.
 
         """
         check_scalar(n_rounds, name="n_rounds", target_type=int, min_val=1)
@@ -239,7 +239,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         Returns
         ----------
         policy_value: float
-            The policy value of the evaluation policy on the given test bandit feedback data.
+            The policy value of the evaluation policy on the given test logged bandit data.
 
         """
         check_array(array=context, name="context", expected_dim=2)

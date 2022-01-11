@@ -93,7 +93,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating expected reward for each given action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+        i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None is given, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 
@@ -532,7 +532,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Logit values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
 
         n_rounds: int
-            Number of rounds for synthetic bandit feedback data.
+            Number of rounds for synthetic logged bandit data.
 
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
@@ -719,12 +719,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool = True,
         clip_logit_value: Optional[float] = None,
     ) -> BanditFeedback:
-        """Obtain batch logged bandit feedback.
+        """Obtain batch logged bandit data.
 
         Parameters
         ----------
         n_rounds: int
-            Number of rounds for synthetic bandit feedback data.
+            Number of rounds for synthetic logged bandit data.
 
         return_pscore_item_position: bool, default=True
             A boolean parameter whether `pscore_item_position` is returned or not.
@@ -739,7 +739,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            Generated synthetic slate bandit feedback dataset.
+            Generated synthetic slate logged bandit dataset.
 
         """
         check_scalar(n_rounds, "n_rounds", int, min_val=1)
@@ -1270,7 +1270,7 @@ def action_interaction_reward_function(
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function generating expected reward for each given action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+        i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None is given, context **independent** expected reward for each action will be
         sampled from the uniform distribution automatically.
 

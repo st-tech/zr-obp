@@ -590,9 +590,9 @@ class QLearner(BaseOfflinePolicyLearner):
 
         .. math::
 
-            \\pi_{k} (a | x) = \\frac{\\mathrm{exp}( \\hat{q}_{k}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}_{k}(x,a^{\\prime}) / \\tau)}
+            \\pi_{k} (a|x) = \\frac{\\mathrm{exp}( \\hat{q}_{k}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}_{k}(x,a^{\\prime}) / \\tau)}
 
-        where :math:`\\pi_{k} (a | x)` is the resulting action choice probabilities at position :math:`k`.
+        where :math:`\\pi_{k} (a|x)` is the resulting action choice probabilities at position :math:`k`.
         :math:`\\tau` is a temperature hyperparameter.
         :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a q function estimator for position :math:`k`, which is now implemented in the `predict_score` method.
