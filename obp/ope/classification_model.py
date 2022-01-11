@@ -40,7 +40,7 @@ class ImportanceWeightEstimator(BaseEstimator):
     fitting_method: str, default='sample'
         Method to fit the classification model.
         Must be one of ['sample', 'raw']. Each method is defined as follows:
-            - sample: actions are sampled from behavior and evaluation policies, respectively, and action features are represented by one-hot encoding of the sampled actions.
+            - sample: actions are sampled from behavior and evaluation policies, respectively.
             - raw: action_dist_at_position are directly encoded as action features.
         If fitting_method is 'raw', one-hot encoding will be used as action_context.
 

@@ -205,7 +205,7 @@ ope_estimators = [
 
 
 @pytest.mark.parametrize(
-    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model, base_model_for_treatment_model",
+    "n_rounds, n_actions, dim_context, base_model_for_iw_estimator, base_model_for_reg_model, base_model_for_pscore_estimator",
     offline_experiment_configurations,
 )
 def test_offline_estimation_performance(
@@ -228,8 +228,8 @@ def test_offline_estimation_performance(
         # define evaluation policy using IPWLearner
         evaluation_policy = IPWLearner(
             n_actions=dataset.n_actions,
-            base_classifier=base_model_dict[base_model_for_evaluation_policy](
-                **hyperparams[base_model_for_evaluation_policy]
+            base_classifier=base_model_dict[base_model_for_iw_estimator](
+                **hyperparams[base_model_for_iw_estimator]
             ),
         )
         # sample new training and test sets of synthetic logged bandit feedback
@@ -265,8 +265,8 @@ def test_offline_estimation_performance(
         classification_model_for_action = PropensityScoreEstimator(
             len_list=1,
             n_actions=n_actions,
-            base_model=base_model_dict[base_model_for_treatment_model](
-                **hyperparams[base_model_for_treatment_model]
+            base_model=base_model_dict[base_model_for_pscore_estimator](
+                **hyperparams[base_model_for_pscore_estimator]
             ),
             calibration_cv=2,
         )
