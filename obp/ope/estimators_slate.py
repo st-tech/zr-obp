@@ -43,7 +43,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
     """Base Class of Inverse Probability Weighting Estimators for the slate contextual bandit setting.
 
     len_list: int (> 1)
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, `len_list=3`.
 
     """
@@ -180,17 +180,17 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         Returns
         ----------
         V_hat: float
-            Estimated policy value (performance) of a given evaluation policy.
+            Estimated policy value of evaluation policy.
 
         """
         check_sips_inputs(
@@ -236,11 +236,11 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         alpha: float, default=0.05
@@ -338,7 +338,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         Returns
         ----------
         V_hat: float
-            Estimated policy value (performance) of a given evaluation policy.
+            Estimated policy value of evaluation policy.
 
         """
         check_iips_inputs(
@@ -485,7 +485,7 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
         Returns
         ----------
         V_hat: float
-            Estimated policy value (performance) of a given evaluation policy.
+            Estimated policy value of evaluation policy.
 
         """
 
@@ -922,7 +922,7 @@ class BaseSlateSelfNormalizedInverseProbabilityWeighting(
     """Base Class of Self-Normalized Inverse Probability Weighting Estimators for the slate contextual bandit setting.
 
     len_list: int (> 1)
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, `len_list=3`.
 
     """
@@ -1026,11 +1026,11 @@ class SelfNormalizedSlateStandardIPS(
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         Returns

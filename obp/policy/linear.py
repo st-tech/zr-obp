@@ -24,7 +24,7 @@ class BaseLinPolicy(BaseContextualPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -98,7 +98,7 @@ class LinEpsilonGreedy(BaseLinPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -177,7 +177,7 @@ class LinUCB(BaseLinPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -255,7 +255,7 @@ class LinTS(BaseLinPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1

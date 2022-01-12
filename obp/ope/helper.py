@@ -22,10 +22,10 @@ def estimate_bias_in_ope(
     Parameters
     ----------
     reward: array-like, shape (n_rounds,)
-        Reward observed in each round of logged bandit data, i.e., :math:`r_t`.
+        Reward observed for each data in logged bandit data, i.e., :math:`r_t`.
 
     iw: array-like, shape (n_rounds,)
-        Importance weight in each round of logged bandit data, i.e., :math:`w(x,a)=\\pi_e(a|x)/ \\pi_b(a|x)`.
+        Importance weight for each data in logged bandit data, i.e., :math:`w(x,a)=\\pi_e(a|x)/ \\pi_b(a|x)`.
 
     iw_hat: array-like, shape (n_rounds,)
         Importance weight (IW) modified by a hyparpareter. How IW is modified depends on the estimator as follows.
@@ -35,7 +35,7 @@ def estimate_bias_in_ope(
         where :math:`\\lambda` is a hyperparameter value.
 
     q_hat: array-like, shape (n_rounds,), default=None
-        Estimated expected reward given context :math:`x_t` and action :math:`a_t`.
+        Estimated expected reward given context :math:`x_i` and action :math:`a_i`.
 
     Returns
     ----------
@@ -69,10 +69,10 @@ def estimate_high_probability_upper_bound_bias(
     Parameters
     ----------
     reward: array-like, shape (n_rounds,)
-        Reward observed in each round of logged bandit data, i.e., :math:`r_t`.
+        Reward observed for each data in logged bandit data, i.e., :math:`r_t`.
 
     iw: array-like, shape (n_rounds,)
-        Importance weight in each round of logged bandit data, i.e., :math:`w(x,a)=\\pi_e(a|x)/ \\pi_b(a|x)`.
+        Importance weight for each data in logged bandit data, i.e., :math:`w(x,a)=\\pi_e(a|x)/ \\pi_b(a|x)`.
 
     iw_hat: array-like, shape (n_rounds,)
         Importance weight (IW) modified by a hyparpareter. How IW is modified depends on the estimator as follows.
@@ -82,10 +82,10 @@ def estimate_high_probability_upper_bound_bias(
         where :math:`\\lambda` and :math:`\\lambda` are hyperparameters.
 
     q_hat: array-like, shape (n_rounds,), default=None
-        Estimated expected reward given context :math:`x_t` and action :math:`a_t`.
+        Estimated expected reward given context :math:`x_i` and action :math:`a_i`.
 
     delta: float, default=0.05
-        A confidence delta to construct a high probability upper bound based on Bernstein’s inequality.
+        A confidence delta to construct a high probability upper bound based on Bernstein inequality.
 
     Returns
     ----------

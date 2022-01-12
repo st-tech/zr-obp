@@ -27,7 +27,7 @@ invalid_input_of_ipw_init = [
         r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (-1.0, False, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
-    (np.nan, False, ValueError, "lambda_ must not be nan"),
+    (np.nan, False, ValueError, "`lambda_` must not be nan"),
     (
         1.0,
         "s",
@@ -243,7 +243,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -253,7 +253,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -263,7 +263,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "pscore must be 1D array",
+        "`pscore` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -273,7 +273,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -283,7 +283,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -293,7 +293,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -303,7 +303,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -313,7 +313,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        r"action elements must be integers in the range of`",
+        r"`action` elements must be integers in the range of`",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -323,7 +323,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -333,7 +333,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -353,7 +353,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "pscore must be 1D array",
+        "`pscore` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -363,7 +363,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "pscore must be 1D array",
+        "`pscore` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -383,7 +383,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "pscore must be positive",
+        "`pscore` must be positive",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -393,7 +393,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         True,
         None,  #
-        "estimated_pscore must be 1D array",
+        "`estimated_pscore` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -403,7 +403,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         True,
         np.arange(5),  #
-        "pscore must be positive",
+        "`pscore` must be positive",
     ),
 ]
 

@@ -227,15 +227,15 @@ invalid_input_of_create_estimator_inputs = [
     (
         np.zeros(5),
         {"dr": None},
-        r"estimated_rewards_by_reg_model\[dr\] must be 1D array",
+        r"`estimated_rewards_by_reg_model\[dr\]` must be 1D array",
     ),
     (
         np.zeros((2, 3)),
         None,
-        "action_by_evaluation_policy must be 1D array",
+        "`action_by_evaluation_policy` must be 1D array",
     ),
-    ("3", None, "action_by_evaluation_policy must be 1D array"),
-    (None, None, "action_by_evaluation_policy must be 1D array"),
+    ("3", None, "`action_by_evaluation_policy` must be 1D array"),
+    (None, None, "`action_by_evaluation_policy` must be 1D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [
@@ -249,7 +249,7 @@ valid_input_of_create_estimator_inputs = [
         {"dr": np.zeros(5)},
         "same shape",
     ),
-    (np.zeros(5), None, "estimated_rewards_by_reg_model is None"),
+    (np.zeros(5), None, "`estimated_rewards_by_reg_model` is None"),
 ]
 
 
@@ -601,7 +601,7 @@ def test_meta_summarize_off_policy_estimates(
 
 
 invalid_input_of_evaluation_performance_of_estimators = [
-    ("foo", 0.3, ValueError, "metric must be either 'relative-ee' or 'se'"),
+    ("foo", 0.3, ValueError, "`metric` must be either 'relative-ee' or 'se'"),
     (
         "se",
         1,
@@ -618,7 +618,7 @@ invalid_input_of_evaluation_performance_of_estimators = [
         "relative-ee",
         0.0,
         ValueError,
-        "ground_truth_policy_value must be non-zero when metric is relative-ee",
+        "`ground_truth_policy_value` must be non-zero when metric is relative-ee",
     ),
 ]
 

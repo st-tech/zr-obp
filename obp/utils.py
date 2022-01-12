@@ -126,8 +126,8 @@ def convert_to_action_dist(
         Number of actions.
 
     selected_actions: array-like, shape (n_rounds, len_list)
-            Sequence of actions selected by evaluation policy
-            at each round in offline bandit simulation.
+        Sequence of actions selected by evaluation policy
+        at each round in offline bandit simulation.
 
     Returns
     ----------
@@ -167,10 +167,12 @@ def check_array(
 
     """
     if not isinstance(array, np.ndarray):
-        raise ValueError(f"{name} must be {expected_dim}D array, but got {type(array)}")
+        raise ValueError(
+            f"`{name}` must be {expected_dim}D array, but got {type(array)}"
+        )
     if array.ndim != expected_dim:
         raise ValueError(
-            f"{name} must be {expected_dim}D array, but got {array.ndim}D array"
+            f"`{name}` must be {expected_dim}D array, but got {array.ndim}D array"
         )
 
 
@@ -195,11 +197,11 @@ def check_tensor(
     """
     if not isinstance(tensor, torch.Tensor):
         raise ValueError(
-            f"{name} must be {expected_dim}D tensor, but got {type(tensor)}"
+            f"`{name}` must be {expected_dim}D tensor, but got {type(tensor)}"
         )
     if tensor.ndim != expected_dim:
         raise ValueError(
-            f"{name} must be {expected_dim}D tensor, but got {tensor.ndim}D tensor"
+            f"`{name}` must be {expected_dim}D tensor, but got {tensor.ndim}D tensor"
         )
 
 
@@ -217,23 +219,22 @@ def check_bandit_feedback_inputs(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors in each round, i.e., :math:`x_t`.
+        Context vectors observed for each data, i.e., :math:`x_i`.
 
     action: array-like, shape (n_rounds,)
-        Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,)
-        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+        Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
     expected_reward: array-like, shape (n_rounds, n_actions), default=None
-        Expected rewards (or outcome) in each round, i.e., :math:`\\mathbb{E}[r_t]`.
+        Expected reward of each data, i.e., :math:`\\mathbb{E}[r_i|x_i,a_i]`.
 
     position: array-like, shape (n_rounds,), default=None
-        Position of recommendation interface where action was presented in each round of the given logged bandit data.
+        Position in a recommendation interface where the action was presented.
 
-    pscore: array-like, shape (n_rounds,), default=None
-        Propensity scores, the probability of selecting each action by behavior policy,
-        in the given logged bandit data.
+    pscore: array-like, shape (n_rounds,)
+        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Context vectors characterizing each action.
@@ -260,11 +261,11 @@ def check_bandit_feedback_inputs(
             and action.max() < expected_reward.shape[1]
         ):
             raise ValueError(
-                "action elements must be integers in the range of [0, `expected_reward.shape[1]`)"
+                "`action` elements must be integers in the range of [0, `expected_reward.shape[1]`)"
             )
     else:
         if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
-            raise ValueError("action elements must be non-negative integers")
+            raise ValueError("`action` elements must be non-negative integers")
     if pscore is not None:
         check_array(array=pscore, name="pscore", expected_dim=1)
         if not (
@@ -275,7 +276,7 @@ def check_bandit_feedback_inputs(
                 ", but found it False"
             )
         if np.any(pscore <= 0):
-            raise ValueError("pscore must be positive")
+            raise ValueError("`pscore` must be positive")
 
     if position is not None:
         check_array(array=position, name="position", expected_dim=1)
@@ -287,7 +288,7 @@ def check_bandit_feedback_inputs(
                 ", but found it False"
             )
         if not (np.issubdtype(position.dtype, np.integer) and position.min() >= 0):
-            raise ValueError("position elements must be non-negative integers")
+            raise ValueError("`position` elements must be non-negative integers")
     else:
         if not (context.shape[0] == action.shape[0] == reward.shape[0]):
             raise ValueError(
@@ -302,11 +303,11 @@ def check_bandit_feedback_inputs(
             and action.max() < action_context.shape[0]
         ):
             raise ValueError(
-                "action elements must be integers in the range of [0, `action_context.shape[0]`)"
+                "`action` elements must be integers in the range of [0, `action_context.shape[0]`)"
             )
     else:
         if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
-            raise ValueError("action elements must be non-negative integers")
+            raise ValueError("`action` elements must be non-negative integers")
 
 
 def check_ope_inputs(
@@ -323,23 +324,22 @@ def check_ope_inputs(
     Parameters
     -----------
     action_dist: array-like, shape (n_rounds, n_actions, len_list)
-        Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+        Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
     position: array-like, shape (n_rounds,), default=None
-        Position of recommendation interface where action was presented in each round of the given logged bandit data.
+        Position in a recommendation interface where the action was presented.
 
     action: array-like, shape (n_rounds,), default=None
-        Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,), default=None
-        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+        Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
-    pscore: array-like, shape (n_rounds,), default=None
-        Propensity scores, the probability of selecting each action by behavior policy,
-        in the given logged bandit data.
+    pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-        Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+        Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
     estimated_importance_weights: array-like, shape (n_rounds,), default=None
         Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
@@ -347,7 +347,7 @@ def check_ope_inputs(
     # action_dist
     check_array(array=action_dist, name="action_dist", expected_dim=3)
     if not np.allclose(action_dist.sum(axis=1), 1):
-        raise ValueError("action_dist must be a probability distribution")
+        raise ValueError("`action_dist` must be a probability distribution")
 
     # position
     if position is not None:
@@ -357,14 +357,14 @@ def check_ope_inputs(
                 "Expected `position.shape[0] == action_dist.shape[0]`, but found it False"
             )
         if not (np.issubdtype(position.dtype, np.integer) and position.min() >= 0):
-            raise ValueError("position elements must be non-negative integers")
+            raise ValueError("`position` elements must be non-negative integers")
         if position.max() >= action_dist.shape[2]:
             raise ValueError(
-                "position elements must be smaller than `action_dist.shape[2]`"
+                "`position` elements must be smaller than `action_dist.shape[2]`"
             )
     elif action_dist.shape[2] > 1:
         raise ValueError(
-            "position elements must be given when `action_dist.shape[2] > 1`"
+            "`position` elements must be given when `action_dist.shape[2] > 1`"
         )
 
     # estimated_rewards_by_reg_model
@@ -396,7 +396,7 @@ def check_ope_inputs(
             and action.max() < action_dist.shape[1]
         ):
             raise ValueError(
-                "action elements must be integers in the range of [0, `action_dist.shape[1]`)"
+                "`action` elements must be integers in the range of [0, `action_dist.shape[1]`)"
             )
 
     # pscore
@@ -408,7 +408,7 @@ def check_ope_inputs(
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0]`, but found it False"
             )
         if np.any(pscore <= 0):
-            raise ValueError("pscore must be positive")
+            raise ValueError("`pscore` must be positive")
 
 
 def check_continuous_bandit_feedback_inputs(
@@ -423,20 +423,20 @@ def check_continuous_bandit_feedback_inputs(
     Parameters
     -----------
     context: array-like, shape (n_rounds, dim_context)
-        Context vectors in each round, i.e., :math:`x_t`.
+        Context vectors observed for each data, i.e., :math:`x_i`.
 
     action_by_behavior_policy: array-like, shape (n_rounds,)
-        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,)
-        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+        Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
     expected_reward: array-like, shape (n_rounds, n_actions), default=None
-        Expected rewards (or outcome) in each round, i.e., :math:`\\mathbb{E}[r_t]`.
+        Expected reward of each data, i.e., :math:`\\mathbb{E}[r_i|x_i,a_i]`.
 
     pscore: array-like, shape (n_rounds,), default=None
         Probability densities of the continuous action values sampled by a behavior policy
-        (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+        (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     """
     check_array(array=context, name="context", expected_dim=2)
@@ -472,7 +472,7 @@ def check_continuous_bandit_feedback_inputs(
                 "== reward.shape[0] == pscore.shape[0]`, but found it False"
             )
         if np.any(pscore <= 0):
-            raise ValueError("pscore must be positive")
+            raise ValueError("`pscore` must be positive")
 
 
 def check_continuous_ope_inputs(
@@ -490,17 +490,17 @@ def check_continuous_ope_inputs(
         Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
     action_by_behavior_policy: array-like, shape (n_rounds,), default=None
-        Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+        Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,), default=None
-        Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+        Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
     pscore: array-like, shape (n_rounds,), default=None
         Probability densities of the continuous action values sampled by a behavior policy
-        (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+        (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds,), default=None
-            Expected rewards given context and action estimated by a regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+        Expected rewards given context and action estimated by a regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
     """
     # action_by_evaluation_policy
@@ -558,7 +558,7 @@ def check_continuous_ope_inputs(
                 ", but found it False"
             )
         if np.any(pscore <= 0):
-            raise ValueError("pscore must be positive")
+            raise ValueError("`pscore` must be positive")
 
 
 def _check_slate_ope_inputs(
@@ -574,13 +574,13 @@ def _check_slate_ope_inputs(
     Parameters
     -----------
     slate_id: array-like, shape (<= n_rounds * len_list,)
-        Slate id observed in each round of the logged bandit feedback.
+        Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit data.
+        Position in a recommendation interface where the action was presented.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities of behavior policy (propensity scores).
@@ -595,7 +595,7 @@ def _check_slate_ope_inputs(
     # position
     check_array(array=position, name="position", expected_dim=1)
     if not (position.dtype == int and position.min() >= 0):
-        raise ValueError("position elements must be non-negative integers")
+        raise ValueError("`position` elements must be non-negative integers")
 
     # reward
     check_array(array=reward, name="reward", expected_dim=1)
@@ -603,7 +603,7 @@ def _check_slate_ope_inputs(
     # pscore
     check_array(array=pscore, name=f"{pscore_type}", expected_dim=1)
     if np.any(pscore <= 0) or np.any(pscore > 1):
-        raise ValueError(f"{pscore_type} must be in the range of (0, 1]")
+        raise ValueError(f"`{pscore_type}` must be in the range of (0, 1]")
 
     # evaluation_policy_pscore
     check_array(
@@ -613,7 +613,7 @@ def _check_slate_ope_inputs(
     )
     if np.any(evaluation_policy_pscore < 0) or np.any(evaluation_policy_pscore > 1):
         raise ValueError(
-            f"evaluation_policy_{pscore_type} must be in the range of [0, 1]"
+            f"`evaluation_policy_{pscore_type}` must be in the range of [0, 1]"
         )
 
     # slate id
@@ -628,7 +628,7 @@ def _check_slate_ope_inputs(
         == evaluation_policy_pscore.shape[0]
     ):
         raise ValueError(
-            f"slate_id, position, reward, {pscore_type}, and evaluation_policy_{pscore_type} "
+            f"`slate_id`, `position`, `reward`, `{pscore_type}`, and `evaluation_policy_{pscore_type}` "
             "must have the same number of samples."
         )
 
@@ -645,19 +645,19 @@ def check_sips_inputs(
     Parameters
     -----------
     slate_id: array-like, shape (<= n_rounds * len_list,)
-        Slate id observed in each round of the logged bandit feedback.
+        Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit data.
+        Position in a recommendation interface where the action was presented.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+        Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_i|x_i)`.
 
     """
     _check_slate_ope_inputs(
@@ -677,19 +677,19 @@ def check_sips_inputs(
     bandit_feedback_df["evaluation_policy_pscore"] = evaluation_policy_pscore
     # check uniqueness
     if bandit_feedback_df.duplicated(["slate_id", "position"]).sum() > 0:
-        raise ValueError("position must not be duplicated in each slate")
+        raise ValueError("`position` must not be duplicated in each slate")
     # check pscore uniqueness
     distinct_count_pscore_in_slate = bandit_feedback_df.groupby("slate_id").apply(
         lambda x: x["pscore"].unique().shape[0]
     )
     if (distinct_count_pscore_in_slate != 1).sum() > 0:
-        raise ValueError("pscore must be unique in each slate")
+        raise ValueError("`pscore` must be unique in each slate")
     # check pscore uniqueness of evaluation policy
     distinct_count_evaluation_policy_pscore_in_slate = bandit_feedback_df.groupby(
         "slate_id"
     ).apply(lambda x: x["evaluation_policy_pscore"].unique().shape[0])
     if (distinct_count_evaluation_policy_pscore_in_slate != 1).sum() > 0:
-        raise ValueError("evaluation_policy_pscore must be unique in each slate")
+        raise ValueError("`evaluation_policy_pscore` must be unique in each slate")
 
 
 def check_iips_inputs(
@@ -704,13 +704,13 @@ def check_iips_inputs(
     Parameters
     -----------
     slate_id: array-like, shape (<= n_rounds * len_list,)
-        Slate id observed in each round of the logged bandit feedback.
+        Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit data.
+        Position in a recommendation interface where the action was presented.
 
     pscore_item_position: array-like, shape (<= n_rounds * len_list,)
         Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
@@ -733,7 +733,7 @@ def check_iips_inputs(
     bandit_feedback_df["position"] = position
     # check uniqueness
     if bandit_feedback_df.duplicated(["slate_id", "position"]).sum() > 0:
-        raise ValueError("position must not be duplicated in each slate")
+        raise ValueError("`position` must not be duplicated in each slate")
 
 
 def check_rips_inputs(
@@ -748,16 +748,16 @@ def check_rips_inputs(
     Parameters
     -----------
     slate_id: array-like, shape (<= n_rounds * len_list,)
-        Slate id observed in each round of the logged bandit feedback.
+        Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
         Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Positions of each round and slot in the given logged bandit data.
+        Position in a recommendation interface where the action was presented.
 
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
@@ -788,7 +788,7 @@ def check_rips_inputs(
     )
     # check uniqueness
     if bandit_feedback_df.duplicated(["slate_id", "position"]).sum() > 0:
-        raise ValueError("position must not be duplicated in each slate")
+        raise ValueError("`position` must not be duplicated in each slate")
     # check pscore_cascade structure
     previous_minimum_pscore_cascade = (
         bandit_feedback_df.groupby("slate_id")["pscore_cascade"]
@@ -799,7 +799,9 @@ def check_rips_inputs(
     if (
         previous_minimum_pscore_cascade < bandit_feedback_df["pscore_cascade"]
     ).sum() > 0:
-        raise ValueError("pscore_cascade must be non-increasing sequence in each slate")
+        raise ValueError(
+            "`pscore_cascade` must be non-increasing sequence in each slate"
+        )
     # check pscore_cascade structure of evaluation policy
     previous_minimum_evaluation_policy_pscore_cascade = (
         bandit_feedback_df.groupby("slate_id")["evaluation_policy_pscore_cascade"]
@@ -812,7 +814,7 @@ def check_rips_inputs(
         < bandit_feedback_df["evaluation_policy_pscore_cascade"]
     ).sum() > 0:
         raise ValueError(
-            "evaluation_policy_pscore_cascade must be non-increasing sequence in each slate"
+            "`evaluation_policy_pscore_cascade` must be non-increasing sequence in each slate"
         )
 
 
@@ -888,7 +890,7 @@ def check_cascade_dr_inputs(
         and action.max() < n_unique_action
     ):
         raise ValueError(
-            "action elements must be integers in the range of [0, n_unique_action)"
+            "`action` elements must be integers in the range of [0, n_unique_action)"
         )
     if not (
         slate_id.shape[0]
@@ -909,7 +911,7 @@ def check_cascade_dr_inputs(
         evaluation_policy_action_dist_.sum(axis=1),
     ):
         raise ValueError(
-            "evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action] "
+            "`evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action]` "
             "must sum up to one for all i."
         )
 

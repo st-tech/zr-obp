@@ -40,7 +40,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_evaluation_policy must be 1D array",
+        "`action_by_evaluation_policy` must be 1D array",
     ),
     (
         np.ones((5, 1)),  #
@@ -48,7 +48,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_evaluation_policy must be 1D array",
+        "`action_by_evaluation_policy` must be 1D array",
     ),
     (
         np.ones(5),
@@ -56,7 +56,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "estimated_rewards_by_reg_model must be 1D array",
+        "`estimated_rewards_by_reg_model` must be 1D array",
     ),
     (
         np.ones(5),
@@ -64,7 +64,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=5),
-        "estimated_rewards_by_reg_model must be 1D array",
+        "`estimated_rewards_by_reg_model` must be 1D array",
     ),
     (
         np.ones(5),  #
@@ -80,7 +80,7 @@ invalid_input_of_dr = [
         None,  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy must be 1D array",
+        "`action_by_behavior_policy` must be 1D array",
     ),
     (
         np.ones(5),
@@ -88,7 +88,7 @@ invalid_input_of_dr = [
         np.ones((5, 1)),  #
         np.ones(5),
         np.random.uniform(size=5),
-        "action_by_behavior_policy must be 1D array",
+        "`action_by_behavior_policy` must be 1D array",
     ),
     (
         np.ones(5),
@@ -96,7 +96,7 @@ invalid_input_of_dr = [
         np.ones(5),
         None,  #
         np.random.uniform(size=5),
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.ones(5),
@@ -104,7 +104,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones((5, 1)),  #
         np.random.uniform(size=5),
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.ones(5),
@@ -128,7 +128,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones(5),
         None,  #
-        "pscore must be 1D array",
+        "`pscore` must be 1D array",
     ),
     (
         np.ones(5),
@@ -136,7 +136,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones(5),
         np.random.uniform(size=(5, 1)),  #
-        "pscore must be 1D array",
+        "`pscore` must be 1D array",
     ),
     (
         np.ones(5),
@@ -152,7 +152,7 @@ invalid_input_of_dr = [
         np.ones(5),
         np.ones(5),
         np.arange(5),  #
-        "pscore must be positive",
+        "`pscore` must be positive",
     ),
 ]
 

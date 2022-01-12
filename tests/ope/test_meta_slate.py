@@ -781,7 +781,7 @@ def test_meta_summarize_off_policy_estimates(
 
 
 invalid_input_of_evaluation_performance_of_estimators = [
-    ("foo", 0.3, ValueError, "metric must be either 'relative-ee' or 'se'"),
+    ("foo", 0.3, ValueError, "`metric` must be either 'relative-ee' or 'se'"),
     (
         "se",
         1,
@@ -798,7 +798,7 @@ invalid_input_of_evaluation_performance_of_estimators = [
         "relative-ee",
         0.0,
         ValueError,
-        "ground_truth_policy_value must be non-zero when metric is relative-ee",
+        "`ground_truth_policy_value` must be non-zero when metric is relative-ee",
     ),
 ]
 

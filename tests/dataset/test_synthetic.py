@@ -76,20 +76,20 @@ def test_synthetic_init():
 
 # context, action, description
 invalid_input_of_sample_reward = [
-    ("3", np.ones(2, dtype=int), "context must be 2D array"),
-    (None, np.ones(2, dtype=int), "context must be 2D array"),
-    (np.ones((2, 3)), "3", "action must be 1D array"),
-    (np.ones((2, 3)), None, "action must be 1D array"),
+    ("3", np.ones(2, dtype=int), "`context` must be 2D array"),
+    (None, np.ones(2, dtype=int), "`context` must be 2D array"),
+    (np.ones((2, 3)), "3", "`action` must be 1D array"),
+    (np.ones((2, 3)), None, "`action` must be 1D array"),
     (
         np.ones((2, 3)),
         np.ones(2, dtype=np.float32),
         "the dtype of action must be a subdtype of int",
     ),
-    (np.ones(2), np.ones(2, dtype=int), "context must be 2D array"),
+    (np.ones(2), np.ones(2, dtype=int), "`context` must be 2D array"),
     (
         np.ones((2, 3)),
         np.ones((2, 3), dtype=int),
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.ones((2, 3)),
@@ -195,11 +195,11 @@ invalid_input_of_calc_policy_value = [
         np.ones((2, 2, 3)),
         "Expected `expected_reward.shape[1]",
     ),
-    ("3", np.ones((2, 2, 3)), "expected_reward must be 2D array"),
-    (None, np.ones((2, 2, 3)), "expected_reward must be 2D array"),
-    (np.ones((2, 3)), np.ones((2, 3)), "action_dist must be 3D array"),
-    (np.ones((2, 3)), "3", "action_dist must be 3D array"),
-    (np.ones((2, 3)), None, "action_dist must be 3D array"),
+    ("3", np.ones((2, 2, 3)), "`expected_reward` must be 2D array"),
+    (None, np.ones((2, 2, 3)), "`expected_reward` must be 2D array"),
+    (np.ones((2, 3)), np.ones((2, 3)), "`action_dist` must be 3D array"),
+    (np.ones((2, 3)), "3", "`action_dist` must be 3D array"),
+    (np.ones((2, 3)), None, "`action_dist` must be 3D array"),
 ]
 
 valid_input_of_calc_policy_value = [

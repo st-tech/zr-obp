@@ -34,7 +34,7 @@ class ContinuousOffPolicyEvaluation:
     Parameters
     -----------
     bandit_feedback: BanditFeedback
-        Logged bandit feedback data with continuous actions used to conduct OPE.
+        Logged bandit data with continuous actions used to conduct OPE.
 
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
@@ -183,15 +183,15 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds,) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+            If None, model-dependent estimators such as DM and DR cannot be used.
 
         Returns
         ----------
         policy_value_dict: Dict[str, float]
-            Dictionary containing estimated policy values by OPE estimators.
+            Dictionary containing the policy values estimated by OPE estimators.
 
         """
         if self.is_model_dependent:
@@ -230,10 +230,10 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+            If None, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
             Significance level.
@@ -295,10 +295,10 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+            If None, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
             Significance level.
@@ -365,10 +365,10 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+            If None, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
             Significance level.
@@ -441,11 +441,11 @@ class ContinuousOffPolicyEvaluation:
         ] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
-        """Evaluate estimation performance of OPE estimators.
+        """Evaluate the accuracy of OPE estimators.
 
         Note
         ------
-        Evaluate the estimation performance of OPE estimators by relative estimation error (relative-EE) or squared error (SE):
+        Evaluate the estimation performance of OPE estimators with relative estimation error (relative-EE) or squared error (SE):
 
         .. math ::
             \\text{Relative-EE} (\\hat{V}; \\mathcal{D}) = \\left|  \\frac{\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi)}{V(\\pi)} \\right|,
@@ -454,7 +454,7 @@ class ContinuousOffPolicyEvaluation:
             \\text{SE} (\\hat{V}; \\mathcal{D}) = \\left(\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi) \\right)^2,
 
         where :math:`V({\\pi})` is the ground-truth policy value of the evalation policy :math:`\\pi_e` (often estimated using on-policy estimation).
-        :math:`\\hat{V}(\\pi; \\mathcal{D})` is an estimated policy value by an OPE estimator :math:`\\hat{V}` and logged bandit feedback :math:`\\mathcal{D}`.
+        :math:`\\hat{V}(\\pi; \\mathcal{D})` is the policy value estimated by an OPE estimator :math:`\\hat{V}` and logged bandit feedback :math:`\\mathcal{D}`.
 
         Parameters
         ----------
@@ -466,19 +466,19 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
-            When a dict is given, if the dict has the name of a estimator as a key, the corresponding value is used.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+            If None, model-dependent estimators such as DM and DR cannot be used.
 
         metric: str, default="relative-ee"
             Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
-            Must be "relative-ee" or "se".
+            Must be either "relative-ee" or "se".
 
         Returns
         ----------
         eval_metric_ope_dict: Dict[str, float]
-            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+            Dictionary containing the value of evaluation metric for the estimation performance of OPE estimators.
 
         """
 
@@ -489,11 +489,11 @@ class ContinuousOffPolicyEvaluation:
         )
         if metric not in ["relative-ee", "se"]:
             raise ValueError(
-                f"metric must be either 'relative-ee' or 'se', but {metric} is given"
+                f"`metric` must be either 'relative-ee' or 'se', but {metric} is given"
             )
         if metric == "relative-ee" and ground_truth_policy_value == 0.0:
             raise ValueError(
-                "ground_truth_policy_value must be non-zero when metric is relative-ee"
+                "`ground_truth_policy_value` must be non-zero when metric is relative-ee"
             )
 
         eval_metric_ope_dict = dict()
@@ -535,8 +535,8 @@ class ContinuousOffPolicyEvaluation:
             Continuous action values given by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            If None, model-dependent estimators such as DM and DR cannot be used.
 
         metric: str, default="relative-ee"
             Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
@@ -584,10 +584,10 @@ class ContinuousOffPolicyEvaluation:
             List of action values given by the (deterministic) evaluation policies, i.e., :math:`\\pi_e(x_t)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of an estimator as a key, the corresponding value is used.
-            When it is not given, model-dependent estimators such as DM and DR cannot be used.
+            If None, model-dependent estimators such as DM and DR cannot be used.
 
         alpha: float, default=0.05
             Significance level.

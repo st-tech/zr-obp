@@ -66,10 +66,10 @@ class SlateRegressionModel(BaseEstimator):
             )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
-                "base_model must be BaseEstimator or a child class of BaseEstimator"
+                "`base_model` must be BaseEstimator or a child class of BaseEstimator"
             )
         if is_classifier(self.base_model):
-            raise ValueError("base_model must be a regressor, not a classifier")
+            raise ValueError("`base_model` must be a regressor, not a classifier")
         self.base_model_list = [clone(self.base_model) for _ in range(self.len_list)]
         self.action_context = np.eye(self.n_unique_action)
 
@@ -82,12 +82,12 @@ class SlateRegressionModel(BaseEstimator):
         evaluation_policy_pscore_cascade: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
     ):
-        """Fit the regression model on given logged bandit feedback data.
+        """Fit the regression model on given logged bandit data.
 
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, (n_rounds * len_list,)
             Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
@@ -150,15 +150,15 @@ class SlateRegressionModel(BaseEstimator):
             and action.max() < self.n_unique_action
         ):
             raise ValueError(
-                "action elements must be integers in the range of [0, n_unique_action)"
+                "`action` elements must be integers in the range of [0, n_unique_action)"
             )
         if np.any(pscore_cascade <= 0) or np.any(pscore_cascade > 1):
-            raise ValueError("pscore_cascade must be in the range of (0, 1]")
+            raise ValueError("`pscore_cascade` must be in the range of (0, 1]")
         if np.any(evaluation_policy_pscore_cascade <= 0) or np.any(
             evaluation_policy_pscore_cascade > 1
         ):
             raise ValueError(
-                "evaluation_policy_pscore_cascade must be in the range of (0, 1]"
+                "`evaluation_policy_pscore_cascade` must be in the range of (0, 1]"
             )
         if not np.allclose(
             np.ones(
@@ -171,7 +171,7 @@ class SlateRegressionModel(BaseEstimator):
             ),
         ):
             raise ValueError(
-                "evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action] "
+                "`evaluation_policy_action_dist[i * n_unique_action : (i+1) * n_unique_action]` "
                 "must sum up to one for all i."
             )
         # (n_rounds_ * len_list, ) -> (n_rounds_, len_list)
@@ -265,12 +265,12 @@ class SlateRegressionModel(BaseEstimator):
         evaluation_policy_pscore_cascade: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
     ):
-        """Fit the regression model on given logged bandit feedback data and predict the Q functions of the same data.
+        """Fit the regression model on given logged bandit data and predict the Q functions of the same data.
 
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, (n_rounds * len_list,)
             Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,

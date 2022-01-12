@@ -32,7 +32,7 @@ class SlateOffPolicyEvaluation:
     Parameters
     -----------
     bandit_feedback: BanditFeedback
-        Logged bandit feedback data used for off-policy evaluation for the slate recommendation setting.
+        Logged bandit data used for off-policy evaluation for the slate recommendation setting.
 
     ope_estimators: List[BaseSlateOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
@@ -197,7 +197,7 @@ class SlateOffPolicyEvaluation:
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
@@ -221,7 +221,7 @@ class SlateOffPolicyEvaluation:
         Returns
         ----------
         policy_value_dict: Dict[str, float]
-            Dictionary containing estimated policy values by OPE estimators.
+            Dictionary containing the policy values estimated by OPE estimators.
 
         """
         policy_value_dict = dict()
@@ -255,7 +255,7 @@ class SlateOffPolicyEvaluation:
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
@@ -330,7 +330,7 @@ class SlateOffPolicyEvaluation:
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
@@ -362,7 +362,7 @@ class SlateOffPolicyEvaluation:
         Returns
         ----------
         (policy_value_df, policy_value_interval_df): Tuple[DataFrame, DataFrame]
-            Policy values and their confidence intervals Estimated by OPE estimators.
+            Policy values and their confidence intervals estimated by OPE estimators.
 
         """
         policy_value_df = DataFrame(
@@ -422,7 +422,7 @@ class SlateOffPolicyEvaluation:
         Parameters
         ----------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
@@ -523,11 +523,11 @@ class SlateOffPolicyEvaluation:
         q_hat: Optional[np.ndarray] = None,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
-        """Evaluate estimation performance of OPE estimators.
+        """Evaluate the accuracy of OPE estimators.
 
         Note
         ------
-        Evaluate the estimation performance of OPE estimators by relative estimation error (relative-EE) or squared error (SE):
+        Evaluate the estimation performance of OPE estimators with relative estimation error (relative-EE) or squared error (SE):
 
         .. math ::
 
@@ -538,7 +538,7 @@ class SlateOffPolicyEvaluation:
             \\text{SE} (\\hat{V}; \\mathcal{D}) = \\left(\\hat{V}(\\pi; \\mathcal{D}) - V(\\pi) \\right)^2,
 
         where :math:`V({\\pi})` is the ground-truth policy value of the evalation policy :math:`\\pi_e` (often estimated using on-policy estimation).
-        :math:`\\hat{V}(\\pi; \\mathcal{D})` is an estimated policy value by an OPE estimator :math:`\\hat{V}` and logged bandit feedback :math:`\\mathcal{D}`.
+        :math:`\\hat{V}(\\pi; \\mathcal{D})` is the policy value estimated by an OPE estimator :math:`\\hat{V}` and logged bandit feedback :math:`\\mathcal{D}`.
 
         Parameters
         ----------
@@ -547,7 +547,7 @@ class SlateOffPolicyEvaluation:
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as its ground-truth.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
@@ -569,22 +569,22 @@ class SlateOffPolicyEvaluation:
 
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
-            Must be "relative-ee" or "se".
+            Must be either "relative-ee" or "se".
 
         Returns
         ----------
         eval_metric_ope_dict: Dict[str, float]
-            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+            Dictionary containing the value of evaluation metric for the estimation performance of OPE estimators.
 
         """
         check_scalar(ground_truth_policy_value, "ground_truth_policy_value", float)
         if metric not in ["relative-ee", "se"]:
             raise ValueError(
-                f"metric must be either 'relative-ee' or 'se', but {metric} is given"
+                f"`metric` must be either 'relative-ee' or 'se', but {metric} is given"
             )
         if metric == "relative-ee" and ground_truth_policy_value == 0.0:
             raise ValueError(
-                "ground_truth_policy_value must be non-zero when metric is relative-ee"
+                "`ground_truth_policy_value` must be non-zero when metric is relative-ee"
             )
 
         eval_metric_ope_dict = dict()
@@ -625,7 +625,7 @@ class SlateOffPolicyEvaluation:
             With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)

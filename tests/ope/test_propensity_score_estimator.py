@@ -72,7 +72,7 @@ invalid_input_of_initializing_propensity_score_estimator = [
         "RandomForest",  #
         2,
         ValueError,
-        "base_model must be BaseEstimator or a child class of BaseEstimator",
+        "`base_model` must be BaseEstimator or a child class of BaseEstimator",
     ),
     (
         n_actions,
@@ -98,7 +98,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -111,7 +111,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7, 3)),  #
@@ -124,7 +124,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -137,7 +137,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -150,7 +150,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "action elements must be non-negative integers",
+        "`action` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -163,7 +163,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "action elements must be non-negative integers",
+        "`action` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -176,7 +176,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -189,7 +189,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -215,7 +215,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -228,7 +228,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -267,7 +267,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        r"action elements must be integers in the range of",
+        r"`action` elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -280,7 +280,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -293,7 +293,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        "position elements must be smaller than len_list",
+        "`position` elements must be smaller than `len_list`",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

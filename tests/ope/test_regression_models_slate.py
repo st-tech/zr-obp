@@ -94,7 +94,7 @@ invalid_input_of_initializing_regression_models = [
         "normal",
         "RandomForest",  #
         ValueError,
-        "base_model must be BaseEstimator or a child class of BaseEstimator",
+        "`base_model` must be BaseEstimator or a child class of BaseEstimator",
     ),
 ]
 
@@ -109,7 +109,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7, 3)),  #
@@ -119,7 +119,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -129,7 +129,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -139,7 +139,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -149,7 +149,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -159,7 +159,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -179,7 +179,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -189,7 +189,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -199,7 +199,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "pscore_cascade must be 1D array",
+        "`pscore_cascade` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -209,7 +209,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "pscore_cascade must be 1D array",
+        "`pscore_cascade` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -229,7 +229,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "pscore_cascade must be in the range of",
+        "`pscore_cascade` must be in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -239,7 +239,7 @@ invalid_input_of_fitting_regression_models = [
         "3",  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "evaluation_policy_pscore_cascade must be 1D array",
+        "`evaluation_policy_pscore_cascade` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -249,7 +249,7 @@ invalid_input_of_fitting_regression_models = [
         np.ones((n_rounds, len_list)),  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "evaluation_policy_pscore_cascade must be 1D array",
+        "`evaluation_policy_pscore_cascade` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -269,7 +269,7 @@ invalid_input_of_fitting_regression_models = [
         np.arange(n_rounds * len_list),  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
         ValueError,
-        "evaluation_policy_pscore_cascade must be in the range of",
+        "`evaluation_policy_pscore_cascade` must be in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -279,7 +279,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         "4",  #
         ValueError,
-        "evaluation_policy_action_dist must be 1D array",
+        "`evaluation_policy_action_dist` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -289,7 +289,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones((n_rounds, len_list, n_unique_action)) / n_unique_action,  #
         ValueError,
-        "evaluation_policy_action_dist must be 1D array",
+        "`evaluation_policy_action_dist` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -299,7 +299,7 @@ invalid_input_of_fitting_regression_models = [
         np.random.uniform(size=n_rounds * len_list),
         np.ones((n_rounds * len_list, n_unique_action)) / n_unique_action,  #
         ValueError,
-        "evaluation_policy_action_dist must be 1D array",
+        "`evaluation_policy_action_dist` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

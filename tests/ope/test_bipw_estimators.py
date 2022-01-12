@@ -21,7 +21,7 @@ invalid_input_of_bipw_init = [
         r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (-1.0, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
-    (np.nan, ValueError, "lambda_ must not be nan"),
+    (np.nan, ValueError, "`lambda_` must not be nan"),
 ]
 
 
@@ -51,7 +51,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         np.ones(5),
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -59,7 +59,7 @@ invalid_input_of_bipw = [
         None,  #
         np.random.choice(3, size=5),
         np.ones(5),
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -67,7 +67,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         None,  #
-        "estimated_importance_weights must be 1D array",
+        "`estimated_importance_weights` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -75,7 +75,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         np.ones(5),
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -83,7 +83,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         np.ones(5),
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -91,7 +91,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         np.ones(5),
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -99,7 +99,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         np.ones(5),
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -107,7 +107,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         np.ones(5),
-        r"action elements must be integers in the range of`",
+        r"`action` elements must be integers in the range of`",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -115,7 +115,7 @@ invalid_input_of_bipw = [
         "4",  #
         np.random.choice(3, size=5),
         np.ones(5),
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -123,7 +123,7 @@ invalid_input_of_bipw = [
         np.zeros((3, 2), dtype=int),  #
         np.random.choice(3, size=5),
         np.ones(5),
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -139,7 +139,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         "4",  #
-        "estimated_importance_weights must be 1D array",
+        "`estimated_importance_weights` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -147,7 +147,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         np.ones((5, 3)),  #
-        "estimated_importance_weights must be 1D array",
+        "`estimated_importance_weights` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -171,7 +171,7 @@ invalid_input_of_bipw = [
         np.zeros(5, dtype=int),
         np.random.choice(3, size=5),
         None,  #
-        "estimated_importance_weights must be 1D array",
+        "`estimated_importance_weights` must be 1D array",
     ),
 ]
 

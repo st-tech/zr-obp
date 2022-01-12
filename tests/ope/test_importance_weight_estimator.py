@@ -103,7 +103,7 @@ invalid_input_of_initializing_importance_weight_estimator = [
         "RandomForest",  #
         2,
         ValueError,
-        "base_model must be BaseEstimator or a child class of BaseEstimator",
+        "`base_model` must be BaseEstimator or a child class of BaseEstimator",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -134,7 +134,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -150,7 +150,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7, 3)),  #
@@ -166,7 +166,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -182,7 +182,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -198,7 +198,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action elements must be non-negative integers",
+        "`action` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -214,7 +214,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action elements must be non-negative integers",
+        "`action` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -230,7 +230,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -246,7 +246,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -278,7 +278,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -294,7 +294,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -342,7 +342,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action_context must be 2D array",
+        "`action_context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -358,7 +358,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action_context must be 2D array",
+        "`action_context` must be 2D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -374,7 +374,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        r"action elements must be integers in the range of",
+        r"`action` elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -390,7 +390,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -406,7 +406,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "position elements must be smaller than len_list",
+        "`position` elements must be smaller than `len_list`",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -422,7 +422,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action_dist must be 3D array",
+        "`action_dist` must be 3D array",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -438,7 +438,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "shape of action_dist must be (n_rounds, n_actions, len_list)",
+        "shape of `action_dist` must be (n_rounds, n_actions, len_list)",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -454,7 +454,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         1,
         2,
         ValueError,
-        "action_dist must be a probability distribution",
+        "`action_dist` must be a probability distribution",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

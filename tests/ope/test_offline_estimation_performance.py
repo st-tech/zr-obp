@@ -274,7 +274,7 @@ def test_offline_estimation_performance(
         action_dist = evaluation_policy.predict_proba(
             context=bandit_feedback_test["context"],
         )
-        # estimate the mean reward function of the test set of synthetic bandit feedback with ML model
+        # estimate the reward function of the test set of synthetic bandit feedback with ML model
         regression_model = RegressionModel(
             n_actions=dataset.n_actions,
             action_context=dataset.action_context,

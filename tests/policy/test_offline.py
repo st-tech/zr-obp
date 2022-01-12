@@ -150,7 +150,7 @@ def test_ipw_learner_fit():
         learner.fit(context=context, action=action, reward=reward)
 
     # position must be non-negative
-    desc = "position elements must be non-negative integers"
+    desc = "`position` elements must be non-negative integers"
     with pytest.raises(ValueError, match=f"{desc}*"):
         negative_position = position - 1
         learner = IPWLearner(n_actions=n_actions, len_list=len_list)
@@ -173,7 +173,7 @@ def test_ipw_learner_predict():
     len_list = 1
 
     # shape error
-    desc = "context must be 2D array"
+    desc = "`context` must be 2D array"
     with pytest.raises(ValueError, match=f"{desc}*"):
         context = np.array([1.0, 1.0])
         learner = IPWLearner(n_actions=n_actions, len_list=len_list)
@@ -208,7 +208,7 @@ def test_ipw_learner_sample_action():
     learner = IPWLearner(n_actions=n_actions, len_list=len_list)
     learner.fit(context=context, action=action, reward=reward, position=position)
 
-    desc = "context must be 2D array"
+    desc = "`context` must be 2D array"
     with pytest.raises(ValueError, match=f"{desc}*"):
         invalid_type_context = [1.0, 2.0]
         learner.sample_action(context=invalid_type_context)
@@ -249,13 +249,13 @@ invalid_input_of_q_learner_init = [
         "normal",
         "`len_list`= 20, must be <= 10",
     ),
-    (10, 1, "base_regressor", "normal", "base_model must be BaseEstimator"),  #
+    (10, 1, "base_regressor", "normal", "`base_model` must be BaseEstimator"),  #
     (
         10,
         1,
         base_classifier,
         "None",  #
-        "fitting_method must be one of 'normal', 'iw', or 'mrdr', but",
+        "`fitting_method` must be one of 'normal', 'iw', or 'mrdr', but",
     ),
 ]
 
@@ -358,7 +358,7 @@ def test_q_learner_fit():
         learner.fit(context=context, action=action, reward=reward)
 
     # position must be non-negative
-    desc = "position elements must be non-negative integers"
+    desc = "`position` elements must be non-negative integers"
     with pytest.raises(ValueError, match=f"{desc}*"):
         negative_position = position - 1
         learner = QLearner(
@@ -374,7 +374,7 @@ def test_q_learner_predict():
     len_list = 1
 
     # shape error
-    desc = "context must be 2D array"
+    desc = "`context` must be 2D array"
     with pytest.raises(ValueError, match=f"{desc}*"):
         context = np.array([1.0, 1.0])
         learner = QLearner(
@@ -415,7 +415,7 @@ def test_q_learner_sample_action():
     )
     learner.fit(context=context, action=action, reward=reward, position=position)
 
-    desc = "context must be 2D array"
+    desc = "`context` must be 2D array"
     with pytest.raises(ValueError, match=f"{desc}*"):
         invalid_type_context = [1.0, 2.0]
         learner.sample_action(context=invalid_type_context)
@@ -1537,7 +1537,7 @@ def test_nn_policy_learner_predict():
     pscore = np.array([0.5] * 100, dtype=np.float32)
 
     # shape error
-    desc = "context must be 2D array"
+    desc = "`context` must be 2D array"
     with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
@@ -1590,7 +1590,7 @@ def test_nn_policy_learner_sample_action():
     pscore = np.array([0.5] * 100, dtype=np.float32)
 
     # shape error
-    desc = "context must be 2D array"
+    desc = "`context` must be 2D array"
     with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,
@@ -1641,7 +1641,7 @@ def test_nn_policy_learner_predict_proba():
     pscore = np.array([0.5] * 100, dtype=np.float32)
 
     # shape error
-    desc = "context must be 2D array"
+    desc = "`context` must be 2D array"
     with pytest.raises(ValueError, match=f"{desc}*"):
         learner = NNPolicyLearner(
             n_actions=n_actions,

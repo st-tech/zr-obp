@@ -29,7 +29,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "slate_id must be 1D array",
+        "`slate_id` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list).reshape((n_rounds, len_list)),  #
@@ -40,7 +40,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "slate_id must be 1D array",
+        "`slate_id` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list) - 1,  #
@@ -62,7 +62,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -73,7 +73,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -84,7 +84,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -95,7 +95,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -106,7 +106,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "action elements must be integers in the range of",
+        "`action` elements must be integers in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -117,7 +117,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -128,7 +128,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -139,7 +139,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "pscore_cascade must be 1D array",
+        "`pscore_cascade` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -150,7 +150,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "pscore_cascade must be 1D array",
+        "`pscore_cascade` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -161,7 +161,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "pscore_cascade must be in the range of",
+        "`pscore_cascade` must be in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -172,7 +172,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "pscore_cascade must be in the range of",
+        "`pscore_cascade` must be in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -183,7 +183,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "pscore_cascade must be non-increasing sequence in each slate",
+        "`pscore_cascade` must be non-increasing sequence in each slate",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -194,7 +194,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "slate_id, position, reward, pscore_cascade, and evaluation_policy_pscore_cascade must have the same number of samples",
+        "`slate_id`, `position`, `reward`, `pscore_cascade`, and `evaluation_policy_pscore_cascade` must have the same number of samples",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -205,7 +205,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -216,7 +216,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -227,7 +227,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -238,7 +238,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "position must not be duplicated in each slate",
+        "`position` must not be duplicated in each slate",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -249,7 +249,7 @@ invalid_input_of_slate_estimators = [
         "4",  #
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "evaluation_policy_pscore_cascade must be 1D array",
+        "`evaluation_policy_pscore_cascade` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -260,7 +260,7 @@ invalid_input_of_slate_estimators = [
         np.ones((n_rounds, len_list)),  #
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "evaluation_policy_pscore_cascade must be 1D array",
+        "`evaluation_policy_pscore_cascade` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -271,7 +271,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list) + 1,  #
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "evaluation_policy_pscore_cascade must be in the range of",
+        "`evaluation_policy_pscore_cascade` must be in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -282,7 +282,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list) - 1.1,  #
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "evaluation_policy_pscore_cascade must be in the range of",
+        "`evaluation_policy_pscore_cascade` must be in the range of",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -293,7 +293,7 @@ invalid_input_of_slate_estimators = [
         np.hstack([[0.2], np.ones(n_rounds * len_list - 1)]),  #
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "evaluation_policy_pscore_cascade must be non-increasing sequence in each slate",
+        "`evaluation_policy_pscore_cascade` must be non-increasing sequence in each slate",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -304,7 +304,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         None,  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "q_hat must be 1D array",
+        "`q_hat` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -315,7 +315,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         "4",  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "q_hat must be 1D array",
+        "`q_hat` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -326,7 +326,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones((n_rounds, len_list, n_unique_action)),  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "q_hat must be 1D array",
+        "`q_hat` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -337,7 +337,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones((n_rounds * len_list, n_unique_action)),  #
         np.ones(n_rounds * len_list * n_unique_action) / n_unique_action,
-        "q_hat must be 1D array",
+        "`q_hat` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -348,7 +348,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         "4",  #
-        "evaluation_policy_action_dist must be 1D array",
+        "`evaluation_policy_action_dist` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -359,7 +359,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones((n_rounds, len_list, n_unique_action)) / n_unique_action,  #
-        "evaluation_policy_action_dist must be 1D array",
+        "`evaluation_policy_action_dist` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -370,7 +370,7 @@ invalid_input_of_slate_estimators = [
         np.ones(n_rounds * len_list),
         np.ones(n_rounds * len_list * n_unique_action),
         np.ones((n_rounds * len_list, n_unique_action)) / n_unique_action,  #
-        "evaluation_policy_action_dist must be 1D array",
+        "`evaluation_policy_action_dist` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),

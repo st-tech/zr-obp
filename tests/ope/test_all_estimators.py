@@ -20,7 +20,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "action_dist must be 3D array",
+        "`action_dist` must be 3D array",
     ),
     (
         generate_action_dist(5, 4, 1)[:, :, 0],  #
@@ -31,7 +31,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 1)),
         np.ones(5),
         np.ones(5),
-        "action_dist must be 3D array",
+        "`action_dist` must be 3D array",
     ),
     (
         np.ones((5, 4, 3)),  #
@@ -42,7 +42,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "action_dist must be a probability distribution",
+        "`action_dist` must be a probability distribution",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -53,7 +53,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -64,7 +64,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -75,7 +75,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -86,7 +86,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -108,7 +108,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be smaller than",
+        "`position` elements must be smaller than",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -119,7 +119,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be given when",
+        "`position` elements must be given when",
     ),
 ]
 
