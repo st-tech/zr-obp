@@ -17,49 +17,63 @@ from obp.ope import SwitchDoublyRobustTuning
 from obp.types import BanditFeedback
 
 
-# lambda_, err, description
+# lambda_, use_estimated_pscore, err, description
 invalid_input_of_dr_init = [
     (
         "",
+        False,
         TypeError,
         r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         None,
+        False,
         TypeError,
         r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
-    (-1.0, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
-    (np.nan, ValueError, "lambda_ must not be nan"),
+    (-1.0, False, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
+    (np.nan, False, ValueError, "lambda_ must not be nan"),
+    (
+        1.0,
+        "s",
+        TypeError,
+        r"`use_estimated_pscore` must be a bool, but <class 'str'> is given.",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambda_, err, description",
+    "lambda_, use_estimated_pscore, err, description",
     invalid_input_of_dr_init,
 )
 def test_dr_init_using_invalid_inputs(
     lambda_,
+    use_estimated_pscore,
     err,
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = DoublyRobust(lambda_=lambda_)
+        _ = DoublyRobust(lambda_=lambda_, use_estimated_pscore=use_estimated_pscore)
 
     with pytest.raises(err, match=f"{description}*"):
-        _ = SwitchDoublyRobust(lambda_=lambda_)
+        _ = SwitchDoublyRobust(
+            lambda_=lambda_, use_estimated_pscore=use_estimated_pscore
+        )
 
     with pytest.raises(err, match=f"{description}*"):
-        _ = DoublyRobustWithShrinkage(lambda_=lambda_)
+        _ = DoublyRobustWithShrinkage(
+            lambda_=lambda_, use_estimated_pscore=use_estimated_pscore
+        )
 
 
-# lambdas, use_bias_upper_bound, delta, err, description
+# lambdas, use_bias_upper_bound, delta, use_estimated_pscore, err, description
 invalid_input_of_dr_tuning_init = [
     (
         "",  #
         "mse",
         True,
         0.05,
+        False,
         TypeError,
         "lambdas must be a list",
     ),
@@ -68,6 +82,7 @@ invalid_input_of_dr_tuning_init = [
         "slope",
         True,
         0.05,
+        False,
         TypeError,
         "lambdas must be a list",
     ),
@@ -76,6 +91,7 @@ invalid_input_of_dr_tuning_init = [
         "mse",
         True,
         0.05,
+        False,
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
@@ -84,6 +100,7 @@ invalid_input_of_dr_tuning_init = [
         "slope",
         True,
         0.05,
+        False,
         TypeError,
         r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
@@ -92,6 +109,7 @@ invalid_input_of_dr_tuning_init = [
         "mse",
         True,
         0.05,
+        False,
         ValueError,
         "lambdas must not be empty",
     ),
@@ -100,15 +118,25 @@ invalid_input_of_dr_tuning_init = [
         "slope",
         True,
         0.05,
+        False,
         ValueError,
         "`an element of lambdas`= -1.0, must be >= 0.0.",
     ),
-    ([np.nan], "mse", True, 0.05, ValueError, "an element of lambdas must not be nan"),
+    (
+        [np.nan],
+        "mse",
+        True,
+        0.05,
+        False,
+        ValueError,
+        "an element of lambdas must not be nan",
+    ),
     (
         [1],
         "",  #
         True,
         0.05,
+        False,
         ValueError,
         "`tuning_method` must be either 'slope' or 'mse'",
     ),
@@ -117,6 +145,7 @@ invalid_input_of_dr_tuning_init = [
         "mse",
         "",  #
         0.05,
+        False,
         TypeError,
         "`use_bias_upper_bound` must be a bool",
     ),
@@ -125,6 +154,7 @@ invalid_input_of_dr_tuning_init = [
         "slope",
         None,  #
         0.05,
+        False,
         TypeError,
         "`use_bias_upper_bound` must be a bool",
     ),
@@ -133,6 +163,7 @@ invalid_input_of_dr_tuning_init = [
         "mse",
         True,
         "",  #
+        False,
         TypeError,
         "`delta` must be an instance of <class 'float'>",
     ),
@@ -141,6 +172,7 @@ invalid_input_of_dr_tuning_init = [
         "slope",
         True,
         None,  #
+        False,
         TypeError,
         "`delta` must be an instance of <class 'float'>",
     ),
@@ -149,6 +181,7 @@ invalid_input_of_dr_tuning_init = [
         "mse",
         True,
         -1.0,  #
+        False,
         ValueError,
         "`delta`= -1.0, must be >= 0.0.",
     ),
@@ -157,14 +190,24 @@ invalid_input_of_dr_tuning_init = [
         "slope",
         True,
         1.1,  #
+        False,
         ValueError,
         "`delta`= 1.1, must be <= 1.0.",
+    ),
+    (
+        [1],
+        "slope",
+        True,
+        1.0,
+        "s",  #
+        TypeError,
+        r"`use_estimated_pscore` must be a bool, but <class 'str'> is given.",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas, tuning_method, use_bias_upper_bound, delta, err, description",
+    "lambdas, tuning_method, use_bias_upper_bound, delta, use_estimated_pscore, err, description",
     invalid_input_of_dr_tuning_init,
 )
 def test_dr_tuning_init_using_invalid_inputs(
@@ -172,6 +215,7 @@ def test_dr_tuning_init_using_invalid_inputs(
     tuning_method,
     use_bias_upper_bound,
     delta,
+    use_estimated_pscore,
     err,
     description,
 ):
@@ -181,6 +225,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             delta=delta,
             lambdas=lambdas,
             tuning_method=tuning_method,
+            use_estimated_pscore=use_estimated_pscore,
         )
 
     with pytest.raises(err, match=f"{description}*"):
@@ -189,6 +234,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             delta=delta,
             lambdas=lambdas,
             tuning_method=tuning_method,
+            use_estimated_pscore=use_estimated_pscore,
         )
 
     with pytest.raises(err, match=f"{description}*"):
@@ -197,6 +243,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             delta=delta,
             lambdas=lambdas,
             tuning_method=tuning_method,
+            use_estimated_pscore=use_estimated_pscore,
         )
 
     with pytest.raises(err, match=f"{description}*"):
@@ -205,6 +252,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             delta=delta,
             lambdas=lambdas,
             tuning_method=tuning_method,
+            use_estimated_pscore=use_estimated_pscore,
         )
 
 
@@ -287,6 +335,27 @@ sg_dr_tuning_slope = SubGaussianDoublyRobustTuning(
     lambdas=[0.01, 0.1], tuning_method="slope", estimator_name="sg_dr_tuning_slope"
 )
 sg_dr_max = SubGaussianDoublyRobust(lambda_=1.0)
+# estimated pscore
+dr_estimated_pscore = DoublyRobust(use_estimated_pscore=True)
+dr_os_estimated_pscore = DoublyRobustWithShrinkage(use_estimated_pscore=True)
+dr_tuning_estimated_pscore = DoublyRobustTuning(
+    lambdas=[1, 100],
+    estimator_name="dr_tuning_estimated_pscore",
+    use_estimated_pscore=True,
+)
+dr_os_tuning_estimated_pscore = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100],
+    estimator_name="dr_os_tuning_estimated_pscore",
+    use_estimated_pscore=True,
+)
+sndr_estimated_pscore = SelfNormalizedDoublyRobust(use_estimated_pscore=True)
+switch_dr_estimated_pscore = SwitchDoublyRobust(use_estimated_pscore=True)
+switch_dr_tuning_estimated_pscore = SwitchDoublyRobustTuning(
+    lambdas=[1, 100],
+    estimator_name="switch_dr_tuning_estimated_pscore",
+    use_estimated_pscore=True,
+)
+
 
 dr_estimators = [
     dr,
@@ -305,11 +374,18 @@ dr_estimators = [
     sg_dr_tuning_mse,
     sg_dr_tuning_slope,
     sg_dr_max,
+    dr_estimated_pscore,
+    dr_os_estimated_pscore,
+    dr_tuning_estimated_pscore,
+    dr_os_tuning_estimated_pscore,
+    sndr_estimated_pscore,
+    switch_dr_estimated_pscore,
+    switch_dr_tuning_estimated_pscore,
 ]
 
 
 # dr and self-normalized dr
-# action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description
+# action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, use_estimated_pscore, estimated_pscore, description
 invalid_input_of_dr = [
     (
         generate_action_dist(5, 4, 3),
@@ -318,6 +394,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "action must be 1D array",
     ),
     (
@@ -327,6 +405,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "reward must be 1D array",
     ),
     (
@@ -336,6 +416,8 @@ invalid_input_of_dr = [
         None,  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "pscore must be 1D array",
     ),
     (
@@ -345,6 +427,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         None,  #
+        False,
+        None,
         "estimated_rewards_by_reg_model must be 3D array",
     ),
     (
@@ -354,6 +438,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "action elements must be non-negative integers",
     ),
     (
@@ -363,6 +449,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "action elements must be non-negative integers",
     ),
     (
@@ -372,6 +460,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "action must be 1D array",
     ),
     (
@@ -381,6 +471,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "action must be 1D array",
     ),
     (
@@ -390,6 +482,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         r"action elements must be smaller than`",
     ),
     (
@@ -399,6 +493,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "reward must be 1D array",
     ),
     (
@@ -408,6 +504,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "reward must be 1D array",
     ),
     (
@@ -417,6 +515,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "Expected `action.shape[0]",
     ),
     (
@@ -426,6 +526,8 @@ invalid_input_of_dr = [
         "4",  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "pscore must be 1D array",
     ),
     (
@@ -435,6 +537,8 @@ invalid_input_of_dr = [
         np.ones((5, 3)),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "pscore must be 1D array",
     ),
     (
@@ -444,6 +548,8 @@ invalid_input_of_dr = [
         np.ones(4),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "Expected `action.shape[0]",
     ),
     (
@@ -453,6 +559,8 @@ invalid_input_of_dr = [
         np.arange(5),  #
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        False,
+        None,
         "pscore must be positive",
     ),
     (
@@ -462,6 +570,8 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 2)),  #
+        False,
+        None,
         "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False",
     ),
     (
@@ -471,13 +581,37 @@ invalid_input_of_dr = [
         np.ones(5),
         np.random.choice(3, size=5),
         "4",  #
+        False,
+        None,
         "estimated_rewards_by_reg_model must be 3D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        np.zeros((5, 4, 3)),
+        True,
+        None,  #
+        "estimated_pscore must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        None,
+        np.random.choice(3, size=5),
+        np.zeros((5, 4, 3)),
+        True,
+        np.arange(5),  #
+        "pscore must be positive",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, description",
+    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, use_estimated_pscore, estimated_pscore, description",
     invalid_input_of_dr,
 )
 def test_dr_using_invalid_input_data(
@@ -487,10 +621,19 @@ def test_dr_using_invalid_input_data(
     pscore: np.ndarray,
     position: np.ndarray,
     estimated_rewards_by_reg_model: np.ndarray,
+    use_estimated_pscore: bool,
+    estimated_pscore: np.ndarray,
     description: str,
 ) -> None:
+    dr = DoublyRobust(use_estimated_pscore=use_estimated_pscore)
+    dr_tuning = DoublyRobustTuning(
+        lambdas=[1, 100],
+        estimator_name="dr_tuning",
+        use_estimated_pscore=use_estimated_pscore,
+    )
+    sndr = SelfNormalizedDoublyRobust(use_estimated_pscore=use_estimated_pscore)
     # estimate_intervals function raises ValueError of all estimators
-    for estimator in [dr, sndr, dr_tuning_mse, dr_tuning_slope]:
+    for estimator in [dr, sndr, dr_tuning]:
         with pytest.raises(ValueError, match=f"{description}*"):
             _ = estimator.estimate_policy_value(
                 action_dist=action_dist,
@@ -499,6 +642,7 @@ def test_dr_using_invalid_input_data(
                 pscore=pscore,
                 position=position,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
             )
         with pytest.raises(ValueError, match=f"{description}*"):
             _ = estimator.estimate_interval(
@@ -508,6 +652,7 @@ def test_dr_using_invalid_input_data(
                 pscore=pscore,
                 position=position,
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+                estimated_pscore=estimated_pscore,
             )
 
 
@@ -520,6 +665,7 @@ valid_input_of_dr_variants = [
         np.random.uniform(low=0.5, high=1.0, size=5),
         np.random.choice(3, size=5),
         np.zeros((5, 4, 3)),
+        np.random.uniform(low=0.5, high=1.0, size=5),
         0.5,
         "all arguments are given and len_list > 1",
     )
@@ -527,7 +673,7 @@ valid_input_of_dr_variants = [
 
 
 @pytest.mark.parametrize(
-    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, hyperparameter, description",
+    "action_dist, action, reward, pscore, position, estimated_rewards_by_reg_model, estimated_pscore, hyperparameter, description",
     valid_input_of_dr_variants,
 )
 def test_dr_variants_using_valid_input_data(
@@ -537,6 +683,7 @@ def test_dr_variants_using_valid_input_data(
     pscore: np.ndarray,
     position: np.ndarray,
     estimated_rewards_by_reg_model: np.ndarray,
+    estimated_pscore: np.ndarray,
     hyperparameter: float,
     description: str,
 ) -> None:
@@ -568,16 +715,32 @@ def test_dr_variants_using_valid_input_data(
         lambdas=[hyperparameter, hyperparameter / 10],
         tuning_method="slope",
     )
+    switch_dr_estimated_pscore = SwitchDoublyRobust(
+        lambda_=hyperparameter, use_estimated_pscore=True
+    )
+    switch_dr_tuning_estimated_pscore = SwitchDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter * 10], use_estimated_pscore=True
+    )
+    dr_os_estimated_pscore = DoublyRobustWithShrinkage(
+        lambda_=hyperparameter, use_estimated_pscore=True
+    )
+    dr_os_tuning_estimated_pscore = DoublyRobustWithShrinkageTuning(
+        lambdas=[hyperparameter, hyperparameter * 10], use_estimated_pscore=True
+    )
     for estimator in [
-        switch_dr,
-        switch_dr_tuning_mse,
-        switch_dr_tuning_slope,
-        dr_os,
-        dr_os_tuning_mse,
-        dr_os_tuning_slope,
         sg_dr,
         sg_dr_tuning_mse,
         sg_dr_tuning_slope,
+        switch_dr,
+        switch_dr_tuning_mse,
+        switch_dr_tuning_slope,
+        switch_dr_estimated_pscore,
+        switch_dr_tuning_estimated_pscore,
+        dr_os,
+        dr_os_tuning_mse,
+        dr_os_tuning_slope,
+        dr_os_estimated_pscore,
+        dr_os_tuning_estimated_pscore,
     ]:
         est = estimator.estimate_policy_value(
             action_dist=action_dist,
@@ -586,6 +749,7 @@ def test_dr_variants_using_valid_input_data(
             pscore=pscore,
             position=position,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
         )
         assert est == 0.0, f"policy value must be 0, but {est}"
 
@@ -606,6 +770,7 @@ def test_dr_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     input_dict["estimated_rewards_by_reg_model"] = expected_reward
+    input_dict["estimated_pscore"] = input_dict["pscore"]
     # dr estimators require all arguments
     for estimator in dr_estimators:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
@@ -614,14 +779,13 @@ def test_dr_using_random_evaluation_policy(
         ), f"invalid type response: {estimator}"
     # remove necessary keys
     del input_dict["reward"]
-    del input_dict["pscore"]
     del input_dict["action"]
     del input_dict["estimated_rewards_by_reg_model"]
     for estimator in dr_estimators:
         with pytest.raises(
             TypeError,
             match=re.escape(
-                "estimate_policy_value() missing 4 required positional arguments: 'reward', 'action', 'pscore', and 'estimated_rewards_by_reg_model'"
+                "estimate_policy_value() missing 3 required positional arguments: 'reward', 'action', and 'estimated_rewards_by_reg_model'"
             ),
         ):
             _ = estimator.estimate_policy_value(**input_dict)
@@ -728,3 +892,9 @@ def test_sg_dr_using_random_evaluation_policy(
     assert (
         dr_value == sg_dr_0_value
     ), "SG-DR (lambda=0) should be the same as DoublyRobust"
+    input_dict["estimated_pscore"] = input_dict["pscore"]
+    del input_dict["pscore"]
+    dr_value_estimated_pscore = dr_estimated_pscore.estimate_policy_value(**input_dict)
+    assert (
+        dr_value == dr_value_estimated_pscore
+    ), "DoublyRobust with estimated_pscore (which is the same as pscore) should be the same as DoublyRobust"

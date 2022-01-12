@@ -1,3 +1,6 @@
+from obp.ope.classification_model import ImportanceWeightEstimator
+from obp.ope.classification_model import PropensityScoreEstimator
+from obp.ope.estimators import BalancedInverseProbabilityWeighting
 from obp.ope.estimators import BaseOffPolicyEstimator
 from obp.ope.estimators import DirectMethod
 from obp.ope.estimators import DoublyRobust
@@ -65,6 +68,9 @@ __all__ = [
     "SelfNormalizedSlateRewardInteractionIPS",
     "SelfNormalizedSlateIndependentIPS",
     "SelfNormalizedSlateStandardIPS",
+    "BalancedInverseProbabilityWeighting",
+    "ImportanceWeightEstimator",
+    "PropensityScoreEstimator",
     "BaseContinuousOffPolicyEstimator",
     "KernelizedInverseProbabilityWeighting",
     "KernelizedSelfNormalizedInverseProbabilityWeighting",
@@ -86,6 +92,7 @@ __all_estimators__ = [
     "SelfNormalizedDoublyRobust",
     "SubGaussianInverseProbabilityWeighting",
     "SubGaussianDoublyRobust",
+    "BalancedInverseProbabilityWeighting",
 ]
 
 
