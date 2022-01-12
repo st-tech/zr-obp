@@ -7,6 +7,7 @@ from obp.ope.estimators import ReplayMethod
 from obp.ope.estimators import SelfNormalizedDoublyRobust
 from obp.ope.estimators import SelfNormalizedInverseProbabilityWeighting
 from obp.ope.estimators import SwitchDoublyRobust
+from obp.ope.estimators import BalancedInverseProbabilityWeighting
 from obp.ope.estimators_continuous import (
     KernelizedSelfNormalizedInverseProbabilityWeighting,
 )
@@ -33,6 +34,8 @@ from obp.ope.meta_continuous import ContinuousOffPolicyEvaluation
 from obp.ope.meta_slate import SlateOffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
 from obp.ope.regression_model_slate import SlateRegressionModel
+from obp.ope.classification_model import ImportanceWeightEstimator
+from obp.ope.classification_model import PropensityScoreEstimator
 
 
 __all__ = [
@@ -61,6 +64,9 @@ __all__ = [
     "SelfNormalizedSlateRewardInteractionIPS",
     "SelfNormalizedSlateIndependentIPS",
     "SelfNormalizedSlateStandardIPS",
+    "BalancedInverseProbabilityWeighting",
+    "ImportanceWeightEstimator",
+    "PropensityScoreEstimator",
     "BaseContinuousOffPolicyEstimator",
     "KernelizedInverseProbabilityWeighting",
     "KernelizedSelfNormalizedInverseProbabilityWeighting",
@@ -80,6 +86,7 @@ __all_estimators__ = [
     "DoublyRobustWithShrinkage",
     "SwitchDoublyRobust",
     "SelfNormalizedDoublyRobust",
+    "BalancedInverseProbabilityWeighting",
 ]
 
 
