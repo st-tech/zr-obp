@@ -317,7 +317,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action: array-like or Tensor, shape (n_rounds,)
+        action: array-like, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
@@ -401,7 +401,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action: array-like or Tensor, shape (n_rounds,)
+        action: array-like, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
@@ -550,7 +550,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         pscore: Tensor, shape (batch_size,)
             Action choice probabilities of a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
 
-        action_by_current_policy: array-like or Tensor, shape (batch_size,)
+        action_by_current_policy: Tensor, shape (batch_size,)
             Continuous action values given by the current policy.
 
         Returns
@@ -863,7 +863,7 @@ class QFuncEstimatorForContinuousAction:
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action: array-like or Tensor, shape (n_rounds,)
+        action: array-like, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
@@ -933,7 +933,7 @@ class QFuncEstimatorForContinuousAction:
         context: array-like, shape (n_rounds, dim_context)
             Context vectors in each round, i.e., :math:`x_t`.
 
-        action: array-like or Tensor, shape (n_rounds,)
+        action: array-like, shape (n_rounds,)
             Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
 
         reward: array-like, shape (n_rounds,)
