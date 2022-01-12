@@ -82,14 +82,14 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
     .. math::
 
         \\hat{V}_{\\mathrm{Kernel-IPW}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{\\mathcal{D}} \\left[ \\frac{1}{h} K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t} \\right],
+        := \\mathbb{E}_{n} \\left[ \\frac{1}{h} K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t} \\right],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by behavior policy.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit data with :math:`T` rounds collected by behavior policy.
     Note that each action :math:`a_t` in the logged bandit data is a continuous variable.
     :math:`q_t` is a generalized propensity score that is defined as the conditional probability density of the behavior policy.
     :math:`K(\cdot)` is a kernel function such as the gaussian kernel, and :math:`h` is a bandwidth hyperparameter.
     :math:`\\pi_e (x)` is a deterministic evaluation policy that maps :math:`x` to a continuous action value.
-    :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+    :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
 
     Parameters
     ------------
@@ -301,14 +301,14 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
     .. math::
 
         \\hat{V}_{\\mathrm{Kernel-SNIPW}} (\\pi_e; \\mathcal{D})
-        := \\frac{\\mathbb{E}_{\\mathcal{D}} \\left[ K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t} \\right]}{\\mathbb{E}_{\\mathcal{D}} \\left[ K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t}},
+        := \\frac{\\mathbb{E}_{n} \\left[ K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t} \\right]}{\\mathbb{E}_{n} \\left[ K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{r_t}{q_t}},
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by behavior policy.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit data with :math:`T` rounds collected by behavior policy.
     Note that each action :math:`a_t` in the logged bandit data is a continuous variable.
     :math:`q_t` is a generalized propensity score that is defined as the conditional probability density of the behavior policy.
     :math:`K(\cdot)` is a kernel function such as the gaussian kernel, and :math:`h` is a bandwidth hyperparameter.
     :math:`\\pi_e (x)` is a deterministic evaluation policy that maps :math:`x` to a continuous action value.
-    :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+    :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
 
     Parameters
     ------------
@@ -525,15 +525,15 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
     .. math::
 
         \\hat{V}_{\\mathrm{Kernel-DR}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{\\mathcal{D}} \\left[ \\frac{1}{h} K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{(r_t - \\hat{q}(x_t, \\pi_e(x_t)))}{q_t} + \\hat{q}(x_t, \\pi_e(x_t)) \\right],
+        := \\mathbb{E}_{n} \\left[ \\frac{1}{h} K \\left( \\frac{\pi_e(x_t) - a_t}{h} \\right) \\frac{(r_t - \\hat{q}(x_t, \\pi_e(x_t)))}{q_t} + \\hat{q}(x_t, \\pi_e(x_t)) \\right],
 
-    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit feedback data with :math:`T` rounds collected by behavior policy.
+    where :math:`\\mathcal{D}=\\{(x_t,a_t,r_t)\\}_{t=1}^{T}` is logged bandit data with :math:`T` rounds collected by behavior policy.
     Note that each action :math:`a_t` in the logged bandit data is a continuous variable.
     :math:`q_t` is a generalized propensity score that is defined as the conditional probability density of the behavior policy.
     :math:`K(\cdot)` is a kernel function such as the gaussian kernel, and :math:`h` is a bandwidth hyperparameter.
     :math:`\\pi_e (x)` is a deterministic evaluation policy that maps :math:`x` to a continuous action value.
     :math:`\\hat{q} (x,a)` is an estimated expected reward given :math:`x` and :math:`a`.
-    :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
+    :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
 
     Parameters
     ------------

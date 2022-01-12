@@ -10,6 +10,8 @@ from obp.ope import DoublyRobustTuning
 from obp.ope import DoublyRobustWithShrinkage
 from obp.ope import DoublyRobustWithShrinkageTuning
 from obp.ope import SelfNormalizedDoublyRobust
+from obp.ope import SubGaussianDoublyRobust
+from obp.ope import SubGaussianDoublyRobustTuning
 from obp.ope import SwitchDoublyRobust
 from obp.ope import SwitchDoublyRobustTuning
 from obp.types import BanditFeedback
@@ -68,6 +70,7 @@ def test_dr_init_using_invalid_inputs(
 invalid_input_of_dr_tuning_init = [
     (
         "",  #
+        "mse",
         True,
         0.05,
         False,
@@ -76,6 +79,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         None,  #
+        "slope",
         True,
         0.05,
         False,
@@ -84,6 +88,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [""],  #
+        "mse",
         True,
         0.05,
         False,
@@ -92,6 +97,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [None],  #
+        "slope",
         True,
         0.05,
         False,
@@ -100,6 +106,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [],  #
+        "mse",
         True,
         0.05,
         False,
@@ -108,15 +115,34 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [-1.0],  #
+        "slope",
         True,
         0.05,
         False,
         ValueError,
         "`an element of lambdas`= -1.0, must be >= 0.0.",
     ),
-    ([np.nan], True, 0.05, False, ValueError, "an element of lambdas must not be nan"),
+    (
+        [np.nan],
+        "mse",
+        True,
+        0.05,
+        False,
+        ValueError,
+        "an element of lambdas must not be nan",
+    ),
     (
         [1],
+        "",  #
+        True,
+        0.05,
+        False,
+        ValueError,
+        "`tuning_method` must be either 'slope' or 'mse'",
+    ),
+    (
+        [1],
+        "mse",
         "",  #
         0.05,
         False,
@@ -125,6 +151,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "slope",
         None,  #
         0.05,
         False,
@@ -133,6 +160,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "mse",
         True,
         "",  #
         False,
@@ -141,6 +169,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "slope",
         True,
         None,  #
         False,
@@ -149,6 +178,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "mse",
         True,
         -1.0,  #
         False,
@@ -157,6 +187,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "slope",
         True,
         1.1,  #
         False,
@@ -165,6 +196,7 @@ invalid_input_of_dr_tuning_init = [
     ),
     (
         [1],
+        "slope",
         True,
         1.0,
         "s",  #
@@ -175,11 +207,12 @@ invalid_input_of_dr_tuning_init = [
 
 
 @pytest.mark.parametrize(
-    "lambdas, use_bias_upper_bound, delta, use_estimated_pscore, err, description",
+    "lambdas, tuning_method, use_bias_upper_bound, delta, use_estimated_pscore, err, description",
     invalid_input_of_dr_tuning_init,
 )
 def test_dr_tuning_init_using_invalid_inputs(
     lambdas,
+    tuning_method,
     use_bias_upper_bound,
     delta,
     use_estimated_pscore,
@@ -191,6 +224,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             use_bias_upper_bound=use_bias_upper_bound,
             delta=delta,
             lambdas=lambdas,
+            tuning_method=tuning_method,
             use_estimated_pscore=use_estimated_pscore,
         )
 
@@ -199,6 +233,7 @@ def test_dr_tuning_init_using_invalid_inputs(
             use_bias_upper_bound=use_bias_upper_bound,
             delta=delta,
             lambdas=lambdas,
+            tuning_method=tuning_method,
             use_estimated_pscore=use_estimated_pscore,
         )
 
@@ -207,14 +242,24 @@ def test_dr_tuning_init_using_invalid_inputs(
             use_bias_upper_bound=use_bias_upper_bound,
             delta=delta,
             lambdas=lambdas,
+            tuning_method=tuning_method,
+            use_estimated_pscore=use_estimated_pscore,
+        )
+
+    with pytest.raises(err, match=f"{description}*"):
+        _ = SubGaussianDoublyRobustTuning(
+            use_bias_upper_bound=use_bias_upper_bound,
+            delta=delta,
+            lambdas=lambdas,
+            tuning_method=tuning_method,
             use_estimated_pscore=use_estimated_pscore,
         )
 
 
 valid_input_of_dr_init = [
     (np.inf, "infinite lambda_"),
-    (3.0, "float lambda_"),
-    (2, "integer lambda_"),
+    (0.3, "float lambda_"),
+    (1, "integer lambda_"),
 ]
 
 
@@ -226,43 +271,70 @@ def test_dr_init_using_valid_input_data(lambda_: float, description: str) -> Non
     _ = DoublyRobust(lambda_=lambda_)
     _ = DoublyRobustWithShrinkage(lambda_=lambda_)
     _ = SwitchDoublyRobust(lambda_=lambda_)
+    if lambda_ < np.inf:
+        _ = SubGaussianDoublyRobust(lambda_=lambda_)
 
 
 valid_input_of_dr_tuning_init = [
-    ([3.0, np.inf, 100.0], "float lambda_"),
-    ([2], "integer lambda_"),
+    ([0.3, 0.001], "slope", "float lambda_"),
+    ([1], "mse", "integer lambda_"),
 ]
 
 
 @pytest.mark.parametrize(
-    "lambdas, description",
+    "lambdas, tuning_method, description",
     valid_input_of_dr_tuning_init,
 )
-def test_dr_tuning_init_using_valid_input_data(lambdas, description):
-    _ = DoublyRobustTuning(lambdas=lambdas)
+def test_dr_tuning_init_using_valid_input_data(lambdas, tuning_method, description):
+    _ = DoublyRobustTuning(lambdas=lambdas, tuning_method=tuning_method)
     _ = DoublyRobustWithShrinkageTuning(
         lambdas=lambdas,
+        tuning_method=tuning_method,
     )
     _ = SwitchDoublyRobustTuning(
         lambdas=lambdas,
+        tuning_method=tuning_method,
+    )
+    _ = SubGaussianDoublyRobustTuning(
+        lambdas=lambdas,
+        tuning_method=tuning_method,
     )
 
 
 # prepare instances
 dm = DirectMethod()
 dr = DoublyRobust()
-dr_tuning = DoublyRobustTuning(lambdas=[1, 100], estimator_name="dr_tuning")
+dr_tuning_mse = DoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="mse", estimator_name="dr_tuning_mse"
+)
+dr_tuning_slope = DoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="slope", estimator_name="dr_tuning_slope"
+)
 dr_os_0 = DoublyRobustWithShrinkage(lambda_=0.0)
-dr_os_tuning = DoublyRobustWithShrinkageTuning(
-    lambdas=[1, 100], estimator_name="dr_os_tuning"
+dr_os_tuning_mse = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100], tuning_method="mse", estimator_name="dr_os_tuning_mse"
+)
+dr_os_tuning_slope = DoublyRobustWithShrinkageTuning(
+    lambdas=[1, 100], tuning_method="slope", estimator_name="dr_os_tuning_slope"
 )
 dr_os_max = DoublyRobustWithShrinkage(lambda_=np.inf)
 sndr = SelfNormalizedDoublyRobust()
 switch_dr_0 = SwitchDoublyRobust(lambda_=0.0)
-switch_dr_tuning = SwitchDoublyRobustTuning(
-    lambdas=[1, 100], estimator_name="switch_dr_tuning"
+switch_dr_tuning_mse = SwitchDoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="mse", estimator_name="switch_dr_tuning_mse"
+)
+switch_dr_tuning_slope = SwitchDoublyRobustTuning(
+    lambdas=[1, 100], tuning_method="slope", estimator_name="switch_dr_tuning_slope"
 )
 switch_dr_max = SwitchDoublyRobust(lambda_=np.inf)
+sg_dr_0 = SubGaussianDoublyRobust(lambda_=0.0)
+sg_dr_tuning_mse = SubGaussianDoublyRobustTuning(
+    lambdas=[0.01, 0.1], tuning_method="mse", estimator_name="sg_dr_tuning_mse"
+)
+sg_dr_tuning_slope = SubGaussianDoublyRobustTuning(
+    lambdas=[0.01, 0.1], tuning_method="slope", estimator_name="sg_dr_tuning_slope"
+)
+sg_dr_max = SubGaussianDoublyRobust(lambda_=1.0)
 # estimated pscore
 dr_estimated_pscore = DoublyRobust(use_estimated_pscore=True)
 dr_os_estimated_pscore = DoublyRobustWithShrinkage(use_estimated_pscore=True)
@@ -287,12 +359,21 @@ switch_dr_tuning_estimated_pscore = SwitchDoublyRobustTuning(
 
 dr_estimators = [
     dr,
-    dr_tuning,
+    dr_tuning_mse,
+    dr_tuning_slope,
     dr_os_0,
-    dr_os_tuning,
+    dr_os_tuning_mse,
+    dr_os_tuning_slope,
+    dr_os_max,
     sndr,
     switch_dr_0,
-    switch_dr_tuning,
+    switch_dr_tuning_mse,
+    switch_dr_tuning_slope,
+    switch_dr_max,
+    sg_dr_0,
+    sg_dr_tuning_mse,
+    sg_dr_tuning_slope,
+    sg_dr_max,
     dr_estimated_pscore,
     dr_os_estimated_pscore,
     dr_tuning_estimated_pscore,
@@ -608,12 +689,31 @@ def test_dr_variants_using_valid_input_data(
 ) -> None:
     # check dr variants
     switch_dr = SwitchDoublyRobust(lambda_=hyperparameter)
-    switch_dr_tuning = SwitchDoublyRobustTuning(
-        lambdas=[hyperparameter, hyperparameter * 10]
+    switch_dr_tuning_mse = SwitchDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="mse",
+    )
+    switch_dr_tuning_slope = SwitchDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="slope",
     )
     dr_os = DoublyRobustWithShrinkage(lambda_=hyperparameter)
-    dr_os_tuning = DoublyRobustWithShrinkageTuning(
-        lambdas=[hyperparameter, hyperparameter * 10]
+    dr_os_tuning_mse = DoublyRobustWithShrinkageTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="mse",
+    )
+    dr_os_tuning_slope = DoublyRobustWithShrinkageTuning(
+        lambdas=[hyperparameter, hyperparameter * 10],
+        tuning_method="slope",
+    )
+    sg_dr = SubGaussianDoublyRobust(lambda_=hyperparameter)
+    sg_dr_tuning_mse = SubGaussianDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter / 10],
+        tuning_method="mse",
+    )
+    sg_dr_tuning_slope = SubGaussianDoublyRobustTuning(
+        lambdas=[hyperparameter, hyperparameter / 10],
+        tuning_method="slope",
     )
     switch_dr_estimated_pscore = SwitchDoublyRobust(
         lambda_=hyperparameter, use_estimated_pscore=True
@@ -628,12 +728,17 @@ def test_dr_variants_using_valid_input_data(
         lambdas=[hyperparameter, hyperparameter * 10], use_estimated_pscore=True
     )
     for estimator in [
+        sg_dr,
+        sg_dr_tuning_mse,
+        sg_dr_tuning_slope,
         switch_dr,
-        switch_dr_tuning,
-        dr_os,
-        dr_os_tuning,
+        switch_dr_tuning_mse,
+        switch_dr_tuning_slope,
         switch_dr_estimated_pscore,
         switch_dr_tuning_estimated_pscore,
+        dr_os,
+        dr_os_tuning_mse,
+        dr_os_tuning_slope,
         dr_os_estimated_pscore,
         dr_os_tuning_estimated_pscore,
     ]:
@@ -710,7 +815,7 @@ def test_boundedness_of_sndr_using_random_evaluation_policy(
     ), f"estimated policy value of sndr should be smaller than or equal to 2 (because of its 2-boundedness), but the value is: {estimated_policy_value}"
 
 
-def test_dr_osage_using_random_evaluation_policy(
+def test_dr_os_using_random_evaluation_policy(
     synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
 ) -> None:
     """
@@ -764,6 +869,29 @@ def test_switch_dr_using_random_evaluation_policy(
     assert (
         dr_value == switch_dr_max_value
     ), "SwitchDR (lambda=1e10) should be the same as DoublyRobust"
+
+
+def test_sg_dr_using_random_evaluation_policy(
+    synthetic_bandit_feedback: BanditFeedback, random_action_dist: np.ndarray
+) -> None:
+    """
+    Test the switch_dr using synthetic bandit data and random evaluation policy
+    """
+    expected_reward = synthetic_bandit_feedback["expected_reward"][:, :, np.newaxis]
+    action_dist = random_action_dist
+    # prepare input dict
+    input_dict = {
+        k: v
+        for k, v in synthetic_bandit_feedback.items()
+        if k in ["reward", "action", "pscore", "position"]
+    }
+    input_dict["action_dist"] = action_dist
+    input_dict["estimated_rewards_by_reg_model"] = expected_reward
+    dr_value = dr.estimate_policy_value(**input_dict)
+    sg_dr_0_value = sg_dr_0.estimate_policy_value(**input_dict)
+    assert (
+        dr_value == sg_dr_0_value
+    ), "SG-DR (lambda=0) should be the same as DoublyRobust"
     input_dict["estimated_pscore"] = input_dict["pscore"]
     del input_dict["pscore"]
     dr_value_estimated_pscore = dr_estimated_pscore.estimate_policy_value(**input_dict)

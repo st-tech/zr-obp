@@ -541,7 +541,7 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
-        metric: str = "relative-ee",
+        metric: str = "se",
     ) -> Dict[str, float]:
         """Evaluate estimation performance of OPE estimators.
 
@@ -585,7 +585,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        metric: str, default="relative-ee"
+        metric: str, default="se"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be "relative-ee" or "se".
 
@@ -640,7 +640,7 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
-        metric: str = "relative-ee",
+        metric: str = "se",
     ) -> DataFrame:
         """Summarize performance comparisons of OPE estimators.
 
@@ -667,7 +667,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        metric: str, default="relative-ee"
+        metric: str, default="se"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be either "relative-ee" or "se".
 

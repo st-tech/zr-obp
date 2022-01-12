@@ -8,12 +8,14 @@ from typing import Optional
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold
 from sklearn.utils import check_random_state
 from sklearn.utils import check_scalar
-from sklearn.calibration import CalibratedClassifierCV
 
-from ..utils import check_array, sample_action_fast, check_bandit_feedback_inputs
+from ..utils import check_array
+from ..utils import check_bandit_feedback_inputs
+from ..utils import sample_action_fast
 
 
 @dataclass
