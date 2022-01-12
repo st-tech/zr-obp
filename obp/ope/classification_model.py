@@ -31,11 +31,11 @@ class ImportanceWeightEstimator(BaseEstimator):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
-        Context vector characterizing action (i.e., vector representation of each action).
+        Context vectors characterizing actions (i.e., vector representation of each action).
         If None, one-hot encoding of the action variable is used as default.
         If fitting_method is 'raw', one-hot encoding will be used as action_context.
 
@@ -74,7 +74,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             and self.fitting_method in ["sample", "raw"]
         ):
             raise ValueError(
-                f"fitting_method must be either 'sample' or 'raw', but {self.fitting_method} is given"
+                f"`fitting_method` must be either 'sample' or 'raw', but {self.fitting_method} is given"
             )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
@@ -110,17 +110,17 @@ class ImportanceWeightEstimator(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         random_state: int, default=None
@@ -187,14 +187,14 @@ class ImportanceWeightEstimator(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds_of_new_data, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         Returns
@@ -235,22 +235,22 @@ class ImportanceWeightEstimator(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
-            When 1 is given, the classification model is trained on the whole logged bandit feedback data.
+            When 1 is given, the classification model is trained on the whole logged bandit data.
             Please refer to https://arxiv.org/abs/2002.08536 about the details of the cross-fitting procedure.
 
         random_state: int, default=None
@@ -370,10 +370,10 @@ class ImportanceWeightEstimator(BaseEstimator):
         Parameters
         -----------
         context: array-like, shape (n_rounds,)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
 
         action_dist_at_position: array-like, shape (n_rounds, n_actions,)
@@ -412,7 +412,7 @@ class PropensityScoreEstimator(BaseEstimator):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     calibration_cv: int, default=2
@@ -466,14 +466,14 @@ class PropensityScoreEstimator(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         """
@@ -510,14 +510,14 @@ class PropensityScoreEstimator(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds_of_new_data, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
         Returns
@@ -554,19 +554,19 @@ class PropensityScoreEstimator(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a classification model assumes that there is only a single position.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a classification model assumes that there is only a single position.
             When `len_list` > 1, this position argument has to be set.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
-            When 1 is given, the classification model is trained on the whole logged bandit feedback data.
+            When 1 is given, the classification model is trained on the whole logged bandit data.
             Please refer to https://arxiv.org/abs/2002.08536 about the details of the cross-fitting procedure.
 
         random_state: int, default=None

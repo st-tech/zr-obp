@@ -27,7 +27,7 @@ class BaseLogisticPolicy(BaseContextualPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -113,7 +113,7 @@ class LogisticEpsilonGreedy(BaseLogisticPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -180,7 +180,7 @@ class LogisticUCB(BaseLogisticPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -254,7 +254,7 @@ class LogisticTS(BaseLogisticPolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1

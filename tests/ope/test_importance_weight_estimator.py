@@ -83,7 +83,7 @@ invalid_input_of_initializing_importance_weight_estimator = [
         RandomForestClassifier(**hyperparams["random_forest"]),
         2,
         ValueError,
-        "fitting_method must be either 'sample' or 'raw', but 1 is given",
+        "`fitting_method` must be either 'sample' or 'raw', but 1 is given",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -93,7 +93,7 @@ invalid_input_of_initializing_importance_weight_estimator = [
         RandomForestClassifier(**hyperparams["random_forest"]),
         2,
         ValueError,
-        "fitting_method must be either 'sample' or 'raw', but awesome is given",
+        "`fitting_method` must be either 'sample' or 'raw', but awesome is given",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),

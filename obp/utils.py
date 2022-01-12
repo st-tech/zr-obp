@@ -26,7 +26,7 @@ def check_confidence_interval_arguments(
         Significance level.
 
     n_bootstrap_samples: int, default=10000
-        Number of resampling performed in the bootstrap procedure.
+        Number of resampling performed in bootstrap sampling.
 
     random_state: int, default=None
         Controls the random seed in bootstrap sampling.
@@ -48,7 +48,7 @@ def estimate_confidence_interval_by_bootstrap(
     n_bootstrap_samples: int = 10000,
     random_state: Optional[int] = None,
 ) -> Dict[str, float]:
-    """Estimate confidence interval by nonparametric bootstrap-like procedure.
+    """Estimate confidence interval using nonparametric bootstrap.
 
     Parameters
     ----------
@@ -59,7 +59,7 @@ def estimate_confidence_interval_by_bootstrap(
         Significance level.
 
     n_bootstrap_samples: int, default=10000
-        Number of resampling performed in the bootstrap procedure.
+        Number of resampling performed in bootstrap sampling.
 
     random_state: int, default=None
         Controls the random seed in bootstrap sampling.
@@ -222,7 +222,7 @@ def check_bandit_feedback_inputs(
         Context vectors observed for each data, i.e., :math:`x_i`.
 
     action: array-like, shape (n_rounds,)
-        Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,)
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -231,7 +231,7 @@ def check_bandit_feedback_inputs(
         Expected reward of each data, i.e., :math:`\\mathbb{E}[r_i|x_i,a_i]`.
 
     position: array-like, shape (n_rounds,), default=None
-        Position in a recommendation interface where the action was presented.
+        Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore: array-like, shape (n_rounds,)
         Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -327,10 +327,10 @@ def check_ope_inputs(
         Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
     position: array-like, shape (n_rounds,), default=None
-        Position in a recommendation interface where the action was presented.
+        Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     action: array-like, shape (n_rounds,), default=None
-        Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,), default=None
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -339,7 +339,7 @@ def check_ope_inputs(
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-        Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+        Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
     estimated_importance_weights: array-like, shape (n_rounds,), default=None
         Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
@@ -577,10 +577,10 @@ def _check_slate_ope_inputs(
         Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Slot-level rewards, i.e., :math:`r_{i}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(l)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Position in a recommendation interface where the action was presented.
+        Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities of behavior policy (propensity scores).
@@ -648,10 +648,10 @@ def check_sips_inputs(
         Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Slot-level rewards, i.e., :math:`r_{i}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(l)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Position in a recommendation interface where the action was presented.
+        Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -707,16 +707,16 @@ def check_iips_inputs(
         Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Slot-level rewards, i.e., :math:`r_{i}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(l)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Position in a recommendation interface where the action was presented.
+        Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-        Marginal action choice probabilities of the slot (:math:`l`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
+        Marginal action choice probabilities of the slot (:math:`l`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{i}(l) |x_i)`.
 
     evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-        Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+        Marginal action choice probabilities of the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(a_{i}(l) |x_i)`.
 
     """
     _check_slate_ope_inputs(
@@ -751,10 +751,10 @@ def check_rips_inputs(
         Slate id observed for each data in logged bandit data.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Slot-level rewards, i.e., :math:`r_{i}(k)`.
+        Slot-level rewards, i.e., :math:`r_{i}(l)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        Position in a recommendation interface where the action was presented.
+        Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -837,33 +837,33 @@ def check_cascade_dr_inputs(
         Number of unique actions.
 
     slate_id: array-like, shape (<= n_rounds * len_list,)
-        IDs to differentiate slates (i.e., rounds or lists of actions).
+        Indices to differentiate slates (i.e., ranking or list of actions)
 
     action: array-like, (<= n_rounds * len_list,)
-        Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+        Actions observed at each slot in a ranking/slate in logged bandit data, i.e., :math:`a_{i}(l)`,
         which is chosen by the behavior policy :math:`\\pi_b`.
 
     reward: array-like, shape (<= n_rounds * len_list,)
-        Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+        Slot-level rewards observed for each data in logged bandit data, i.e., :math:`r_{i}(l)`.
 
     position: array-like, shape (<= n_rounds * len_list,)
-        IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+        Indices to differentiate slots/positions in a slate/ranking.
 
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
         Probabilities of behavior policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
-        , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+        , i.e., :math:`\\pi_b(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1))`.
 
     evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
         Probabilities of evaluation policy selecting action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
-        , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+        , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1))`.
 
     q_hat: array-like (<= n_rounds * len_list * n_unique_actions, )
-        :math:`\\hat{Q}_k` used in Cascade-DR.
-        , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+        :math:`\\hat{Q}_l` used in Cascade-DR.
+        , i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
 
     evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
         Action choice probabilities of evaluation policy for all possible actions
-        , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+        , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
     """
     check_rips_inputs(

@@ -385,7 +385,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         reward: np.ndarray,
         pscore: Optional[np.ndarray] = None,
     ) -> None:
-        """Fits an offline bandit policy using the given logged bandit feedback data.
+        """Fits an offline bandit policy on the given logged bandit data.
 
         Note
         ----------
@@ -548,7 +548,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: Tensor, shape (batch_size,)
-            Action choice probabilities of a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_by_current_policy: Tensor, shape (batch_size,)
             Continuous action values given by the current policy.
@@ -926,7 +926,7 @@ class QFuncEstimatorForContinuousAction:
         action: np.ndarray,
         reward: np.ndarray,
     ) -> None:
-        """Fits an offline bandit policy using the given logged bandit feedback data.
+        """Fits an offline bandit policy on the given logged bandit data.
 
         Parameters
         -----------

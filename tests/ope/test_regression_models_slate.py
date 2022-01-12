@@ -78,7 +78,7 @@ invalid_input_of_initializing_regression_models = [
         1,  #
         Ridge(**hyperparams["ridge"]),
         ValueError,
-        "fitting_method must be either",
+        "`fitting_method` must be either",
     ),
     (
         n_unique_action,
@@ -86,7 +86,7 @@ invalid_input_of_initializing_regression_models = [
         "awesome",  #
         Ridge(**hyperparams["ridge"]),
         ValueError,
-        "fitting_method must be either",
+        "`fitting_method` must be either",
     ),
     (
         n_unique_action,

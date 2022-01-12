@@ -34,7 +34,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_interval(self) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure."""
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap."""
         raise NotImplementedError
 
 
@@ -83,17 +83,17 @@ class ReplayMethod(BaseOffPolicyEstimator):
         Parameters
         ------------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -125,17 +125,17 @@ class ReplayMethod(BaseOffPolicyEstimator):
         Parameters
         ------------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -170,29 +170,29 @@ class ReplayMethod(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         alpha: float, default=0.05
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -305,10 +305,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -317,8 +317,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -350,21 +350,21 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
-            If self.use_estimated_pscore is False, pscore must be given.
+            If `use_estimated_pscore` is False, `pscore` must be given.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
@@ -417,26 +417,26 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
-            If self.use_estimated_pscore is False, pscore must be given.
+            If `use_estimated_pscore` is False, `pscore` must be given.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
@@ -447,7 +447,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -507,10 +507,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -519,8 +519,8 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         use_bias_upper_bound: bool, default=True
@@ -586,10 +586,10 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
     behavior policy :math:`\\pi_b`. :math:`w(x,a):=\\pi_e (a|x)/\\pi_b (a|x)` is the importance weight given :math:`x` and :math:`a`.
     :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`n` observations in :math:`\\mathcal{D}`.
 
-    SNIPW re-weights the observed rewards by the self-normalized importance weihgt.
+    SNIPW normalizes the observed rewards by the self-normalized importance weihgt.
     This estimator is not unbiased even when the behavior policy is known.
-    However, it is still consistent for the true policy value and increases the stability in some senses.
-    See the references for the detailed discussions.
+    However, it is still consistent for the true policy value and gains some stability in OPE.
+    See the reference papers for more details.
 
     Parameters
     ----------
@@ -625,10 +625,10 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -637,8 +637,8 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -712,11 +712,11 @@ class DirectMethod(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -757,11 +757,11 @@ class DirectMethod(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -799,7 +799,7 @@ class DirectMethod(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
@@ -807,18 +807,18 @@ class DirectMethod(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         alpha: float, default=0.05
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -951,10 +951,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -963,11 +963,11 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -1019,24 +1019,24 @@ class DoublyRobust(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
-            If self.use_estimated_pscore is False, pscore must be given.
+            If `use_estimated_pscore` is False, `pscore` must be given.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
@@ -1096,29 +1096,29 @@ class DoublyRobust(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
-            If self.use_estimated_pscore is False, pscore must be given.
+            If `use_estimated_pscore` is False, `pscore` must be given.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
@@ -1129,7 +1129,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -1195,10 +1195,10 @@ class DoublyRobust(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1207,12 +1207,12 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         use_bias_upper_bound: bool, default=True
             Whether to use bias upper bound in hyperparameter tuning.
@@ -1327,10 +1327,10 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1339,11 +1339,11 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -1455,10 +1455,10 @@ class SwitchDoublyRobust(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1467,11 +1467,11 @@ class SwitchDoublyRobust(DoublyRobust):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -1514,10 +1514,10 @@ class SwitchDoublyRobust(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1526,11 +1526,11 @@ class SwitchDoublyRobust(DoublyRobust):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         use_bias_upper_bound: bool, default=True
@@ -1667,10 +1667,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1679,11 +1679,11 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -1735,10 +1735,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1747,10 +1747,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         use_bias_upper_bound: bool, default=True
             Whether to use bias upper bound in hyperparameter tuning.
@@ -1883,10 +1883,10 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
         Parameters
         ----------
         reward: array-like or Tensor, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1895,8 +1895,8 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -1928,10 +1928,10 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1940,10 +1940,10 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         use_bias_upper_bound: bool, default=True
             Whether to use bias upper bound in hyperparameter tuning.
@@ -2069,10 +2069,10 @@ class SubGaussianDoublyRobust(DoublyRobust):
         Parameters
         ----------
         reward: array-like or Tensor, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like or Tensor, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like or Tensor, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -2081,11 +2081,11 @@ class SubGaussianDoublyRobust(DoublyRobust):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like or Tensor, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like or Tensor, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -2134,10 +2134,10 @@ class SubGaussianDoublyRobust(DoublyRobust):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -2146,10 +2146,10 @@ class SubGaussianDoublyRobust(DoublyRobust):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         use_bias_upper_bound: bool, default=True
             Whether to use bias upper bound in hyperparameter tuning.
@@ -2282,10 +2282,10 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         estimated_importance_weights: array-like, shape (n_rounds,)
             Importance weights estimated via supervised classification using `obp.ope.ImportanceWeightEstimator`.
@@ -2294,8 +2294,8 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -2326,10 +2326,10 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         estimated_importance_weights: array-like, shape (n_rounds,)
             Importance weights estimated via supervised classification using `obp.ope.ImportanceWeightEstimator`.
@@ -2338,8 +2338,8 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         Returns
@@ -2384,15 +2384,15 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         estimated_importance_weights: array-like, shape (n_rounds,)
             Importance weights estimated via supervised classification using `obp.ope.ImportanceWeightEstimator`.
@@ -2401,15 +2401,15 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, the effect of position on the reward will be ignored.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         alpha: float, default=0.05
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.

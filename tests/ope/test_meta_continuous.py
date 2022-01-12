@@ -69,7 +69,7 @@ class KernelizedInverseProbabilityWeightingMock(BaseContinuousOffPolicyEstimator
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Returns
         ----------
@@ -132,7 +132,7 @@ class KernelizedDoublyRobustMock(BaseContinuousOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Returns
         ----------

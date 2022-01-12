@@ -169,7 +169,7 @@ invalid_input_of_init = [
         np.ones((3, 1, 1)),  #
         12345,
         ValueError,
-        "action_context must be 2D array",
+        "`action_context` must be 2D array",
     ),
     (
         3,
@@ -181,7 +181,7 @@ invalid_input_of_init = [
         "np.ones((3, 1, 1))",  #
         12345,
         ValueError,
-        "action_context must be 2D array",
+        "`action_context` must be 2D array",
     ),
     (
         3,

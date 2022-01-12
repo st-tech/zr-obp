@@ -22,7 +22,7 @@ def estimate_bias_in_ope(
     Parameters
     ----------
     reward: array-like, shape (n_rounds,)
-        Reward observed for each data in logged bandit data, i.e., :math:`r_t`.
+        Rewards observed for each data in logged bandit data, i.e., :math:`r_t`.
 
     iw: array-like, shape (n_rounds,)
         Importance weight for each data in logged bandit data, i.e., :math:`w(x,a)=\\pi_e(a|x)/ \\pi_b(a|x)`.
@@ -69,7 +69,7 @@ def estimate_high_probability_upper_bound_bias(
     Parameters
     ----------
     reward: array-like, shape (n_rounds,)
-        Reward observed for each data in logged bandit data, i.e., :math:`r_t`.
+        Rewards observed for each data in logged bandit data, i.e., :math:`r_t`.
 
     iw: array-like, shape (n_rounds,)
         Importance weight for each data in logged bandit data, i.e., :math:`w(x,a)=\\pi_e(a|x)/ \\pi_b(a|x)`.
@@ -128,7 +128,7 @@ def estimate_hoeffding_lower_bound(
 
     x_max: float, default=None.
         A maximum value of random variable `x`.
-        If None is given, this is estimated from the given samples.
+        If None, this is estimated from the given samples.
 
     delta: float, default=0.05
         A confidence delta to construct a high probability lower bound.
@@ -170,7 +170,7 @@ def estimate_bernstein_lower_bound(
 
     x_max: float, default=None.
         A maximum value of random variable `x`.
-        If None is given, this is estimated from the given samples.
+        If None, this is estimated from the given samples.
 
     delta: float, default=0.05
         A confidence delta to construct a high probability lower bound.

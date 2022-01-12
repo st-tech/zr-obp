@@ -64,7 +64,7 @@ class SlateStandardIPSMock(SlateStandardIPS):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Returns
         ----------
@@ -116,7 +116,7 @@ class SlateIndependentIPSMock(SlateIndependentIPS):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Returns
         ----------
@@ -168,7 +168,7 @@ class SlateRewardInteractionIPSMock(SlateRewardInteractionIPS):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Returns
         ----------
@@ -226,7 +226,7 @@ class SlateCascadeDoublyRobustMock(SlateCascadeDoublyRobust):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Returns
         ----------
@@ -300,19 +300,19 @@ invalid_input_of_create_estimator_inputs = [
         None,
         np.ones(100 * len_list * n_unique_action) / n_unique_action,
         np.ones(100 * len_list * n_unique_action),
-        "one of evaluation_policy_pscore, evaluation_policy_pscore_item_position, or evaluation_policy_pscore_cascade must be given",
+        "one of `evaluation_policy_pscore`, `evaluation_policy_pscore_item_position`, or `evaluation_policy_pscore_cascade` must be given",
     ),
     (
         np.ones(300),
         None,
         np.ones(100 * len_list * n_unique_action),
-        "evaluation_policy_action_dist must be given",
+        "`evaluation_policy_action_dist` must be given",
     ),
     (
         np.ones(300),
         np.ones(100 * len_list * n_unique_action) / n_unique_action,
         None,
-        "q_hat must be given",
+        "`q_hat` must be given",
     ),
 ]
 
