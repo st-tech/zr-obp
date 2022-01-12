@@ -27,6 +27,7 @@ from obp.ope.estimators_slate import SelfNormalizedSlateRewardInteractionIPS
 from obp.ope.estimators_slate import SelfNormalizedSlateStandardIPS
 from obp.ope.estimators_slate import SlateIndependentIPS
 from obp.ope.estimators_slate import SlateRewardInteractionIPS
+from obp.ope.estimators_slate import SlateCascadeDoublyRobust
 from obp.ope.estimators_slate import SlateStandardIPS
 from obp.ope.estimators_tuning import DoublyRobustTuning
 from obp.ope.estimators_tuning import DoublyRobustWithShrinkageTuning
@@ -38,6 +39,9 @@ from obp.ope.meta import OffPolicyEvaluation
 from obp.ope.meta_continuous import ContinuousOffPolicyEvaluation
 from obp.ope.meta_slate import SlateOffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
+from obp.ope.regression_model_slate import SlateRegressionModel
+from obp.ope.classification_model import ImportanceWeightEstimator
+from obp.ope.classification_model import PropensityScoreEstimator
 
 
 __all__ = [
@@ -62,9 +66,11 @@ __all__ = [
     "SlateOffPolicyEvaluation",
     "ContinuousOffPolicyEvaluation",
     "RegressionModel",
+    "SlateRegressionModel",
     "SlateStandardIPS",
     "SlateIndependentIPS",
     "SlateRewardInteractionIPS",
+    "SlateCascadeDoublyRobust",
     "SelfNormalizedSlateRewardInteractionIPS",
     "SelfNormalizedSlateIndependentIPS",
     "SelfNormalizedSlateStandardIPS",

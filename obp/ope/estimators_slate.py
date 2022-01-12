@@ -9,10 +9,12 @@ from typing import Dict
 from typing import Optional
 
 import numpy as np
+from sklearn.utils import check_scalar
 
 from ..utils import check_iips_inputs
 from ..utils import check_rips_inputs
 from ..utils import check_sips_inputs
+from ..utils import check_cascade_dr_inputs
 from ..utils import estimate_confidence_interval_by_bootstrap
 
 
@@ -67,10 +69,12 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Marginal probabilities of behavior policy selecting an action (propensity scores) at each position (slot) `k` or
+            joint probabilities of behavior policy selecting a set of actions.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Marginal probabilities of evaluation policy selecting an action at each position (slot) `k` or
+            joint probabilities of evaluation policy selecting a set of actions.
 
         Returns
         ----------
@@ -176,11 +180,12 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            This parameter must be unique in each slate.
 
         Returns
         ----------
@@ -231,11 +236,12 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            This parameter must be unique in each slate.
 
         alpha: float, default=0.05
             Significance level.
@@ -324,10 +330,10 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that behavior policy selects each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
+            Marginal probabilities of behavior policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that evaluation policy selects each action :math:`a` at position (slot) :math:`k` given context :math:`x`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
         Returns
         ----------
@@ -378,10 +384,10 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(a_{t, k}|x_t)`.
+            Marginal probabilities of behavior policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_b(a_{t}(k) |x_t)`.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal action choice probabilities of the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(a_{t, k}|x_t)`.
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -467,12 +473,14 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that behavior policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
+            Joint probabilities of behavior policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of behavior policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Probabilities that evaluation policy selects action :math:`a` at position (slot) `k` conditional on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         Returns
         ----------
@@ -524,10 +532,14 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by a behavior policy (propensity scores), i.e., :math:`\\pi_b(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Joint probabilities of behavior policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of behavior policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities above the slot (:math:`k`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         alpha: float, default=0.05
             Significance level.
@@ -567,6 +579,343 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
 
 
 @dataclass
+class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
+    """Cascade Doubly Robust (Cascade-DR) Estimator.
+
+    Note
+    -------
+    Cascade Doubly Robust (Cascade-DR) estimates the policy value of evaluation (ranking) policy :math:`\\pi_e`
+    assuming the cascade click model (users interact with actions from the top position to the bottom in a slate).
+    It also uses reward prediction :math:`\\hat{Q}_k` as a control variate, which is derived using `obp.ope.SlateRegressionModel`.
+    Please refer to Section 3.1 of Kiyohara et al.(2022) for the detail.
+
+    Parameters
+    ----------
+    len_list: int
+        Length of a list of actions recommended in each impression (slate size).
+        When Open Bandit Dataset is used, 3 should be set.
+
+    n_unique_action: int
+        Number of unique actions.
+
+    estimator_name: str, default='cascade-dr'.
+        Name of the estimator.
+
+    References
+    ------------
+    Haruka Kiyohara, Yuta Saito, Tatsuya Matsuhiro, Yusuke Narita, Nobuyuki Shimizu, and Yasuo Yamamoto.
+    "Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model.", 2022.
+
+    """
+
+    len_list: int
+    n_unique_action: int
+    estimator_name: str = "cascade-dr"
+
+    def __post_init__(self):
+        """Initialize Class."""
+        check_scalar(self.n_unique_action, "n_unique_action", int, min_val=1)
+
+    def _estimate_round_rewards(
+        self,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        behavior_policy_pscore: np.ndarray,
+        evaluation_policy_pscore: np.ndarray,
+        q_hat: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate rewards given round (slate_id) and slot (position).
+
+        Parameters
+        ----------
+        action: array-like, (n_rounds * len_list,)
+            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            which is chosen by the behavior policy :math:`\\pi_b`.
+
+        reward: array-like, shape (n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of behavior policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of behavior policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        Returns
+        ----------
+        estimated_rewards: array-like, shape (n_rounds * len_list,)
+            Rewards estimated by Cascade-DR given round (slate_id) and slot (position).
+
+        """
+        # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action)
+        q_hat_3d = q_hat.reshape((-1, self.len_list, self.n_unique_action))
+        # the estimated Q functions for the action taken by the behavior policy
+        # (n_rounds_, len_list, n_unique_action) -> (n_rounds_ * len_list, )
+        q_hat_for_observed_action = []
+        for i in range(self.n_rounds_):
+            for position_ in range(self.len_list):
+                q_hat_for_observed_action.append(
+                    q_hat_3d[i, position_, action[i * self.len_list + position_]]
+                )
+        q_hat_for_observed_action = np.array(q_hat_for_observed_action)
+        # the expected Q function under the evaluation policy
+        # (n_rounds_ * len_list * n_unique_action, ) -> (n_rounds_, len_list, n_unique_action) -> (n_rounds_, len_list) -> (n_rounds_ * len_list, )
+        expected_q_hat_under_eval_policy = (
+            (evaluation_policy_action_dist * q_hat)
+            .reshape((-1, self.len_list, self.n_unique_action))
+            .sum(axis=2)
+            .flatten()
+        )
+        # importance weights
+        # (n_rounds * len_list, )
+        iw = evaluation_policy_pscore / behavior_policy_pscore
+        iw_prev = np.roll(iw, 1)
+        iw_prev[np.array([i * self.len_list for i in range(self.n_rounds_)])] = 1
+        # estimate policy value given each round and slot in a doubly robust manner
+        estimated_rewards = (
+            iw * (reward - q_hat_for_observed_action)
+            + iw_prev * expected_q_hat_under_eval_policy
+        )
+        return estimated_rewards
+
+    def estimate_policy_value(
+        self,
+        slate_id: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        pscore_cascade: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
+        q_hat: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        **kwargs,
+    ) -> float:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (n_rounds * len_list,)
+            IDs to differentiate slates (i.e., rounds or lists of actions).
+
+        action: array-like, (n_rounds * len_list,)
+            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            which is chosen by the behavior policy :math:`\\pi_b`.
+
+        reward: array-like, shape (n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of behavior policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of behavior policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        Returns
+        ----------
+        V_hat: array-like, shape (n_rounds * len_list,)
+            Estimated policy value (performance) of a given evaluation policy.
+
+        """
+        check_cascade_dr_inputs(
+            n_unique_action=self.n_unique_action,
+            slate_id=slate_id,
+            action=action,
+            reward=reward,
+            position=position,
+            pscore_cascade=pscore_cascade,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            q_hat=q_hat,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        self.n_rounds_ = np.unique(slate_id).shape[0]
+        return (
+            self._estimate_round_rewards(
+                action=action,
+                reward=reward,
+                position=position,
+                behavior_policy_pscore=pscore_cascade,
+                evaluation_policy_pscore=evaluation_policy_pscore_cascade,
+                q_hat=q_hat,
+                evaluation_policy_action_dist=evaluation_policy_action_dist,
+            ).sum()
+            / self.n_rounds_
+        )
+
+    def estimate_interval(
+        self,
+        slate_id: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        pscore_cascade: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
+        q_hat: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (n_rounds * len_list,)
+            IDs to differentiate slates (i.e., rounds or lists of actions).
+
+        action: array-like, (n_rounds * len_list,)
+            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            which is chosen by the behavior policy :math:`\\pi_b`.
+
+        reward: array-like, shape (n_rounds * len_list,)
+            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+
+        position: array-like, shape (n_rounds * len_list,)
+            IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
+
+        pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of behavior policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of behavior policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+
+        q_hat: array-like (n_rounds * len_list * n_unique_actions, )
+            :math:`\\hat{Q}_k` for all unique actions
+            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_cascade_dr_inputs(
+            n_unique_action=self.n_unique_action,
+            slate_id=slate_id,
+            action=action,
+            reward=reward,
+            position=position,
+            pscore_cascade=pscore_cascade,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            q_hat=q_hat,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        self.n_rounds_ = np.unique(slate_id).shape[0]
+        estimated_rewards = self._estimate_round_rewards(
+            action=action,
+            reward=reward,
+            position=position,
+            behavior_policy_pscore=pscore_cascade,
+            evaluation_policy_pscore=evaluation_policy_pscore_cascade,
+            q_hat=q_hat,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        return self._estimate_slate_confidence_interval_by_bootstrap(
+            slate_id=slate_id,
+            estimated_rewards=estimated_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+    def _estimate_slate_confidence_interval_by_bootstrap(
+        self,
+        slate_id: np.ndarray,
+        estimated_rewards: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap-like procedure.
+
+        Parameters
+        ----------
+        slate_id: array-like, shape (<= n_rounds * len_list,)
+            IDs to differentiate slates (i.e., rounds or lists of actions).
+
+        estimated_rewards: array-like, shape (<= n_rounds * len_list,)
+            Rewards estimated by IPW given round (slate_id) and slot (position).
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        unique_slate = np.unique(slate_id)
+        # sum estimated_rewards in each slate
+        estimated_round_rewards = list()
+        for slate in unique_slate:
+            estimated_round_rewards.append(estimated_rewards[slate_id == slate].sum())
+        estimated_round_rewards = np.array(estimated_round_rewards)
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_round_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+
+@dataclass
 class BaseSlateSelfNormalizedInverseProbabilityWeighting(
     BaseSlateInverseProbabilityWeighting
 ):
@@ -599,10 +948,12 @@ class BaseSlateSelfNormalizedInverseProbabilityWeighting(
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
         behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Marginal probabilities of behavior policy selecting an action (propensity scores) at each position (slot) `k` or
+            joint probabilities of behavior policy selecting a set of actions.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Marginal probabilities of evaluation policy selecting an action at each position (slot) `k` or
+            joint probabilities of evaluation policy selecting a set of actions.
 
         Returns
         ----------
@@ -674,11 +1025,13 @@ class SelfNormalizedSlateStandardIPS(
         position: array-like, shape (<= n_rounds * len_list,)
             IDs to differentiate slot (i.e., position in recommendation/ranking interface) in each slate.
 
-        behavior_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+        pscore: array-like, shape (<= n_rounds * len_list,)
+            Joint probabilities of behavior policy selecting a slate action (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            This parameter must be unique in each slate.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_t|x_t)`.
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_t|x_t)`.
+            This parameter must be unique in each slate.
 
         Returns
         ----------
