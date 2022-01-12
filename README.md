@@ -9,19 +9,19 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2008.07146-b31b1b.svg)](https://arxiv.org/abs/2008.07146)
 
 [[arXiv]](https://arxiv.org/abs/2008.07146)
-# Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation
+[[NeurIPS2021 Proceedings]](https://datasets-benchmarks-proceedings.neurips.cc/paper/2021/hash/33e75ff09dd601bbe69f351039152189-Abstract-round2.html)
+# Open Bandit Pipeline: a research framework for off-policy evaluation and learning
 
 **[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Tutorial](https://sites.google.com/cornell.edu/recsys2021tutorial)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](./slides/slides_EN.pdf)** | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd)** | **[日本語](./README_JN.md)**
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
 
-- [Open Bandit Pipeline: a research framework for bandit algorithms and off-policy evaluation](#open-bandit-pipeline-a-research-framework-for-bandit-algorithms-and-off-policy-evaluation)
+- [Open Bandit Pipeline: a research framework for off-policy evaluation and learning](#open-bandit-pipeline-a-research-framework-for-bandit-algorithms-and-off-policy-evaluation)
 - [Overview](#overview)
   - [Open Bandit Dataset (OBD)](#open-bandit-dataset-obd)
   - [Open Bandit Pipeline (OBP)](#open-bandit-pipeline-obp)
     - [Algorithms and OPE Estimators Supported](#algorithms-and-ope-estimators-supported)
-  - [Topics and Tasks](#topics-and-tasks)
 - [Installation](#installation)
 - [Usage](#usage)
   - [(1) Data loading and preprocessing](#1-data-loading-and-preprocessing)
@@ -44,7 +44,7 @@
 *Open Bandit Dataset* is a public real-world logged bandit dataset.
 This dataset is provided by [ZOZO, Inc.](https://corp.zozo.com/en/about/profile/), the largest fashion e-commerce company in Japan.
 The company uses some multi-armed bandit algorithms to recommend fashion items to users in a large-scale fashion e-commerce platform called [ZOZOTOWN](https://zozo.jp/).
-The following figure presents examples of displayed fashion items as actions.
+The following figure presents the displayed fashion items as actions.
 The figure shows that there are three *positions* in the data.
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/recommended_fashion_items.png" width="45%"/></div>
@@ -56,7 +56,7 @@ The figure shows that there are three *positions* in the data.
 
 We collected the dataset in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
 Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection.
-This dataset is unique in that it contains a set of *multiple* logged bandit datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see Section 5 of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
+Open Bandit Dataset is unique in that it contains a set of *multiple* logged bandit datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see Section 5 of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/obd_stats.png" width="90%"/></div>
 
@@ -123,10 +123,13 @@ Open Bandit Pipeline consists of the following main modules.
   - [Switch Estimators](https://arxiv.org/abs/1612.01205)
   - [More Robust Doubly Robust (MRDR)](https://arxiv.org/abs/1802.03493)
   - [Doubly Robust with Optimistic Shrinkage (DRos)](https://arxiv.org/abs/1907.09623)
+  - [Sub-Gaussian Inverse Probability Weighting (SGIPW)](https://proceedings.neurips.cc/paper/2021/hash/4476b929e30dd0c4e8bdbcc82c6ba23a-Abstract.html)
+  - [Sub-Gaussian Doubly Robust (SGDR)](https://proceedings.neurips.cc/paper/2021/hash/4476b929e30dd0c4e8bdbcc82c6ba23a-Abstract.html)
   - [Double Machine Learning (DML)](https://arxiv.org/abs/2002.08536)
 - OPE of Offline Slate Bandit Algorithms
   - [Independent Inverse Propensity Scoring (IIPS)](https://arxiv.org/abs/1804.10488)
   - [Reward Interaction Inverse Propensity Scoring (RIPS)](https://arxiv.org/abs/2007)
+  - Cascade Doubly Robust (Cascade-DR)
 - OPE of Offline Bandit Algorithms with Continuous Actions
   - [Kernelized Inverse Probability Weighting](https://arxiv.org/abs/1802.06037)
   - [Kernelized Self-Normalized Inverse Probability Weighting](https://arxiv.org/abs/1802.06037)
@@ -134,32 +137,11 @@ Open Bandit Pipeline consists of the following main modules.
 
 </details>
 
-Please refer to Section 2/Appendix of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the definitions of supported OPE estimators.
+Please refer to Section 2/Appendix of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the supported estimators.
 Note that, in addition to the above algorithms and estimators, Open Bandit Pipeline provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
 Moreover, Open Bandit Pipeline provides an interface for handling real-world logged bandit data.
 Thus, practitioners can combine their own real-world data with Open Bandit Pipeline and easily evaluate bandit algorithms' performance in their settings with OPE.
-
-
-## Topics and Tasks
-Open Bandit Dataset and Pipeline facilitate the following research topics or practical tasks.
-
-### Research
-
-Researchers can evaluate the performance of their bandit algorithms (in bandit papers) or the accuracy of their OPE estimators (in OPE papers) in an easy, standardized manner with Open Bandit Pipeline. One can implement these types of experiments for their research papers using synthetic bandit data, multi-class classification data, or the real-world Open Bandit Dataset.
-
-- **Evaluation of Bandit Algorithms with Synthetic/Classification/Open Bandit Data**
-- **Evaluation of OPE with Synthetic/Classification/Open Bandit Data**
-
-In particular, we prepare some example experiments about the evaluation and comparison of OPE estimators in [examples](./examples/).
-
-### Practice
-
-Practitioners can improve their automated decision making systems using online/batch bandit policies implemented in the policy module. Moreover, they can easily evaluate such bandit policies using historical logged bandit data and OPE without A/B testing. Specifically, one can implement OPE of batch bandit algorithms with the standard OPE procedure introduced in [examples/quickstart/obd.ipynb](./examples/quickstart/obd.ipynb).
-
-- **Implementing Online/Offline(Batch) Bandit Algorithms**
-- **Off-Policy Evaluation of Online Bandit Algorithms**
-- **Off-Policy Evaluation of Offline(Batch) Bandit Algorithms**
 
 
 # Installation
@@ -179,7 +161,7 @@ python setup.py install
 
 Open Bandit Pipeline supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
 
-# Usage Examples
+# Usage
 
 ## Example with Synthetic Bandit Data
 
@@ -342,6 +324,8 @@ Bibtex:
   year={2020}
 }
 ```
+
+The paper has been accepted at *NeurIPS2021 Datasets and Benchmarks Track*. The camera-ready version of the paper is available [here](https://datasets-benchmarks-proceedings.neurips.cc/paper/2021/hash/33e75ff09dd601bbe69f351039152189-Abstract-round2.html).
 
 # Google Group
 If you are interested in the Open Bandit Project, you can follow the updates at its google group: https://groups.google.com/g/open-bandit-project

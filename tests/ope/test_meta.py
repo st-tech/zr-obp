@@ -51,13 +51,13 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Position in a recommendation interface where the action was presented.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         Returns
         ----------
@@ -75,24 +75,24 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Position in a recommendation interface where the action was presented.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         alpha: float, default=0.05
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -141,13 +141,13 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,)
-            Position in a recommendation interface where the action was presented.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -178,18 +178,18 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,)
-            Position in a recommendation interface where the action was presented.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -205,7 +205,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.

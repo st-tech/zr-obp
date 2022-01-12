@@ -18,12 +18,13 @@ from sklearn.utils import check_X_y
 
 from ..types import BanditFeedback
 from ..utils import check_array
+from ..utils import sample_action_fast
 from .base import BaseBanditDataset
 
 
 @dataclass
 class MultiClassToBanditReduction(BaseBanditDataset):
-    """Class for handling multi-class classification data as logged bandit feedback data.
+    """Class for handling multi-class classification data as logged bandit data.
 
     Note
     -----
@@ -35,16 +36,15 @@ class MultiClassToBanditReduction(BaseBanditDataset):
 
             .. math::
 
-                \\pi_b (a | x) := \\alpha_b \\cdot \\pi_{\\mathrm{det},b} (a|x) + (1.0 - \\alpha_b) \\cdot \\pi_{u} (a|x)
+                \\pi_b (a|x) := \\alpha_b \\cdot \\pi_{\\mathrm{det},b} (a|x) + (1.0 - \\alpha_b) \\cdot \\pi_{u} (a|x)
 
             .. math::
 
-                \\pi_e (a | x) := \\alpha_e \\cdot \\pi_{\\mathrm{det},e} (a|x) + (1.0 - \\alpha_e) \\cdot \\pi_{u} (a|x)
+                \\pi_e (a|x) := \\alpha_e \\cdot \\pi_{\\mathrm{det},e} (a|x) + (1.0 - \\alpha_e) \\cdot \\pi_{u} (a|x)
 
-            where :math:`\\pi_{u}` is a uniform random policy and :math:`\\alpha_b` and :math:`\\alpha_e` are set by the user.
+            where :math:`\\pi_{u}` is a uniform random policy and :math:`\\alpha_b` and :math:`\\alpha_e` are given by the user.
 
-        4. Measure the accuracy of the evaluation policy on :math:`\\mathcal{D}_{\\mathrm{ev}}` with its fully observed rewards
-        and use it as the evaluation policy's ground truth policy value.
+        4. Measure the accuracy of the evaluation policy on :math:`\\mathcal{D}_{\\mathrm{ev}}` with its fully observed rewards and use it as the evaluation policy's ground truth policy value.
 
         5. Using :math:`\\mathcal{D}_{\\mathrm{ev}}`, an estimator :math:`\\hat{V}` estimates the policy value of the evaluation policy, i.e.,
 
@@ -58,17 +58,24 @@ class MultiClassToBanditReduction(BaseBanditDataset):
     -----------
     X: array-like, shape (n_rounds,n_features)
         Training vector of the original multi-class classification data,
-        where n_rounds is the number of samples and n_features is the number of features.
+        where `n_rounds` is the number of samples and `n_features` is the number of features.
 
     y: array-like, shape (n_rounds,)
-        Target vector (relative to X) of the original multi-class classification data.
+        Target vector (relative to `X`) of the original multi-class classification data.
 
     base_classifier_b: ClassifierMixin
         Machine learning classifier used to construct a behavior policy.
 
     alpha_b: float, default=0.9
-        Ration of a uniform random policy when constructing a **behavior** policy.
-        Must be in the [0, 1) interval to make the behavior policy a stochastic one.
+        Ratio of a uniform random policy when constructing a **behavior** policy.
+        Must be in the [0, 1) interval to make the behavior policy stochastic.
+
+    n_deficient_actions: int, default=0
+        Number of deficient actions having zero probability of being selected in the logged bandit data.
+        If there are some deficient actions, the full/common support assumption is very likely to be violated,
+        leading to some bias for IPW-type estimators. See  Sachdeva et al.(2020) for details.
+        `n_deficient_actions` should be an integer smaller than `n_actions - 1` so that there exists at least one actions
+        that have a positive probability of being selected by the behavior policy.
 
     dataset_name: str, default=None
         Name of the dataset.
@@ -145,31 +152,42 @@ class MultiClassToBanditReduction(BaseBanditDataset):
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
+    Noveen Sachdeva, Yi Su, and Thorsten Joachims.
+    "Off-policy Bandits with Deficient Support.", 2020.
+
     """
 
     X: np.ndarray
     y: np.ndarray
     base_classifier_b: ClassifierMixin
     alpha_b: float = 0.8
+    n_deficient_actions: int = 0
     dataset_name: Optional[str] = None
 
     def __post_init__(self) -> None:
         """Initialize Class."""
         if not is_classifier(self.base_classifier_b):
-            raise ValueError("base_classifier_b must be a classifier")
+            raise ValueError("`base_classifier_b` must be a classifier")
         check_scalar(self.alpha_b, "alpha_b", float, min_val=0.0)
+        check_scalar(
+            self.n_deficient_actions,
+            "n_deficient_actions",
+            int,
+            min_val=0,
+            max_val=self.n_actions - 1,
+        )
         if self.alpha_b >= 1.0:
             raise ValueError(f"`alpha_b`= {self.alpha_b}, must be < 1.0.")
 
         self.X, y = check_X_y(X=self.X, y=self.y, ensure_2d=True, multi_output=False)
-        self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index action
-        # fully observed labels
+        self.y = (rankdata(y, "dense") - 1).astype(int)  # re-index actions
+        # fully observed labels (full bandit feedback)
         self.y_full = np.zeros((self.n_rounds, self.n_actions))
         self.y_full[np.arange(self.n_rounds), y] = 1
 
     @property
     def len_list(self) -> int:
-        """Length of recommendation lists."""
+        """Length of recommendation lists, slate size."""
         return 1
 
     @property
@@ -192,7 +210,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         Parameters
         ----------
         eval_size: float or int, default=0.25
-            If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the evaluation split.
+            If float, should be between 0.0 and 1.0 and represent the proportion of the data to include in the evaluation split.
             If int, represents the absolute number of test samples.
 
         random_state: int, default=None
@@ -215,7 +233,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         self,
         random_state: Optional[int] = None,
     ) -> BanditFeedback:
-        """Obtain batch logged bandit feedback, an evaluation policy, and its ground-truth policy value.
+        """Obtain batch logged bandit data, an evaluation policy, and its ground-truth policy value.
 
         Note
         -------
@@ -229,7 +247,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            bandit_feedback is logged bandit feedback data generated from a multi-class classification dataset.
+            bandit_feedback is logged bandit data generated from a multi-class classification dataset.
 
         """
         random_ = check_random_state(random_state)
@@ -243,22 +261,31 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         pi_b[np.arange(self.n_rounds_ev), preds] = (
             self.alpha_b + (1.0 - self.alpha_b) / self.n_actions
         )
-        # sample action and factual reward based on the behavior policy
-        action = np.zeros(self.n_rounds_ev, dtype=int)
-        for i, p in enumerate(pi_b):
-            action[i] = random_.choice(
-                np.arange(self.n_actions, dtype=int), p=p, replace=False
+        if self.n_deficient_actions > 0:
+            deficient_actions = np.argsort(
+                random_.gumbel(size=(self.n_rounds_ev, self.n_actions)), axis=1
+            )[:, ::-1][:, : self.n_deficient_actions]
+            deficient_actions_idx = (
+                np.tile(np.arange(self.n_rounds_ev), (self.n_deficient_actions, 1)).T,
+                deficient_actions,
             )
-        reward = self.y_full_ev[np.arange(self.n_rounds_ev), action]
+            pi_b[deficient_actions_idx] = 0.0  # create some deficient actions
+            pi_b /= pi_b.sum(1)[
+                :, np.newaxis
+            ]  # re-normalize the probability distribution
+        # sample actions and factual rewards
+        actions = sample_action_fast(pi_b, random_state=random_state)
+        rewards = self.y_full_ev[np.arange(self.n_rounds_ev), actions]
 
         return dict(
             n_actions=self.n_actions,
             n_rounds=self.n_rounds_ev,
             context=self.X_ev,
-            action=action,
-            reward=reward,
+            action=actions,
+            reward=rewards,
             position=None,  # position effect is not considered in classification data
-            pscore=pi_b[np.arange(self.n_rounds_ev), action],
+            pi_b=pi_b[:, :, np.newaxis],
+            pscore=pi_b[np.arange(self.n_rounds_ev), actions],
         )
 
     def obtain_action_dist_by_eval_policy(
@@ -272,16 +299,15 @@ class MultiClassToBanditReduction(BaseBanditDataset):
             Machine learning classifier used to construct a behavior policy.
 
         alpha_e: float, default=1.0
-            Ration of a uniform random policy when constructing an **evaluation** policy.
+            Ratio of a uniform random policy when constructing an **evaluation** policy.
             Must be in the [0, 1] interval (evaluation policy can be deterministic).
 
         Returns
         ---------
         action_dist_by_eval_policy: array-like, shape (n_rounds_ev, n_actions, 1)
-            action_dist_by_eval_policy is an action choice probabilities by an evaluation policy.
-            where n_rounds_ev is the number of samples in the evaluation set given the current train-eval split.
-            n_actions is the number of actions.
-            axis 2 represents the length of list; it is always 1 in the current implementation.
+            `action_dist_by_eval_policy` is the action choice probabilities of the evaluation policy.
+            where `n_rounds_ev` is the number of samples in the evaluation set given the current train-eval split.
+            `n_actions` is the number of actions.
 
         """
         check_scalar(alpha_e, "alpha_e", float, min_val=0.0, max_val=1.0)
@@ -291,7 +317,7 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         else:
             assert is_classifier(
                 base_classifier_e
-            ), "base_classifier_e must be a classifier"
+            ), "`base_classifier_e` must be a classifier"
             base_clf_e = clone(base_classifier_e)
         base_clf_e.fit(X=self.X_tr, y=self.y_tr)
         preds = base_clf_e.predict(self.X_ev).astype(int)
@@ -304,20 +330,19 @@ class MultiClassToBanditReduction(BaseBanditDataset):
         return pi_e[:, :, np.newaxis]
 
     def calc_ground_truth_policy_value(self, action_dist: np.ndarray) -> float:
-        """Calculate the ground-truth policy value of a given action distribution.
+        """Calculate the ground-truth policy value of the given action distribution.
 
         Parameters
         ----------
         action_dist: array-like, shape (n_rounds_ev, n_actions, 1)
             Action distribution or action choice probabilities of a policy whose ground-truth is to be caliculated here.
-            where n_rounds_ev is the number of samples in the evaluation set given the current train-eval split.
-            n_actions is the number of actions.
-            axis 2 of action_dist represents the length of list; it is always 1 in the current implementation.
+            where `n_rounds_ev` is the number of samples in the evaluation set given the current train-eval split.
+            `n_actions` is the number of actions.
 
         Returns
         ---------
         ground_truth_policy_value: float
-            policy value of a given action distribution (mostly evaluation policy).
+            policy value of given action distribution (mostly evaluation policy).
 
         """
         check_array(array=action_dist, name="action_dist", expected_dim=3)

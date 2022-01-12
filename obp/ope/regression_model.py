@@ -22,7 +22,7 @@ class RegressionModel(BaseEstimator):
 
     Note
     -------
-    Reward (or outcome) :math:`r` must be either binary or continuous.
+    Reward :math:`r` must be either binary or continuous.
 
     Parameters
     ------------
@@ -33,11 +33,11 @@ class RegressionModel(BaseEstimator):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
-        Context vector characterizing action (i.e., vector representation of each action).
+        Context vectors characterizing actions (i.e., vector representation of each action).
         If None, one-hot encoding of the action variable is used as default.
 
     fitting_method: str, default='normal'
@@ -100,26 +100,26 @@ class RegressionModel(BaseEstimator):
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
-            If None is given, behavior policy is assumed to be uniform.
+            If None, behavior policy is assumed to be uniform.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a regression model assumes that there is only one position.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a regression model assumes that only a single action is chosen for each data.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-            When either of 'iw' or 'mrdr' is used as `fitting_method`, `action_dist` must be given.
+            When either of 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
 
         """
         check_bandit_feedback_inputs(
@@ -233,41 +233,41 @@ class RegressionModel(BaseEstimator):
         n_folds: int = 1,
         random_state: Optional[int] = None,
     ) -> np.ndarray:
-        """Fit the regression model on given logged bandit data and predict the reward function of the same data.
+        """Fit the regression model on given logged bandit data and estimate the expected rewards on the same data.
 
         Note
         ------
-        When `n_folds` is larger than 1, then the cross-fitting procedure is applied.
+        When `n_folds` is larger than 1, the cross-fitting procedure is applied.
         See the reference for the details about the cross-fitting technique.
 
         Parameters
         ----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities (propensity score) of a behavior policy
-            in the training logged bandit feedback.
-            If None is given, the the behavior policy is assumed to be a uniform one.
+            in the training set of logged bandit data.
+            If None, the the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a regression model assumes that there is only one position.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a regression model assumes that only a single action is chosen for each data.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-            When either of 'iw' or 'mrdr' is used as `fitting_method`, `action_dist` must be given.
+            When either of 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
-            When 1 is given, the regression model is trained on the whole logged bandit feedback data.
+            When 1 is given, the regression model is trained on the whole logged bandit data.
             Please refer to https://arxiv.org/abs/2002.08536 about the details of the cross-fitting procedure.
 
         random_state: int, default=None
@@ -361,13 +361,13 @@ class RegressionModel(BaseEstimator):
         Parameters
         -----------
         context: array-like, shape (n_rounds,)
-            Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
-            Context vector characterizing action (i.e., vector representation of each action).
+            Context vectors characterizing actions (i.e., vector representation of each action).
 
         """
         return np.c_[context, action_context[action]]

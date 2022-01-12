@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Class for Generating Synthetic Slate Logged Bandit Feedback."""
+"""Class for Generating Synthetic Logged Bandit Data for Slate/Ranking Policies."""
 from dataclasses import dataclass
 from itertools import permutations
 from itertools import product
@@ -27,15 +27,13 @@ from .base import BaseBanditDataset
 
 @dataclass
 class SyntheticSlateBanditDataset(BaseBanditDataset):
-    """Class for generating synthetic slate bandit dataset.
+    """Class for synthesizing slate bandit dataset.
 
     Note
     -----
     By calling the `obtain_batch_bandit_feedback` method several times,
-    we have different bandit samples with the same setting.
+    we can resample logged bandit data from the same data generating distribution.
     This can be used to estimate confidence intervals of the performances of Slate OPE estimators.
-
-    If None is given as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
 
     Parameters
     -----------
@@ -43,68 +41,74 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Number of unique actions.
 
     len_list: int (> 1)
-        Length of a list of actions recommended in each slate.
-        When Open Bandit Dataset is used, 3 should be set.
+        Length of a list/ranking of actions, slate size.
 
     dim_context: int, default=1
         Number of dimensions of context vectors.
 
     reward_type: str, default='binary'
         Type of reward variable, which must be either 'binary' or 'continuous'.
-        When 'binary' is given, rewards are sampled from the Bernoulli distribution.
-        When 'continuous' is given, rewards are sampled from the truncated Normal distribution with `scale=1`.
-        The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
+        When 'binary', rewards are sampled from the Bernoulli distribution.
+        When 'continuous', rewards are sampled from the truncated Normal distribution with `scale=1`.
+        The mean parameter of the reward distribution is determined by the `reward_function`.
 
     reward_structure: str, default='cascade_additive'
-        Type of reward structure, which must be one of 'cascade_additive', 'cascade_decay', 'independent', 'standard_additive', or 'standard_decay'.
-        When 'cascade_additive' or 'standard_additive' is given, additive action_interaction_weight_matrix (:math:`W \\in \\mathbb{R}^{\\text{n_unique_action} \\times \\text{n_unique_action}}`) is generated.
-        When 'cascade_decay', 'standard_decay', or 'independent' is given, decay action_interaction_weight_matrix (:math:`\\in \\mathbb{R}^{\\text{len_list} \\times \\text{len_list}}`) is generated.
-        Expected reward is calculated as follows (:math:`f` is a base reward function of each item-position, :math:`g` is a transform function, and :math:`h` is a decay function):
+        Specify which reward structure to use to define the expected rewards. Must be one of the following.
+            - 'cascade_additive'
+            - 'cascade_decay'
+            - 'independent'
+            - 'standard_additive'
+            - 'standard_decay'
+
+        The expected reward function is defined as follows (:math:`f` is a base reward function of each item-position, :math:`g` is a transform function, and :math:`h` is a decay function):
             'cascade_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
             'cascade_decay': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j < k} g^{-1}(f(x, a(j))) / h(|k-j|))`.
             'independent': :math:`q_k(x, a) = f(x, a(k))`
             'standard_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
             'standard_decay': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j \\neq k} g^{-1}(f(x, a(j))) / h(|k-j|))`.
-        When reward_type is 'continuous', transform function is the identity function.
-        When reward_type is 'binary', transform function is the logit function.
+        When `reward_type` is 'continuous', transform function is the identity function.
+        When `reward_type` is 'binary', transform function is the logit function.
+        See the experiment section of Kiyohara et al.(2022) for details.
 
     decay_function: str, default='exponential'
-        Type of decay function, which must be one of 'exponential' or 'inverse'.
-        Decay function used for 'cascade_decay' and 'standard_decay' reward structures.
-        Discount rate is calculated as follows (:math:`k` and :math:`j` are positions of the two slots).
+        Specify the decay function used to define the expected reward, which must be one of 'exponential' or 'inverse'.
+        Decay function is used when `reward_structure`='cascade_decay' or `reward_structure`='standard_decay'.
+        Discount rate is defined as follows (:math:`k` and :math:`j` are positions of the two slots).
             'exponential': :math:`h(|k-j|) = \\exp(-|k-j|)`.
             'inverse': :math:`h(|k-j|) = \\frac{1}{|k-j|+1})`.
+        See the experiment section of Kiyohara et al.(2022) for details.
 
     click_model: str, default=None
-        Type of click model, which must be one of None, 'pbm', or 'cascade'.
-        If None is given, reward at each slot is sampled based on the original expected rewards.
-        When 'pbm' is given, reward at each slot is sampled based on the position-based model.
-        When 'cascade' is given, reward at each slot is sampled based on the cascade model.
-        When using some click model, 'continuous' reward type is unavailable.
+        Specify the click model used to define the expected reward, which must be one of None, 'pbm', or 'cascade'.
+        When None, no click model is applied when defining the expected reward for each slot in a ranking.
+        When 'pbm', the expected reward will be modifed based on the position-based model.
+        When 'cascade', the expected reward will be modifed based on the cascade model.
+        Note that these click models are not applicable to 'continuous' rewards.
 
     eta: float, default=1.0
-        Hyperparameter to define the click models.
-        When click_model='pbm', then eta defines the examination probabilities of the position-based model.
-        For example, when eta=0.5, then the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
-        When click_model='cascade', then eta defines the position-dependent attractiveness parameters of the dependent click model
-        (an extension of the cascade model).
-        For example, when eta=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
-        When eta is very large, the click model induced by eta is close to the original cascade model.
+        A hyperparameter to define the click model to generate the data.
+        When click_model='pbm', `eta` defines the examination probabilities of the position-based model.
+        For example, when `eta`=0.5, the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
+        When click_model='cascade', `eta` defines the position-dependent attractiveness parameters of the dependent click model (an extension of the cascade model).
+        For example, when `eta`=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
+        When `eta` is very large, the click model induced is close to the vanilla cascade model.
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
-        Function generating expected reward for each given action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is given, context **independent** expected reward for each action will be
+        Function defining the expected reward function for each given action-context pair,
+        i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+        If None, context **independent** expected rewards will be
         sampled from the uniform distribution automatically.
 
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
-        Function generating logit value of each action in action space,
+        Function generating logit values for each action in the action space,
         i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
-        If None is given, context **independent** uniform distribution will be used (uniform behavior policy).
+        If None, context **independent** uniform distribution will be used (uniform behavior policy).
 
     is_factorizable: bool
-        A boolean parameter whether to use factorizable evaluation policy (which choose slot actions independently) or not.
-        When `n_unique_action` and `len_list` are large, this parameter should be set to True because of the computational time.
+        Whether to use factorizable evaluation policy (which choose slot actions independently).
+        Note that a factorizable policy can choose the same action more than twice in a slate.
+        In contrast, a non-factorizable policy chooses a slate action without any duplicates among slots.
+        When `n_unique_action` and `len_list` are large, a factorizable policy should be used due to computation time.
 
     random_state: int, default=12345
         Controls the random seed in sampling synthetic slate bandit dataset.
@@ -174,6 +178,19 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 0.33855573, 0.40489767, 0.31231088, 0.40489767, 0.33855573])
         }
 
+
+    References
+    ------------
+    Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S. Muthukrishnan, Vishwa Vinay, Zheng Wen.
+    "Offline Evaluation of Ranking Policies with Click Models.", 2018.
+
+    James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Benjamin Carterette.
+    "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions.", 2020.
+
+    Haruka Kiyohara, Yuta Saito, Tatsuya Matsuhiro, Yusuke Narita, Nobuyuki Shimizu, Yasuo Yamamoto.
+    "Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model.", 2022.
+
+
     """
 
     n_unique_action: int
@@ -212,7 +229,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             "continuous",
         ]:
             raise ValueError(
-                f"reward_type must be either 'binary' or 'continuous', but {self.reward_type} is given."
+                f"`reward_type` must be either 'binary' or 'continuous', but {self.reward_type} is given."
             )
         if self.reward_structure not in [
             "cascade_additive",
@@ -222,15 +239,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             "standard_decay",
         ]:
             raise ValueError(
-                f"reward_structure must be one of 'cascade_additive', 'cascade_decay', 'independent', 'standard_additive', or 'standard_decay', but {self.reward_structure} is given."
+                f"`reward_structure` must be one of 'cascade_additive', 'cascade_decay', 'independent', 'standard_additive', or 'standard_decay', but {self.reward_structure} is given."
             )
         if self.decay_function not in ["exponential", "inverse"]:
             raise ValueError(
-                f"decay_function must be either 'exponential' or 'inverse', but {self.decay_function} is given"
+                f"`decay_function` must be either 'exponential' or 'inverse', but {self.decay_function} is given"
             )
         if self.click_model not in ["cascade", "pbm", None]:
             raise ValueError(
-                f"click_model must be one of 'cascade', 'pbm', or None, but {self.click_model} is given."
+                f"`click_model` must be one of 'cascade', 'pbm', or None, but {self.click_model} is given."
             )
         # set exam_weight (slot-level examination probability).
         # When click_model is 'pbm', exam_weight is :math:`(1 / k)^{\\eta}`, where :math:`k` is the position.
@@ -247,7 +264,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             self.exam_weight = np.ones(self.len_list, dtype=float)
         if self.click_model is not None and self.reward_type == "continuous":
             raise ValueError(
-                "continuous outcome cannot be generated when click_model is given"
+                "continuous rewards cannot be used when `click_model` is given"
             )
         if self.base_reward_function is not None:
             self.reward_function = action_interaction_reward_function
@@ -287,14 +304,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             self.reward_min = 0
             self.reward_max = 1e10
             self.reward_std = 1.0
-        # one-hot encoding representations characterizing each action
+        # one-hot encoding characterizing each action
         self.action_context = np.eye(self.n_unique_action, dtype=int)
 
     def obtain_standard_decay_action_interaction_weight_matrix(
         self,
         len_list,
     ) -> np.ndarray:
-        """Obtain action interaction weight matrix for standard decay reward structure (symmetric matrix)"""
+        """Obtain an action interaction weight matrix for standard decay reward structure (symmetric matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             action_interaction_weight_matrix[:, position_] = -self.decay_function(
@@ -307,7 +324,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         self,
         len_list,
     ) -> np.ndarray:
-        """Obtain action interaction weight matrix for cascade decay reward structure (upper triangular matrix)"""
+        """Obtain an action interaction weight matrix for cascade decay reward structure (upper triangular matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
         for position_ in np.arange(len_list):
             action_interaction_weight_matrix[:, position_] = -self.decay_function(
@@ -321,7 +338,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def _calc_pscore_given_policy_logit(
         self, all_slate_actions: np.ndarray, policy_logit_i_: np.ndarray
     ) -> np.ndarray:
-        """Calculate the propensity score of each of the possible slate actions given policy_logit.
+        """Calculate the propensity score of all possible slate actions given a particular policy_logit.
 
         Parameters
         ------------
@@ -329,12 +346,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             All possible slate actions.
 
         policy_logit_i_: array-like, (n_unique_action, )
-            Logit values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+            Logit values given context (:math:`x`), which defines the distribution over actions of the policy.
 
         Returns
         ------------
         pscores: array-like, (n_action, )
-            Propensity scores of all the possible slate actions given policy_logit.
+            Propensity scores of all slate actions.
 
         """
         n_actions = len(all_slate_actions)
@@ -360,7 +377,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def _calc_pscore_given_policy_softmax(
         self, all_slate_actions: np.ndarray, policy_softmax_i_: np.ndarray
     ) -> np.ndarray:
-        """Calculate the propensity score of each of the possible slate actions given policy_logit.
+        """Calculate the propensity score of all possible slate actions given a particular policy_softmax.
 
         Parameters
         ------------
@@ -368,12 +385,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             All possible slate actions.
 
         policy_softmax_i_: array-like, (n_unique_action, )
-            Policy values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+            Policy softmax values given context (:math:`x`).
 
         Returns
         ------------
         pscores: array-like, (n_action, )
-            Propensity scores of all the possible slate actions given policy_logit.
+            Propensity scores of all slate actions.
 
         """
         n_actions = len(all_slate_actions)
@@ -404,25 +421,25 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool = True,
         clip_logit_value: Optional[float] = None,
     ):
-        """Calculate the propensity score given evaluation policy logit.
+        """Calculate the propensity score given particular logit values to define the evaluation policy.
 
         Parameters
         ------------
         action: array-like, (n_rounds * len_list, )
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         evaluation_policy_logit_: array-like, (n_rounds, n_unique_action)
-            Evaluation policy logit values by given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+            Logit values to define the evaluation policy.
 
         return_pscore_item_position: bool, default=True
-            A boolean parameter whether `pscore_item_position` is returned or not.
-            When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
+            Whether to compute `pscore_item_position` and include it in the logged data.
+            When `n_actions` and `len_list` are large, `return_pscore_item_position`=True can lead to a long computation time.
 
         clip_logit_value: Optional[float], default=None
-            A float parameter to clip logit value (<= `700.`).
-            If None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
-            When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
-            When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
+            A float parameter used to clip logit values (<= `700.`).
+            When None, clipping is not applied to softmax values when obtaining `pscore_item_position`.
+            When a float value is given, logit values are clipped when calculating softmax values.
+            When `n_actions` and `len_list` are large, `clip_logit_value`=None can lead to a long computation time.
 
         """
         check_array(array=action, name="action", expected_dim=1)
@@ -529,38 +546,38 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Parameters
         ------------
         behavior_policy_logit_: array-like, shape (n_rounds, n_actions)
-            Logit values given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+            Logit values given context (:math:`x`).
 
         n_rounds: int
-            Number of rounds for synthetic bandit feedback data.
+            Data size of synthetic logged data.
 
         return_pscore_item_position: bool, default=True
-            A boolean parameter whether `pscore_item_position` is returned or not.
-            When n_actions and len_list are large, giving True to this parameter may lead to a large computational time.
+            Whether to compute `pscore_item_position` and include it in the logged data.
+            When `n_actions` and `len_list` are large, `return_pscore_item_position`=True can lead to a long computation time.
 
         clip_logit_value: Optional[float], default=None
-            A float parameter to clip logit value (<= `700.`).
-            If None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
-            When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
-            When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
+            A float parameter used to clip logit values (<= `700.`).
+            When None, clipping is not applied to softmax values when obtaining `pscore_item_position`.
+            When a float value is given, logit values are clipped when calculating softmax values.
+            When `n_actions` and `len_list` are large, `clip_logit_value`=None can lead to a long computation time.
 
         Returns
         ----------
         action: array-like, shape (n_rounds * len_list)
-            Actions sampled by a behavior policy.
-            Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
+            Actions sampled by the behavior policy.
+            Actions sampled within slate `i` is stored in `action[`i` * `len_list`: (`i + 1`) * `len_list`]`.
 
-        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+        pscore: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the slate actions given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,1}, a_{i,2}, \\ldots, a_{i,L} | x_{i} )`.
 
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
-            This parameter must be unique in each slate.
+        pscore_item_position: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the action of the :math:`l`-th slot given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,l} | x_{i} )`.
 
-        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+        pscore_cascade: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the actions of the top :math:`l` slots given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,1}, a_{i,2}, \\ldots, a_{i,l} | x_{i} )`.
 
         """
         action = np.zeros(n_rounds * self.len_list, dtype=int)
@@ -650,11 +667,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def sample_contextfree_expected_reward(
         self, random_state: Optional[int] = None
     ) -> np.ndarray:
-        """Sample expected reward for each action and slot from the uniform distribution
+        """Define context independent expected rewards for each action and slot.
 
         Parameters
         -----------
-
         random_state: int, default=None
             Controls the random seed in sampling dataset.
 
@@ -665,16 +681,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     def sample_reward_given_expected_reward(
         self, expected_reward_factual: np.ndarray
     ) -> np.ndarray:
-        """Sample reward for each action and slot based on expected_reward_factual
+        """Sample reward variables given actions observed at each slot.
 
         Parameters
         ------------
         expected_reward_factual: array-like, shape (n_rounds, len_list)
-            Expected reward of factual actions given context.
+            Expected rewards given observed actions and contexts.
 
         Returns
         ----------
         reward: array-like, shape (n_rounds, len_list)
+            Sampled rewards.
 
         """
         expected_reward_factual *= self.exam_weight
@@ -719,27 +736,27 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         return_pscore_item_position: bool = True,
         clip_logit_value: Optional[float] = None,
     ) -> BanditFeedback:
-        """Obtain batch logged bandit feedback.
+        """Obtain batch logged bandit data.
 
         Parameters
         ----------
         n_rounds: int
-            Number of rounds for synthetic bandit feedback data.
+            Data size of the synthetic logged bandit data.
 
         return_pscore_item_position: bool, default=True
-            A boolean parameter whether `pscore_item_position` is returned or not.
-            When `n_unique_action` and `len_list` are large, this parameter should be set to False because of the computational time.
+            Whether to compute `pscore_item_position` and include it in the logged data.
+            When `n_unique_action` and `len_list` are large, this should be set to False due to computation time.
 
         clip_logit_value: Optional[float], default=None
-            A float parameter to clip logit value.
-            If None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
+            A float parameter to clip logit values.
+            When None, we calculate softmax values without clipping to obtain `pscore_item_position`.
             When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
-            When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
+            When `n_actions` and `len_list` are large, `clip_logit_value`=None can lead to a long computation time.
 
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            Generated synthetic slate bandit feedback dataset.
+            Synthesized slate logged bandit dataset.
 
         """
         check_scalar(n_rounds, "n_rounds", int, min_val=1)
@@ -760,7 +777,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             isinstance(behavior_policy_logit_, np.ndarray)
             and behavior_policy_logit_.shape == (n_rounds, self.n_unique_action)
         ):
-            raise ValueError("behavior_policy_logit_ has an invalid shape")
+            raise ValueError("`behavior_policy_logit_` has an invalid shape")
         # sample actions and calculate the three variants of the propensity scores
         (
             action,
@@ -807,7 +824,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             isinstance(expected_reward_factual, np.ndarray)
             and expected_reward_factual.shape == (n_rounds, self.len_list)
         ):
-            raise ValueError("expected_reward_factual has an invalid shape")
+            raise ValueError("`expected_reward_factual` has an invalid shape")
         # sample reward
         reward = self.sample_reward_given_expected_reward(
             expected_reward_factual=expected_reward_factual
@@ -836,10 +853,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Parameters
         -----------
         reward: array-like, shape (<= n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards, i.e., :math:`r_{i}(l)`.
 
         slate_id: array-like, shape (<= n_rounds * len_list,)
-            Slate ids of the logged bandit feedback.
+            Slate index.
 
         Returns
         ----------
@@ -861,7 +878,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         context: np.ndarray,
         evaluation_policy_logit_: np.ndarray,
     ):
-        """Calculate the ground-truth policy value of given evaluation policy logit and context
+        """Calculate the ground-truth policy value of given evaluation policy logit and contexts.
 
         Parameters
         -----------
@@ -869,7 +886,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Context vectors characterizing each data (such as user information).
 
         evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
-            Evaluation policy function generating logit value of each action in action space.
+            Logit values to define the evaluation policy.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -1018,12 +1035,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         action: Optional[np.ndarray] = None,
         epsilon: Optional[float] = 1.0,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Generate the three variants of the propensity scores of synthetic evaluation policies (such as 'random', 'optimal', 'anti-optimal').
+        """Generate three variants of propensity scores of synthetic evaluation policies.
 
         Parameters
         -----------
         evaluation_policy_type: str
-            Type of evaluation policy, which must be one of 'optimal', 'anti-optimal', or 'random'.
+            Specify the type of evaluation policy to generate, which must be one of 'optimal', 'anti-optimal', or 'random'.
             When 'optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract top-L actions (L=`len_list`) for each slate.
             When 'anti-optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract bottom-L actions (L=`len_list`) for each slate.
             We calculate the three variants of the propensity scores (pscore, `pscore_item_position`, and pscore_cascade) of the epsilon-greedy policy when either 'optimal' or 'anti-optimal' is given.
@@ -1033,33 +1050,33 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Context vectors characterizing each data (such as user information).
 
         action: array-like, shape (n_rounds * len_list,), default=None
-            Actions sampled by a behavior policy.
-            Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
-            When evaluation_policy_type is 'random', this is unnecessary.
+            Actions sampled by the behavior policy.
+            Actions sampled within slate `i` is stored in `action[`i` * `len_list`: (`i + 1`) * `len_list`]`.
+            When `evaluation_policy_type`='random', this argument is irrelevant.
 
         epsilon: float, default=1.
             Exploration hyperparameter that must take value in the range of [0., 1.].
-            When evaluation_policy_type is 'random', this is unnecessary.
+            When `evaluation_policy_type`='random', this argument is irrelevant.
 
         Returns
         ----------
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
-            This parameter must be unique in each slate.
+        pscore: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the slate actions given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,1}, a_{i,2}, \\ldots, a_{i,L} | x_{i} )`.
 
-        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+        pscore_item_position: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the action of the :math:`l`-th slot given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,l} | x_{i} )`.
 
-        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+        pscore_cascade: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the actions of the top :math:`l` slots given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,1}, a_{i,2}, \\ldots, a_{i,l} | x_{i} )`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
         if evaluation_policy_type not in ["optimal", "anti-optimal", "random"]:
             raise ValueError(
-                f"evaluation_policy_type must be 'optimal', 'anti-optimal', or 'random', but {evaluation_policy_type} is given"
+                f"`evaluation_policy_type` must be 'optimal', 'anti-optimal', or 'random', but {evaluation_policy_type} is given"
             )
 
         # [Caution]: OverflowError raises when integer division result is too large for a float
@@ -1155,8 +1172,9 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         Returns
         ----------
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         """
         check_array(action, name="action", expected_dim=1)
@@ -1210,46 +1228,43 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         random_pscore_item_position: np.ndarray,
         random_pscore_cascade: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Calculate the three variants of the propensity scores of synthetic evaluation policies based on the epsilon-greedy rule.
+        """Calculate three variants of the propensity scores of synthetic evaluation policies via epsilon-greedy.
 
         Parameters
         -----------
         epsilon: float, default=1.
-            Exploration hyperparameter that must take value in the range of [0., 1.].
-            When evaluation_policy_type is 'random', this argument is unnecessary.
+            Exploration hyperparameter in the epsilon-greedy rule.
+            Must take value in the range of [0., 1.].
 
         action_2d: array-like, shape (n_rounds, len_list), default=None
-            Actions sampled by a behavior policy.
-            Action list of slate `i` is stored in action[`i`].
+            Actions sampled by the behavior policy.
+            Actions sampled within slate `i` is stored in `action[i]`.
             When bandit_feedback is obtained by `obtain_batch_bandit_feedback`, we can obtain action_2d as follows: bandit_feedback["action"].reshape((n_rounds, len_list))
-            When evaluation_policy_type is 'random', this argument is unnecessary.
+            When `evaluation_policy_type`='random', this argument is unnecessary.
 
         random_pscore: array-like, shape (n_unique_action * len_list, )
-            Joint action choice probabilities of the slate given context (:math:`x`) when the evaluation policy is random.
-            i.e., :math:`\\frac{1}{{}_{n} P _r)`, where :math:`n` is `n_unique_actions` and :math:`r` is `len_list`.
+            Probabilities of the uniform random policy choosing the slate actions given context (:math:`x`),
+            i.e., :math:`\\pi_{unif} (a_{i,1}, a_{i,2}, \\ldots, a_{i,L} | x_{i} )`.
 
         random_pscore_item_position: array-like, shape (n_unique_action * len_list, )
-            Marginal action choice probabilities of each slot given context (:math:`x`) when the evaluation policy is random.
-            i.e., :math:`\\frac{1}{n)`, where :math:`n` is `n_unique_actions`.
+            Probabilities of the uniform random policy choosing the action of the :math:`l`-th slot given context (:math:`x`), i.e., :math:`\\pi_{unif}(a_{i,l} | x_{i} )`.
 
         random_pscore_cascade: array-like, shape (n_unique_action * len_list, )
-            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`) when the evaluation policy is random.
-            i.e., :math:`\\frac{1}{{}_{n} P _k)`, where :math:`n` is `n_unique_actions`.
-
+            Probabilities of the uniform random policy choosing the actions of the top :math:`l` slots given context (:math:`x`), i.e., :math:`\\pi_{unif}(a_{i,1}, a_{i,2}, \\ldots, a_{i,l} | x_{i} )`.
 
         Returns
         ----------
-        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
-            This parameter must be unique in each slate.
+        pscore: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the slate actions given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,1}, a_{i,2}, \\ldots, a_{i,L} | x_{i} )`.
 
-        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+        pscore_item_position: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the action of the :math:`l`-th slot given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,l} | x_{i} )`.
 
-        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+        pscore_cascade: array-like, shape (n_unique_action * len_list)
+            Probabilities of choosing the actions of the top :math:`l` slots given context (:math:`x`),
+            i.e., :math:`\\pi(a_{i,1}, a_{i,2}, \\ldots, a_{i,l} | x_{i} )`.
 
         """
         check_array(array=action_2d, name="action_2d", expected_dim=2)
@@ -1257,7 +1272,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             [np.unique(x).shape[0] for x in action_2d]
         ) != set([self.len_list]):
             raise ValueError(
-                "when is_factorizable=False, actions of each slate must not be duplicated"
+                "when `is_factorizable`=False, actions observed within each slate must be unique"
             )
         if self.is_factorizable:
             action_match_flg = (
@@ -1285,9 +1300,8 @@ def generate_symmetric_matrix(n_unique_action: int, random_state: int) -> np.nda
 
     Parameters
     -----------
-
     n_unique_action: int (>= len_list)
-        Number of actions.
+        Number of unique actions.
 
     random_state: int
         Controls the random seed in sampling elements of matrix.
@@ -1295,6 +1309,7 @@ def generate_symmetric_matrix(n_unique_action: int, random_state: int) -> np.nda
     Returns
     ---------
     symmetric_matrix: array-like, shape (n_unique_action, n_unique_action)
+
     """
     random_ = check_random_state(random_state)
     base_matrix = random_.normal(scale=5, size=(n_unique_action, n_unique_action))
@@ -1328,34 +1343,31 @@ def action_interaction_reward_function(
         Vector representation of actions.
 
     action: array-like, shape (n_rounds * len_list, ) or (len(enumerated_slate_actions) * len_list, )
-        When is_enumerated=False, action corresponds to actions sampled by a (often behavior) policy.
-        In this case, action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`].
-        When is_enumerated=True, action corresponds to the enumerated all possible combinatorial actions.
+        When `is_enumerated`=False, action corresponds to actions sampled by a (often behavior) policy.
+        In this case, actions sampled within slate `i` is stored in `action[`i` * `len_list`: (`i + 1`) * `len_list`]`.
+        When `is_enumerated`=True, action corresponds to the enumerated all possible combinatorial actions.
 
     base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
-        Function generating expected reward for each given action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is given, context **independent** expected reward for each action will be
-        sampled from the uniform distribution automatically.
+        Function to define the expected reward, i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
 
     reward_type: str, default='binary'
         Type of reward variable, which must be either 'binary' or 'continuous'.
-        When 'binary' is given, expected reward is transformed by logit function.
+        When 'binary',the expected rewards are transformed by logit function.
 
     reward_structure: str
         Reward structure.
-        Must be either 'standard_additive', 'cascade_additive', 'standard_decay', or 'cascade_decay'.
+        Must be one of 'standard_additive', 'cascade_additive', 'standard_decay', or 'cascade_decay'.
 
     action_interaction_weight_matrix (`W`): array-like, shape (n_unique_action, n_unique_action) or (len_list, len_list)
-        When using additive-type reward_structure, `W(i, j)` is the interaction term between action `i` and `j`.
-        When using decay-type reward_structure, `W(i, j)` is the weight of how the expected reward of slot `i` affects that of slot `j`.
+        When using an additive-type reward_structure, `W(i, j)` defines the interaction between action `i` and `j`.
+        When using an decay-type reward_structure, `W(i, j)` defines the weight of how the expected reward of slot `i` affects that of slot `j`.
+        See the experiment section of Kiyohara et al.(2022) for details.
 
     len_list: int (> 1)
-        Length of a list of actions recommended in each slate.
-        When Open Bandit Dataset is used, 3 should be set.
+        Length of a list/ranking of actions, slate size.
 
     is_enumerate: bool
-        Whether input action is corresponds to enumerated_slate_actions or not.
+        Whether `action` corresponds to `enumerated_slate_actions`.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -1364,7 +1376,7 @@ def action_interaction_reward_function(
     ---------
     expected_reward_factual: array-like, shape (n_rounds, len_list)
         When reward_structure='standard_additive', :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
-        When reward_structure='caccade_additive', :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
+        When reward_structure='cascade_additive', :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
         Otherwise, :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} g^{-1}(f(x, a(j))) * W(k, j)`
 
     """
@@ -1385,7 +1397,7 @@ def action_interaction_reward_function(
         "continuous",
     ]:
         raise ValueError(
-            f"reward_type must be either 'binary' or 'continuous', but {reward_type} is given."
+            f"`reward_type` must be either 'binary' or 'continuous', but {reward_type} is given."
         )
     if reward_structure not in [
         "standard_additive",
@@ -1395,7 +1407,7 @@ def action_interaction_reward_function(
         "independent",
     ]:
         raise ValueError(
-            f"reward_structure must be either 'standard_additive', 'cascade_additive', 'standard_decay' or 'cascade_decay', but {reward_structure} is given."
+            f"`reward_structure` must be either 'standard_additive', 'cascade_additive', 'standard_decay' or 'cascade_decay', but {reward_structure} is given."
         )
 
     is_additive = reward_structure in ["standard_additive", "cascade_additive"]
@@ -1407,7 +1419,7 @@ def action_interaction_reward_function(
             action_context.shape[0],
         ):
             raise ValueError(
-                f"the shape of action_interaction_weight_matrix must be (action_context.shape[0], action_context.shape[0]), but {action_interaction_weight_matrix.shape}"
+                f"the shape of `action_interaction_weight_matrix` must be `(action_context.shape[0], action_context.shape[0])`, but {action_interaction_weight_matrix.shape}"
             )
     else:  # decay
         if action_interaction_weight_matrix.shape != (
@@ -1415,7 +1427,7 @@ def action_interaction_reward_function(
             len_list,
         ):
             raise ValueError(
-                f"the shape of action_interaction_weight_matrix must be (len_list, len_list), but {action_interaction_weight_matrix.shape}"
+                f"the shape of `action_interaction_weight_matrix` must be `(len_list, len_list)`, but {action_interaction_weight_matrix.shape}"
             )
 
     n_rounds = context.shape[0]
@@ -1496,13 +1508,13 @@ def linear_behavior_policy_logit(
         Controls the random seed in sampling dataset.
 
     tau: int or float, default=1.0
-        A temperature parameter, controlling the randomness of the action choice by scaling the scores before applying softmax.
+        A temperature parameter to control the entropy of the behavior policy.
         As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
     Returns
     ---------
     logit value: array-like, shape (n_rounds, n_unique_action)
-        Logit given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+        Logit values to define the behavior policy.
 
     """
     check_array(array=context, name="context", expected_dim=2)

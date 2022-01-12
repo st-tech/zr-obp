@@ -115,7 +115,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "reward_type must be either",
+        "`reward_type` must be either",
     ),
     (
         5,
@@ -128,7 +128,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "reward_structure must be one of",
+        "`reward_structure` must be one of",
     ),
     (
         5,
@@ -141,7 +141,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "decay_function must be either",
+        "`decay_function` must be either",
     ),
     (
         5,
@@ -154,7 +154,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "click_model must be one of",
+        "`click_model` must be one of",
     ),
     (
         5,
@@ -1188,7 +1188,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.tile(np.arange(3), 5),
         ValueError,
-        "evaluation_policy_type must be",
+        "`evaluation_policy_type` must be",
     ),
     (
         "optimal",

@@ -24,7 +24,7 @@ class BaseContextFreePolicy(metaclass=ABCMeta):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -90,7 +90,7 @@ class BaseContextualPolicy(metaclass=ABCMeta):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -153,7 +153,7 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     """
@@ -175,7 +175,7 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
     def fit(
         self,
     ) -> None:
-        """Fits an offline bandit policy using the given logged bandit feedback data."""
+        """Fits an offline bandit policy on the given logged bandit data."""
         raise NotImplementedError
 
     @abstractmethod
@@ -209,7 +209,7 @@ class BaseContinuousOfflinePolicyLearner(metaclass=ABCMeta):
     def fit(
         self,
     ) -> None:
-        """Fits an offline bandit policy using the given logged bandit feedback data."""
+        """Fits an offline bandit policy on the given logged bandit data."""
         raise NotImplementedError
 
     @abstractmethod

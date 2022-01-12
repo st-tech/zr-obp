@@ -19,13 +19,15 @@ from .base import BaseBanditDataset
 
 @dataclass
 class SyntheticContinuousBanditDataset(BaseBanditDataset):
-    """Class for generating synthetic continuous bandit dataset.
+    """Class for synthesizing bandit dataset with continuous actions.
 
     Note
     -----
-    By calling the `obtain_batch_bandit_feedback` method several times, we have different bandit samples with the same setting.
-    This can be used to estimate confidence intervals of the performances of OPE estimators for continuous actions.
-    If None is given as `behavior_policy_function`, the synthetic data will be context-free bandit feedback.
+    By calling the `obtain_batch_bandit_feedback` method several times,
+    we can resample logged bandit data from the same data generating distribution.
+    This can be used to estimate confidence intervals of the performances of OPE estimators.
+
+    If None is given as `behavior_policy_function`, the context-free expected reward function will be set.
 
     Parameters
     -----------
@@ -33,27 +35,27 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         Number of dimensions of context vectors.
 
     action_noise: float, default=1.0
-        Standard deviation of the Gaussian noise on the continuous action variable.
+        Standard deviation of the Gaussian noise on the continuous action variables.
 
     reward_noise: float, default=1.0
-        Standard deviation of the Gaussian noise on the reward variable.
+        Standard deviation of the Gaussian noise on the reward variables.
 
     min_action_value: float, default=-np.inf
-        A minimum possible continuous action value.
+        A minimum possible value of continuous action.
 
     max_action_value: float, default=np.inf
-        A maximum possible continuous action value.
+        A maximum possible value of continuous action.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
-        Function generating expected reward for each given action-context pair,
-        i.e., :math:`\\mu: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None is given, context **independent** expected reward for each action will be
+        Function to define the expected rewards
+        i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+        If None, context **independent** expected rewards will be
         sampled from the uniform distribution automatically.
 
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
-        Function generating the propensity score of continuous actions,
+        Function generating the generalized propensity score (GPS),
         i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
-        If None is given, context **independent** uniform distribution will be used (uniform behavior policy).
+        If None, context **independent** uniform distribution will be used (uniform behavior policy).
 
     random_state: int, default=12345
         Controls the random seed in sampling synthetic slate bandit dataset.
@@ -154,17 +156,17 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         self,
         n_rounds: int,
     ) -> BanditFeedback:
-        """Obtain batch logged bandit feedback.
+        """Obtain batch logged bandit data.
 
         Parameters
         ----------
         n_rounds: int
-            Number of rounds for synthetic bandit feedback data.
+            Data size of synthetic logged data.
 
         Returns
         ---------
         bandit_feedback: BanditFeedback
-            Generated synthetic bandit feedback dataset with continuous actions.
+            Synthesized logged bandit dataset with continuous actions.
 
         """
         check_scalar(n_rounds, name="n_rounds", target_type=int, min_val=1)
@@ -226,7 +228,7 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
         context: np.ndarray,
         action: np.ndarray,
     ) -> float:
-        """Calculate the policy value of the action sequence.
+        """Calculate the policy value of a particular action sequence.
 
         Parameters
         -----------
@@ -234,12 +236,13 @@ class SyntheticContinuousBanditDataset(BaseBanditDataset):
             Context vectors of test data.
 
         action: array-like, shape (n_rounds_of_test_data,)
-            Continuous action values for test data predicted by the (deterministic) evaluation policy, i.e., :math:`\\pi_e(x_t)`.
+            Continuous action values for the test data predicted by the (deterministic) evaluation policy,
+            i.e., :math:`\\pi_e(x_t)`.
 
         Returns
         ----------
         policy_value: float
-            The policy value of the evaluation policy on the given test bandit feedback data.
+            The policy value of the evaluation policy calculated on the given test logged bandit data.
 
         """
         check_array(array=context, name="context", expected_dim=2)

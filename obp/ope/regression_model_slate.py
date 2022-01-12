@@ -15,15 +15,15 @@ from obp.utils import check_array
 
 @dataclass
 class SlateRegressionModel(BaseEstimator):
-    """Machine learning model to estimate the Q functions
+    """Machine learning model to estimate the Q functions for OPE of ranking policies.
 
     Note
     -------
-    Q function at position :math:`k` is defined as
-    :math:`\\hat{Q}_k := \\hat{Q}_k(x, a(1), \\ldots, a(k)) \\approx \\mathbb{E}[ \sum_{k'=k}^K \\alpha_{k'} r(k') | x, a(1), \\ldots, a(k)]`).
+    Q function at position :math:`l` is defined as
+    :math:`\\hat{Q}_l := \\hat{Q}_l(x, a(1), \\ldots, a(k)) \\approx \\mathbb{E}[ \\sum_{l'=l}^L \\alpha_{l'} r(l') | x, a(1), \\ldots, a(l)]`).
 
-    Q function is estimated recursively, and then used to construct Cascade-DR.
-    Please refer to Section 3.1 of Kiyohara et al.(2022) for the detail.
+    Q function is estimated recursively, and then used in Cascade-DR.
+    Please refer to Section 3.1 of Kiyohara et al.(2022) for more details.
 
     Parameters
     ------------
@@ -31,7 +31,7 @@ class SlateRegressionModel(BaseEstimator):
         A machine learning model used to estimate the Q function.
 
     len_list: int
-        Length of a list of actions recommended in each impression (slate size).
+        Length of a list of actions in a recommendation/ranking interface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     n_unique_action: int
@@ -62,7 +62,7 @@ class SlateRegressionModel(BaseEstimator):
             and self.fitting_method in ["normal", "iw"]
         ):
             raise ValueError(
-                f"fitting_method must be either 'normal' or 'iw', but {self.fitting_method} is given"
+                f"`fitting_method` must be either 'normal' or 'iw', but {self.fitting_method} is given"
             )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
@@ -90,25 +90,22 @@ class SlateRegressionModel(BaseEstimator):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, (n_rounds * len_list,)
-            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            Actions observed at each slot in a ranking/slate in logged bandit data, i.e., :math:`a_{i}(l)`,
             which is chosen by the behavior policy :math:`\\pi_b`.
 
         reward: array-like, shape (n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards observed for each data in logged bandit data, i.e., :math:`r_{i}(l)`.
 
         pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of behavior policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of behavior policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of behavior policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`).
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
 
         evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e({a'}_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e({a'}_t(k) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall {a'}_t(k) \\in \\mathcal{A}`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -204,7 +201,7 @@ class SlateRegressionModel(BaseEstimator):
         context: np.ndarray,
         action: np.ndarray,
     ):
-        """Predict the Q functions.
+        """Predict the Q function values.
 
         Parameters
         -----------
@@ -217,8 +214,8 @@ class SlateRegressionModel(BaseEstimator):
         Returns
         -----------
         q_hat: array-like, shape (n_rounds_of_new_data * len_list * n_unique_action, )
-            Estimated Q functions for new data.
-            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Estimated Q function values of new data.
+            :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -265,7 +262,7 @@ class SlateRegressionModel(BaseEstimator):
         evaluation_policy_pscore_cascade: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
     ):
-        """Fit the regression model on given logged bandit data and predict the Q functions of the same data.
+        """Fit the regression model on given logged bandit data and predict the Q function values on the same data.
 
         Parameters
         ----------
@@ -273,25 +270,22 @@ class SlateRegressionModel(BaseEstimator):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, (n_rounds * len_list,)
-            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            Actions observed at each slot in a ranking/slate in logged bandit data, i.e., :math:`a_{i}(l)`,
             which is chosen by the behavior policy :math:`\\pi_b`.
 
         reward: array-like, shape (n_rounds * len_list,)
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards observed for each data in logged bandit data, i.e., :math:`r_{i}(l)`.
 
         pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of behavior policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of behavior policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of behavior policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`).
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
 
         evaluation_policy_action_dist: array-like (n_rounds * len_list * n_unique_actions, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         Returns
         -----------
@@ -318,7 +312,7 @@ class SlateRegressionModel(BaseEstimator):
         evaluation_policy_action_dist: np.ndarray,
         position_: int,
     ):
-        """Preprocess feature vectors and estimation target to train a given regression model.
+        """Preprocess feature vectors and target variables for training a regression model.
 
         Note
         -----
@@ -328,18 +322,19 @@ class SlateRegressionModel(BaseEstimator):
         Parameters
         -----------
         context: array-like, shape (n_rounds_, dim_context)
-            Context vectors in the training logged bandit feedback.
+            Context vectors in the training set of logged bandit data.
 
         action: array-like, (n_rounds_ * len_list, )
-            Action observed at each slot in each round of the logged bandit feedback, i.e., :math:`a_{t}(k)`,
+            Actions observed at each slot in a ranking/slate in logged bandit data, i.e., :math:`a_{i}(l)`,
             which is chosen by the behavior policy :math:`\\pi_b`.
 
         reward: array-like, shape (n_rounds_ * len_list, )
-            Reward observed at each slot in each round of the logged bandit feedback, i.e., :math:`r_{t}(k)`.
+            Slot-level rewards observed for each data in logged bandit data, i.e., :math:`r_{i}(l)`.
 
         evaluation_policy_action_dist: array-like (n_rounds_ * len_list * n_unique_actions, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         position_: int
             Position id (slot) in a slate.

@@ -273,7 +273,7 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure.
+        """Estimate confidence intervals of policy values using nonparametric bootstrap.
 
         Parameters
         ------------
@@ -281,7 +281,7 @@ class OffPolicyEvaluation:
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
             If None, model-dependent estimators such as DM and DR cannot be used.
@@ -300,7 +300,7 @@ class OffPolicyEvaluation:
             Significance level.
 
         n_bootstrap_samples: int, default=100
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -308,8 +308,7 @@ class OffPolicyEvaluation:
         Returns
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
-            Dictionary containing confidence intervals of estimated policy value estimated
-            using nonparametric bootstrap procedure.
+            Dictionary containing confidence intervals of the estimated policy values.
 
         """
         if self.is_model_dependent:
@@ -381,7 +380,7 @@ class OffPolicyEvaluation:
             Significance level.
 
         n_bootstrap_samples: int, default=100
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -442,7 +441,7 @@ class OffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy values estimated by OPE estimators.
+        """Visualize the estimated policy values.
 
         Parameters
         ----------
@@ -450,7 +449,7 @@ class OffPolicyEvaluation:
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
             If None, model-dependent estimators such as DM and DR cannot be used.
@@ -469,7 +468,7 @@ class OffPolicyEvaluation:
             Significance level.
 
         n_bootstrap_samples: int, default=100
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -480,16 +479,16 @@ class OffPolicyEvaluation:
 
         fig_dir: Path, default=None
             Path to store the bar figure.
-            If 'None' is given, the figure will not be saved.
+            If None, the figure will not be saved.
 
         fig_name: str, default="estimated_policy_value.png"
             Name of the bar figure.
 
         """
         if fig_dir is not None:
-            assert isinstance(fig_dir, Path), "fig_dir must be a Path"
+            assert isinstance(fig_dir, Path), "`fig_dir` must be a Path"
         if fig_name is not None:
-            assert isinstance(fig_name, str), "fig_dir must be a string"
+            assert isinstance(fig_name, str), "`fig_dir` must be a string"
 
         estimated_round_rewards_dict = dict()
         estimator_inputs = self._create_estimator_inputs(
@@ -569,7 +568,7 @@ class OffPolicyEvaluation:
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
             If None, model-dependent estimators such as DM and DR cannot be used.
@@ -641,7 +640,7 @@ class OffPolicyEvaluation:
         ] = None,
         metric: str = "se",
     ) -> DataFrame:
-        """Summarize performance comparisons of OPE estimators.
+        """Summarize the performance comparison among OPE estimators.
 
         Parameters
         ----------
@@ -653,7 +652,7 @@ class OffPolicyEvaluation:
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
             If None, model-dependent estimators such as DM and DR cannot be used.
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
@@ -673,7 +672,7 @@ class OffPolicyEvaluation:
         Returns
         ----------
         eval_metric_ope_df: DataFrame
-            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
+            Results of performance comparison among OPE estimators.
 
         """
         eval_metric_ope_df = DataFrame(
@@ -707,7 +706,7 @@ class OffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy values estimated by OPE estimators.
+        """Visualize the estimated policy values.
 
         Parameters
         ----------
@@ -718,7 +717,7 @@ class OffPolicyEvaluation:
             List of action choice probabilities of evaluation policies (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
             When an array-like is given, all OPE estimators use it.
             When a dict is given, if the dict has the name of an estimator as a key, the corresponding value is used.
             If None, model-dependent estimators such as DM and DR cannot be used.
@@ -737,7 +736,7 @@ class OffPolicyEvaluation:
             Significance level.
 
         n_bootstrap_samples: int, default=100
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -748,7 +747,7 @@ class OffPolicyEvaluation:
 
         fig_dir: Path, default=None
             Path to store the bar figure.
-            If 'None' is given, the figure will not be saved.
+            If None, the figure will not be saved.
 
         fig_name: str, default="estimated_policy_value.png"
             Name of the bar figure.
@@ -759,9 +758,9 @@ class OffPolicyEvaluation:
                 "the length of policy_name_list must be the same as action_dist_list"
             )
         if fig_dir is not None:
-            assert isinstance(fig_dir, Path), "fig_dir must be a Path"
+            assert isinstance(fig_dir, Path), "`fig_dir` must be a Path"
         if fig_name is not None:
-            assert isinstance(fig_name, str), "fig_dir must be a string"
+            assert isinstance(fig_name, str), "`fig_dir` must be a string"
 
         estimated_round_rewards_dict = {
             estimator_name: {} for estimator_name in self.ope_estimators_

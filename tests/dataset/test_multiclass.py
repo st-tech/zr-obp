@@ -34,6 +34,39 @@ def test_invalid_initialization(raw_data):
 
         MultiClassToBanditReduction(X=X, y=y, base_classifier_b=DecisionTreeRegressor)
 
+    # invalid n_def_actions
+    with pytest.raises(TypeError):
+        MultiClassToBanditReduction(
+            X=X,
+            y=y,
+            base_classifier_b=LogisticRegression(max_iter=10000),
+            n_deficient_actions="aaa",
+        )
+
+    with pytest.raises(TypeError):
+        MultiClassToBanditReduction(
+            X=X,
+            y=y,
+            base_classifier_b=LogisticRegression(max_iter=10000),
+            n_deficient_actions=None,
+        )
+
+    with pytest.raises(ValueError):
+        MultiClassToBanditReduction(
+            X=X,
+            y=y,
+            base_classifier_b=LogisticRegression(max_iter=10000),
+            n_deficient_actions=-1,
+        )
+
+    with pytest.raises(ValueError):
+        MultiClassToBanditReduction(
+            X=X,
+            y=y,
+            base_classifier_b=LogisticRegression(max_iter=10000),
+            n_deficient_actions=1000,
+        )
+
 
 def test_split_train_eval(raw_data):
     X, y = raw_data
@@ -50,19 +83,34 @@ def test_split_train_eval(raw_data):
 def test_obtain_batch_bandit_feedback(raw_data):
     X, y = raw_data
 
-    mcbr = MultiClassToBanditReduction(
-        X=X, y=y, base_classifier_b=LogisticRegression(max_iter=10000), alpha_b=0.3
-    )
-    mcbr.split_train_eval()
-    bandit_feedback = mcbr.obtain_batch_bandit_feedback()
+    for n_deficient_actions in [0, 2]:
+        mcbr = MultiClassToBanditReduction(
+            X=X,
+            y=y,
+            base_classifier_b=LogisticRegression(max_iter=10000),
+            alpha_b=0.3,
+            n_deficient_actions=n_deficient_actions,
+        )
+        mcbr.split_train_eval()
+        bandit_feedback = mcbr.obtain_batch_bandit_feedback()
 
-    assert "n_actions" in bandit_feedback.keys()
-    assert "n_rounds" in bandit_feedback.keys()
-    assert "context" in bandit_feedback.keys()
-    assert "action" in bandit_feedback.keys()
-    assert "reward" in bandit_feedback.keys()
-    assert "position" in bandit_feedback.keys()
-    assert "pscore" in bandit_feedback.keys()
+        assert "n_actions" in bandit_feedback.keys()
+        assert "n_rounds" in bandit_feedback.keys()
+        assert "context" in bandit_feedback.keys()
+        assert "action" in bandit_feedback.keys()
+        assert "reward" in bandit_feedback.keys()
+        assert "position" in bandit_feedback.keys()
+        assert "pi_b" in bandit_feedback.keys()
+        assert "pscore" in bandit_feedback.keys()
+
+        n_rounds = bandit_feedback["n_rounds"]
+        pi_b = bandit_feedback["pi_b"]
+        assert pi_b.shape[0] == n_rounds
+        n_actions = np.unique(y).shape[0]
+        assert pi_b.shape[1] == n_actions
+        assert pi_b.shape[2] == 1
+        assert np.allclose(pi_b[:, :, 0].sum(1), np.ones(n_rounds))
+        assert (pi_b == 0).sum() == n_deficient_actions * n_rounds
 
 
 def test_obtain_action_dist_by_eval_policy(raw_data):
@@ -88,6 +136,7 @@ def test_obtain_action_dist_by_eval_policy(raw_data):
     n_actions = np.unique(y).shape[0]
     assert action_dist.shape[1] == n_actions
     assert action_dist.shape[2] == 1
+    assert np.allclose(action_dist[:, :, 0].sum(1), np.ones(eval_size))
 
 
 def test_calc_ground_truth_policy_value(raw_data):

@@ -1,7 +1,7 @@
 # Copyright (c) Yuta Saito, Yusuke Narita, and ZOZO Technologies, Inc. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Off-Policy Evaluation Class to Streamline OPE."""
+"""Off-Policy Evaluation Class to Streamline OPE of Slate/Ranking Policies."""
 from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
@@ -27,12 +27,12 @@ logger = getLogger(__name__)
 
 @dataclass
 class SlateOffPolicyEvaluation:
-    """Class to conduct slate off-policy evaluation by multiple off-policy estimators simultaneously.
+    """Class to conduct slate/ranking OPE with multiple estimators simultaneously.
 
     Parameters
     -----------
     bandit_feedback: BanditFeedback
-        Logged bandit data used for off-policy evaluation for the slate recommendation setting.
+        Logged bandit data used in OPE of slate/ranking policies.
 
     ope_estimators: List[BaseSlateOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
@@ -148,14 +148,16 @@ class SlateOffPolicyEvaluation:
             and evaluation_policy_pscore_cascade is None
         ):
             raise ValueError(
-                "one of evaluation_policy_pscore, evaluation_policy_pscore_item_position, or evaluation_policy_pscore_cascade must be given"
+                "one of `evaluation_policy_pscore`, `evaluation_policy_pscore_item_position`, or `evaluation_policy_pscore_cascade` must be given"
             )
         if self.use_cascade_dr and evaluation_policy_action_dist is None:
             raise ValueError(
-                "evaluation_policy_action_dist must be given when using SlateCascadeDoublyRobust"
+                "`evaluation_policy_action_dist` must be given when using `SlateCascadeDoublyRobust`"
             )
         if self.use_cascade_dr and q_hat is None:
-            raise ValueError("q_hat must be given when using SlateCascadeDoublyRobust")
+            raise ValueError(
+                "`q_hat` must be given when using `SlateCascadeDoublyRobust`"
+            )
 
         estimator_inputs = {
             input_: self.bandit_feedback[input_]
@@ -197,26 +199,26 @@ class SlateOffPolicyEvaluation:
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            Joint probabilities of evaluation policy choosing a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Marginal probabilities of evaluation policy choosing a particular action at each position (slot),
+             i.e., :math:`\\pi_e(a_{i}(l) |x_i)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
-            Required when using SlateCascadeDoublyRobust.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
+            Required when using `obp.ope.SlateCascadeDoublyRobust`.
 
         q_hat: array-like (n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all unique actions
-            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
-            Required when using SlateCascadeDoublyRobust.
+            :math:`\\hat{Q}_l` for all unique actions,
+            i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
+            Required when using `obp.ope.SlateCascadeDoublyRobust`.
 
         Returns
         ----------
@@ -250,36 +252,36 @@ class SlateOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure.
+        """Estimate the confidence intervals of the policy values using nonparametric bootstrap.
 
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            Joint probabilities of evaluation policy choosing a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Marginal probabilities of evaluation policy choosing a particular action at each position (slot),
+             i.e., :math:`\\pi_e(a_{i}(l) |x_i)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         q_hat: array-like (n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all unique actions
-            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
-            Required when using SlateCascadeDoublyRobust.
+            :math:`\\hat{Q}_l` for all unique actions,
+            i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
+            Required when using `obp.ope.SlateCascadeDoublyRobust`.
 
         alpha: float, default=0.05
             Significance level.
 
         n_bootstrap_samples: int, default=100
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -287,8 +289,7 @@ class SlateOffPolicyEvaluation:
         Returns
         ----------
         policy_value_interval_dict: Dict[str, Dict[str, float]]
-            Dictionary containing confidence intervals of estimated policy value estimated
-            using nonparametric bootstrap procedure.
+            Dictionary containing confidence intervals of the estimated policy values.
 
         """
         check_confidence_interval_arguments(
@@ -325,36 +326,37 @@ class SlateOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[DataFrame, DataFrame]:
-        """Summarize policy values estimated by OPE estimators and their confidence intervals estimated by a nonparametric bootstrap procedure.
+        """Summarize the estimated policy values and their confidence intervals estimated by bootstrap.
 
         Parameters
         ------------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            Joint probabilities of evaluation policy choosing a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Marginal probabilities of evaluation policy choosing a particular action at each position (slot),
+             i.e., :math:`\\pi_e(a_{i}(l) |x_i)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
+
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         q_hat: array-like (n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all unique actions
-            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
-            Required when using SlateCascadeDoublyRobust.
+            :math:`\\hat{Q}_l` for all unique actions,
+            i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
+            Required when using `obp.ope.SlateCascadeDoublyRobust`.
 
         alpha: float, default=0.05
             Significance level.
 
         n_bootstrap_samples: int, default=100
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -417,36 +419,36 @@ class SlateOffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy values estimated by OPE estimators.
+        """Visualize the estimated policy values.
 
         Parameters
         ----------
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            Joint probabilities of evaluation policy choosing a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Marginal probabilities of evaluation policy choosing a particular action at each position (slot),
+             i.e., :math:`\\pi_e(a_{i}(l) |x_i)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         q_hat: array-like (n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all unique actions
-            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
-            Required when using SlateCascadeDoublyRobust.
+            :math:`\\hat{Q}_l` for all unique actions,
+            i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
+            Required when using `obp.ope.SlateCascadeDoublyRobust`.
 
         alpha: float, default=0.05
             Significance level.
 
         n_bootstrap_samples: int, default=100
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -457,16 +459,16 @@ class SlateOffPolicyEvaluation:
 
         fig_dir: Path, default=None
             Path to store the bar figure.
-            If 'None' is given, the figure will not be saved.
+            If None, the figure will not be saved.
 
         fig_name: str, default="estimated_policy_value.png"
             Name of the bar figure.
 
         """
         if fig_dir is not None:
-            assert isinstance(fig_dir, Path), "fig_dir must be a Path"
+            assert isinstance(fig_dir, Path), "`fig_dir` must be a Path"
         if fig_name is not None:
-            assert isinstance(fig_name, str), "fig_dir must be a string"
+            assert isinstance(fig_name, str), "`fig_dir` must be a string"
 
         _, estimated_interval_a = self.summarize_off_policy_estimates(
             evaluation_policy_pscore=evaluation_policy_pscore,
@@ -521,7 +523,7 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
         q_hat: Optional[np.ndarray] = None,
-        metric: str = "relative-ee",
+        metric: str = "se",
     ) -> Dict[str, float]:
         """Evaluate the accuracy of OPE estimators.
 
@@ -544,30 +546,31 @@ class SlateOffPolicyEvaluation:
         ----------
         ground_truth_policy_value: float
             Ground_truth policy value of evaluation policy, i.e., :math:`V(\\pi)`.
-            With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as its ground-truth.
+            With Open Bandit Dataset, we use an on-policy estimate of the policy value as its ground-truth.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            Joint probabilities of evaluation policy choosing a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Marginal probabilities of evaluation policy choosing a particular action at each position (slot),
+             i.e., :math:`\\pi_e(a_{i}(l) |x_i)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
+
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         q_hat: array-like (n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all unique actions
-            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
-            Required when using SlateCascadeDoublyRobust.
+            :math:`\\hat{Q}_l` for all unique actions,
+            i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
+            Required when using `obp.ope.SlateCascadeDoublyRobust`.
 
-        metric: str, default="relative-ee"
+        metric: str, default="se"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be either "relative-ee" or "se".
 
@@ -614,45 +617,45 @@ class SlateOffPolicyEvaluation:
         evaluation_policy_pscore_cascade: Optional[np.ndarray] = None,
         evaluation_policy_action_dist: Optional[np.ndarray] = None,
         q_hat: Optional[np.ndarray] = None,
-        metric: str = "relative-ee",
+        metric: str = "se",
     ) -> DataFrame:
-        """Summarize performance comparisons of OPE estimators.
+        """Summarize the performance comparison among OPE estimators.
 
         Parameters
         ----------
         ground_truth_policy_value: float
             Ground_truth policy value of evaluation policy, i.e., :math:`V(\\pi)`.
-            With Open Bandit Dataset, in general, we use an on-policy estimate of the policy value as ground-truth.
+            With Open Bandit Dataset, we use an on-policy estimate of the policy value as ground-truth.
 
         evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            Joint probabilities of evaluation policy choosing a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
             This parameter must be unique in each slate.
 
         evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
-            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
+            Marginal probabilities of evaluation policy choosing a particular action at each position (slot),
+             i.e., :math:`\\pi_e(a_{i}(l) |x_i)`.
 
         evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
-            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
-            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
-            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
+            Joint probabilities of evaluation policy choosing a particular sequence of actions from the top position to the :math:`l`-th position (:math:`a_{1:l}`). This type of action choice probabilities corresponds to the cascade model.
 
         evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
-            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
-            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+            Plackett-luce style action distribution induced by evaluation policy
+            (action choice probabilities at each slot given previous action choices)
+            , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
         q_hat: array-like (n_rounds * len_list * n_unique_actions, )
-            :math:`\\hat{Q}_k` for all unique actions
-            , i.e., :math:`\\hat{Q}_{t, k}(x_t, a_t(1), \\ldots, a_t(k-1), a_t(k)) \\forall a_t(k) \\in \\mathcal{A}`.
-            Required when using SlateCascadeDoublyRobust.
+            :math:`\\hat{Q}_l` for all unique actions,
+            i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
+            Required when using `obp.ope.SlateCascadeDoublyRobust`.
 
-        metric: str, default="relative-ee"
+        metric: str, default="se"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be either "relative-ee" or "se".
 
         Returns
         ----------
         eval_metric_ope_df: DataFrame
-            Evaluation metric to evaluate and compare the estimation performance of OPE estimators.
+            Results of performance comparison among OPE estimators.
 
         """
         eval_metric_ope_df = DataFrame(

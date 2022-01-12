@@ -11,7 +11,7 @@ class BaseBanditDataset(metaclass=ABCMeta):
 
     @abstractmethod
     def obtain_batch_bandit_feedback(self) -> None:
-        """Obtain batch logged bandit feedback."""
+        """Obtain batch logged bandit data."""
         raise NotImplementedError
 
 

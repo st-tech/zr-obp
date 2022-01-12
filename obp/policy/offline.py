@@ -43,7 +43,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     base_classifier: ClassifierMixin
@@ -88,13 +88,13 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Propensity scores, the probability of selecting each action by behavior policy,
+            Propensity scores, the probability of behavior policy choosing a particular action
             in the given logged bandit data.
 
         Returns
@@ -113,7 +113,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
     ) -> None:
-        """Fits an offline bandit policy using the given logged bandit feedback data.
+        """Fits an offline bandit policy on the given logged bandit data.
 
         Note
         --------
@@ -137,7 +137,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -146,9 +146,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a learner assumes that there is only one position.
-            When `len_list` > 1, position has to be set.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a learner assumes that only a single action is chosen for each data.
 
         """
         check_bandit_feedback_inputs(
@@ -361,7 +360,7 @@ class QLearner(BaseOfflinePolicyLearner):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     base_model: BaseEstimator
@@ -414,7 +413,7 @@ class QLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -423,8 +422,8 @@ class QLearner(BaseOfflinePolicyLearner):
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a learner assumes that there is only one position.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a learner assumes that only a single action is chosen for each data.
             When `len_list` > 1, position has to be set.
 
         """
@@ -590,12 +589,12 @@ class QLearner(BaseOfflinePolicyLearner):
 
         .. math::
 
-            \\pi_{k} (a | x) = \\frac{\\mathrm{exp}( \\hat{q}_{k}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}_{k}(x,a^{\\prime}) / \\tau)}
+            \\pi_{k} (a|x) = \\frac{\\mathrm{exp}( \\hat{q}_{k}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}_{k}(x,a^{\\prime}) / \\tau)}
 
-        where :math:`\\pi_{k} (a | x)` is the resulting action choice probabilities at position :math:`k`.
+        where :math:`\\pi_{k} (a|x)` is the resulting action choice probabilities at position :math:`l`.
         :math:`\\tau` is a temperature hyperparameter.
         :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
-        is a q function estimator for position :math:`k`, which is now implemented in the `predict_score` method.
+        is a q function estimator for position :math:`l`, which is now implemented in the `predict_score` method.
 
         Parameters
         ----------------
@@ -631,7 +630,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     dim_context: int
@@ -921,18 +920,18 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Propensity scores, the probability of selecting each action by behavior policy,
+            Propensity scores, the probability of behavior policy choosing a particular action
             in the given logged bandit data.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a learner assumes that there is only one position.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a learner assumes that only a single action is chosen for each data.
 
         Returns
         --------
@@ -994,7 +993,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
     ) -> None:
-        """Fits an offline bandit policy using the given logged bandit feedback data.
+        """Fits an offline bandit policy on the given logged bandit data.
 
         Note
         ----------
@@ -1012,7 +1011,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -1021,8 +1020,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position in a recommendation interface where the action was presented.
-            If None is given, a learner assumes that there is only one position.
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, a learner assumes that only a single action is chosen for each data.
             When `len_list` > 1, position has to be set.
             Currently, this feature is not supported.
 
@@ -1172,7 +1171,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (batch_size,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (batch_size,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -1234,7 +1233,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Parameters
         -----------
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -1619,7 +1618,7 @@ class QFuncEstimator:
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -1680,7 +1679,7 @@ class QFuncEstimator:
         action: np.ndarray,
         reward: np.ndarray,
     ) -> None:
-        """Fits an offline bandit policy using the given logged bandit feedback data.
+        """Fits an offline bandit policy on the given logged bandit data.
 
         Parameters
         -----------
@@ -1688,7 +1687,7 @@ class QFuncEstimator:
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.

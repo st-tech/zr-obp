@@ -32,7 +32,7 @@ def run_bandit_simulation(
         Logged bandit data used in offline bandit simulation.
 
     policy: BanditPolicy
-        Online bandit policy evaluated in offline bandit simulation (i.e., evaluation policy).
+        Online bandit policy to be evaluated in offline bandit simulation (i.e., evaluation policy).
 
     Returns
     --------
@@ -105,15 +105,13 @@ def calc_ground_truth_policy_value(
     Parameters
     ----------
     bandit_feedback: BanditFeedback
-        Logged bandit data used in offline bandit simulation.
-        It must contain "expected_rewards".
+        Logged bandit data used in offline bandit simulation. Must contain "expected_rewards" as a key.
 
     reward_sampler: Callable[[np.ndarray, np.ndarray], np.ndarray]
-        Function sampling reward for each given action-context pair,
-        i.e., :math:`p(r \\mid x, a)`.
+        Function sampling reward for each given action-context pair, i.e., :math:`p(r|x, a)`.
 
     policy: BanditPolicy
-        Online bandit policy evaluated in offline bandit simulation (i.e., evaluation policy).
+        Online bandit policy to be evaluated in offline bandit simulation (i.e., evaluation policy).
 
     n_sim: int, default=100
         Number of simulations in the Monte Carlo simulation to compute the policy value.
@@ -122,6 +120,7 @@ def calc_ground_truth_policy_value(
     --------
     ground_truth_policy_value: float
         policy value of a given evaluation policy.
+
     """
     for key_ in [
         "action",

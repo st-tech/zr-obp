@@ -31,7 +31,7 @@ class EpsilonGreedy(BaseContextFreePolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -103,7 +103,7 @@ class Random(EpsilonGreedy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1
@@ -156,7 +156,7 @@ class BernoulliTS(BaseContextFreePolicy):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions in a recommender inferface, slate size.
+        Length of a list of actions in a recommendation/ranking inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     batch_size: int, default=1

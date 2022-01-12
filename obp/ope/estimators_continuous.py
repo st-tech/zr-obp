@@ -66,7 +66,7 @@ class BaseContinuousOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_interval(self) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure."""
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap."""
         raise NotImplementedError
 
 
@@ -137,7 +137,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -175,7 +175,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -225,12 +225,12 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -246,7 +246,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -355,7 +355,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -401,7 +401,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -451,12 +451,12 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -472,7 +472,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
@@ -581,7 +581,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -626,7 +626,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -687,12 +687,12 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
 
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action_by_behavior_policy: array-like, shape (n_rounds,)
             Continuous action values sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
@@ -711,7 +711,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
             Significance level.
 
         n_bootstrap_samples: int, default=10000
-            Number of resampling performed in the bootstrap procedure.
+            Number of resampling performed in bootstrap sampling.
 
         random_state: int, default=None
             Controls the random seed in bootstrap sampling.
