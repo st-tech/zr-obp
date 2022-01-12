@@ -340,7 +340,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             This is often the expected_reward of the test set of logged bandit feedback data.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         Returns
         ----------

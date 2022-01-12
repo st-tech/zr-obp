@@ -315,13 +315,13 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Propensity scores, the probability of selecting each action by behavior policy in the given logged bandit data.
@@ -399,16 +399,16 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities by a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities by a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         """
         check_continuous_bandit_feedback_inputs(
@@ -539,16 +539,16 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         Parameters
         -----------
         context: Tensor, shape (batch_size, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: Tensor, shape (batch_size,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: Tensor, shape (batch_size,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: Tensor, shape (batch_size,)
-            Action choice probabilities of a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of a behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_by_current_policy: Tensor, shape (batch_size,)
             Continuous action values given by the current policy.
@@ -556,7 +556,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         Returns
         ----------
         estimated_policy_value_arr: array-like, shape (batch_size,)
-            Rewards of each round estimated by an OPE estimator.
+            Rewards of each data estimated by an OPE estimator.
 
         """
 
@@ -861,13 +861,13 @@ class QFuncEstimatorForContinuousAction:
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         Returns
         --------
@@ -931,13 +931,13 @@ class QFuncEstimatorForContinuousAction:
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
-            Context vectors in each round, i.e., :math:`x_t`.
+            Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         """
         check_continuous_bandit_feedback_inputs(

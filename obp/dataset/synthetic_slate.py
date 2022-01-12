@@ -77,13 +77,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
     click_model: str, default=None
         Type of click model, which must be one of None, 'pbm', or 'cascade'.
-        When None is given, reward at each slot is sampled based on the original expected rewards.
+        If None is given, reward at each slot is sampled based on the original expected rewards.
         When 'pbm' is given, reward at each slot is sampled based on the position-based model.
         When 'cascade' is given, reward at each slot is sampled based on the cascade model.
         When using some click model, 'continuous' reward type is unavailable.
 
     eta: float, default=1.0
-        A hyperparameter to define the click models.
+        Hyperparameter to define the click models.
         When click_model='pbm', then eta defines the examination probabilities of the position-based model.
         For example, when eta=0.5, then the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
         When click_model='cascade', then eta defines the position-dependent attractiveness parameters of the dependent click model
@@ -420,7 +420,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         clip_logit_value: Optional[float], default=None
             A float parameter to clip logit value (<= `700.`).
-            When None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
+            If None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
             When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
             When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
 
@@ -436,7 +436,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             or evaluation_policy_logit_.shape[1] != self.n_unique_action
         ):
             raise ValueError(
-                "the shape of action and evaluation_policy_logit_ must be (n_rounds * len_list, )"
+                "the shape of `action` and `evaluation_policy_logit_` must be (n_rounds * len_list, )"
                 "and (n_rounds, n_unique_action) respectively"
             )
 
@@ -540,7 +540,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         clip_logit_value: Optional[float], default=None
             A float parameter to clip logit value (<= `700.`).
-            When None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
+            If None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
             When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
             When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
 
@@ -550,17 +550,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Actions sampled by a behavior policy.
             Action list of slate `i` is stored in action[`i` * `len_list`: (`i + 1`) * `len_list`]
 
-        pscore_cascade: array-like, shape (n_rounds * len_list)
-            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
-            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
-        pscore: array-like, shape (n_rounds * len_list)
-            Joint action choice probabilities of the slate given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            This parameter must be unique in each slate.
 
-        pscore_item_position: array-like, shape (n_rounds * len_list)
-            Marginal action choice probabilities of each slot given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
         """
         action = np.zeros(n_rounds * self.len_list, dtype=int)
@@ -732,7 +732,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         clip_logit_value: Optional[float], default=None
             A float parameter to clip logit value.
-            When None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
+            If None is given, we calculate softmax values without clipping to obtain `pscore_item_position`.
             When a float value is given, we clip logit values to calculate softmax values to obtain `pscore_item_position`.
             When n_actions and len_list are large, giving None to this parameter may lead to a large computational time.
 
@@ -1026,7 +1026,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Type of evaluation policy, which must be one of 'optimal', 'anti-optimal', or 'random'.
             When 'optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract top-L actions (L=`len_list`) for each slate.
             When 'anti-optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract bottom-L actions (L=`len_list`) for each slate.
-            We calculate the three variants of the propensity scores (pscore, pscore_item_position, and pscore_cascade) of the epsilon-greedy policy when either 'optimal' or 'anti-optimal' is given.
+            We calculate the three variants of the propensity scores (pscore, `pscore_item_position`, and pscore_cascade) of the epsilon-greedy policy when either 'optimal' or 'anti-optimal' is given.
             When 'random' is given, we calculate the three variants of the propensity scores of the uniform random policy.
 
         context: array-like, shape (n_rounds, dim_context)
@@ -1043,17 +1043,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        pscore: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities of the slate given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            This parameter must be unique in each slate.
 
-        pscore_item_position: array-like, shape (n_unique_action * len_list)
-            Marginal action choice probabilities of each slot given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
-        pscore_cascade: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
-            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -1137,6 +1137,70 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             )
         return pscore, pscore_item_position, pscore_cascade
 
+    def calc_evaluation_policy_action_dist(
+        self,
+        action: np.ndarray,
+        evaluation_policy_logit_: np.ndarray,
+    ):
+        """Calculate action distribution at each slot from a given evaluation policy logit.
+
+        Parameters
+        ----------
+        action: array-like, shape (n_rounds * len_list, )
+            Action chosen by behavior policy.
+
+        evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
+            Logit values of evaluation policy given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        Returns
+        ----------
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        """
+        check_array(action, name="action", expected_dim=1)
+        check_array(
+            evaluation_policy_logit_, name="evaluation_policy_logit_", expected_dim=2
+        )
+        if evaluation_policy_logit_.shape[1] != self.n_unique_action:
+            raise ValueError(
+                "Expected `evaluation_policy_logit_.shape[1] == n_unique_action`, but found it False"
+            )
+        if len(action) != evaluation_policy_logit_.shape[0] * self.len_list:
+            raise ValueError(
+                "Expected `len(action) == evaluation_policy_logit_.shape[0] * len_list`, but found it False"
+            )
+        n_rounds = evaluation_policy_logit_.shape[0]
+
+        # (n_rounds * len_list, ) -> (n_rounds, len_list)
+        action = action.reshape((n_rounds, self.len_list))
+        # (n_rounds, n_unique_action) -> (n_rounds, len_list, n_unique_action)
+        evaluation_policy_logit_ = np.array(
+            [
+                [evaluation_policy_logit_[i] for _ in range(self.len_list)]
+                for i in range(n_rounds)
+            ]
+        )
+        # calculate action probabilities for all the counterfactual actions at the position
+        # (n_rounds, len_list, n_unique_action)
+        evaluation_policy_action_dist = []
+        for i in range(n_rounds):
+            if not self.is_factorizable:
+                for position_ in range(self.len_list - 1):
+                    action_ = action[i][position_]
+                    # mask action choice probability of the previously chosen action
+                    # to avoid overflow in softmax function, set -1e4 instead of -np.inf
+                    # (make action choice probability 0 for the previously chosen action by softmax)
+                    evaluation_policy_logit_[i, position_ + 1 :, action_] = -1e4
+            # (len_list, n_unique_action)
+            evaluation_policy_action_dist.append(softmax(evaluation_policy_logit_[i]))
+        # (n_rounds, len_list, n_unique_action) -> (n_rounds * len_list * n_unique_action, )
+        evaluation_policy_action_dist = np.array(
+            evaluation_policy_action_dist
+        ).flatten()
+        return evaluation_policy_action_dist
+
     def _calc_epsilon_greedy_pscore(
         self,
         epsilon: float,
@@ -1175,17 +1239,17 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         Returns
         ----------
-        pscore: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities of the slate given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{\\text{len_list}})`.
+        evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting a slate action, i.e., :math:`\\pi_e(a_i|x_i)`.
+            This parameter must be unique in each slate.
 
-        pscore_item_position: array-like, shape (n_unique_action * len_list)
-            Marginal action choice probabilities of each slot given context (:math:`x`).
-            i.e., :math:`\\pi: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A})`.
+        evaluation_policy_pscore_item_position: array-like, shape (<= n_rounds * len_list,)
+            Marginal probabilities of evaluation policy selecting each action :math:`a` at position (slot) :math:`k`, i.e., :math:`\\pi_e(a_{t}(k) |x_t)`.
 
-        pscore_cascade: array-like, shape (n_unique_action * len_list)
-            Joint action choice probabilities above the slot (:math:`k`) in each slate given context (:math:`x`).
-            i.e., :math:`\\pi_k: \\mathcal{X} \\rightarrow \\Delta(\\mathcal{A}^{k})`.
+        evaluation_policy_pscore_cascade: array-like, shape (n_rounds * len_list,)
+            Joint probabilities of evaluation policy selecting action :math:`a_{1:k}` (actions presented at position (slot) `1` to `k`).
+            Each probability of evaluation policy selecting action :math:`a_k` (action presented at position (slot) `k`) is conditioned on the previous actions (presented at position `1` to `k-1`)
+            , i.e., :math:`\\pi_b(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1))`.
 
         """
         check_array(array=action_2d, name="action_2d", expected_dim=2)

@@ -20,7 +20,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "action_dist must be 3D array",
+        "`action_dist` must be 3D array",
     ),
     (
         generate_action_dist(5, 4, 1)[:, :, 0],  #
@@ -31,7 +31,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 1)),
         np.ones(5),
         np.ones(5),
-        "action_dist must be 3D array",
+        "`action_dist` must be 3D array",
     ),
     (
         np.ones((5, 4, 3)),  #
@@ -42,7 +42,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "action_dist must be a probability distribution",
+        "`action_dist` must be a probability distribution",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -53,7 +53,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -64,7 +64,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position must be 1D array",
+        "`position` must be 1D array",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -75,7 +75,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -86,7 +86,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be non-negative integers",
+        "`position` elements must be non-negative integers",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -108,7 +108,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be smaller than",
+        "`position` elements must be smaller than",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -119,7 +119,7 @@ invalid_input_of_estimation = [
         np.zeros((5, 4, 3)),
         np.ones(5),
         np.ones(5),
-        "position elements must be given when",
+        "`position` elements must be given when",
     ),
 ]
 
@@ -181,9 +181,23 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
+    all_estimators_tuning_sg = ope.__all_estimators_tuning_sg__
+    estimators_tuning_sg = [
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[0.001, 0.01, 0.1, 1.0],
+            tuning_method=tuning_method,
+        )
+        for estimator_name in all_estimators_tuning_sg
+        for tuning_method in ["slope", "mse"]
+    ]
+    estimators_tuning = estimators_tuning + estimators_tuning_sg
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
         with pytest.raises(ValueError, match=f"{description}*"):
@@ -225,9 +239,10 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
             assert hasattr(
                 estimator_tuning, "best_hyperparam"
             ), "estimator_tuning should have `best_hyperparam` attr"
-            assert hasattr(
-                estimator_tuning, "estimated_mse_score_dict"
-            ), "estimator_tuning should have `estimated_mse_score_dict` attr"
+            if estimator_tuning.tuning_method == "mse":
+                assert hasattr(
+                    estimator_tuning, "estimated_mse_score_dict"
+                ), "estimator_tuning should have `estimated_mse_score_dict` attr"
         with pytest.raises(ValueError, match=f"{description}*"):
             _ = estimator_tuning.estimate_interval(
                 action_dist=action_dist,
@@ -241,9 +256,10 @@ def test_estimation_of_all_estimators_using_invalid_input_data(
             assert hasattr(
                 estimator_tuning, "best_hyperparam"
             ), "estimator_tuning should have `best_hyperparam` attr"
-            assert hasattr(
-                estimator_tuning, "estimated_mse_score_dict"
-            ), "estimator_tuning should have `estimated_mse_score_dict` attr"
+            if estimator_tuning.tuning_method == "mse":
+                assert hasattr(
+                    estimator_tuning, "estimated_mse_score_dict"
+                ), "estimator_tuning should have `estimated_mse_score_dict` attr"
 
 
 @pytest.mark.parametrize(
@@ -267,9 +283,23 @@ def test_estimation_of_all_estimators_using_valid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
+    all_estimators_tuning_sg = ope.__all_estimators_tuning_sg__
+    estimators_tuning_sg = [
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[0.001, 0.01, 0.1, 1.0],
+            tuning_method=tuning_method,
+        )
+        for estimator_name in all_estimators_tuning_sg
+        for tuning_method in ["slope", "mse"]
+    ]
+    estimators_tuning = estimators_tuning + estimators_tuning_sg
     # estimate_intervals function raises ValueError of all estimators
     for estimator in estimators:
         _ = estimator.estimate_policy_value(
@@ -373,10 +403,23 @@ def test_estimate_intervals_of_all_estimators_using_invalid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
-    # TODO
+    all_estimators_tuning_sg = ope.__all_estimators_tuning_sg__
+    estimators_tuning_sg = [
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[0.001, 0.01, 0.1, 1.0],
+            tuning_method=tuning_method,
+        )
+        for estimator_name in all_estimators_tuning_sg
+        for tuning_method in ["slope", "mse"]
+    ]
+    estimators_tuning = estimators_tuning + estimators_tuning_sg
     estimated_pscore = None
     estimated_importance_weights = np.ones(bandit_feedback["action"].shape[0])
     # estimate_intervals function raises ValueError of all estimators
@@ -436,10 +479,23 @@ def test_estimate_intervals_of_all_estimators_using_valid_input_data(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
-    # TODO
+    all_estimators_tuning_sg = ope.__all_estimators_tuning_sg__
+    estimators_tuning_sg = [
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[0.001, 0.01, 0.1, 1.0],
+            tuning_method=tuning_method,
+        )
+        for estimator_name in all_estimators_tuning_sg
+        for tuning_method in ["slope", "mse"]
+    ]
+    estimators_tuning = estimators_tuning + estimators_tuning_sg
     estimated_pscore = None
     estimated_importance_weights = np.ones(bandit_feedback["action"].shape[0])
     # estimate_intervals function raises ValueError of all estimators
@@ -510,10 +566,23 @@ def test_performance_of_ope_estimators_using_random_evaluation_policy(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
-    estimators = estimators_standard + estimators_tuning
+    all_estimators_tuning_sg = ope.__all_estimators_tuning_sg__
+    estimators_tuning_sg = [
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[0.001, 0.01, 0.1, 1.0],
+            tuning_method=tuning_method,
+        )
+        for estimator_name in all_estimators_tuning_sg
+        for tuning_method in ["slope", "mse"]
+    ]
+    estimators = estimators_standard + estimators_tuning + estimators_tuning_sg
     # skip estimation
     estimated_pscore = None
     estimated_importance_weights = (
@@ -563,10 +632,23 @@ def test_response_format_of_ope_estimators_using_random_evaluation_policy(
     ]
     all_estimators_tuning = ope.__all_estimators_tuning__
     estimators_tuning = [
-        getattr(ope.estimators_tuning, estimator_name)([1, 100, 10000, np.inf])
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[1, 100, 10000, np.inf],
+            tuning_method=tuning_method,
+        )
         for estimator_name in all_estimators_tuning
+        for tuning_method in ["slope", "mse"]
     ]
-    estimators = estimators_standard + estimators_tuning
+    all_estimators_tuning_sg = ope.__all_estimators_tuning_sg__
+    estimators_tuning_sg = [
+        getattr(ope.estimators_tuning, estimator_name)(
+            lambdas=[0.001, 0.01, 0.1, 1.0],
+            tuning_method=tuning_method,
+        )
+        for estimator_name in all_estimators_tuning_sg
+        for tuning_method in ["slope", "mse"]
+    ]
+    estimators = estimators_standard + estimators_tuning + estimators_tuning_sg
     # skip estimation
     estimated_pscore = None
     estimated_importance_weights = (

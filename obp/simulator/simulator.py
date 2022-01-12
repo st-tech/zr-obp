@@ -29,7 +29,7 @@ def run_bandit_simulation(
     Parameters
     ----------
     bandit_feedback: BanditFeedback
-        Logged bandit feedback data used in offline bandit simulation.
+        Logged bandit data used in offline bandit simulation.
 
     policy: BanditPolicy
         Online bandit policy evaluated in offline bandit simulation (i.e., evaluation policy).
@@ -105,7 +105,7 @@ def calc_ground_truth_policy_value(
     Parameters
     ----------
     bandit_feedback: BanditFeedback
-        Logged bandit feedback data used in offline bandit simulation.
+        Logged bandit data used in offline bandit simulation.
         It must contain "expected_rewards".
 
     reward_sampler: Callable[[np.ndarray, np.ndarray], np.ndarray]

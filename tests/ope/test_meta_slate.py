@@ -10,6 +10,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 import pytest
 
+from obp.ope import SlateCascadeDoublyRobust
 from obp.ope import SlateIndependentIPS
 from obp.ope import SlateOffPolicyEvaluation
 from obp.ope import SlateRewardInteractionIPS
@@ -133,7 +134,7 @@ class SlateIndependentIPSMock(SlateIndependentIPS):
 
 @dataclass
 class SlateRewardInteractionIPSMock(SlateRewardInteractionIPS):
-    """Slate Recursive Inverse Propensity Scoring (RIPS) Mock."""
+    """Slate Reward interaction Inverse Propensity Scoring (RIPS) Mock."""
 
     estimator_name: str = "rips"
 
@@ -183,12 +184,75 @@ class SlateRewardInteractionIPSMock(SlateRewardInteractionIPS):
         return {k: v for k, v in mock_confidence_interval.items()}
 
 
+@dataclass
+class SlateCascadeDoublyRobustMock(SlateCascadeDoublyRobust):
+    """Slate Cascade Doubly RObust (Cascade-DR) Mock."""
+
+    estimator_name: str = "cascade-dr"
+
+    def estimate_policy_value(
+        self,
+        slate_id: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        pscore_cascade: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        q_hat: np.ndarray,
+        **kwargs,
+    ) -> float:
+        """Estimate the policy value of evaluation policy.
+
+        Returns
+        ----------
+        mock_policy_value: float
+
+        """
+        return mock_policy_value
+
+    def estimate_interval(
+        self,
+        slate_id: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        position: np.ndarray,
+        pscore_cascade: np.ndarray,
+        evaluation_policy_pscore_cascade: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        q_hat: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Returns
+        ----------
+        mock_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_confidence_interval_arguments(
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+        return {k: v for k, v in mock_confidence_interval.items()}
+
+
 # define Mock instances
-sips = SlateStandardIPSMock(len_list=3)
-sips2 = SlateStandardIPSMock(len_list=3, eps=0.02)
-sips3 = SlateStandardIPSMock(len_list=3, estimator_name="sips3")
-iips = SlateIndependentIPSMock(len_list=3)
-rips = SlateRewardInteractionIPSMock(len_list=3)
+len_list = 3
+n_unique_action = 10
+sips = SlateStandardIPSMock(len_list=len_list)
+sips2 = SlateStandardIPSMock(len_list=len_list, eps=0.02)
+sips3 = SlateStandardIPSMock(len_list=len_list, estimator_name="sips3")
+iips = SlateIndependentIPSMock(len_list=len_list)
+rips = SlateRewardInteractionIPSMock(len_list=len_list)
+cascade_dr = SlateCascadeDoublyRobustMock(
+    len_list=len_list, n_unique_action=n_unique_action
+)
 
 
 def test_meta_post_init(synthetic_slate_bandit_feedback: BanditFeedback) -> None:
@@ -211,7 +275,13 @@ def test_meta_post_init(synthetic_slate_bandit_feedback: BanditFeedback) -> None
         "sips3": sips3,
     }, "__post_init__ returns a wrong value"
     # __post__init__ raises RuntimeError when necessary_keys are not included in the bandit_feedback
-    necessary_keys = ["slate_id", "position", "reward"]
+    necessary_keys = [
+        "slate_id",
+        "context",
+        "action",
+        "reward",
+        "position",
+    ]
     for i in range(len(necessary_keys)):
         for deleted_keys in itertools.combinations(necessary_keys, i + 1):
             invalid_bandit_feedback_dict = {key: "_" for key in necessary_keys}
@@ -224,31 +294,49 @@ def test_meta_post_init(synthetic_slate_bandit_feedback: BanditFeedback) -> None
                 )
 
 
-# evaluation_policy_pscore, description
+# evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description
 invalid_input_of_create_estimator_inputs = [
     (
         None,
+        np.ones(100 * len_list * n_unique_action) / n_unique_action,
+        np.ones(100 * len_list * n_unique_action),
         "one of evaluation_policy_pscore, evaluation_policy_pscore_item_position, or evaluation_policy_pscore_cascade must be given",
+    ),
+    (
+        np.ones(300),
+        None,
+        np.ones(100 * len_list * n_unique_action),
+        "evaluation_policy_action_dist must be given",
+    ),
+    (
+        np.ones(300),
+        np.ones(100 * len_list * n_unique_action) / n_unique_action,
+        None,
+        "q_hat must be given",
     ),
 ]
 
-# evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description
+# evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description
 valid_input_of_create_estimator_inputs = [
     (
         np.ones(300),
         np.ones(300),
         np.ones(300),
-        "deterministic evaluation policy",
+        np.ones(300 * n_unique_action) / n_unique_action,
+        np.ones(100 * len_list * n_unique_action),
+        "evaluation policy",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, description",
+    "evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description",
     invalid_input_of_create_estimator_inputs,
 )
 def test_meta_create_estimator_inputs_using_invalid_input_data(
-    evaluation_policy_pscore,
+    evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description: str,
     synthetic_slate_bandit_feedback: BanditFeedback,
 ) -> None:
@@ -256,44 +344,61 @@ def test_meta_create_estimator_inputs_using_invalid_input_data(
     Test the _create_estimator_inputs using valid data and a sips estimator
     """
     ope_ = SlateOffPolicyEvaluation(
-        bandit_feedback=synthetic_slate_bandit_feedback, ope_estimators=[sips]
+        bandit_feedback=synthetic_slate_bandit_feedback,
+        ope_estimators=[cascade_dr],
     )
     # raise ValueError when the shape of two arrays are different
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_._create_estimator_inputs(
-            evaluation_policy_pscore=evaluation_policy_pscore
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
     # _create_estimator_inputs function is called in the following functions
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.estimate_policy_values(
-            evaluation_policy_pscore=evaluation_policy_pscore
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
-        _ = ope_.estimate_intervals(evaluation_policy_pscore=evaluation_policy_pscore)
+        _ = ope_.estimate_intervals(
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
+        )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.summarize_off_policy_estimates(
-            evaluation_policy_pscore=evaluation_policy_pscore
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.evaluate_performance_of_estimators(
             ground_truth_policy_value=0.1,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.summarize_estimators_comparison(
             ground_truth_policy_value=0.1,
-            evaluation_policy_pscore=evaluation_policy_pscore,
+            evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            q_hat=q_hat,
         )
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description",
     valid_input_of_create_estimator_inputs,
 )
 def test_meta_create_estimator_inputs_using_valid_input_data(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description: str,
     synthetic_slate_bandit_feedback: BanditFeedback,
 ) -> None:
@@ -308,6 +413,8 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
     )
     assert set(estimator_inputs.keys()) == set(
         [
+            "slate_id",
+            "action",
             "reward",
             "pscore",
             "pscore_item_position",
@@ -317,7 +424,9 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
             "evaluation_policy_pscore_item_position",
             "evaluation_policy_pscore_cascade",
             "slate_id",
-        ]
+            "evaluation_policy_action_dist",
+            "q_hat",
+        ],
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
     # _create_estimator_inputs function is called in the following functions
     _ = ope_.estimate_policy_values(evaluation_policy_pscore=evaluation_policy_pscore)
@@ -331,16 +440,30 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
     _ = ope_.summarize_estimators_comparison(
         ground_truth_policy_value=0.1, evaluation_policy_pscore=evaluation_policy_pscore
     )
+    # check if the valid values are returned when using cascade-dr
+    ope_ = SlateOffPolicyEvaluation(
+        bandit_feedback=synthetic_slate_bandit_feedback,
+        ope_estimators=[cascade_dr],
+    )
+    estimator_inputs = ope_._create_estimator_inputs(
+        evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+        evaluation_policy_action_dist=evaluation_policy_action_dist,
+        q_hat=q_hat,
+    )
+    assert estimator_inputs["evaluation_policy_action_dist"] is not None
+    assert estimator_inputs["q_hat"] is not None
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description",
     valid_input_of_create_estimator_inputs,
 )
 def test_meta_estimate_policy_values_using_valid_input_data(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description: str,
     synthetic_slate_bandit_feedback: BanditFeedback,
 ) -> None:
@@ -359,44 +482,42 @@ def test_meta_estimate_policy_values_using_valid_input_data(
     # multiple ope estimators
     ope_ = SlateOffPolicyEvaluation(
         bandit_feedback=synthetic_slate_bandit_feedback,
-        ope_estimators=[iips, sips, rips],
+        ope_estimators=[iips, sips, rips, cascade_dr],
     )
     assert ope_.estimate_policy_values(
         evaluation_policy_pscore=evaluation_policy_pscore,
         evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
         evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+        evaluation_policy_action_dist=evaluation_policy_action_dist,
+        q_hat=q_hat,
     ) == {
         "iips": mock_policy_value,
         "sips": mock_policy_value + sips.eps,
         "rips": mock_policy_value,
-    }, "SlateOffPolicyEvaluation.estimate_policy_values ([IIPS, SIPS, RIPS]) returns a wrong value"
+        "cascade-dr": mock_policy_value,
+    }, "SlateOffPolicyEvaluation.estimate_policy_values ([IIPS, SIPS, RIPS, Cascade-DR]) returns a wrong value"
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description",
     valid_input_of_create_estimator_inputs,
 )
 def test_meta_estimate_policy_values_using_various_pscores(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description: str,
     synthetic_slate_bandit_feedback: BanditFeedback,
 ) -> None:
-    necessary_keys = [
-        "reward",
-        "position",
-        "evaluation_policy_pscore",
-        "evaluation_policy_pscore_item_position",
-        "evaluation_policy_pscore_cascade" "slate_id",
-    ]
     pscore_keys = [
         "pscore",
         "pscore_item_position",
         "pscore_cascade",
     ]
     # TypeError must be raised when required positional arguments are missing
-    for i in range(len(necessary_keys)):
+    for i in range(len(pscore_keys)):
         for deleted_keys in itertools.combinations(pscore_keys, i + 1):
             copied_feedback = deepcopy(synthetic_slate_bandit_feedback)
             # delete
@@ -408,23 +529,38 @@ def test_meta_estimate_policy_values_using_various_pscores(
             ):
                 ope_ = SlateOffPolicyEvaluation(
                     bandit_feedback=copied_feedback,
-                    ope_estimators=[sips, iips, rips],
+                    ope_estimators=[sips, iips, rips, cascade_dr],
                 )
                 _ = ope_.estimate_policy_values(
                     evaluation_policy_pscore=evaluation_policy_pscore,
                     evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
                     evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+                    evaluation_policy_action_dist=evaluation_policy_action_dist,
+                    q_hat=q_hat,
                 )
+
     # pscore_item_position and evaluation_policy_pscore_item_position are not necessary when iips is not evaluated
     copied_feedback = deepcopy(synthetic_slate_bandit_feedback)
     del copied_feedback["pscore_item_position"]
     ope_ = SlateOffPolicyEvaluation(
         bandit_feedback=copied_feedback,
-        ope_estimators=[sips, rips],
+        ope_estimators=[sips, rips, cascade_dr],
     )
     _ = ope_.estimate_policy_values(
         evaluation_policy_pscore=evaluation_policy_pscore,
         evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+        evaluation_policy_action_dist=evaluation_policy_action_dist,
+        q_hat=q_hat,
+    )
+    # evaluation_policy_action_dist and q_hat are not necessary when cascade-dr is not used
+    ope_ = SlateOffPolicyEvaluation(
+        bandit_feedback=synthetic_slate_bandit_feedback,
+        ope_estimators=[sips, rips, iips],
+    )
+    _ = ope_.estimate_policy_values(
+        evaluation_policy_pscore=evaluation_policy_pscore,
+        evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
+        evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
     )
 
 
@@ -463,7 +599,7 @@ valid_input_of_estimate_intervals = [
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description_1",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -474,6 +610,8 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description_1: str,
     alpha,
     n_bootstrap_samples,
@@ -506,7 +644,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description_1",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -517,6 +655,8 @@ def test_meta_estimate_intervals_using_valid_input_data(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description_1: str,
     alpha: float,
     n_bootstrap_samples: int,
@@ -541,22 +681,28 @@ def test_meta_estimate_intervals_using_valid_input_data(
     }, "SlateOffPolicyEvaluation.estimate_intervals ([IIPS]) returns a wrong value"
     # multiple ope estimators
     ope_ = SlateOffPolicyEvaluation(
-        bandit_feedback=synthetic_slate_bandit_feedback, ope_estimators=[iips, sips]
+        bandit_feedback=synthetic_slate_bandit_feedback,
+        ope_estimators=[iips, rips, cascade_dr, sips],
     )
     assert ope_.estimate_intervals(
         evaluation_policy_pscore=evaluation_policy_pscore,
+        evaluation_policy_pscore_cascade=evaluation_policy_pscore_cascade,
         evaluation_policy_pscore_item_position=evaluation_policy_pscore_item_position,
+        evaluation_policy_action_dist=evaluation_policy_action_dist,
+        q_hat=q_hat,
         alpha=alpha,
         n_bootstrap_samples=n_bootstrap_samples,
         random_state=random_state,
     ) == {
         "iips": mock_confidence_interval,
+        "rips": mock_confidence_interval,
+        "cascade-dr": mock_confidence_interval,
         "sips": {k: v + sips.eps for k, v in mock_confidence_interval.items()},
     }, "SlateOffPolicyEvaluation.estimate_intervals ([IIPS, SIPS]) returns a wrong value"
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description_1",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -567,6 +713,8 @@ def test_meta_summarize_off_policy_estimates(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description_1: str,
     alpha: float,
     n_bootstrap_samples: int,
@@ -633,7 +781,7 @@ def test_meta_summarize_off_policy_estimates(
 
 
 invalid_input_of_evaluation_performance_of_estimators = [
-    ("foo", 0.3, ValueError, "metric must be either 'relative-ee' or 'se'"),
+    ("foo", 0.3, ValueError, "`metric` must be either 'relative-ee' or 'se'"),
     (
         "se",
         1,
@@ -650,7 +798,7 @@ invalid_input_of_evaluation_performance_of_estimators = [
         "relative-ee",
         0.0,
         ValueError,
-        "ground_truth_policy_value must be non-zero when metric is relative-ee",
+        "`ground_truth_policy_value` must be non-zero when metric is relative-ee",
     ),
 ]
 
@@ -661,7 +809,7 @@ valid_input_of_evaluation_performance_of_estimators = [
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description_1",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -672,6 +820,8 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description_1: str,
     metric,
     ground_truth_policy_value,
@@ -701,7 +851,7 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
 
 
 @pytest.mark.parametrize(
-    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, description_1",
+    "evaluation_policy_pscore, evaluation_policy_pscore_item_position, evaluation_policy_pscore_cascade, evaluation_policy_action_dist, q_hat, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -712,6 +862,8 @@ def test_meta_evaluate_performance_of_estimators_using_valid_input_data(
     evaluation_policy_pscore,
     evaluation_policy_pscore_item_position,
     evaluation_policy_pscore_cascade,
+    evaluation_policy_action_dist,
+    q_hat,
     description_1: str,
     metric,
     ground_truth_policy_value,

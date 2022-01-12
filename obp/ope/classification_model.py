@@ -8,12 +8,14 @@ from typing import Optional
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold
 from sklearn.utils import check_random_state
 from sklearn.utils import check_scalar
-from sklearn.calibration import CalibratedClassifierCV
 
-from ..utils import check_array, sample_action_fast, check_bandit_feedback_inputs
+from ..utils import check_array
+from ..utils import check_bandit_feedback_inputs
+from ..utils import sample_action_fast
 
 
 @dataclass
@@ -29,12 +31,12 @@ class ImportanceWeightEstimator(BaseEstimator):
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
         Context vector characterizing action (i.e., vector representation of each action).
-        If not given, one-hot encoding of the action variable is used as default.
+        If None, one-hot encoding of the action variable is used as default.
         If fitting_method is 'raw', one-hot encoding will be used as action_context.
 
     fitting_method: str, default='sample'
@@ -76,7 +78,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
-                "base_model must be BaseEstimator or a child class of BaseEstimator"
+                "`base_model` must be BaseEstimator or a child class of BaseEstimator"
             )
 
         if self.calibration_cv > 1:
@@ -103,7 +105,7 @@ class ImportanceWeightEstimator(BaseEstimator):
         position: Optional[np.ndarray] = None,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit the classification model on given logged bandit feedback data.
+        """Fit the classification model on given logged bandit data.
 
         Parameters
         ----------
@@ -111,13 +113,13 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
             If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
@@ -141,14 +143,14 @@ class ImportanceWeightEstimator(BaseEstimator):
             check_array(array=position, name="position", expected_dim=1)
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                    f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
         if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
             raise ValueError(
-                f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
             )
         if not np.allclose(action_dist.sum(axis=1), 1):
-            raise ValueError("action_dist must be a probability distribution")
+            raise ValueError("`action_dist` must be a probability distribution")
 
         # If self.fitting_method != "sample", `sampled_action` has no information
         sampled_action = np.zeros(n_rounds, dtype=int)
@@ -188,10 +190,10 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
             If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
@@ -224,7 +226,7 @@ class ImportanceWeightEstimator(BaseEstimator):
         random_state: Optional[int] = None,
         evaluate_model_performance: bool = False,
     ) -> np.ndarray:
-        """Fit the classification model on given logged bandit feedback data and predict the importance weights on the same data, possibly using cross-fitting to avoid over-fitting.
+        """Fit the classification model on given logged bandit data and predict the importance weights on the same data, possibly using cross-fitting to avoid over-fitting.
 
         Note
         ------
@@ -236,13 +238,13 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
             If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
@@ -281,7 +283,7 @@ class ImportanceWeightEstimator(BaseEstimator):
         else:
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                    f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
 
         check_scalar(n_folds, "n_folds", int, min_val=1)
@@ -289,10 +291,10 @@ class ImportanceWeightEstimator(BaseEstimator):
 
         if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
             raise ValueError(
-                f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
             )
         if not np.allclose(action_dist.sum(axis=1), 1):
-            raise ValueError("action_dist must be a probability distribution")
+            raise ValueError("`action_dist` must be a probability distribution")
 
         if n_folds == 1:
             self.fit(
@@ -371,11 +373,11 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
 
         action_dist_at_position: array-like, shape (n_rounds, n_actions,)
-            Action choice probabilities of evaluation policy of each position (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy of each position (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         sampled_action_at_position: array-like, shape (n_rounds, n_actions,)
             Actions sampled by evaluation policy for each data at each position.
@@ -404,13 +406,13 @@ class PropensityScoreEstimator(BaseEstimator):
     Parameters
     ------------
     base_model: BaseEstimator
-        A machine learning model used to estimate the mean reward function.
+        A machine learning model used to estimate the reward function.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     calibration_cv: int, default=2
@@ -436,7 +438,7 @@ class PropensityScoreEstimator(BaseEstimator):
         check_scalar(self.calibration_cv, "calibration_cv", int)
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
-                "base_model must be BaseEstimator or a child class of BaseEstimator"
+                "`base_model` must be BaseEstimator or a child class of BaseEstimator"
             )
 
         if self.calibration_cv > 1:
@@ -459,7 +461,7 @@ class PropensityScoreEstimator(BaseEstimator):
         action: np.ndarray,
         position: Optional[np.ndarray] = None,
     ) -> None:
-        """Fit the classification model on given logged bandit feedback data.
+        """Fit the classification model on given logged bandit data.
 
         Parameters
         ----------
@@ -467,10 +469,10 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
             If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
@@ -488,7 +490,7 @@ class PropensityScoreEstimator(BaseEstimator):
         else:
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                    f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
 
         for position_ in np.arange(self.len_list):
@@ -511,10 +513,10 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
             If None is given, a classification model assumes that there is only a single position in  a recommendation interface.
             When `len_list` > 1, this position argument has to be set.
 
@@ -543,7 +545,7 @@ class PropensityScoreEstimator(BaseEstimator):
         random_state: Optional[int] = None,
         evaluate_model_performance: bool = False,
     ) -> np.ndarray:
-        """Fit the classification model on given logged bandit feedback data and predict the propensity score on the same data, possibly using the cross-fitting procedure to avoid over-fitting.
+        """Fit the classification model on given logged bandit data and predict the propensity score on the same data, possibly using the cross-fitting procedure to avoid over-fitting.
 
         Note
         ------
@@ -555,10 +557,10 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
             If None is given, a classification model assumes that there is only a single position.
             When `len_list` > 1, this position argument has to be set.
 
@@ -596,7 +598,7 @@ class PropensityScoreEstimator(BaseEstimator):
         else:
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                    f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
 
         check_scalar(n_folds, "n_folds", int, min_val=1)

@@ -155,7 +155,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         Returns
         ---------
         on_policy_policy_value_estimate: float
-            Policy value of the behavior policy estimated by on-policy estimation, i.e., :math:`\\mathbb{E}_{\\mathcal{D}} [r_t]`.
+            Policy value of the behavior policy estimated by on-policy estimation, i.e., :math:`\\mathbb{E}_{\\mathcal{D}} [r_i]`.
             where :math:`\\mathbb{E}_{\\mathcal{D}}[\\cdot]` is the empirical average over :math:`T` observations in :math:`\\mathcal{D}`.
             This parameter is used as a ground-truth policy value in the evaluation of OPE estimators.
 
@@ -297,7 +297,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         -----------
         sample_size: int, default=None
             Number of data sampled by bootstrap.
-            When None is given, the original data size (n_rounds) is used as `sample_size`.
+            If None is given, the original data size (n_rounds) is used as `sample_size`.
             The value must be smaller than the original data size.
 
         test_size: float, default=0.3
