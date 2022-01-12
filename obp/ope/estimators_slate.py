@@ -11,10 +11,10 @@ from typing import Optional
 import numpy as np
 from sklearn.utils import check_scalar
 
+from ..utils import check_cascade_dr_inputs
 from ..utils import check_iips_inputs
 from ..utils import check_rips_inputs
 from ..utils import check_sips_inputs
-from ..utils import check_cascade_dr_inputs
 from ..utils import estimate_confidence_interval_by_bootstrap
 
 
