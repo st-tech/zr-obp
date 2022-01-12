@@ -297,7 +297,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
         -----------
         sample_size: int, default=None
             Number of data sampled by bootstrap.
-            When None, the original data size (n_rounds) is used as `sample_size`.
+            If None is given, the original data size (n_rounds) is used as `sample_size`.
             The value must be smaller than the original data size.
 
         test_size: float, default=0.3

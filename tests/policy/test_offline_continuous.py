@@ -874,56 +874,56 @@ invalid_input_of_nn_policy_learner_fit = [
         np.ones(5),
         np.ones(5),
         np.ones(5) * 0.5,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.ones(5),  #
         np.ones(5),
         np.ones(5),
         np.ones(5) * 0.5,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         np.ones((5, 2)),
         5,  #
         np.ones(5),
         np.ones(5) * 0.5,
-        "action_by_behavior_policy must be 1D array",
+        "`action_by_behavior_policy` must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones((5, 2)),  #
         np.ones(5),
         np.ones(5) * 0.5,
-        "action_by_behavior_policy must be 1D array",
+        "`action_by_behavior_policy` must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         5,  #
         np.ones(5) * 0.5,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         np.ones((5, 2)),  #
         np.ones(5) * 0.5,
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         np.ones(5),
         0.5,  #
-        "pscore must be 1D array",
+        "`pscore` must be 1D array",
     ),
     (
         np.ones((5, 2)),
         np.ones(5),
         np.ones(5),
         np.ones((5, 2)) * 0.5,  #
-        "pscore must be 1D array",
+        "`pscore` must be 1D array",
     ),
     (
         np.ones((4, 2)),  #
@@ -951,7 +951,7 @@ invalid_input_of_nn_policy_learner_fit = [
         np.ones(5),
         np.ones(5),
         np.arange(5) * 0.1,  #
-        "pscore must be positive",
+        "`pscore` must be positive",
     ),
     (
         np.ones((5, 3)),  #
@@ -1049,10 +1049,10 @@ def test_nn_policy_learner_predict():
     )
 
     # shape error
-    with pytest.raises(ValueError, match="context must be 2D array"):
+    with pytest.raises(ValueError, match="`context` must be 2D array"):
         learner.predict(context=np.ones(5))
 
-    with pytest.raises(ValueError, match="context must be 2D array"):
+    with pytest.raises(ValueError, match="`context` must be 2D array"):
         learner.predict(context="np.ones(5)")
 
     # inconsistency between dim_context and context

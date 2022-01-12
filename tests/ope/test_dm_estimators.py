@@ -20,13 +20,13 @@ invalid_input_of_dm = [
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         None,  #
-        "estimated_rewards_by_reg_model must be 3D array",
+        "`estimated_rewards_by_reg_model` must be 3D array",
     ),
     (
         generate_action_dist(5, 4, 3),
         np.zeros(5, dtype=int),
         "4",  #
-        "estimated_rewards_by_reg_model must be 3D array",
+        "`estimated_rewards_by_reg_model` must be 3D array",
     ),
 ]
 

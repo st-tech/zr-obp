@@ -105,8 +105,7 @@ def calc_ground_truth_policy_value(
     Parameters
     ----------
     bandit_feedback: BanditFeedback
-        Logged bandit data used in offline bandit simulation.
-        It must contain "expected_rewards" as its key.
+        Logged bandit data used in offline bandit simulation. Must contain "expected_rewards" as a key.
 
     reward_sampler: Callable[[np.ndarray, np.ndarray], np.ndarray]
         Function sampling reward for each given action-context pair, i.e., :math:`p(r|x, a)`.

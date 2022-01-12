@@ -29,166 +29,183 @@ from .base import BaseBanditDataset
 class SyntheticSlateBanditDataset(BaseBanditDataset):
     """Class for synthesizing slate bandit dataset.
 
-    Note
-    -----
-    By calling the `obtain_batch_bandit_feedback` method several times,
-    we can resample logged bandit data from the same data generating distribution.
-    This can be used to estimate confidence intervals of the performances of Slate OPE estimators.
+        Note
+        -----
+        By calling the `obtain_batch_bandit_feedback` method several times,
+        we can resample logged bandit data from the same data generating distribution.
+        This can be used to estimate confidence intervals of the performances of Slate OPE estimators.
 
-    Parameters
-    -----------
-    n_unique_action: int (>= len_list)
-        Number of unique actions.
+        Parameters
+        -----------
+        n_unique_action: int (>= len_list)
+            Number of unique actions.
 
-    len_list: int (> 1)
-        Length of a list/ranking of actions, slate size.
+        len_list: int (> 1)
+            Length of a list/ranking of actions, slate size.
 
-    dim_context: int, default=1
-        Number of dimensions of context vectors.
+        dim_context: int, default=1
+            Number of dimensions of context vectors.
 
-    reward_type: str, default='binary'
-        Type of reward variable, which must be either 'binary' or 'continuous'.
-        When 'binary', rewards are sampled from the Bernoulli distribution.
-        When 'continuous', rewards are sampled from the truncated Normal distribution with `scale=1`.
-        The mean parameter of the reward distribution is determined by the `reward_function`.
+        reward_type: str, default='binary'
+            Type of reward variable, which must be either 'binary' or 'continuous'.
+            When 'binary', rewards are sampled from the Bernoulli distribution.
+            When 'continuous', rewards are sampled from the truncated Normal distribution with `scale=1`.
+            The mean parameter of the reward distribution is determined by the `reward_function`.
 
-    reward_structure: str, default='cascade_additive'
-        Specify which reward structure to use to define the expected rewards. Must be one of the following.
-            - 'cascade_additive'
-            - 'cascade_decay'
-            - 'independent'
-            - 'standard_additive'
-            - 'standard_decay'
+        reward_structure: str, default='cascade_additive'
+            Specify which reward structure to use to define the expected rewards. Must be one of the following.
+                - 'cascade_additive'
+                - 'cascade_decay'
+                - 'independent'
+                - 'standard_additive'
+                - 'standard_decay'
 
-        The expected reward function is defined as follows (:math:`f` is a base reward function of each item-position, :math:`g` is a transform function, and :math:`h` is a decay function):
-            'cascade_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
-            'cascade_decay': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j < k} g^{-1}(f(x, a(j))) / h(|k-j|))`.
-            'independent': :math:`q_k(x, a) = f(x, a(k))`
-            'standard_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
-            'standard_decay': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j \\neq k} g^{-1}(f(x, a(j))) / h(|k-j|))`.
-        When `reward_type` is 'continuous', transform function is the identity function.
-        When `reward_type` is 'binary', transform function is the logit function.
-        See the experiment section of Kiyohara et al.(2022) for details.
+            The expected reward function is defined as follows (:math:`f` is a base reward function of each item-position, :math:`g` is a transform function, and :math:`h` is a decay function):
+                'cascade_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j < k} W(a(k), a(j)))`.
+                'cascade_decay': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j < k} g^{-1}(f(x, a(j))) / h(|k-j|))`.
+                'independent': :math:`q_k(x, a) = f(x, a(k))`
+                'standard_additive': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) + \\sum_{j \\neq k} W(a(k), a(j)))`.
+                'standard_decay': :math:`q_k(x, a) = g(g^{-1}(f(x, a(k))) - \\sum_{j \\neq k} g^{-1}(f(x, a(j))) / h(|k-j|))`.
+            When `reward_type` is 'continuous', transform function is the identity function.
+            When `reward_type` is 'binary', transform function is the logit function.
+            See the experiment section of Kiyohara et al.(2022) for details.
 
-    decay_function: str, default='exponential'
-        Specify the decay function used to define the expected reward, which must be one of 'exponential' or 'inverse'.
-        Decay function is used when `reward_structure`='cascade_decay' or `reward_structure`='standard_decay'.
-        Discount rate is defined as follows (:math:`k` and :math:`j` are positions of the two slots).
-            'exponential': :math:`h(|k-j|) = \\exp(-|k-j|)`.
-            'inverse': :math:`h(|k-j|) = \\frac{1}{|k-j|+1})`.
-        See the experiment section of Kiyohara et al.(2022) for details.
+        decay_function: str, default='exponential'
+            Specify the decay function used to define the expected reward, which must be one of 'exponential' or 'inverse'.
+            Decay function is used when `reward_structure`='cascade_decay' or `reward_structure`='standard_decay'.
+            Discount rate is defined as follows (:math:`k` and :math:`j` are positions of the two slots).
+                'exponential': :math:`h(|k-j|) = \\exp(-|k-j|)`.
+                'inverse': :math:`h(|k-j|) = \\frac{1}{|k-j|+1})`.
+            See the experiment section of Kiyohara et al.(2022) for details.
 
-    click_model: str, default=None
-        Specify the click model used to define the expected reward, which must be one of None, 'pbm', or 'cascade'.
-        When None, no click model is applied when defining the expected reward for each slot in a ranking.
-        When 'pbm', the expected reward will be modifed based on the position-based model.
-        When 'cascade', the expected reward will be modifed based on the cascade model.
-        Note that these click models are not applicable to 'continuous' rewards.
+        click_model: str, default=None
+    <<<<<<< HEAD
+            Specify the click model used to define the expected reward, which must be one of None, 'pbm', or 'cascade'.
+            When None, no click model is applied when defining the expected reward for each slot in a ranking.
+            When 'pbm', the expected reward will be modifed based on the position-based model.
+            When 'cascade', the expected reward will be modifed based on the cascade model.
+            Note that these click models are not applicable to 'continuous' rewards.
 
-    eta: float, default=1.0
-        A hyperparameter to define the click model to generate the data.
-        When click_model='pbm', `eta` defines the examination probabilities of the position-based model.
-        For example, when `eta`=0.5, the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
-        When click_model='cascade', `eta` defines the position-dependent attractiveness parameters of the dependent click model (an extension of the cascade model).
-        For example, when `eta`=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
-        When `eta` is very large, the click model induced is close to the vanilla cascade model.
+        eta: float, default=1.0
+            A hyperparameter to define the click model to generate the data.
+            When click_model='pbm', `eta` defines the examination probabilities of the position-based model.
+            For example, when `eta`=0.5, the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
+            When click_model='cascade', `eta` defines the position-dependent attractiveness parameters of the dependent click model (an extension of the cascade model).
+            For example, when `eta`=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
+            When `eta` is very large, the click model induced is close to the vanilla cascade model.
+    =======
+            Type of click model, which must be one of None, 'pbm', or 'cascade'.
+            If None is given, reward at each slot is sampled based on the original expected rewards.
+            When 'pbm' is given, reward at each slot is sampled based on the position-based model.
+            When 'cascade' is given, reward at each slot is sampled based on the cascade model.
+            When using some click model, 'continuous' reward type is unavailable.
 
-    base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
-        Function defining the expected reward function for each given action-context pair,
-        i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None, context **independent** expected rewards will be
-        sampled from the uniform distribution automatically.
+        eta: float, default=1.0
+            Hyperparameter to define the click models.
+            When click_model='pbm', then eta defines the examination probabilities of the position-based model.
+            For example, when eta=0.5, then the examination probability at position `k` is :math:`\\theta (k) = (1/k)^{0.5}`.
+            When click_model='cascade', then eta defines the position-dependent attractiveness parameters of the dependent click model
+            (an extension of the cascade model).
+            For example, when eta=0.5, the position-dependent attractiveness parameter at position `k` is :math:`\\alpha (k) = (1/k)^{0.5}`.
+            When eta is very large, the click model induced by eta is close to the original cascade model.
+    >>>>>>> 4f075e9d66012032525ca2026364ffbf13acaee3
 
-    behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
-        Function generating logit values for each action in the action space,
-        i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
-        If None, context **independent** uniform distribution will be used (uniform behavior policy).
+        base_reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
+            Function defining the expected reward function for each given action-context pair,
+            i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
+            If None, context **independent** expected rewards will be
+            sampled from the uniform distribution automatically.
 
-    is_factorizable: bool
-        Whether to use factorizable evaluation policy (which choose slot actions independently).
-        Note that a factorizable policy can choose the same action more than twice in a slate.
-        In contrast, a non-factorizable policy chooses a slate action without any duplicates among slots.
-        When `n_unique_action` and `len_list` are large, a factorizable policy should be used due to computation time.
+        behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
+            Function generating logit values for each action in the action space,
+            i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+            If None, context **independent** uniform distribution will be used (uniform behavior policy).
 
-    random_state: int, default=12345
-        Controls the random seed in sampling synthetic slate bandit dataset.
+        is_factorizable: bool
+            Whether to use factorizable evaluation policy (which choose slot actions independently).
+            Note that a factorizable policy can choose the same action more than twice in a slate.
+            In contrast, a non-factorizable policy chooses a slate action without any duplicates among slots.
+            When `n_unique_action` and `len_list` are large, a factorizable policy should be used due to computation time.
 
-    dataset_name: str, default='synthetic_slate_bandit_dataset'
-        Name of the dataset.
+        random_state: int, default=12345
+            Controls the random seed in sampling synthetic slate bandit dataset.
 
-    ----------
+        dataset_name: str, default='synthetic_slate_bandit_dataset'
+            Name of the dataset.
 
-    .. code-block:: python
+        ----------
 
-        >>> from obp.dataset import (
-            logistic_reward_function,
-            linear_behavior_policy_logit,
-            SyntheticSlateBanditDataset,
-        )
+        .. code-block:: python
 
-        # generate synthetic contextual bandit feedback with 10 actions.
-        >>> dataset = SyntheticSlateBanditDataset(
-                n_unique_action=10,
-                dim_context=5,
-                len_list=3,
-                base_reward_function=logistic_reward_function,
-                behavior_policy_function=linear_behavior_policy_logit,
-                reward_type='binary',
-                reward_structure='cascade_additive',
-                click_model='cascade',
-                random_state=12345
+            >>> from obp.dataset import (
+                logistic_reward_function,
+                linear_behavior_policy_logit,
+                SyntheticSlateBanditDataset,
             )
-        >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(
-                n_rounds=5, return_pscore_item_position=True
-            )
-        >>> bandit_feedback
-        {
-            'n_rounds': 5,
-            'n_unique_action': 10,
-            'slate_id': array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]),
-            'context': array([[-0.20470766,  0.47894334, -0.51943872, -0.5557303 ,  1.96578057],
-                [ 1.39340583,  0.09290788,  0.28174615,  0.76902257,  1.24643474],
-                [ 1.00718936, -1.29622111,  0.27499163,  0.22891288,  1.35291684],
-                [ 0.88642934, -2.00163731, -0.37184254,  1.66902531, -0.43856974],
-                [-0.53974145,  0.47698501,  3.24894392, -1.02122752, -0.5770873 ]]),
-            'action_context': array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]),
-            'action': array([8, 6, 5, 4, 7, 0, 1, 3, 5, 4, 6, 1, 4, 1, 7]),
-            'position': array([0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2]),
-            'reward': array([1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0]),
-            'expected_reward_factual': array([0.5       , 0.73105858, 0.5       , 0.88079708, 0.88079708,
-                0.88079708, 0.5       , 0.73105858, 0.5       , 0.5       ,
-                0.26894142, 0.5       , 0.73105858, 0.73105858, 0.5       ]),
-            'pscore_cascade': array([0.05982646, 0.00895036, 0.00127176, 0.10339675, 0.00625482,
-                0.00072447, 0.14110696, 0.01868618, 0.00284884, 0.10339675,
-                0.01622041, 0.00302774, 0.10339675, 0.01627253, 0.00116824]),
-            'pscore': array([0.00127176, 0.00127176, 0.00127176, 0.00072447, 0.00072447,
-                0.00072447, 0.00284884, 0.00284884, 0.00284884, 0.00302774,
-                0.00302774, 0.00302774, 0.00116824, 0.00116824, 0.00116824]),
-            'pscore_item_position': array([0.19068462, 0.40385939, 0.33855573, 0.31231088, 0.40385939,
-                0.2969341 , 0.40489767, 0.31220474, 0.3388982 , 0.31231088,
-                0.33855573, 0.40489767, 0.31231088, 0.40489767, 0.33855573])
-        }
+
+            # generate synthetic contextual bandit feedback with 10 actions.
+            >>> dataset = SyntheticSlateBanditDataset(
+                    n_unique_action=10,
+                    dim_context=5,
+                    len_list=3,
+                    base_reward_function=logistic_reward_function,
+                    behavior_policy_function=linear_behavior_policy_logit,
+                    reward_type='binary',
+                    reward_structure='cascade_additive',
+                    click_model='cascade',
+                    random_state=12345
+                )
+            >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(
+                    n_rounds=5, return_pscore_item_position=True
+                )
+            >>> bandit_feedback
+            {
+                'n_rounds': 5,
+                'n_unique_action': 10,
+                'slate_id': array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]),
+                'context': array([[-0.20470766,  0.47894334, -0.51943872, -0.5557303 ,  1.96578057],
+                    [ 1.39340583,  0.09290788,  0.28174615,  0.76902257,  1.24643474],
+                    [ 1.00718936, -1.29622111,  0.27499163,  0.22891288,  1.35291684],
+                    [ 0.88642934, -2.00163731, -0.37184254,  1.66902531, -0.43856974],
+                    [-0.53974145,  0.47698501,  3.24894392, -1.02122752, -0.5770873 ]]),
+                'action_context': array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]),
+                'action': array([8, 6, 5, 4, 7, 0, 1, 3, 5, 4, 6, 1, 4, 1, 7]),
+                'position': array([0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2]),
+                'reward': array([1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0]),
+                'expected_reward_factual': array([0.5       , 0.73105858, 0.5       , 0.88079708, 0.88079708,
+                    0.88079708, 0.5       , 0.73105858, 0.5       , 0.5       ,
+                    0.26894142, 0.5       , 0.73105858, 0.73105858, 0.5       ]),
+                'pscore_cascade': array([0.05982646, 0.00895036, 0.00127176, 0.10339675, 0.00625482,
+                    0.00072447, 0.14110696, 0.01868618, 0.00284884, 0.10339675,
+                    0.01622041, 0.00302774, 0.10339675, 0.01627253, 0.00116824]),
+                'pscore': array([0.00127176, 0.00127176, 0.00127176, 0.00072447, 0.00072447,
+                    0.00072447, 0.00284884, 0.00284884, 0.00284884, 0.00302774,
+                    0.00302774, 0.00302774, 0.00116824, 0.00116824, 0.00116824]),
+                'pscore_item_position': array([0.19068462, 0.40385939, 0.33855573, 0.31231088, 0.40385939,
+                    0.2969341 , 0.40489767, 0.31220474, 0.3388982 , 0.31231088,
+                    0.33855573, 0.40489767, 0.31231088, 0.40489767, 0.33855573])
+            }
 
 
-    References
-    ------------
-    Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S. Muthukrishnan, Vishwa Vinay, Zheng Wen.
-    "Offline Evaluation of Ranking Policies with Click Models.", 2018.
+        References
+        ------------
+        Shuai Li, Yasin Abbasi-Yadkori, Branislav Kveton, S. Muthukrishnan, Vishwa Vinay, Zheng Wen.
+        "Offline Evaluation of Ranking Policies with Click Models.", 2018.
 
-    James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Benjamin Carterette.
-    "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions.", 2020.
+        James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Benjamin Carterette.
+        "Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions.", 2020.
 
-    Haruka Kiyohara, Yuta Saito, Tatsuya Matsuhiro, Yusuke Narita, Nobuyuki Shimizu, Yasuo Yamamoto.
-    "Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model.", 2022.
+        Haruka Kiyohara, Yuta Saito, Tatsuya Matsuhiro, Yusuke Narita, Nobuyuki Shimizu, Yasuo Yamamoto.
+        "Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model.", 2022.
 
 
     """
@@ -1043,7 +1060,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             Specify the type of evaluation policy to generate, which must be one of 'optimal', 'anti-optimal', or 'random'.
             When 'optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract top-L actions (L=`len_list`) for each slate.
             When 'anti-optimal' is given, we sort actions based on the base expected rewards (outputs of `base_reward_function`) and extract bottom-L actions (L=`len_list`) for each slate.
-            We calculate the three variants of the propensity scores (pscore, pscore_item_position, and pscore_cascade) of the epsilon-greedy policy when either 'optimal' or 'anti-optimal' is given.
+            We calculate the three variants of the propensity scores (pscore, `pscore_item_position`, and pscore_cascade) of the epsilon-greedy policy when either 'optimal' or 'anti-optimal' is given.
             When 'random' is given, we calculate the three variants of the propensity scores of the uniform random policy.
 
         context: array-like, shape (n_rounds, dim_context)
@@ -1153,6 +1170,70 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 random_pscore_cascade=random_pscore_cascade,
             )
         return pscore, pscore_item_position, pscore_cascade
+
+    def calc_evaluation_policy_action_dist(
+        self,
+        action: np.ndarray,
+        evaluation_policy_logit_: np.ndarray,
+    ):
+        """Calculate action distribution at each slot from a given evaluation policy logit.
+
+        Parameters
+        ----------
+        action: array-like, shape (n_rounds * len_list, )
+            Action chosen by behavior policy.
+
+        evaluation_policy_logit_: array-like, shape (n_rounds, n_unique_action)
+            Logit values of evaluation policy given context (:math:`x`), i.e., :math:`\\f: \\mathcal{X} \\rightarrow \\mathbb{R}^{\\mathcal{A}}`.
+
+        Returns
+        ----------
+        evaluation_policy_action_dist: array-like, shape (n_rounds * len_list * n_unique_action, )
+            Plackett-luce style action distribution induced by evaluation policy (action choice probabilities at each slot given previous action choices).
+            , i.e., :math:`\\pi_e(a_t(k) | x_t, a_t(1), \\ldots, a_t(k-1)) \\forall a_t(k) \\in \\mathcal{A}`.
+
+        """
+        check_array(action, name="action", expected_dim=1)
+        check_array(
+            evaluation_policy_logit_, name="evaluation_policy_logit_", expected_dim=2
+        )
+        if evaluation_policy_logit_.shape[1] != self.n_unique_action:
+            raise ValueError(
+                "Expected `evaluation_policy_logit_.shape[1] == n_unique_action`, but found it False"
+            )
+        if len(action) != evaluation_policy_logit_.shape[0] * self.len_list:
+            raise ValueError(
+                "Expected `len(action) == evaluation_policy_logit_.shape[0] * len_list`, but found it False"
+            )
+        n_rounds = evaluation_policy_logit_.shape[0]
+
+        # (n_rounds * len_list, ) -> (n_rounds, len_list)
+        action = action.reshape((n_rounds, self.len_list))
+        # (n_rounds, n_unique_action) -> (n_rounds, len_list, n_unique_action)
+        evaluation_policy_logit_ = np.array(
+            [
+                [evaluation_policy_logit_[i] for _ in range(self.len_list)]
+                for i in range(n_rounds)
+            ]
+        )
+        # calculate action probabilities for all the counterfactual actions at the position
+        # (n_rounds, len_list, n_unique_action)
+        evaluation_policy_action_dist = []
+        for i in range(n_rounds):
+            if not self.is_factorizable:
+                for position_ in range(self.len_list - 1):
+                    action_ = action[i][position_]
+                    # mask action choice probability of the previously chosen action
+                    # to avoid overflow in softmax function, set -1e4 instead of -np.inf
+                    # (make action choice probability 0 for the previously chosen action by softmax)
+                    evaluation_policy_logit_[i, position_ + 1 :, action_] = -1e4
+            # (len_list, n_unique_action)
+            evaluation_policy_action_dist.append(softmax(evaluation_policy_logit_[i]))
+        # (n_rounds, len_list, n_unique_action) -> (n_rounds * len_list * n_unique_action, )
+        evaluation_policy_action_dist = np.array(
+            evaluation_policy_action_dist
+        ).flatten()
+        return evaluation_policy_action_dist
 
     def _calc_epsilon_greedy_pscore(
         self,

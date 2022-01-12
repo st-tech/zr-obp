@@ -51,13 +51,13 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         Returns
         ----------
@@ -80,13 +80,13 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
-            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_t,a_t)`.
+            Expected rewards given context, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -133,6 +133,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         position: np.ndarray,
         pscore: np.ndarray,
         action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the policy value of evaluation policy.
@@ -140,19 +141,22 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
 
         Returns
         ----------
@@ -168,6 +172,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         position: np.ndarray,
         pscore: np.ndarray,
         action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -178,20 +183,23 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         Parameters
         ----------
         reward: array-like, shape (n_rounds,)
-            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,)
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
+            Position in a recommendation interface where the action was presented.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities
-            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -236,7 +244,7 @@ def test_meta_post_init(synthetic_bandit_feedback: BanditFeedback) -> None:
         "ipw3": ipw3,
     }, "__post_init__ returns a wrong value"
     # __post__init__ raises RuntimeError when necessary_keys are not included in the bandit_feedback
-    necessary_keys = ["action", "position", "reward", "pscore"]
+    necessary_keys = ["action", "position", "reward"]
     for i in range(len(necessary_keys)):
         for deleted_keys in itertools.combinations(necessary_keys, i + 1):
             invalid_bandit_feedback_dict = {key: "_" for key in necessary_keys}
@@ -290,11 +298,11 @@ invalid_input_of_create_estimator_inputs = [
     (
         np.zeros((2, 3, 4)),
         {"dm": None},
-        r"estimated_rewards_by_reg_model\[dm\] must be 3D array",
+        r"`estimated_rewards_by_reg_model\[dm\]` must be 3D array",
     ),
-    (np.zeros((2, 3)), None, "action_dist must be 3D array"),
-    ("3", None, "action_dist must be 3D array"),
-    (None, None, "action_dist must be 3D array"),
+    (np.zeros((2, 3)), None, "`action_dist` must be 3D array"),
+    ("3", None, "`action_dist` must be 3D array"),
+    (None, None, "`action_dist` must be 3D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [
@@ -308,7 +316,7 @@ valid_input_of_create_estimator_inputs = [
         {"dm": np.zeros((2, 3, 4))},
         "same shape",
     ),
-    (np.zeros((2, 3, 1)), None, "estimated_rewards_by_reg_model is None"),
+    (np.zeros((2, 3, 1)), None, "`estimated_rewards_by_reg_model` is None"),
 ]
 
 
@@ -393,6 +401,8 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
             "position",
             "action_dist",
             "estimated_rewards_by_reg_model",
+            "estimated_pscore",
+            "estimated_importance_weights",
         ]
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
     # _create_estimator_inputs function is called in the following functions
@@ -661,7 +671,7 @@ def test_meta_summarize_off_policy_estimates(
 
 
 invalid_input_of_evaluation_performance_of_estimators = [
-    ("foo", 0.3, ValueError, "metric must be either 'relative-ee' or 'se'"),
+    ("foo", 0.3, ValueError, "`metric` must be either 'relative-ee' or 'se'"),
     (
         "se",
         1,
@@ -678,7 +688,7 @@ invalid_input_of_evaluation_performance_of_estimators = [
         "relative-ee",
         0.0,
         ValueError,
-        "ground_truth_policy_value must be non-zero when metric is relative-ee",
+        "`ground_truth_policy_value` must be non-zero when metric is relative-ee",
     ),
 ]
 

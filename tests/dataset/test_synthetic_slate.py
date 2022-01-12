@@ -259,7 +259,7 @@ def check_slate_bandit_feedback(
     # check uniqueness
     assert (
         bandit_feedback_df.duplicated(["slate_id", "position"]).sum() == 0
-    ), "position must not be duplicated in each slate"
+    ), "`position` must not be duplicated in each slate"
     assert (
         bandit_feedback_df.duplicated(["slate_id", "action"]).sum() == 0
         if not is_factorizable
@@ -302,7 +302,7 @@ def check_slate_bandit_feedback(
         )
         assert (
             count_pscore_in_expression != 1
-        ).sum() == 0, "pscore must be unique in each slate"
+        ).sum() == 0, "`pscore` must be unique in each slate"
     if "pscore" in pscore_columns and "pscore_cascade" in pscore_columns:
         last_slot_feedback_df = bandit_feedback_df.drop_duplicates(
             "slate_id", keep="last"
@@ -1088,22 +1088,22 @@ invalid_input_of_calc_on_policy_policy_value = [
     (
         np.repeat(np.arange(n_rounds), len_list),
         "4",  #
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
         np.zeros((n_rounds, len_list), dtype=int),  #
-        "reward must be 1D array",
+        "`reward` must be 1D array",
     ),
     (
         "4",  #
         np.zeros(n_rounds * len_list, dtype=int),
-        "slate_id must be 1D array",
+        "`slate_id` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list).reshape((n_rounds, len_list)),  #
         np.zeros(n_rounds * len_list, dtype=int),
-        "slate_id must be 1D array",
+        "`slate_id` must be 1D array",
     ),
     (
         np.repeat(np.arange(n_rounds), len_list),
@@ -1196,7 +1196,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.array([5, 2]),  #
         np.tile(np.arange(3), 5),
         ValueError,
-        "context must be 2D array",
+        "`context` must be 2D array",
     ),
     (
         "optimal",
@@ -1204,7 +1204,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.ones([5, 2]),  #
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         "optimal",
@@ -1212,7 +1212,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.random.choice(5),  #
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         "optimal",
@@ -1427,7 +1427,7 @@ def test_generate_evaluation_policy_pscore_using_valid_input_data(
     )
     assert (
         count_pscore_in_expression != 1
-    ).sum() == 0, "pscore must be unique in each slate"
+    ).sum() == 0, "`pscore` must be unique in each slate"
     last_slot_feedback_df = bandit_feedback_df.drop_duplicates("slate_id", keep="last")
     assert np.allclose(
         last_slot_feedback_df["pscore"], last_slot_feedback_df["pscore_cascade"]
@@ -1529,7 +1529,7 @@ invalid_input_of_calc_ground_truth_policy_value = [
         np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]]).flatten(),
         np.ones((3, 2)),
         ValueError,
-        "evaluation_policy_logit_ must be 2D array",
+        "`evaluation_policy_logit_` must be 2D array",
     ),
     (
         3,
@@ -1979,13 +1979,13 @@ invalid_input_of_obtain_pscore_given_evaluation_policy_logit = [
         np.ones((n_rounds, len_list)),
         np.ones((n_rounds, n_unique_action)),
         ValueError,
-        "action must be 1D array",
+        "`action` must be 1D array",
     ),
     (
         np.ones((n_rounds * len_list)),
         np.ones((n_rounds * n_unique_action)),
         ValueError,
-        "evaluation_policy_logit_ must be 2D array",
+        "`evaluation_policy_logit_` must be 2D array",
     ),
     (
         np.ones((n_rounds * len_list + 1)),
@@ -2286,4 +2286,162 @@ def test_obtain_pscore_given_evaluation_policy_logit_using_mock_input_data(
     assert np.allclose(true_pscores_cascade, evaluation_policy_pscore_cascade)
     assert np.allclose(
         true_pscores_item_position, evaluation_policy_pscore_item_position
+    )
+
+
+# action, evaluation_policy_logit_, err, description
+invalid_input_of_calc_evaluation_policy_action_dist = [
+    (
+        np.ones((10, 3)),  #
+        np.ones((10, 3)),
+        ValueError,
+        "`action` must be 1D array",
+    ),
+    (
+        np.ones((10 * 3 + 1)),  #
+        np.ones((10, 3)),
+        ValueError,
+        "Expected `len(action)",
+    ),
+    (
+        np.ones((10 * 3)),
+        np.ones((10, 2)),  #
+        ValueError,
+        "Expected `evaluation_policy_logit_.shape[1]",
+    ),
+    (
+        np.ones((10 * 3)),
+        np.ones((15, 3)),  #
+        ValueError,
+        "Expected `len(action)",
+    ),
+    (
+        np.ones((10 * 3)),
+        np.ones((10 * 3)),  #
+        ValueError,
+        "`evaluation_policy_logit_` must be 2D array",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "action, evaluation_policy_logit_, err, description",
+    invalid_input_of_calc_evaluation_policy_action_dist,
+)
+def test_calc_evaluation_policy_action_dist_using_invalid_input_data(
+    action,
+    evaluation_policy_logit_,
+    err,
+    description,
+):
+    # set parameters
+    n_unique_action = 3
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    is_factorizable = True
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        is_factorizable=is_factorizable,
+        base_reward_function=logistic_reward_function,
+    )
+    with pytest.raises(err, match=f"{description}*"):
+        dataset.calc_evaluation_policy_action_dist(
+            action=action,
+            evaluation_policy_logit_=evaluation_policy_logit_,
+        )
+
+
+# action, evaluation_policy_logit_, description
+valid_input_of_calc_evaluation_policy_action_dist = [
+    (
+        np.ones((10 * 3), dtype=int),
+        np.ones((10, 3)) * 10,
+        "",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "action, evaluation_policy_logit_, description",
+    valid_input_of_calc_evaluation_policy_action_dist,
+)
+def test_calc_evaluation_policy_action_dist_using_valid_input_data_factorizable_case(
+    action,
+    evaluation_policy_logit_,
+    description,
+):
+    # set parameters
+    n_unique_action = 3
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    is_factorizable = True
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        is_factorizable=is_factorizable,
+        base_reward_function=logistic_reward_function,
+    )
+    evaluation_policy_action_dist = dataset.calc_evaluation_policy_action_dist(
+        action=action,
+        evaluation_policy_logit_=evaluation_policy_logit_,
+    )
+    assert len(evaluation_policy_action_dist) == n_rounds * len_list * n_unique_action
+    assert np.allclose(
+        evaluation_policy_action_dist.reshape((-1, n_unique_action)).sum(axis=1),
+        np.ones((n_rounds * len_list,)),
+    )
+    assert np.allclose(
+        evaluation_policy_action_dist,
+        np.ones_like(evaluation_policy_action_dist) / n_unique_action,
+    )
+
+
+@pytest.mark.parametrize(
+    "action, evaluation_policy_logit_, description",
+    valid_input_of_calc_evaluation_policy_action_dist,
+)
+def test_calc_evaluation_policy_action_dist_using_valid_input_data_non_factorizable_case(
+    action,
+    evaluation_policy_logit_,
+    description,
+):
+    # set parameters
+    n_unique_action = 3
+    len_list = 3
+    dim_context = 2
+    reward_type = "binary"
+    is_factorizable = False
+    random_state = 12345
+    dataset = SyntheticSlateBanditDataset(
+        n_unique_action=n_unique_action,
+        len_list=len_list,
+        dim_context=dim_context,
+        reward_type=reward_type,
+        random_state=random_state,
+        is_factorizable=is_factorizable,
+        base_reward_function=logistic_reward_function,
+    )
+    evaluation_policy_action_dist = dataset.calc_evaluation_policy_action_dist(
+        action=action,
+        evaluation_policy_logit_=evaluation_policy_logit_,
+    )
+    assert len(evaluation_policy_action_dist) == n_rounds * len_list * n_unique_action
+    assert np.allclose(
+        evaluation_policy_action_dist.reshape((-1, n_unique_action)).sum(axis=1),
+        np.ones((n_rounds * len_list,)),
+    )
+    assert not np.allclose(
+        evaluation_policy_action_dist,
+        np.ones_like(evaluation_policy_action_dist) / n_unique_action,
     )

@@ -18,7 +18,7 @@ from ..utils import check_bandit_feedback_inputs
 
 @dataclass
 class RegressionModel(BaseEstimator):
-    """Machine learning model to estimate the mean reward function (:math:`q(x,a):= \\mathbb{E}[r|x,a]`).
+    """Machine learning model to estimate the reward function (:math:`q(x,a):= \\mathbb{E}[r|x,a]`).
 
     Note
     -------
@@ -27,18 +27,18 @@ class RegressionModel(BaseEstimator):
     Parameters
     ------------
     base_model: BaseEstimator
-        A machine learning model used to estimate the mean reward function.
+        A machine learning model used to estimate the reward function.
 
     n_actions: int
         Number of actions.
 
     len_list: int, default=1
-        Length of a list of actions recommended in each impression.
+        Length of a list of actions in a recommender inferface, slate size.
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
         Context vector characterizing action (i.e., vector representation of each action).
-        If not given, one-hot encoding of the action variable is used as default.
+        If None, one-hot encoding of the action variable is used as default.
 
     fitting_method: str, default='normal'
         Method to fit the regression model.
@@ -73,11 +73,11 @@ class RegressionModel(BaseEstimator):
             and self.fitting_method in ["normal", "iw", "mrdr"]
         ):
             raise ValueError(
-                f"fitting_method must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
+                f"`fitting_method` must be one of 'normal', 'iw', or 'mrdr', but {self.fitting_method} is given"
             )
         if not isinstance(self.base_model, BaseEstimator):
             raise ValueError(
-                "base_model must be BaseEstimator or a child class of BaseEstimator"
+                "`base_model` must be BaseEstimator or a child class of BaseEstimator"
             )
 
         self.base_model_list = [
@@ -95,7 +95,7 @@ class RegressionModel(BaseEstimator):
         position: Optional[np.ndarray] = None,
         action_dist: Optional[np.ndarray] = None,
     ) -> None:
-        """Fit the regression model on given logged bandit feedback data.
+        """Fit the regression model on given logged bandit data.
 
         Parameters
         ----------
@@ -103,23 +103,23 @@ class RegressionModel(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
-            Reward observed in each round of the logged bandit feedback, i.e., :math:`r_t`.
+            Reward observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_t|x_t)`.
-            When None is given, behavior policy is assumed to be uniform.
+            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            If None is given, behavior policy is assumed to be uniform.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None, a regression model assumes that there is only one position.
+            Position in a recommendation interface where the action was presented.
+            If None is given, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
-            When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            When either of 'iw' or 'mrdr' is used as `fitting_method`, `action_dist` must be given.
 
         """
         check_bandit_feedback_inputs(
@@ -137,19 +137,19 @@ class RegressionModel(BaseEstimator):
         else:
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                    f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
         if self.fitting_method in ["iw", "mrdr"]:
             if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
                 raise ValueError(
-                    "when fitting_method is either 'iw' or 'mrdr', action_dist (a 3-dimensional ndarray) must be given"
+                    "when `fitting_method` is either 'iw' or 'mrdr', `action_dist` (a 3-dimensional ndarray) must be given"
                 )
             if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
                 raise ValueError(
-                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                    f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
                 )
             if not np.allclose(action_dist.sum(axis=1), 1):
-                raise ValueError("action_dist must be a probability distribution")
+                raise ValueError("`action_dist` must be a probability distribution")
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions
 
@@ -185,7 +185,7 @@ class RegressionModel(BaseEstimator):
                     )
 
     def predict(self, context: np.ndarray) -> np.ndarray:
-        """Predict the mean reward function.
+        """Predict the reward function.
 
         Parameters
         -----------
@@ -233,7 +233,7 @@ class RegressionModel(BaseEstimator):
         n_folds: int = 1,
         random_state: Optional[int] = None,
     ) -> np.ndarray:
-        """Fit the regression model on given logged bandit feedback data and predict the reward function of the same data.
+        """Fit the regression model on given logged bandit data and predict the reward function of the same data.
 
         Note
         ------
@@ -246,24 +246,24 @@ class RegressionModel(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
-            Observed rewards (or outcome) in each round, i.e., :math:`r_t`.
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities (propensity score) of a behavior policy
             in the training logged bandit feedback.
-            When None is given, the the behavior policy is assumed to be a uniform one.
+            If None is given, the the behavior policy is assumed to be a uniform one.
 
         position: array-like, shape (n_rounds,), default=None
-            Position of recommendation interface where action was presented in each round of the given logged bandit data.
-            If None, a regression model assumes that there is only one position.
+            Position in a recommendation interface where the action was presented.
+            If None is given, a regression model assumes that there is only one position.
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
-            When either of 'iw' or 'mrdr' is used as the 'fitting_method' argument, then `action_dist` must be given.
+            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            When either of 'iw' or 'mrdr' is used as `fitting_method`, `action_dist` must be given.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
@@ -298,16 +298,16 @@ class RegressionModel(BaseEstimator):
         else:
             if position.max() >= self.len_list:
                 raise ValueError(
-                    f"position elements must be smaller than len_list, but the maximum value is {position.max()} (>= {self.len_list})"
+                    f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
         if self.fitting_method in ["iw", "mrdr"]:
             if not (isinstance(action_dist, np.ndarray) and action_dist.ndim == 3):
                 raise ValueError(
-                    "when fitting_method is either 'iw' or 'mrdr', action_dist (a 3-dimensional ndarray) must be given"
+                    "when `fitting_method` is either 'iw' or 'mrdr', `action_dist` (a 3-dimensional ndarray) must be given"
                 )
             if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
                 raise ValueError(
-                    f"shape of action_dist must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                    f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
                 )
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions
@@ -364,7 +364,7 @@ class RegressionModel(BaseEstimator):
             Context vectors observed in each round of the logged bandit feedback, i.e., :math:`x_t`.
 
         action: array-like, shape (n_rounds,)
-            Action sampled by behavior policy in each round of the logged bandit feedback, i.e., :math:`a_t`.
+            Action sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vector characterizing action (i.e., vector representation of each action).
