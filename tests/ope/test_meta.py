@@ -133,6 +133,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         position: np.ndarray,
         pscore: np.ndarray,
         action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the policy value of evaluation policy.
@@ -154,6 +155,9 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
 
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
+
         Returns
         ----------
         mock_policy_value: float
@@ -168,6 +172,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         position: np.ndarray,
         pscore: np.ndarray,
         action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -192,6 +197,9 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities
             by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_t|x_t)`.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_t|x_t)`.
 
         alpha: float, default=0.05
             Significance level.
@@ -236,7 +244,7 @@ def test_meta_post_init(synthetic_bandit_feedback: BanditFeedback) -> None:
         "ipw3": ipw3,
     }, "__post_init__ returns a wrong value"
     # __post__init__ raises RuntimeError when necessary_keys are not included in the bandit_feedback
-    necessary_keys = ["action", "position", "reward", "pscore"]
+    necessary_keys = ["action", "position", "reward"]
     for i in range(len(necessary_keys)):
         for deleted_keys in itertools.combinations(necessary_keys, i + 1):
             invalid_bandit_feedback_dict = {key: "_" for key in necessary_keys}
@@ -393,6 +401,8 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
             "position",
             "action_dist",
             "estimated_rewards_by_reg_model",
+            "estimated_pscore",
+            "estimated_importance_weights",
         ]
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
     # _create_estimator_inputs function is called in the following functions

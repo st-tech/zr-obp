@@ -9,22 +9,24 @@ import pytest
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 import torch
 
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
+from obp.ope import BalancedInverseProbabilityWeighting
 from obp.ope import DirectMethod
-from obp.ope import DoublyRobust
 from obp.ope import DoublyRobustTuning
-from obp.ope import DoublyRobustWithShrinkage
 from obp.ope import DoublyRobustWithShrinkageTuning
-from obp.ope import InverseProbabilityWeighting
+from obp.ope import ImportanceWeightEstimator
 from obp.ope import InverseProbabilityWeightingTuning
 from obp.ope import OffPolicyEvaluation
+from obp.ope import PropensityScoreEstimator
 from obp.ope import RegressionModel
 from obp.ope import SelfNormalizedDoublyRobust
 from obp.ope import SelfNormalizedInverseProbabilityWeighting
-from obp.ope import SwitchDoublyRobust
+from obp.ope import SubGaussianDoublyRobustTuning
+from obp.ope import SubGaussianInverseProbabilityWeightingTuning
 from obp.ope import SwitchDoublyRobustTuning
 from obp.ope.estimators import BaseOffPolicyEstimator
 from obp.policy import IPWLearner
@@ -50,6 +52,7 @@ hyperparams = {
         "min_samples_leaf": 10,
         "random_state": 12345,
     },
+    "svc": {"gamma": 2, "C": 5, "probability": True, "random_state": 12345},
 }
 
 base_model_dict = dict(
@@ -65,6 +68,7 @@ offline_experiment_configurations = [
         5,
         "logistic_regression",
         "logistic_regression",
+        "logistic_regression",
     ),
     (
         300,
@@ -72,11 +76,13 @@ offline_experiment_configurations = [
         2,
         "lightgbm",
         "lightgbm",
+        "lightgbm",
     ),
     (
         500,
         5,
         3,
+        "random_forest",
         "random_forest",
         "random_forest",
     ),
@@ -85,6 +91,7 @@ offline_experiment_configurations = [
         3,
         5,
         "logistic_regression",
+        "random_forest",
         "random_forest",
     ),
     (
@@ -93,8 +100,20 @@ offline_experiment_configurations = [
         10,
         "lightgbm",
         "logistic_regression",
+        "logistic_regression",
     ),
 ]
+
+bipw_model_configurations = {
+    "bipw (random_forest sample)": dict(
+        fitting_method="sample",
+        base_model=RandomForestClassifier(**hyperparams["random_forest"]),
+    ),
+    "bipw (svc sample)": dict(
+        fitting_method="sample",
+        base_model=SVC(**hyperparams["svc"]),
+    ),
+}
 
 
 @dataclass
@@ -129,82 +148,116 @@ class NaiveEstimator(BaseOffPolicyEstimator):
 ope_estimators = [
     NaiveEstimator(),
     DirectMethod(),
-    InverseProbabilityWeighting(),
     InverseProbabilityWeightingTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="mse",
         estimator_name="ipw (tuning-mse)",
     ),
     InverseProbabilityWeightingTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="slope",
         estimator_name="ipw (tuning-slope)",
     ),
+    SubGaussianInverseProbabilityWeightingTuning(
+        lambdas=[0.0001, 0.01],
+        tuning_method="mse",
+        estimator_name="sg-ipw (tuning-mse)",
+    ),
     SelfNormalizedInverseProbabilityWeighting(),
-    DoublyRobust(),
     DoublyRobustTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="mse",
         estimator_name="dr (tuning-mse)",
     ),
     DoublyRobustTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="slope",
         estimator_name="dr (tuning-slope)",
     ),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(lambda_=1.0, estimator_name="switch-dr (lambda=1)"),
-    SwitchDoublyRobust(lambda_=100.0, estimator_name="switch-dr (lambda=100)"),
     SwitchDoublyRobustTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="mse",
         estimator_name="switch-dr (tuning-mse)",
     ),
     SwitchDoublyRobustTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="slope",
         estimator_name="switch-dr (tuning-slope)",
     ),
-    DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
-    DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
     DoublyRobustWithShrinkageTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="mse",
         estimator_name="dr-os (tuning-mse)",
     ),
     DoublyRobustWithShrinkageTuning(
-        lambdas=[100, 1000, np.inf],
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
         tuning_method="slope",
         estimator_name="dr-os (tuning-slope)",
+    ),
+    SubGaussianDoublyRobustTuning(
+        lambdas=[0.005, 0.01, 0.05, 0.1, 0.5],
+        tuning_method="mse",
+        estimator_name="sg-dr (tuning-mse)",
+    ),
+    SubGaussianDoublyRobustTuning(
+        lambdas=[0.005, 0.01, 0.05, 0.1, 0.5],
+        tuning_method="slope",
+        estimator_name="sg-dr (tuning-slope)",
+    ),
+    InverseProbabilityWeightingTuning(
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
+        estimator_name="cipw (estimated pscore)",
+        use_estimated_pscore=True,
+    ),
+    SelfNormalizedInverseProbabilityWeighting(
+        estimator_name="snipw (estimated pscore)", use_estimated_pscore=True
+    ),
+    DoublyRobustTuning(
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
+        estimator_name="dr (estimated pscore)",
+        use_estimated_pscore=True,
+    ),
+    DoublyRobustWithShrinkageTuning(
+        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
+        estimator_name="dr-os (estimated pscore)",
+        use_estimated_pscore=True,
+    ),
+    BalancedInverseProbabilityWeighting(
+        estimator_name="bipw (svc sample)", lambda_=100
+    ),
+    BalancedInverseProbabilityWeighting(
+        estimator_name="bipw (random_forest sample)", lambda_=100
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "n_rounds, n_actions, dim_context, base_model_for_evaluation_policy, base_model_for_reg_model",
+    "n_rounds, n_actions, dim_context, base_model_for_iw_estimator, base_model_for_reg_model, base_model_for_pscore_estimator",
     offline_experiment_configurations,
 )
 def test_offline_estimation_performance(
     n_rounds: int,
     n_actions: int,
     dim_context: int,
-    base_model_for_evaluation_policy: str,
+    base_model_for_iw_estimator: str,
     base_model_for_reg_model: str,
+    base_model_for_pscore_estimator: str,
 ) -> None:
     def process(i: int):
         # synthetic data generator
         dataset = SyntheticBanditDataset(
             n_actions=n_actions,
             dim_context=dim_context,
-            beta=-2.0,
+            beta=3.0,
             reward_function=logistic_reward_function,
             random_state=i,
         )
         # define evaluation policy using IPWLearner
         evaluation_policy = IPWLearner(
             n_actions=dataset.n_actions,
-            base_classifier=base_model_dict[base_model_for_evaluation_policy](
-                **hyperparams[base_model_for_evaluation_policy]
+            base_classifier=base_model_dict[base_model_for_iw_estimator](
+                **hyperparams[base_model_for_iw_estimator]
             ),
         )
         # sample new training and test sets of synthetic logged bandit feedback
@@ -218,7 +271,7 @@ def test_offline_estimation_performance(
             pscore=bandit_feedback_train["pscore"],
         )
         # predict the action decisions for the test set of the synthetic logged bandit feedback
-        action_dist = evaluation_policy.predict(
+        action_dist = evaluation_policy.predict_proba(
             context=bandit_feedback_test["context"],
         )
         # estimate the mean reward function of the test set of synthetic bandit feedback with ML model
@@ -233,9 +286,43 @@ def test_offline_estimation_performance(
             context=bandit_feedback_test["context"],
             action=bandit_feedback_test["action"],
             reward=bandit_feedback_test["reward"],
-            n_folds=3,  # 3-fold cross-fitting
+            n_folds=2,
             random_state=12345,
         )
+        # fit propensity score estimators
+        pscore_estimator = PropensityScoreEstimator(
+            len_list=1,
+            n_actions=n_actions,
+            base_model=base_model_dict[base_model_for_pscore_estimator](
+                **hyperparams[base_model_for_pscore_estimator]
+            ),
+            calibration_cv=2,
+        )
+        estimated_pscore = pscore_estimator.fit_predict(
+            action=bandit_feedback_test["action"],
+            position=bandit_feedback_test["position"],
+            context=bandit_feedback_test["context"],
+            n_folds=2,
+            random_state=12345,
+        )
+        # fit importance weight estimators
+        estimated_importance_weights_dict = {}
+        for clf_name, clf_arguments in bipw_model_configurations.items():
+            clf = ImportanceWeightEstimator(
+                len_list=1,
+                n_actions=n_actions,
+                fitting_method=clf_arguments["fitting_method"],
+                base_model=clf_arguments["base_model"],
+            )
+            estimated_importance_weights_dict[clf_name] = clf.fit_predict(
+                action=bandit_feedback_test["action"],
+                context=bandit_feedback_test["context"],
+                action_dist=action_dist,
+                position=bandit_feedback_test["position"],
+                n_folds=2,
+                evaluate_model_performance=False,
+                random_state=12345,
+            )
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback_test,
@@ -248,6 +335,9 @@ def test_offline_estimation_performance(
             ),
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            estimated_pscore=estimated_pscore,
+            estimated_importance_weights=estimated_importance_weights_dict,
+            metric="relative-ee",
         )
 
         return relative_ee_i
@@ -267,22 +357,29 @@ def test_offline_estimation_performance(
     relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
     relative_ee_df_mean = relative_ee_df["mean"]
 
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dm"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning-mse)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["ipw (tuning-slope)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["snipw"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr (tuning-mse)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr (tuning-slope)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["sndr"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (lambda=1)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (lambda=100)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (tuning-mse)"]
-    assert (
-        relative_ee_df_mean["naive"] > relative_ee_df_mean["switch-dr (tuning-slope)"]
-    )
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=1)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (lambda=100)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning-mse)"]
-    assert relative_ee_df_mean["naive"] > relative_ee_df_mean["dr-os (tuning-slope)"]
+    tested_estimators = [
+        "dm",
+        "ipw (tuning-mse)",
+        "ipw (tuning-slope)",
+        "sg-ipw (tuning-mse)",
+        "snipw",
+        "dr (tuning-mse)",
+        "dr (tuning-slope)",
+        "sndr",
+        "switch-dr (tuning-mse)",
+        "switch-dr (tuning-slope)",
+        "dr-os (tuning-mse)",
+        "dr-os (tuning-slope)",
+        "sg-dr (tuning-mse)",
+        "sg-dr (tuning-slope)",
+        "cipw (estimated pscore)",
+        "snipw (estimated pscore)",
+        "dr (estimated pscore)",
+        "dr-os (estimated pscore)",
+        "bipw (svc sample)",
+        "bipw (random_forest sample)",
+    ]
+    for estimator_name in tested_estimators:
+        assert (
+            relative_ee_df_mean[estimator_name] / relative_ee_df_mean["naive"] < 1.25
+        ), f"{estimator_name} is significantly worse than naive (on-policy) estimator"
