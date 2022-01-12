@@ -9,6 +9,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2008.07146-b31b1b.svg)](https://arxiv.org/abs/2008.07146)
 
 [[arXiv]](https://arxiv.org/abs/2008.07146)
+[[NeurIPS2021 Proceedings]](https://datasets-benchmarks-proceedings.neurips.cc/paper/2021/hash/33e75ff09dd601bbe69f351039152189-Abstract-round2.html)
 # Open Bandit Pipeline: a research framework for off-policy evaluation and learning
 
 **[Docs](https://zr-obp.readthedocs.io/en/latest/)** | **[Google Group](https://groups.google.com/g/open-bandit-project)** | **[Tutorial](https://sites.google.com/cornell.edu/recsys2021tutorial)** | **[Installation](#installation)** | **[Usage](#usage)** | **[Slides](./slides/slides_EN.pdf)** | **[Quickstart](./examples/quickstart)** | **[Open Bandit Dataset](./obd)** | **[日本語](./README_JN.md)**
@@ -160,7 +161,7 @@ python setup.py install
 
 Open Bandit Pipeline supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
 
-# Usage Examples
+# Usage
 
 ## Example with Synthetic Bandit Data
 
