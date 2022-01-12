@@ -273,7 +273,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "action elements must be non-negative integers",
+        "action elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -283,7 +283,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        "action elements must be non-negative integers",
+        "action elements must be integers in the range of",
     ),
     (
         generate_action_dist(5, 4, 3),
@@ -313,7 +313,7 @@ invalid_input_of_ipw = [
         np.random.choice(3, size=5),
         False,
         None,
-        r"action elements must be smaller than`",
+        r"action elements must be integers in the range of`",
     ),
     (
         generate_action_dist(5, 4, 3),

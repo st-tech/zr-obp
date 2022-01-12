@@ -1,20 +1,20 @@
-from pathlib import Path
 from itertools import permutations
 from itertools import product
+from pathlib import Path
+
 import numpy as np
 import pytest
-import yaml
-
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
+import yaml
 
 from obp.dataset import linear_behavior_policy_logit
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticSlateBanditDataset
-from obp.ope import SlateRewardInteractionIPS
 from obp.ope import SlateCascadeDoublyRobust
 from obp.ope import SlateRegressionModel
+from obp.ope import SlateRewardInteractionIPS
 from obp.utils import softmax
 
 

@@ -1,14 +1,13 @@
 import numpy as np
 import pytest
-
 from sklearn.tree import DecisionTreeRegressor
 
 from obp.dataset import linear_behavior_policy_logit
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticSlateBanditDataset
-from obp.ope import SlateRewardInteractionIPS
 from obp.ope import SlateCascadeDoublyRobust
 from obp.ope import SlateRegressionModel
+from obp.ope import SlateRewardInteractionIPS
 
 
 # setting

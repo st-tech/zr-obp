@@ -267,7 +267,7 @@ invalid_input_of_fitting_propensity_score_estimator = [
         1,
         2,
         ValueError,
-        r"action elements must be smaller than",
+        r"action elements must be integers in the range of",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

@@ -10,11 +10,11 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 import pytest
 
+from obp.ope import SlateCascadeDoublyRobust
 from obp.ope import SlateIndependentIPS
 from obp.ope import SlateOffPolicyEvaluation
 from obp.ope import SlateRewardInteractionIPS
 from obp.ope import SlateStandardIPS
-from obp.ope import SlateCascadeDoublyRobust
 from obp.types import BanditFeedback
 from obp.utils import check_confidence_interval_arguments
 
