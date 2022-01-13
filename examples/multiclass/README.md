@@ -1,14 +1,14 @@
-# Example with Multi-class Classification Data
+# Example Experiment with Multi-class Classification Data
 
 
 ## Description
 
-Here, we use multi-class classification datasets to evaluate OPE estimators.
-Specifically, we evaluate the estimation performances of well-known off-policy estimators using the ground-truth policy value of an evaluation policy calculable with multi-class classification data.
+We use multi-class classification datasets to evaluate OPE estimators. Specifically, we evaluate the estimation performance of some well-known OPE estimators using the ground-truth policy value of an evaluation policy calculable with multi-class classification data.
 
 ## Evaluating Off-Policy Estimators
 
-In the following, we evaluate the estimation performances of
+In the following, we evaluate the estimation performance of
+
 - Direct Method (DM)
 - Inverse Probability Weighting (IPW)
 - Self-Normalized Inverse Probability Weighting (SNIPW)
@@ -17,12 +17,12 @@ In the following, we evaluate the estimation performances of
 - Switch Doubly Robust (Switch-DR)
 - Doubly Robust with Optimistic Shrinkage (DRos)
 
-For Switch-DR and DRos, we try some different values of hyperparameters.
+For Switch-DR and DRos, we tune the built-in hyperparameters using SLOPE, a data-driven hyperparameter tuning method for OPE estimators.
 See [our documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details about these estimators.
 
 ### Files
 - [`./evaluate_off_policy_estimators.py`](./evaluate_off_policy_estimators.py) implements the evaluation of OPE estimators using multi-class classification data.
-- [`./conf/hyperparams.yaml`](./conf/hyperparams.yaml) defines hyperparameters of some machine learning methods used to define regression model.
+- [`./conf/hyperparams.yaml`](./conf/hyperparams.yaml) defines hyperparameters of some ML methods used to define regression model.
 
 ### Scripts
 
@@ -50,38 +50,34 @@ python evaluate_off_policy_estimators.py\
 - `$base_model_for_reg_model` specifies the base ML model for defining regression model and should be one of "logistic_regression", "random_forest", or "lightgbm".
 - `$n_jobs` is the maximum number of concurrently running jobs.
 
-For example, the following command compares the estimation performances (relative estimation error; relative-ee) of the OPE estimators using the digits dataset.
+For example, the following command compares the estimation performance (relative estimation error; relative-ee) of the OPE estimators using the digits dataset.
 
 ```bash
 python evaluate_off_policy_estimators.py\
-    --n_runs 20\
+    --n_runs 30\
     --dataset_name digits\
     --eval_size 0.7\
     --base_model_for_behavior_policy logistic_regression\
-    --alpha_b 0.8\
-    --base_model_for_evaluation_policy logistic_regression\
+    --alpha_b 0.4\
+    --base_model_for_evaluation_policy random_forest\
     --alpha_e 0.9\
-    --base_model_for_reg_model logistic_regression\
+    --base_model_for_reg_model lightgbm\
     --n_jobs -1\
     --random_state 12345
 
 # relative-ee of OPE estimators and their standard deviations (lower is better).
-# It appears that the performances of some OPE estimators depend on the choice of their hyperparameters.
 # =============================================
 # random_state=12345
 # ---------------------------------------------
-#                           mean       std
-# dm                    0.093439  0.015391
-# ipw                   0.013286  0.008496
-# snipw                 0.006797  0.004094
-# dr                    0.007780  0.004492
-# sndr                  0.007210  0.004089
-# switch-dr (lambda=1)     0.173282  0.020025
-# switch-dr (lambda=100)   0.007780  0.004492
-# dr-os (lambda=1)      0.079629  0.014008
-# dr-os (lambda=100)    0.008031  0.004634
+#                mean       std
+# dm         0.436541  0.017629
+# ipw        0.030288  0.024506
+# snipw      0.022764  0.017917
+# dr         0.016156  0.012679
+# sndr       0.022082  0.016865
+# switch-dr  0.034657  0.018575
+# dr-os      0.015868  0.012537
 # =============================================
 ```
 
-The above result can change with different situations.
-You can try the evaluation of OPE with other experimental settings easily.
+The above result can change with different situations. You can try the evaluation of OPE with other experimental settings easily.

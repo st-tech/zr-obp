@@ -35,19 +35,19 @@ if __name__ == "__main__":
         "--n_rounds",
         type=int,
         default=10000,
-        help="number of rounds for synthetic bandit feedback.",
+        help="sample size of logged bandit data.",
     )
     parser.add_argument(
         "--n_actions",
         type=int,
         default=10,
-        help="number of actions for synthetic bandit feedback.",
+        help="number of actions.",
     )
     parser.add_argument(
         "--dim_context",
         type=int,
         default=5,
-        help="dimensions of context vectors characterizing each round.",
+        help="dimensions of context vectors.",
     )
     parser.add_argument(
         "--n_sim",
@@ -143,33 +143,33 @@ if __name__ == "__main__":
             bandit_feedback=bandit_feedback,
             ope_estimators=ope_estimators,
         )
-        relative_ee_i = ope.evaluate_performance_of_estimators(
+        metric_i = ope.evaluate_performance_of_estimators(
             ground_truth_policy_value=ground_truth_policy_value,
             action_dist=action_dist,
         )
 
-        return relative_ee_i
+        return metric_i
 
     processed = Parallel(
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])
-    relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
-    for i, relative_ee_i in enumerate(processed):
+    metric_dict = {est.estimator_name: dict() for est in ope_estimators}
+    for i, metric_i in enumerate(processed):
         for (
             estimator_name,
             relative_ee_,
-        ) in relative_ee_i.items():
-            relative_ee_dict[estimator_name][i] = relative_ee_
-    relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
+        ) in metric_i.items():
+            metric_dict[estimator_name][i] = relative_ee_
+    se_df = DataFrame(metric_dict).describe().T.round(6)
 
     print("=" * 45)
     print(f"random_state={random_state}")
     print("-" * 45)
-    print(relative_ee_df[["mean", "std"]])
+    print(se_df[["mean", "std"]])
     print("=" * 45)
 
     # save results of the evaluation of off-policy estimators in './logs' directory.
     log_path = Path("./logs")
     log_path.mkdir(exist_ok=True, parents=True)
-    relative_ee_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")
+    se_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")

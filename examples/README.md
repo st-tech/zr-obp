@@ -1,6 +1,6 @@
 # Open Bandit Pipeline Examples
 
-This page contains a list of example codes written with the Open Bandit Pipeline.
+This page contains a list of example codes written with Open Bandit Pipeline.
 
 - [`obd/`](./obd/): example implementations for evaluating standard off-policy estimators with the small sample Open Bandit Dataset.
 - [`synthetic/`](./synthetic/): example implementations for evaluating several off-policy estimators with synthetic bandit datasets.

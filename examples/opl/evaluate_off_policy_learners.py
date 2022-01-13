@@ -7,7 +7,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import yaml
 
-from obp.dataset import linear_behavior_policy
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
 from obp.policy import IPWLearner
@@ -33,19 +32,25 @@ if __name__ == "__main__":
         "--n_rounds",
         type=int,
         default=10000,
-        help="number of rounds for synthetic bandit feedback.",
+        help="sample size of logged bandit data.",
     )
     parser.add_argument(
         "--n_actions",
         type=int,
         default=10,
-        help="number of actions for synthetic bandit feedback.",
+        help="number of actions.",
     )
     parser.add_argument(
         "--dim_context",
         type=int,
         default=5,
-        help="dimensions of context vectors characterizing each round.",
+        help="dimensions of context vectors.",
+    )
+    parser.add_argument(
+        "--beta",
+        type=float,
+        default=-3,
+        help="inverse temperature parameter to control the behavior policy.",
     )
     parser.add_argument(
         "--base_model_for_ipw_learner",
@@ -106,6 +111,7 @@ if __name__ == "__main__":
     n_rounds = args.n_rounds
     n_actions = args.n_actions
     dim_context = args.dim_context
+    beta = args.beta
     base_model_for_ipw_learner = args.base_model_for_ipw_learner
     off_policy_objective = args.off_policy_objective
     n_hidden = args.n_hidden
@@ -121,10 +127,10 @@ if __name__ == "__main__":
         n_actions=n_actions,
         dim_context=dim_context,
         reward_function=logistic_reward_function,
-        behavior_policy_function=linear_behavior_policy,
+        beta=beta,
         random_state=random_state,
     )
-    # sample new training and test sets of synthetic logged bandit feedback
+    # sample new training and test sets of synthetic logged bandit data
     bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
 
@@ -149,7 +155,7 @@ if __name__ == "__main__":
         early_stopping=early_stopping,
         random_state=random_state,
     )
-    # train the evaluation policy on the training set of the synthetic logged bandit feedback
+    # train the evaluation policy on the training set of the synthetic logged bandit data
     ipw_learner.fit(
         context=bandit_feedback_train["context"],
         action=bandit_feedback_train["action"],
@@ -162,7 +168,7 @@ if __name__ == "__main__":
         reward=bandit_feedback_train["reward"],
         pscore=bandit_feedback_train["pscore"],
     )
-    # predict the action decisions for the test set of the synthetic logged bandit feedback
+    # predict the action decisions for the test set of the synthetic logged bandit data
     random_action_dist = random_policy.compute_batch_action_dist(n_rounds=n_rounds)
     ipw_learner_action_dist = ipw_learner.predict(
         context=bandit_feedback_test["context"],

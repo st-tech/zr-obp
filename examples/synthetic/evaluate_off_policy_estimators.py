@@ -10,18 +10,17 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import yaml
 
-from obp.dataset import linear_behavior_policy
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
 from obp.ope import DirectMethod
 from obp.ope import DoublyRobust
-from obp.ope import DoublyRobustWithShrinkage
+from obp.ope import DoublyRobustWithShrinkageTuning
 from obp.ope import InverseProbabilityWeighting
 from obp.ope import OffPolicyEvaluation
 from obp.ope import RegressionModel
 from obp.ope import SelfNormalizedDoublyRobust
 from obp.ope import SelfNormalizedInverseProbabilityWeighting
-from obp.ope import SwitchDoublyRobust
+from obp.ope import SwitchDoublyRobustTuning
 from obp.policy import IPWLearner
 
 
@@ -42,15 +41,15 @@ ope_estimators = [
     SelfNormalizedInverseProbabilityWeighting(),
     DoublyRobust(),
     SelfNormalizedDoublyRobust(),
-    SwitchDoublyRobust(lambda_=1.0, estimator_name="switch-dr (lambda=1)"),
-    SwitchDoublyRobust(lambda_=100.0, estimator_name="switch-dr (lambda=100)"),
-    DoublyRobustWithShrinkage(lambda_=1.0, estimator_name="dr-os (lambda=1)"),
-    DoublyRobustWithShrinkage(lambda_=100.0, estimator_name="dr-os (lambda=100)"),
+    SwitchDoublyRobustTuning(lambdas=[10, 50, 100, 500, 1000, 5000, 10000, np.inf]),
+    DoublyRobustWithShrinkageTuning(
+        lambdas=[10, 50, 100, 500, 1000, 5000, 10000, np.inf]
+    ),
 ]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="evaluate off-policy estimators with synthetic bandit data."
+        description="evaluate the accuracy of OPE estimators on synthetic bandit data."
     )
     parser.add_argument(
         "--n_runs", type=int, default=1, help="number of simulations in the experiment."
@@ -59,19 +58,25 @@ if __name__ == "__main__":
         "--n_rounds",
         type=int,
         default=10000,
-        help="number of rounds for synthetic bandit feedback.",
+        help="sample size of logged bandit data.",
     )
     parser.add_argument(
         "--n_actions",
         type=int,
         default=10,
-        help="number of actions for synthetic bandit feedback.",
+        help="number of actions.",
     )
     parser.add_argument(
         "--dim_context",
         type=int,
         default=5,
-        help="dimensions of context vectors characterizing each round.",
+        help="dimensions of context vectors.",
+    )
+    parser.add_argument(
+        "--beta",
+        type=float,
+        default=3,
+        help="inverse temperature parameter to control the behavior policy.",
     )
     parser.add_argument(
         "--base_model_for_evaluation_policy",
@@ -102,6 +107,7 @@ if __name__ == "__main__":
     n_rounds = args.n_rounds
     n_actions = args.n_actions
     dim_context = args.dim_context
+    beta = args.beta
     base_model_for_evaluation_policy = args.base_model_for_evaluation_policy
     base_model_for_reg_model = args.base_model_for_reg_model
     n_jobs = args.n_jobs
@@ -113,7 +119,7 @@ if __name__ == "__main__":
             n_actions=n_actions,
             dim_context=dim_context,
             reward_function=logistic_reward_function,
-            behavior_policy_function=linear_behavior_policy,
+            beta=beta,
             random_state=i,
         )
         # define evaluation policy using IPWLearner
@@ -123,21 +129,21 @@ if __name__ == "__main__":
                 **hyperparams[base_model_for_evaluation_policy]
             ),
         )
-        # sample new training and test sets of synthetic logged bandit feedback
+        # sample new training and test sets of synthetic logged bandit data
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        # train the evaluation policy on the training set of the synthetic logged bandit feedback
+        # train the evaluation policy on the training set of the synthetic logged bandit data
         evaluation_policy.fit(
             context=bandit_feedback_train["context"],
             action=bandit_feedback_train["action"],
             reward=bandit_feedback_train["reward"],
             pscore=bandit_feedback_train["pscore"],
         )
-        # predict the action decisions for the test set of the synthetic logged bandit feedback
-        action_dist = evaluation_policy.predict(
+        # predict the action decisions for the test set of the synthetic logged bandit data
+        action_dist = evaluation_policy.predict_proba(
             context=bandit_feedback_test["context"],
         )
-        # estimate the mean reward function of the test set of synthetic bandit feedback with ML model
+        # estimate the reward function of the test set of synthetic bandit feedback with ML model
         regression_model = RegressionModel(
             n_actions=dataset.n_actions,
             action_context=dataset.action_context,
@@ -157,37 +163,38 @@ if __name__ == "__main__":
             bandit_feedback=bandit_feedback_test,
             ope_estimators=ope_estimators,
         )
-        relative_ee_i = ope.evaluate_performance_of_estimators(
+        metric_i = ope.evaluate_performance_of_estimators(
             ground_truth_policy_value=dataset.calc_ground_truth_policy_value(
                 expected_reward=bandit_feedback_test["expected_reward"],
                 action_dist=action_dist,
             ),
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+            metric="relative-ee",
         )
 
-        return relative_ee_i
+        return metric_i
 
     processed = Parallel(
         n_jobs=n_jobs,
         verbose=50,
     )([delayed(process)(i) for i in np.arange(n_runs)])
-    relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
-    for i, relative_ee_i in enumerate(processed):
+    metric_dict = {est.estimator_name: dict() for est in ope_estimators}
+    for i, metric_i in enumerate(processed):
         for (
             estimator_name,
             relative_ee_,
-        ) in relative_ee_i.items():
-            relative_ee_dict[estimator_name][i] = relative_ee_
-    relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
+        ) in metric_i.items():
+            metric_dict[estimator_name][i] = relative_ee_
+    results_df = DataFrame(metric_dict).describe().T.round(6)
 
     print("=" * 45)
     print(f"random_state={random_state}")
     print("-" * 45)
-    print(relative_ee_df[["mean", "std"]])
+    print(results_df[["mean", "std"]])
     print("=" * 45)
 
-    # save results of the evaluation of off-policy estimators in './logs' directory.
+    # save results of the evaluation of OPE in './logs' directory.
     log_path = Path("./logs")
     log_path.mkdir(exist_ok=True, parents=True)
-    relative_ee_df.to_csv(log_path / "relative_ee_of_ope_estimators.csv")
+    results_df.to_csv(log_path / "evaluation_of_ope_results.csv")
