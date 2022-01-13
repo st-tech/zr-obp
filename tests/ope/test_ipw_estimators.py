@@ -18,15 +18,15 @@ invalid_input_of_ipw_init = [
         "",
         False,
         TypeError,
-        r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"lambda_ must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         None,
         False,
         TypeError,
-        r"`lambda_` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"lambda_ must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
-    (-1.0, False, ValueError, "`lambda_`= -1.0, must be >= 0.0."),
+    (-1.0, False, ValueError, "lambda_ == -1.0, must be >= 0.0."),
     (np.nan, False, ValueError, "`lambda_` must not be nan"),
     (
         1.0,
@@ -80,7 +80,7 @@ invalid_input_of_ipw_tuning_init = [
         0.05,
         False,
         TypeError,
-        r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"an element of lambdas must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         [None],  #
@@ -89,7 +89,7 @@ invalid_input_of_ipw_tuning_init = [
         0.05,
         False,
         TypeError,
-        r"`an element of lambdas` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"an element of lambdas must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         [],  #
@@ -107,7 +107,7 @@ invalid_input_of_ipw_tuning_init = [
         0.05,
         False,
         ValueError,
-        "`an element of lambdas`= -1.0, must be >= 0.0.",
+        "an element of lambdas == -1.0, must be >= 0.0.",
     ),
     (
         [np.nan],
@@ -152,7 +152,7 @@ invalid_input_of_ipw_tuning_init = [
         "",  #
         False,
         TypeError,
-        "`delta` must be an instance of <class 'float'>",
+        "delta must be an instance of <class 'float'>",
     ),
     (
         [1],
@@ -161,7 +161,7 @@ invalid_input_of_ipw_tuning_init = [
         None,  #
         False,
         TypeError,
-        "`delta` must be an instance of <class 'float'>",
+        "delta must be an instance of <class 'float'>",
     ),
     (
         [1],
@@ -170,7 +170,7 @@ invalid_input_of_ipw_tuning_init = [
         -1.0,  #
         False,
         ValueError,
-        "`delta`= -1.0, must be >= 0.0.",
+        "delta == -1.0, must be >= 0.0.",
     ),
     (
         [1],
@@ -179,7 +179,7 @@ invalid_input_of_ipw_tuning_init = [
         1.1,  #
         False,
         ValueError,
-        "`delta`= 1.1, must be <= 1.0.",
+        "delta == 1.1, must be <= 1.0.",
     ),
     (
         [1],

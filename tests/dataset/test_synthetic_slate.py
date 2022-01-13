@@ -24,7 +24,7 @@ invalid_input_of_init = [
         1.0,
         1,
         TypeError,
-        "`n_unique_action` must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_unique_action must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         1,
@@ -37,7 +37,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "`n_unique_action`= 1, must be >= 2.",
+        "n_unique_action == 1, must be >= 2.",
     ),
     (
         5,
@@ -50,7 +50,7 @@ invalid_input_of_init = [
         1.0,
         1,
         TypeError,
-        "`len_list` must be an instance of <class 'int'>, not <class 'str'>.",
+        "len_list must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         5,
@@ -63,7 +63,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "`len_list`= -1, must be >= 2.",
+        "len_list == -1, must be >= 2.",
     ),
     (
         5,
@@ -76,7 +76,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "`len_list`= 10, must be <= 5.",
+        "len_list == 10, must be <= 5.",
     ),
     (
         5,
@@ -89,7 +89,7 @@ invalid_input_of_init = [
         1.0,
         1,
         ValueError,
-        "`dim_context`= 0, must be >= 1.",
+        "dim_context == 0, must be >= 1.",
     ),
     (
         5,
@@ -102,7 +102,7 @@ invalid_input_of_init = [
         1.0,
         1,
         TypeError,
-        "`dim_context` must be an instance of <class 'int'>, not <class 'str'>.",
+        "dim_context must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         5,
@@ -167,7 +167,7 @@ invalid_input_of_init = [
         "aaa",
         1,
         TypeError,
-        "`eta` must be an instance of <class 'float'>, not <class 'str'>.",
+        "eta must be an instance of <class 'float'>, not <class 'str'>.",
     ),
     (
         5,
@@ -180,7 +180,7 @@ invalid_input_of_init = [
         -1.0,
         1,
         ValueError,
-        "`eta`= -1.0, must be >= 0.0.",
+        "eta == -1.0, must be >= 0.0.",
     ),
     (
         5,
@@ -1228,7 +1228,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.tile(np.arange(3), 5),
         TypeError,
-        "`epsilon` must be an instance of <class 'float'>, not <class 'str'>.",
+        "epsilon must be an instance of <class 'float'>, not <class 'str'>.",
     ),
     (
         "optimal",
@@ -1236,7 +1236,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.tile(np.arange(3), 5),
         ValueError,
-        "`epsilon`= -1.0, must be >= 0.0.",
+        "epsilon == -1.0, must be >= 0.0.",
     ),
     (
         "optimal",
@@ -1244,7 +1244,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.tile(np.arange(3), 5),
         ValueError,
-        "`epsilon`= 2.0, must be <= 1.0.",
+        "epsilon == 2.0, must be <= 1.0.",
     ),
 ]
 

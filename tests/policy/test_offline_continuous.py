@@ -33,7 +33,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "`dim_context`= 0, must be >= 1",
+        "dim_context == 0, must be >= 1",
     ),
     (
         10,
@@ -215,7 +215,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "`alpha`= -1.0, must be >= 0.0",
+        "alpha == -1.0, must be >= 0.0",
     ),
     (
         10,
@@ -293,7 +293,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "`max_iter`= 0, must be >= 1",
+        "max_iter == 0, must be >= 1",
     ),
     (
         10,
@@ -397,7 +397,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "`momentum`= 2.0, must be <= 1.0",
+        "momentum == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -501,7 +501,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "`validation_fraction`= 2.0, must be <= 1.0",
+        "validation_fraction == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -527,7 +527,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "`beta_1`= 2.0, must be <= 1.0",
+        "beta_1 == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -553,7 +553,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "`beta_2`= 2.0, must be <= 1.0",
+        "beta_2 == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -579,7 +579,7 @@ invalid_input_of_nn_policy_learner_init = [
         -1.0,  #
         10,
         None,
-        "`epsilon`= -1.0, must be >= 0.0",
+        "epsilon == -1.0, must be >= 0.0",
     ),
     (
         10,
@@ -605,7 +605,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         0,  #
         None,
-        "`n_iter_no_change`= 0, must be >= 1",
+        "n_iter_no_change == 0, must be >= 1",
     ),
     (
         10,

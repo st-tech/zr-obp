@@ -20,7 +20,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         ValueError,
-        "`dim_context`= 0, must be >= 1.",
+        "dim_context == 0, must be >= 1.",
     ),
     (
         1.0,  #
@@ -30,7 +30,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        "`dim_context` must be an instance of <class 'int'>, not <class 'float'>.",
+        "dim_context must be an instance of <class 'int'>, not <class 'float'>.",
     ),
     (
         "3",  #
@@ -40,7 +40,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        "`dim_context` must be an instance of <class 'int'>, not <class 'str'>.",
+        "dim_context must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         None,  #
@@ -50,7 +50,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        "`dim_context` must be an instance of <class 'int'>, not <class 'NoneType'>.",
+        "dim_context must be an instance of <class 'int'>, not <class 'NoneType'>.",
     ),
     (
         3,
@@ -60,7 +60,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         ValueError,
-        "`action_noise`= -1.0, must be >= 0.",
+        "action_noise == -1.0, must be >= 0.",
     ),
     (
         3,
@@ -70,7 +70,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        r"`action_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"action_noise must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -80,7 +80,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        r"`action_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"action_noise must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -90,7 +90,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         ValueError,
-        "`reward_noise`= -1.0, must be >= 0.",
+        "reward_noise == -1.0, must be >= 0.",
     ),
     (
         3,
@@ -100,7 +100,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        r"`reward_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"reward_noise must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -110,7 +110,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        r"`reward_noise` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"reward_noise must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -120,7 +120,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        r"`min_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"min_action_value must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -130,7 +130,7 @@ invalid_input_of_init = [
         1.0,
         12345,
         TypeError,
-        r"`min_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"min_action_value must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -140,7 +140,7 @@ invalid_input_of_init = [
         "3",  #
         12345,
         TypeError,
-        r"`max_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"max_action_value must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -150,7 +150,7 @@ invalid_input_of_init = [
         None,  #
         12345,
         TypeError,
-        r"`max_action_value` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"max_action_value must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         3,
@@ -215,22 +215,22 @@ invalid_input_of_obtain_batch_bandit_feedback = [
     (
         0,  #
         ValueError,
-        "`n_rounds`= 0, must be >= 1.",
+        "n_rounds == 0, must be >= 1.",
     ),
     (
         1.0,  #
         TypeError,
-        "`n_rounds` must be an instance of <class 'int'>, not <class 'float'>.",
+        "n_rounds must be an instance of <class 'int'>, not <class 'float'>.",
     ),
     (
         "3",  #
         TypeError,
-        "`n_rounds` must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_rounds must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         None,  #
         TypeError,
-        "`n_rounds` must be an instance of <class 'int'>, not <class 'NoneType'>.",
+        "n_rounds must be an instance of <class 'int'>, not <class 'NoneType'>.",
     ),
 ]
 
