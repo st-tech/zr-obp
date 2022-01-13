@@ -17,7 +17,7 @@ In the following, we evaluate the estimation performance of
 - Switch Doubly Robust (Switch-DR)
 - Doubly Robust with Optimistic Shrinkage (DRos)
 
-For Switch-DR and DRos, we tune the built-in hyperparameters using SLOPE, a data-driven hyperparameter tuning method for OPE estimators.
+For Switch-DR and DRos, we tune the built-in hyperparameters using SLOPE (Su et al., 2020;  Tucker et al., 2021), a data-driven hyperparameter tuning method for OPE estimators.
 See [our documentation](https://zr-obp.readthedocs.io/en/latest/estimators.html) for the details about these estimators.
 
 ### Files
@@ -81,3 +81,15 @@ python evaluate_off_policy_estimators.py\
 ```
 
 The above result can change with different situations. You can try the evaluation of OPE with other experimental settings easily.
+
+
+## References
+
+- Yi Su, Pavithra Srinath, Akshay Krishnamurthy. [Adaptive Estimator Selection for Off-Policy Evaluation](https://arxiv.org/abs/2002.07729), ICML2020.
+- Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, Miroslav Dudík. [Doubly Robust Off-policy Evaluation with Shrinkage](https://arxiv.org/abs/1907.09623), ICML2020.
+- George Tucker and Jonathan Lee. [Improved Estimator Selection for Off-Policy Evaluation](https://lyang36.github.io/icml2021_rltheory/camera_ready/79.pdf), Workshop on Reinforcement Learning
+Theory at ICML2021.
+- Yu-Xiang Wang, Alekh Agarwal, Miroslav Dudik. [Optimal and Adaptive Off-policy Evaluation in Contextual Bandits](https://arxiv.org/abs/1612.01205), ICML2017.
+- Miroslav Dudik, John Langford, Lihong Li. [Doubly Robust Policy Evaluation and Learning](https://arxiv.org/abs/1103.4601). ICML2011.
+- Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita. [Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation](https://arxiv.org/abs/2008.07146). NeurIPS2021 Track on Datasets and Benchmarks.
+

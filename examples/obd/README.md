@@ -72,3 +72,16 @@ python evaluate_off_policy_estimators.py\
 ```
 
 Please refer to [this page](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the evaluation of OPE protocol using our real-world data. Please visit [synthetic](../synthetic/) to try the evaluation of OPE estimators with synthetic bandit data. Moreover, in [benchmark/ope](https://github.com/st-tech/zr-obp/tree/master/benchmark/ope), we performed the benchmark experiments on several OPE estimators using the full size Open Bandit Dataset.
+
+
+
+## References
+
+- Yi Su, Pavithra Srinath, Akshay Krishnamurthy. [Adaptive Estimator Selection for Off-Policy Evaluation](https://arxiv.org/abs/2002.07729), ICML2020.
+- Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, Miroslav Dudík. [Doubly Robust Off-policy Evaluation with Shrinkage](https://arxiv.org/abs/1907.09623), ICML2020.
+- George Tucker and Jonathan Lee. [Improved Estimator Selection for Off-Policy Evaluation](https://lyang36.github.io/icml2021_rltheory/camera_ready/79.pdf), Workshop on Reinforcement Learning
+Theory at ICML2021.
+- Yu-Xiang Wang, Alekh Agarwal, Miroslav Dudik. [Optimal and Adaptive Off-policy Evaluation in Contextual Bandits](https://arxiv.org/abs/1612.01205), ICML2017.
+- Miroslav Dudik, John Langford, Lihong Li. [Doubly Robust Policy Evaluation and Learning](https://arxiv.org/abs/1103.4601). ICML2011.
+- Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita. [Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation](https://arxiv.org/abs/2008.07146). NeurIPS2021 Track on Datasets and Benchmarks.
+
