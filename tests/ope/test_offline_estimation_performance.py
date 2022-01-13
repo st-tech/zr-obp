@@ -260,17 +260,17 @@ def test_offline_estimation_performance(
                 **hyperparams[base_model_for_iw_estimator]
             ),
         )
-        # sample new training and test sets of synthetic logged bandit feedback
+        # sample new training and test sets of synthetic logged bandit data
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-        # train the evaluation policy on the training set of the synthetic logged bandit feedback
+        # train the evaluation policy on the training set of the synthetic logged bandit data
         evaluation_policy.fit(
             context=bandit_feedback_train["context"],
             action=bandit_feedback_train["action"],
             reward=bandit_feedback_train["reward"],
             pscore=bandit_feedback_train["pscore"],
         )
-        # predict the action decisions for the test set of the synthetic logged bandit feedback
+        # predict the action decisions for the test set of the synthetic logged bandit data
         action_dist = evaluation_policy.predict_proba(
             context=bandit_feedback_test["context"],
         )
@@ -347,14 +347,14 @@ def test_offline_estimation_performance(
         n_jobs=-1,
         verbose=0,
     )([delayed(process)(i) for i in np.arange(n_runs)])
-    relative_ee_dict = {est.estimator_name: dict() for est in ope_estimators}
+    metric_dict = {est.estimator_name: dict() for est in ope_estimators}
     for i, relative_ee_i in enumerate(processed):
         for (
             estimator_name,
             relative_ee_,
         ) in relative_ee_i.items():
-            relative_ee_dict[estimator_name][i] = relative_ee_
-    relative_ee_df = DataFrame(relative_ee_dict).describe().T.round(6)
+            metric_dict[estimator_name][i] = relative_ee_
+    relative_ee_df = DataFrame(metric_dict).describe().T.round(6)
     relative_ee_df_mean = relative_ee_df["mean"]
 
     tested_estimators = [

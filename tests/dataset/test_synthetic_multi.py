@@ -17,7 +17,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "`n_actions` must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_actions must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         1,  #
@@ -30,7 +30,7 @@ invalid_input_of_init = [
         None,
         12345,
         ValueError,
-        "`n_actions`= 1, must be >= 2.",
+        "n_actions == 1, must be >= 2.",
     ),
     (
         3,
@@ -43,7 +43,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "`dim_context` must be an instance of <class 'int'>, not <class 'str'>.",
+        "dim_context must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         3,
@@ -56,7 +56,7 @@ invalid_input_of_init = [
         None,
         12345,
         ValueError,
-        "`dim_context`= 0, must be >= 1.",
+        "dim_context == 0, must be >= 1.",
     ),
     (
         3,
@@ -82,7 +82,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"`reward_std` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"reward_std must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -95,7 +95,7 @@ invalid_input_of_init = [
         None,
         12345,
         ValueError,
-        "`reward_std`= -1.0, must be >= 0.",
+        "reward_std == -1.0, must be >= 0.",
     ),
     (
         3,
@@ -134,7 +134,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"`betas\[0\]` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"betas\[0\] must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -173,7 +173,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"`rhos\[0\]` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"rhos\[0\] must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         3,
@@ -186,7 +186,7 @@ invalid_input_of_init = [
         None,
         12345,
         ValueError,
-        r"`rhos\[2\]`= -1, must be >= 0.0.",
+        r"rhos\[2\] == -1, must be >= 0.0.",
     ),
     (
         3,
@@ -212,7 +212,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "`n_deficient_actions` must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_deficient_actions must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         3,
@@ -225,7 +225,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "`n_deficient_actions` must be an instance of <class 'int'>, not <class 'float'>.",
+        "n_deficient_actions must be an instance of <class 'int'>, not <class 'float'>.",
     ),
     (
         3,
@@ -238,7 +238,7 @@ invalid_input_of_init = [
         None,
         12345,
         ValueError,
-        "`n_deficient_actions`= 10, must be <= 2.",
+        "n_deficient_actions == 10, must be <= 2.",
     ),
     (
         3,

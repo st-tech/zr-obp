@@ -96,21 +96,21 @@ def test_offline_nn_policy_learner_performance(
         )
         # baseline method 1. RandomPolicy
         random_policy = RandomPolicy(output_space=(min_action_value, max_action_value))
-        # sample new training and test sets of synthetic logged bandit feedback
+        # sample new training and test sets of synthetic logged bandit data
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(
             n_rounds=n_rounds,
         )
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(
             n_rounds=n_rounds,
         )
-        # train the evaluation policy on the training set of the synthetic logged bandit feedback
+        # train the evaluation policy on the training set of the synthetic logged bandit data
         nn_policy.fit(
             context=bandit_feedback_train["context"],
             action=bandit_feedback_train["action"],
             reward=bandit_feedback_train["reward"],
             pscore=bandit_feedback_train["pscore"],
         )
-        # predict the action decisions for the test set of the synthetic logged bandit feedback
+        # predict the action decisions for the test set of the synthetic logged bandit data
         actions_predicted_by_nn_policy = nn_policy.predict(
             context=bandit_feedback_test["context"],
         )

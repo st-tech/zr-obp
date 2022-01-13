@@ -192,7 +192,7 @@ def test_offline_policy_learner_performance(
             behavior_policy_function=linear_behavior_policy,
             random_state=i,
         )
-        # sample new training and test sets of synthetic logged bandit feedback
+        # sample new training and test sets of synthetic logged bandit data
         bandit_feedback_train = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         bandit_feedback_test = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
 

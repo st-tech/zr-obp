@@ -43,7 +43,7 @@ invalid_input_of_initializing_regression_models = [
         "normal",
         Ridge(**hyperparams["ridge"]),
         TypeError,
-        "`n_actions` must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_actions must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -52,7 +52,7 @@ invalid_input_of_initializing_regression_models = [
         "normal",
         Ridge(**hyperparams["ridge"]),
         ValueError,
-        "`n_actions`= 1, must be >= 2",
+        "n_actions == 1, must be >= 2",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -61,7 +61,7 @@ invalid_input_of_initializing_regression_models = [
         "normal",
         Ridge(**hyperparams["ridge"]),
         TypeError,
-        "`len_list` must be an instance of <class 'int'>, not <class 'str'>.",
+        "len_list must be an instance of <class 'int'>, not <class 'str'>.",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -70,7 +70,7 @@ invalid_input_of_initializing_regression_models = [
         "normal",
         Ridge(**hyperparams["ridge"]),
         ValueError,
-        "`len_list`= 0, must be >= 1",
+        "len_list == 0, must be >= 1",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -595,7 +595,7 @@ invalid_input_of_fitting_regression_models = [
         "a",  #
         None,
         TypeError,
-        "`n_folds` must be an instance of <class 'int'>, not <class 'str'>",
+        "n_folds must be an instance of <class 'int'>, not <class 'str'>",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),
@@ -612,7 +612,7 @@ invalid_input_of_fitting_regression_models = [
         0,  #
         None,
         ValueError,
-        "`n_folds`= 0, must be >= 1.",
+        "n_folds == 0, must be >= 1.",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

@@ -231,22 +231,22 @@ invalid_input_of_estimate_intervals = [
         ValueError,
         "'s' cannot be used to seed a numpy.random.RandomState instance",
     ),
-    (0.05, -1, 1, ValueError, "`n_bootstrap_samples`= -1, must be >= 1"),
+    (0.05, -1, 1, ValueError, "n_bootstrap_samples == -1, must be >= 1"),
     (
         0.05,
         "s",
         1,
         TypeError,
-        "`n_bootstrap_samples` must be an instance of <class 'int'>, not <class 'str'>",
+        "n_bootstrap_samples must be an instance of <class 'int'>, not <class 'str'>",
     ),
-    (-1.0, 1, 1, ValueError, "`alpha`= -1.0, must be >= 0.0"),
-    (2.0, 1, 1, ValueError, "`alpha`= 2.0, must be <= 1.0"),
+    (-1.0, 1, 1, ValueError, "alpha == -1.0, must be >= 0.0"),
+    (2.0, 1, 1, ValueError, "alpha == 2.0, must be <= 1.0"),
     (
         "0",
         1,
         1,
         TypeError,
-        "`alpha` must be an instance of <class 'float'>, not <class 'str'>",
+        "alpha must be an instance of <class 'float'>, not <class 'str'>",
     ),
 ]
 

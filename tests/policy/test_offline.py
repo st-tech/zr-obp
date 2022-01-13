@@ -19,19 +19,19 @@ invalid_input_of_ipw_learner_init = [
         0,  #
         1,
         base_classifier,
-        "`n_actions`= 0, must be >= 1",
+        "n_actions == 0, must be >= 1",
     ),
     (
         10,
         -1,  #
         base_classifier,
-        "`len_list`= -1, must be >= 0",
+        "len_list == -1, must be >= 0",
     ),
     (
         10,
         20,  #
         base_classifier,
-        "`len_list`= 20, must be <= 10",
+        "len_list == 20, must be <= 10",
     ),
     (10, 1, base_regressor, "base_classifier must be a classifier"),
 ]
@@ -233,21 +233,21 @@ invalid_input_of_q_learner_init = [
         1,
         base_classifier,
         "normal",
-        "`n_actions`= 0, must be >= 1",
+        "n_actions == 0, must be >= 1",
     ),
     (
         10,
         -1,  #
         base_classifier,
         "normal",
-        "`len_list`= -1, must be >= 0",
+        "len_list == -1, must be >= 0",
     ),
     (
         10,
         20,  #
         base_classifier,
         "normal",
-        "`len_list`= 20, must be <= 10",
+        "len_list == 20, must be <= 10",
     ),
     (10, 1, "base_regressor", "normal", "`base_model` must be BaseEstimator"),  #
     (
@@ -464,7 +464,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`n_actions`= 0, must be >= 1",
+        "n_actions == 0, must be >= 1",
     ),
     (
         10,
@@ -492,7 +492,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`len_list`= -1, must be >= 0",
+        "len_list == -1, must be >= 0",
     ),
     (
         10,
@@ -520,7 +520,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`dim_context`= -1, must be >= 1.",
+        "dim_context == -1, must be >= 1.",
     ),
     (
         10,
@@ -604,7 +604,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"`policy_reg_param` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"policy_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         10,
@@ -632,7 +632,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"`policy_reg_param` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"policy_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         10,
@@ -660,7 +660,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        r"`policy_reg_param`= -1.0, must be >= 0.0.",
+        r"policy_reg_param == -1.0, must be >= 0.0.",
     ),
     (
         10,
@@ -688,7 +688,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"`var_reg_param` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"var_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
     ),
     (
         10,
@@ -716,7 +716,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"`var_reg_param` must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"var_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
     ),
     (
         10,
@@ -744,7 +744,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        r"`var_reg_param`= -1.0, must be >= 0.0.",
+        r"var_reg_param == -1.0, must be >= 0.0.",
     ),
     (
         10,
@@ -856,7 +856,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`alpha`= -1.0, must be >= 0.0",
+        "alpha == -1.0, must be >= 0.0",
     ),
     (
         10,
@@ -940,7 +940,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`max_iter`= 0, must be >= 1",
+        "max_iter == 0, must be >= 1",
     ),
     (
         10,
@@ -1052,7 +1052,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`momentum`= 2.0, must be <= 1.0",
+        "momentum == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -1164,7 +1164,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`validation_fraction`= 2.0, must be <= 1.0",
+        "validation_fraction == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -1192,7 +1192,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`beta_1`= 2.0, must be <= 1.0",
+        "beta_1 == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -1220,7 +1220,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "`beta_2`= 2.0, must be <= 1.0",
+        "beta_2 == 2.0, must be <= 1.0",
     ),
     (
         10,
@@ -1248,7 +1248,7 @@ invalid_input_of_nn_policy_learner_init = [
         -1.0,  #
         10,
         ValueError,
-        "`epsilon`= -1.0, must be >= 0.0",
+        "epsilon == -1.0, must be >= 0.0",
     ),
     (
         10,
@@ -1276,7 +1276,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         0,  #
         ValueError,
-        "`n_iter_no_change`= 0, must be >= 1.",
+        "n_iter_no_change == 0, must be >= 1.",
     ),
 ]
 
