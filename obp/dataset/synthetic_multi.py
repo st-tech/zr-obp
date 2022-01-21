@@ -142,7 +142,7 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
                         [0.1965272 ]]]),
                 'pscore': array([0.11948302, 0.34389468, 0.3018088 , ..., 0.07281752, 0.20415909,
                         0.17634078]),
-                'pscore_star': array([0.21089116, 0.20053648, 0.19505875, ..., 0.20616291, 0.19524095,
+                'pscore_avg': array([0.21089116, 0.20053648, 0.19505875, ..., 0.20616291, 0.19524095,
                         0.19032729])
             }
 
@@ -261,8 +261,8 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
 
         n_rounds_strata = [int(np.round(n_rounds * rho)) for rho in self.rhos]
         n_rounds_strata[-1] += n_rounds - np.sum(n_rounds_strata)
-        strata_ = np.concatenate(
-            [np.ones(n_k) * k for k, n_k in enumerate(n_rounds_strata)]
+        stratum_idx = np.concatenate(
+            [np.ones(n_k, dtype=int) * k for k, n_k in enumerate(n_rounds_strata)]
         )
         beta_ = np.concatenate(
             [np.ones(n_k) * self.betas[k] for k, n_k in enumerate(n_rounds_strata)]
@@ -300,9 +300,9 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
         # sample actions for each round based on the behavior policy
         actions = sample_action_fast(pi_b, random_state=self.random_state)
 
-        pi_b_star = np.zeros_like(pi_b_logits)
+        pi_b_avg = np.zeros_like(pi_b_logits)
         for beta, rho in zip(self.betas, self.rhos):
-            pi_b_star += rho * softmax(beta * pi_b_logits)
+            pi_b_avg += rho * softmax(beta * pi_b_logits)
 
         # sample rewards based on the context and action
         rewards = self.sample_reward_given_expected_reward(expected_reward_, actions)
@@ -317,9 +317,9 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
             position=None,  # position effect is not considered in synthetic data
             reward=rewards,
             expected_reward=expected_reward_,
-            strata=strata_,
+            stratum_idx=stratum_idx,
             pi_b=pi_b[:, :, np.newaxis],
-            pi_b_star=pi_b_star[:, :, np.newaxis],
+            pi_b_avg=pi_b_avg[:, :, np.newaxis],
             pscore=pi_b[np.arange(n_rounds), actions],
-            pscore_star=pi_b_star[np.arange(n_rounds), actions],
+            pscore_avg=pi_b_avg[np.arange(n_rounds), actions],
         )
