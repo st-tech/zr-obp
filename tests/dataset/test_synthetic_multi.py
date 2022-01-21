@@ -382,8 +382,8 @@ def test_synthetic_obtain_batch_bandit_feedback():
             and len(bandit_feedback["action"]) == n_rounds
         )
         assert (
-            bandit_feedback["strata"].ndim == 1
-            and len(bandit_feedback["strata"]) == n_rounds
+            bandit_feedback["stratum_idx"].ndim == 1
+            and len(bandit_feedback["stratum_idx"]) == n_rounds
         )
         assert bandit_feedback["position"] is None
         assert (
@@ -401,13 +401,13 @@ def test_synthetic_obtain_batch_bandit_feedback():
         assert np.allclose(bandit_feedback["pi_b"][:, :, 0].sum(1), np.ones(n_rounds))
         assert (bandit_feedback["pi_b"] == 0).sum() == n_deficient_actions * n_rounds
         assert np.allclose(
-            bandit_feedback["pi_b_star"][:, :, 0].sum(1), np.ones(n_rounds)
+            bandit_feedback["pi_b_avg"][:, :, 0].sum(1), np.ones(n_rounds)
         )
         assert (
             bandit_feedback["pscore"].ndim == 1
             and len(bandit_feedback["pscore"]) == n_rounds
         )
         assert (
-            bandit_feedback["pscore_star"].ndim == 1
-            and len(bandit_feedback["pscore_star"]) == n_rounds
+            bandit_feedback["pscore_avg"].ndim == 1
+            and len(bandit_feedback["pscore_avg"]) == n_rounds
         )

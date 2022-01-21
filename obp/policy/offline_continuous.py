@@ -548,7 +548,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: Tensor, shape (batch_size,)
-            Action choice probabilities of behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_by_current_policy: Tensor, shape (batch_size,)
             Continuous action values given by the current policy.

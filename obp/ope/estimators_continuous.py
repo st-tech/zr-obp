@@ -66,7 +66,7 @@ class BaseContinuousOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_interval(self) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap."""
+        """Estimate the confidence interval of the policy value using bootstrap."""
         raise NotImplementedError
 
 
@@ -225,7 +225,7 @@ class KernelizedInverseProbabilityWeighting(BaseContinuousOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -451,7 +451,7 @@ class KernelizedSelfNormalizedInverseProbabilityWeighting(
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -687,7 +687,7 @@ class KernelizedDoublyRobust(BaseContinuousOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------

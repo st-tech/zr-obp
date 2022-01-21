@@ -88,7 +88,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -137,13 +137,13 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -413,13 +413,13 @@ class QLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -920,7 +920,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -1011,13 +1011,13 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -1171,16 +1171,16 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (batch_size,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (batch_size,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (batch_size,), default=None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (batch_size, n_actions, len_list)
-            Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         Returns
         ----------
@@ -1233,13 +1233,13 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Parameters
         -----------
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         """
         idx_tensor = torch.arange(action.shape[0], dtype=torch.long)
@@ -1618,7 +1618,7 @@ class QFuncEstimator:
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -1687,7 +1687,7 @@ class QFuncEstimator:
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -1794,7 +1794,7 @@ class QFuncEstimator:
             Context vectors for new data.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         Returns
         -----------

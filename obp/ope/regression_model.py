@@ -103,13 +103,13 @@ class RegressionModel(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
             If None, behavior policy is assumed to be uniform.
 
         position: array-like, shape (n_rounds,), default=None
@@ -118,7 +118,7 @@ class RegressionModel(BaseEstimator):
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
             When either of 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
 
         """
@@ -246,7 +246,7 @@ class RegressionModel(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -262,7 +262,7 @@ class RegressionModel(BaseEstimator):
             When `len_list` > 1, this position argument has to be set.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
             When either of 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
 
         n_folds: int, default=1
@@ -364,7 +364,7 @@ class RegressionModel(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
             Context vectors characterizing actions (i.e., vector representation of each action).

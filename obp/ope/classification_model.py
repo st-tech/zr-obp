@@ -113,10 +113,10 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -190,7 +190,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -238,10 +238,10 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -373,11 +373,11 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
 
         action_dist_at_position: array-like, shape (n_rounds, n_actions,)
-            Action choice probabilities of evaluation policy of each position (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy of each position (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         sampled_action_at_position: array-like, shape (n_rounds, n_actions,)
             Actions sampled by evaluation policy for each data at each position.
@@ -469,7 +469,7 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -513,7 +513,7 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -557,7 +557,7 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.

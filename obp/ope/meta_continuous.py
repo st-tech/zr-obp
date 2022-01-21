@@ -222,7 +222,7 @@ class ContinuousOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of policy values using nonparametric bootstrap.
+        """Estimate confidence intervals of policy values using bootstrap.
 
         Parameters
         ------------
@@ -611,7 +611,7 @@ class ContinuousOffPolicyEvaluation:
         """
         if len(policy_name_list) != len(action_by_evaluation_policy_list):
             raise ValueError(
-                "the length of policy_name_list must be the same as action_by_evaluation_policy_list"
+                "the length of `policy_name_list` must be the same as action_by_evaluation_policy_list"
             )
         if fig_dir is not None:
             assert isinstance(fig_dir, Path), "`fig_dir` must be a Path"

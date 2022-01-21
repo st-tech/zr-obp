@@ -54,7 +54,7 @@ class DirectMethodMock(BaseOffPolicyEstimator):
             Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -75,7 +75,7 @@ class DirectMethodMock(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -83,7 +83,7 @@ class DirectMethodMock(BaseOffPolicyEstimator):
             Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -144,16 +144,16 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,)
             Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_pscore: array-like, shape (n_rounds,), default=None
             Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
@@ -178,7 +178,7 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -186,13 +186,13 @@ class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,)
             Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         pscore: array-like, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities

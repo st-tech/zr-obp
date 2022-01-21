@@ -34,7 +34,7 @@ class BaseSlateOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_interval(self) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap."""
+        """Estimate the confidence interval of the policy value using bootstrap."""
         raise NotImplementedError
 
 
@@ -94,7 +94,7 @@ class BaseSlateInverseProbabilityWeighting(BaseSlateOffPolicyEstimator):
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -222,7 +222,7 @@ class SlateStandardIPS(BaseSlateInverseProbabilityWeighting):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -372,7 +372,7 @@ class SlateIndependentIPS(BaseSlateInverseProbabilityWeighting):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -518,7 +518,7 @@ class SlateRewardInteractionIPS(BaseSlateInverseProbabilityWeighting):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -780,7 +780,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
@@ -865,7 +865,7 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Parameters
         ----------
