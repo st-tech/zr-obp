@@ -20,7 +20,7 @@ from .synthetic import SyntheticBanditDataset
 
 
 @dataclass
-class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
+class SyntheticMultiLoggersBanditDataset(SyntheticBanditDataset):
     """Class for synthesizing bandit data with multiple logging/behavior policies.
 
     Note
@@ -97,7 +97,7 @@ class SyntheticBanditDatasetWithMultiLoggers(SyntheticBanditDataset):
     .. code-block:: python
 
         >>> from obp.dataset import (
-            SyntheticBanditDatasetWithMultiLoggers,
+            SyntheticMultiLoggersBanditDataset,
             logistic_reward_function
         )
 

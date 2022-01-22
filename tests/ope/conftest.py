@@ -10,7 +10,7 @@ from sklearn.utils import check_random_state
 from obp.dataset import linear_behavior_policy
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
-from obp.dataset import SyntheticBanditDatasetWithMultiLoggers
+from obp.dataset import SyntheticMultiLoggersBanditDataset
 from obp.dataset import SyntheticContinuousBanditDataset
 from obp.dataset import SyntheticSlateBanditDataset
 from obp.policy import Random
@@ -90,7 +90,7 @@ def synthetic_multi_bandit_feedback() -> BanditFeedback:
     rhos = [1, 2, 3, 2, 1]
     random_state = 12345
     n_rounds = 10000
-    dataset = SyntheticBanditDatasetWithMultiLoggers(
+    dataset = SyntheticMultiLoggersBanditDataset(
         n_actions=n_actions,
         dim_context=dim_context,
         betas=betas,
