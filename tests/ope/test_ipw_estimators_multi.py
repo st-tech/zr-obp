@@ -56,7 +56,7 @@ def test_ipw_init_using_invalid_inputs(
 
 
 # action_dist, action, reward, pscore, stratum_idx, position, use_estimated_pscore, estimated_pscore, description
-invalid_input_of_naive_ipw = [
+invalid_input_of_weighted_ipw = [
     (
         generate_action_dist(5, 4, 3),
         None,  #
@@ -282,9 +282,9 @@ invalid_input_of_naive_ipw = [
 
 @pytest.mark.parametrize(
     "action_dist, action, reward, pscore, stratum_idx, position, use_estimated_pscore, estimated_pscore, description",
-    invalid_input_of_naive_ipw,
+    invalid_input_of_weighted_ipw,
 )
-def test_naive_ipw_using_invalid_input_data(
+def test_weighted_ipw_using_invalid_input_data(
     action_dist: np.ndarray,
     action: np.ndarray,
     reward: np.ndarray,
@@ -296,28 +296,7 @@ def test_naive_ipw_using_invalid_input_data(
     description: str,
 ) -> None:
     # prepare ipw instances
-    naive_ipw = NaiveIPW(use_estimated_pscore=use_estimated_pscore)
     weighted_ipw = WeightedIPW(use_estimated_pscore=use_estimated_pscore)
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = naive_ipw.estimate_policy_value(
-            action_dist=action_dist,
-            action=action,
-            reward=reward,
-            pscore=pscore,
-            stratum_idx=stratum_idx,
-            position=position,
-            estimated_pscore=estimated_pscore,
-        )
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = naive_ipw.estimate_interval(
-            action_dist=action_dist,
-            action=action,
-            reward=reward,
-            pscore=pscore,
-            stratum_idx=stratum_idx,
-            position=position,
-            estimated_pscore=estimated_pscore,
-        )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = weighted_ipw.estimate_policy_value(
             action_dist=action_dist,
@@ -335,6 +314,217 @@ def test_naive_ipw_using_invalid_input_data(
             reward=reward,
             pscore=pscore,
             stratum_idx=stratum_idx,
+            position=position,
+            estimated_pscore=estimated_pscore,
+        )
+
+
+# action_dist, action, reward, pscore, position, use_estimated_pscore, estimated_pscore, description
+invalid_input_of_naive_ipw = [
+    (
+        generate_action_dist(5, 4, 3),
+        None,  #
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`action` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        None,  #
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`reward` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        None,  #
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`pscore` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=float),  #
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`action` elements must be integers in the range of",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int) - 1,  #
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`action` elements must be integers in the range of",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        "4",  #
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`action` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros((3, 2), dtype=int),  #
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`action` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int) + 8,  #
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        r"`action` elements must be integers in the range of`",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        "4",  #
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`reward` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros((3, 2), dtype=int),  #
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`reward` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(4, dtype=int),  #
+        np.ones(5),
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "Expected `action.shape[0]",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        "4",  #
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`pscore` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        np.ones((5, 3)),  #
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`pscore` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        np.ones(4),  #
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "Expected `action.shape[0]",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        np.arange(5),  #
+        np.random.choice(3, size=5),
+        False,
+        None,
+        "`pscore` must be positive",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        np.ones(5),
+        np.random.choice(3, size=5),
+        True,
+        None,  #
+        "`estimated_pscore` must be 1D array",
+    ),
+    (
+        generate_action_dist(5, 4, 3),
+        np.zeros(5, dtype=int),
+        np.zeros(5, dtype=int),
+        None,
+        np.random.choice(3, size=5),
+        True,
+        np.arange(5),  #
+        "`pscore` must be positive",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "action_dist, action, reward, pscore, position, use_estimated_pscore, estimated_pscore, description",
+    invalid_input_of_naive_ipw,
+)
+def test_naive_ipw_using_invalid_input_data(
+    action_dist: np.ndarray,
+    action: np.ndarray,
+    reward: np.ndarray,
+    pscore: np.ndarray,
+    position: np.ndarray,
+    use_estimated_pscore: bool,
+    estimated_pscore: np.ndarray,
+    description: str,
+) -> None:
+    # prepare ipw instances
+    naive_ipw = NaiveIPW(use_estimated_pscore=use_estimated_pscore)
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = naive_ipw.estimate_policy_value(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
+            position=position,
+            estimated_pscore=estimated_pscore,
+        )
+    with pytest.raises(ValueError, match=f"{description}*"):
+        _ = naive_ipw.estimate_interval(
+            action_dist=action_dist,
+            action=action,
+            reward=reward,
+            pscore=pscore,
             position=position,
             estimated_pscore=estimated_pscore,
         )

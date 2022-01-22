@@ -10,8 +10,8 @@ from sklearn.utils import check_random_state
 from obp.dataset import linear_behavior_policy
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
-from obp.dataset import SyntheticMultiLoggersBanditDataset
 from obp.dataset import SyntheticContinuousBanditDataset
+from obp.dataset import SyntheticMultiLoggersBanditDataset
 from obp.dataset import SyntheticSlateBanditDataset
 from obp.policy import Random
 from obp.types import BanditFeedback
