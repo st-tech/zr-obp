@@ -49,12 +49,12 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
 
     .. math::
 
-        \\hat{V}_{\\mathrm{Multi-IPW}} (\\pi_e; \\mathcal{D}) := \\sum_{k=1}^K \\rho_k \\mathbb{E}_{n_k} [ w_k(x_i,a_i) r_i],
+        \\hat{V}_{\\mathrm{Multi-IPW}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [ w_{k_i}(x_i,a_i) r_i],
 
     where :math:`\\mathcal{D}_k=\\{(x_i,a_i,r_i)\\}_{i=1}^{n_k}` is logged bandit data with :math:`n_k` observations collected by
     the k-th behavior policy :math:`\\pi_k`. :math:`w_k(x,a):=\\pi_e (a|x)/\\pi_k (a|x)` is the importance weight given :math:`x` and :math:`a` computed for the k-th behavior policy.
     We can represent the whole logged bandit data as :math:`\\mathcal{D}_k=\\{(k_i,x_i,a_i,r_i)\\}_{i=1}^{n}` where :math:`k_i` is the index to indicate the logging/behavior policy that generates i-th data, i.e., :math:`\\pi_{k_i}`.
-    Note that :math:`n := \\sum_{k=1}^K` is the total number of logged bandit data, and :math:`\\rho_k := n_k / n` is the dataset proporsions.
+    Note that :math:`n := \\sum_{k=1}^K` is the total number of logged bandit data.
     :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`n` observations in :math:`\\mathcal{D}`.
     When the clipping is applied, a large importance weight is clipped as :math:`\\hat{w}_k(x,a) := \\min \\{ \\lambda, w_k(x,a) \\}`, where :math:`\\lambda (>0)` is a hyperparameter to specify a maximum allowed importance weight.
 
@@ -106,7 +106,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
         reward: np.ndarray,
         action: np.ndarray,
         pscore: np.ndarray,
-        stratum_idx: np.ndarray,
         action_dist: np.ndarray,
         position: Optional[np.ndarray] = None,
         **kwargs,
@@ -125,9 +124,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
             Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
             If `use_estimated_pscore` is False, `pscore` must be given.
 
-        stratum_idx: array-like, shape (n_rounds,)
-            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
-
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
@@ -144,19 +140,18 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-        rho_k = np.unique(stratum_idx, return_counts=True)[1] / stratum_idx.shape[0]
+
         iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
         # weight clipping
         if isinstance(iw, np.ndarray):
             iw = np.minimum(iw, self.lambda_)
-        return reward * iw * rho_k[stratum_idx]
+        return reward * iw
 
     def estimate_policy_value(
         self,
         reward: np.ndarray,
         action: np.ndarray,
         action_dist: np.ndarray,
-        stratum_idx: np.ndarray,
         pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         estimated_pscore: Optional[np.ndarray] = None,
@@ -174,9 +169,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-
-        stratum_idx: array-like, shape (n_rounds,)
-            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
@@ -199,7 +191,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
         """
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
         if self.use_estimated_pscore:
             check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
             pscore_ = estimated_pscore
@@ -212,7 +203,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
             position=position,
             action=action,
             reward=reward,
-            stratum_idx=stratum_idx,
             pscore=pscore_,
         )
         if position is None:
@@ -223,7 +213,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
             action=action,
             position=position,
             pscore=pscore_,
-            stratum_idx=stratum_idx,
             action_dist=action_dist,
         ).mean()
 
@@ -231,7 +220,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        stratum_idx: np.ndarray,
         action_dist: np.ndarray,
         pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
@@ -253,9 +241,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-
-        stratum_idx: array-like, shape (n_rounds,)
-            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
@@ -287,7 +272,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
         """
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
         if self.use_estimated_pscore:
             check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
             pscore_ = estimated_pscore
@@ -300,7 +284,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
             position=position,
             action=action,
             reward=reward,
-            stratum_idx=stratum_idx,
             pscore=pscore_,
         )
         if position is None:
@@ -310,7 +293,6 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
             reward=reward,
             action=action,
             position=position,
-            stratum_idx=stratum_idx,
             pscore=pscore_,
             action_dist=action_dist,
         )
@@ -430,6 +412,7 @@ class MultiLoggersBalancedInverseProbabilityWeighting(
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         iw_avg = action_dist[np.arange(action.shape[0]), action, position] / pscore_avg
         # weight clipping
         if isinstance(iw_avg, np.ndarray):
@@ -612,7 +595,8 @@ class MultiLoggersWeightedInverseProbabilityWeighting(
 
     .. math::
 
-        \\hat{V}_{\\mathrm{Multi-IPW}} (\\pi_e; \\mathcal{D}) := \\sum_{k=1}^K \\M^*_k \\mathbb{E}_{n_k} [ w_k(x_i,a_i) r_i],
+        \\hat{V}_{\\mathrm{Multi-Weighted-IPW}} (\\pi_e; \\mathcal{D})
+        := \\sum_{k=1}^K \\M^*_k \\mathbb{E}_{n_k} [ w_k(x_i,a_i) r_i],
 
     where :math:`\\mathcal{D}_k=\\{(x_i,a_i,r_i)\\}_{i=1}^{n_k}` is logged bandit data with :math:`n_k` observations collected by
     the k-th behavior policy :math:`\\pi_k`. :math:`w_k(x,a):=\\pi_e (a|x)/\\pi_k (a|x)` is the importance weight given :math:`x` and :math:`a` computed for the k-th behavior policy.
@@ -692,7 +676,9 @@ class MultiLoggersWeightedInverseProbabilityWeighting(
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-        iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
+
+        n = action.shape[0]
+        iw = action_dist[np.arange(n), action, position] / pscore
         # weight clipping
         if isinstance(iw, np.ndarray):
             iw = np.minimum(iw, self.lambda_)
@@ -702,9 +688,179 @@ class MultiLoggersWeightedInverseProbabilityWeighting(
         for k in unique_stratum_idx:
             idx_ = stratum_idx == k
             var_k[k] = np.var(reward[idx_] * iw[idx_])
-        weight_k = n_data_strata / (var_k * np.sum(n_data_strata / var_k))
+        weight_k = n / (var_k * np.sum(n_data_strata / var_k))
 
         return reward * iw * weight_k[stratum_idx]
+
+    def estimate_policy_value(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        action_dist: np.ndarray,
+        stratum_idx: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        stratum_idx: array-like, shape (n_rounds,)
+            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            If `use_estimated_pscore` is False, `pscore` must be given.
+
+        position: array-like, shape (n_rounds,), default=None
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
+            (If only a single action is chosen for each data, you can just ignore this argument.)
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_k(a_i|x_i)`.
+            If `self.use_estimated_pscore` is True, `estimated_pscore` must be given.
+
+        Returns
+        ----------
+        V_hat: float
+            Estimated policy value of evaluation policy.
+
+        """
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
+
+        check_multi_loggers_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            stratum_idx=stratum_idx,
+            pscore=pscore_,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        return self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore_,
+            stratum_idx=stratum_idx,
+            action_dist=action_dist,
+        ).mean()
+
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        stratum_idx: np.ndarray,
+        action_dist: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate the confidence interval of the policy value using bootstrap.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        stratum_idx: array-like, shape (n_rounds,)
+            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k_i`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            If `use_estimated_pscore` is False, `pscore` must be given.
+
+        position: array-like, shape (n_rounds,), default=None
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
+            (If only a single action is chosen for each data, you can just ignore this argument.)
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
+            If `self.use_estimated_pscore` is True, `estimated_pscore` must be given.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in bootstrap sampling.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
+
+        check_multi_loggers_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            stratum_idx=stratum_idx,
+            pscore=pscore_,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        estimated_round_rewards = self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            stratum_idx=stratum_idx,
+            pscore=pscore_,
+            action_dist=action_dist,
+        )
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_round_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
 
 
 @dataclass
@@ -721,12 +877,12 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
     .. math::
 
         \\hat{V}_{\\mathrm{Multi-Naive-DR}} (\\pi_e; \\mathcal{D}, \\hat{q})
-        := \\sum_{k=1}^K \\rho_k \\mathbb{E}_{n_k} [\\hat{q}(x_i,\\pi_e) + w_k(x_i,a_i) (r_i - \\hat{q}(x_i,a_i))],
+        := \\mathbb{E}_{n} [\\hat{q}(x_i,\\pi_e) + w_{k_i}(x_i,a_i) (r_i - \\hat{q}(x_i,a_i))],
 
     where :math:`\\mathcal{D}_k=\\{(x_i,a_i,r_i)\\}_{i=1}^{n_k}` is logged bandit data with :math:`n_k` observations collected by
     the k-th behavior policy :math:`\\pi_k`. :math:`w_k(x,a):=\\pi_e (a|x)/\\pi_k (a|x)` is the importance weight given :math:`x` and :math:`a` computed for the k-th behavior policy.
     We can represent the whole logged bandit data as :math:`\\mathcal{D}_k=\\{(k_i,x_i,a_i,r_i)\\}_{i=1}^{n}` where :math:`k_i` is the index to indicate the logging/behavior policy that generates i-th data, i.e., :math:`\\pi_{k_i}`.
-    Note that :math:`n := \\sum_{k=1}^K` is the total number of logged bandit data, and :math:`\\rho_k := n_k / n` is the dataset proporsions.
+    Note that :math:`n := \\sum_{k=1}^K` is the total number of logged bandit data.
     :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`n` observations in :math:`\\mathcal{D}`.
     :math:`\\hat{q} (x,a)` is the estimated expected reward given :math:`x` and :math:`a`.
     :math:`\\hat{q} (x_i,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
@@ -780,7 +936,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         reward: np.ndarray,
         action: np.ndarray,
         pscore: np.ndarray,
-        stratum_idx: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         position: Optional[np.ndarray] = None,
@@ -799,9 +954,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         pscore: array-like, shape (n_rounds,)
             Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
             If `use_estimated_pscore` is False, `pscore` must be given.
-
-        stratum_idx: array-like, shape (n_rounds,)
-            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
@@ -822,7 +974,7 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-        rho_k = np.unique(stratum_idx, return_counts=True)[1] / stratum_idx.shape[0]
+
         iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
         # weight clipping
         if isinstance(iw, np.ndarray):
@@ -837,7 +989,7 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             weights=pi_e_at_position,
             axis=1,
         )
-        estimated_rewards += iw * (reward - q_hat_factual) * rho_k[stratum_idx]
+        estimated_rewards += iw * (reward - q_hat_factual)
 
         return estimated_rewards
 
@@ -846,7 +998,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         reward: np.ndarray,
         action: np.ndarray,
         action_dist: np.ndarray,
-        stratum_idx: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         pscore: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
@@ -865,9 +1016,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-
-        stratum_idx: array-like, shape (n_rounds,)
-            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -898,7 +1046,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         )
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
         if self.use_estimated_pscore:
             check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
             pscore_ = estimated_pscore
@@ -911,7 +1058,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             position=position,
             action=action,
             reward=reward,
-            stratum_idx=stratum_idx,
             pscore=pscore_,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
@@ -923,7 +1069,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             action=action,
             position=position,
             pscore=pscore_,
-            stratum_idx=stratum_idx,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         ).mean()
@@ -932,7 +1077,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         self,
         reward: np.ndarray,
         action: np.ndarray,
-        stratum_idx: np.ndarray,
         action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         pscore: Optional[np.ndarray] = None,
@@ -955,9 +1099,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-
-        stratum_idx: array-like, shape (n_rounds,)
-            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k_i`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -997,7 +1138,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         )
         check_array(array=reward, name="reward", expected_dim=1)
         check_array(array=action, name="action", expected_dim=1)
-        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
         if self.use_estimated_pscore:
             check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
             pscore_ = estimated_pscore
@@ -1010,7 +1150,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             position=position,
             action=action,
             reward=reward,
-            stratum_idx=stratum_idx,
             pscore=pscore_,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
@@ -1021,7 +1160,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             reward=reward,
             action=action,
             position=position,
-            stratum_idx=stratum_idx,
             pscore=pscore_,
             action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -1470,7 +1608,199 @@ class MultiLoggersWeightedDoublyRobust(MultiLoggersNaiveDoublyRobust):
                 estimated_rewards[idx_]
                 + iw[idx_] * (reward[idx_] - q_hat_factual[idx_])
             )
-        weight_k = n_data_strata / (var_k * np.sum(n_data_strata / var_k))
+        weight_k = n / (var_k * np.sum(n_data_strata / var_k))
         estimated_rewards += iw * (reward - q_hat_factual) * weight_k[stratum_idx]
 
         return estimated_rewards
+
+    def estimate_policy_value(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        action_dist: np.ndarray,
+        stratum_idx: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        stratum_idx: array-like, shape (n_rounds,)
+            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            If `use_estimated_pscore` is False, `pscore` must be given.
+
+        position: array-like, shape (n_rounds,), default=None
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
+            (If only a single action is chosen for each data, you can just ignore this argument.)
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_k(a_i|x_i)`.
+            If `self.use_estimated_pscore` is True, `estimated_pscore` must be given.
+
+        Returns
+        ----------
+        V_hat: float
+            Estimated policy value of evaluation policy.
+
+        """
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
+
+        check_multi_loggers_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            stratum_idx=stratum_idx,
+            pscore=pscore_,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        return self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            pscore=pscore_,
+            stratum_idx=stratum_idx,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        ).mean()
+
+    def estimate_interval(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        stratum_idx: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        pscore: Optional[np.ndarray] = None,
+        position: Optional[np.ndarray] = None,
+        estimated_pscore: Optional[np.ndarray] = None,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate the confidence interval of the policy value using bootstrap.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        stratum_idx: array-like, shape (n_rounds,)
+            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k_i`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
+
+        pscore: array-like, shape (n_rounds,), default=None
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            If `use_estimated_pscore` is False, `pscore` must be given.
+
+        position: array-like, shape (n_rounds,), default=None
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
+            (If only a single action is chosen for each data, you can just ignore this argument.)
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
+            If `self.use_estimated_pscore` is True, `estimated_pscore` must be given.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in bootstrap sampling.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_array(
+            array=estimated_rewards_by_reg_model,
+            name="estimated_rewards_by_reg_model",
+            expected_dim=3,
+        )
+        check_array(array=reward, name="reward", expected_dim=1)
+        check_array(array=action, name="action", expected_dim=1)
+        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
+        if self.use_estimated_pscore:
+            check_array(array=estimated_pscore, name="estimated_pscore", expected_dim=1)
+            pscore_ = estimated_pscore
+        else:
+            check_array(array=pscore, name="pscore", expected_dim=1)
+            pscore_ = pscore
+
+        check_multi_loggers_ope_inputs(
+            action_dist=action_dist,
+            position=position,
+            action=action,
+            reward=reward,
+            stratum_idx=stratum_idx,
+            pscore=pscore_,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+
+        estimated_round_rewards = self._estimate_round_rewards(
+            reward=reward,
+            action=action,
+            position=position,
+            stratum_idx=stratum_idx,
+            pscore=pscore_,
+            action_dist=action_dist,
+            estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+        )
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_round_rewards,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
