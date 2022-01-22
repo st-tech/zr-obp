@@ -438,7 +438,7 @@ def check_multi_loggers_ope_inputs(
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
     stratum_idx: array-like, shape (n_rounds,)
-            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
+        Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
 
     pscore: array-like, shape (n_rounds,)
         Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
@@ -463,8 +463,10 @@ def check_multi_loggers_ope_inputs(
             raise ValueError(
                 "Expected `action_dist.shape[0] == stratum_idx.shape[0]`, but found it False"
             )
-        if not np.issubdtype(stratum_idx.dtype, np.integer) and stratum_idx.min() >= 0:
-            raise ValueError("`stratum_idx` elements must be non-negative integers)")
+        if not (
+            np.issubdtype(stratum_idx.dtype, np.integer) and stratum_idx.min() >= 0
+        ):
+            raise ValueError("`stratum_idx` elements must be non-negative integers")
 
 
 def check_continuous_bandit_feedback_inputs(
@@ -482,7 +484,7 @@ def check_continuous_bandit_feedback_inputs(
         Context vectors observed for each data, i.e., :math:`x_i`.
 
     action_by_behavior_policy: array-like, shape (n_rounds,)
-        Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,)
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -491,7 +493,7 @@ def check_continuous_bandit_feedback_inputs(
         Expected reward of each data, i.e., :math:`\\mathbb{E}[r_i|x_i,a_i]`.
 
     pscore: array-like, shape (n_rounds,), default=None
-        Probability densities of the continuous action values sampled by a behavior policy
+        Probability densities of the continuous action values sampled by the logging/behavior policy
         (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     """
@@ -546,13 +548,13 @@ def check_continuous_ope_inputs(
         Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
     action_by_behavior_policy: array-like, shape (n_rounds,), default=None
-        Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,), default=None
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
     pscore: array-like, shape (n_rounds,), default=None
-        Probability densities of the continuous action values sampled by a behavior policy
+        Probability densities of the continuous action values sampled by the logging/behavior policy
         (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds,), default=None

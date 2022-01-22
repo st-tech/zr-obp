@@ -318,7 +318,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -402,7 +402,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -542,7 +542,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: Tensor, shape (batch_size,)
-            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: Tensor, shape (batch_size,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -864,7 +864,7 @@ class QFuncEstimatorForContinuousAction:
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -934,7 +934,7 @@ class QFuncEstimatorForContinuousAction:
             Context vectors observed for each data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         reward: array-like, shape (n_rounds,)
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.

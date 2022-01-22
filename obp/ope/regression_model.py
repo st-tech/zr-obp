@@ -109,7 +109,7 @@ class RegressionModel(BaseEstimator):
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,)
-        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
             If None, behavior policy is assumed to be uniform.
 
         position: array-like, shape (n_rounds,), default=None
