@@ -10,6 +10,7 @@ from sklearn.utils import check_random_state
 from obp.dataset import linear_behavior_policy
 from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDataset
+from obp.dataset import SyntheticBanditDatasetWithMultiLoggers
 from obp.dataset import SyntheticContinuousBanditDataset
 from obp.dataset import SyntheticSlateBanditDataset
 from obp.policy import Random
@@ -77,6 +78,26 @@ def synthetic_continuous_bandit_feedback() -> BanditFeedback:
         random_state=random_state,
     )
     # obtain feedback
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    return bandit_feedback
+
+
+@pytest.fixture(scope="session")
+def synthetic_multi_bandit_feedback() -> BanditFeedback:
+    n_actions = 10
+    dim_context = 5
+    betas = [-10, -5, 0, 5, 10]
+    rhos = [1, 2, 3, 2, 1]
+    random_state = 12345
+    n_rounds = 10000
+    dataset = SyntheticBanditDatasetWithMultiLoggers(
+        n_actions=n_actions,
+        dim_context=dim_context,
+        betas=betas,
+        rhos=rhos,
+        reward_function=logistic_reward_function,
+        random_state=random_state,
+    )
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
     return bandit_feedback
 
