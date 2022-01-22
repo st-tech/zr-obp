@@ -104,6 +104,7 @@ class ReplayMethod(BaseOffPolicyEstimator):
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         action_match = np.array(
             action_dist[np.arange(action.shape[0]), action, position] == 1
         )
@@ -329,6 +330,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
         # weight clipping
         if isinstance(iw, np.ndarray):
@@ -539,7 +541,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             based on Section 5 of Su et al.(2020).
 
         """
-        n_rounds = reward.shape[0]
+        n = reward.shape[0]
         # estimate the sample variance of IPW with clipping
         sample_variance = np.var(
             self._estimate_round_rewards(
@@ -550,10 +552,10 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
                 position=position,
             )
         )
-        sample_variance /= n_rounds
+        sample_variance /= n
 
         # estimate the (high probability) upper bound of the bias of IPW with clipping
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = action_dist[np.arange(n), action, position] / pscore
         if use_bias_upper_bound:
             bias_term = estimate_high_probability_upper_bound_bias(
                 reward=reward, iw=iw, iw_hat=np.minimum(iw, self.lambda_), delta=delta
@@ -649,6 +651,7 @@ class SelfNormalizedInverseProbabilityWeighting(InverseProbabilityWeighting):
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
         return reward * iw / iw.mean()
 
@@ -727,11 +730,10 @@ class DirectMethod(BaseOffPolicyEstimator):
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-        n_rounds = position.shape[0]
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+
+        n = position.shape[0]
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         return np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
@@ -974,18 +976,16 @@ class DoublyRobust(BaseOffPolicyEstimator):
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
-        n_rounds = action.shape[0]
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+
+        n = action.shape[0]
+        iw = action_dist[np.arange(n), action, position] / pscore
         # weight clipping
         if isinstance(iw, np.ndarray):
             iw = np.minimum(iw, self.lambda_)
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        q_hat_factual = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         estimated_rewards = np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
@@ -1222,7 +1222,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
             based on Section 5 of Su et al.(2020).
 
         """
-        n_rounds = reward.shape[0]
+        n = reward.shape[0]
         # estimate the sample variance of DR with clipping
         sample_variance = np.var(
             self._estimate_round_rewards(
@@ -1234,18 +1234,16 @@ class DoublyRobust(BaseOffPolicyEstimator):
                 position=position,
             )
         )
-        sample_variance /= n_rounds
+        sample_variance /= n
 
         # estimate the (high probability) upper bound of the bias of DR with clipping
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = action_dist[np.arange(n), action, position] / pscore
         if use_bias_upper_bound:
             bias_term = estimate_high_probability_upper_bound_bias(
                 reward=reward,
                 iw=iw,
                 iw_hat=np.minimum(iw, self.lambda_),
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
                 delta=delta,
             )
         else:
@@ -1253,9 +1251,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
                 reward=reward,
                 iw=iw,
                 iw_hat=np.minimum(iw, self.lambda_),
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
         estimated_mse_score = sample_variance + (bias_term ** 2)
 
@@ -1344,20 +1340,16 @@ class SelfNormalizedDoublyRobust(DoublyRobust):
             Estimated rewards for each observation.
 
         """
-        n_rounds = action.shape[0]
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        n = action.shape[0]
+        iw = action_dist[np.arange(n), action, position] / pscore
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         estimated_rewards = np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
             axis=1,
         )
-        q_hat_factual = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
         estimated_rewards += iw * (reward - q_hat_factual) / iw.mean()
 
         return estimated_rewards
@@ -1468,22 +1460,19 @@ class SwitchDoublyRobust(DoublyRobust):
             Estimated rewards for each observation.
 
         """
-        n_rounds = action.shape[0]
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        n = action.shape[0]
+        iw = action_dist[np.arange(n), action, position] / pscore
         switch_indicator = np.array(iw <= self.lambda_, dtype=int)
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        q_hat_factual = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         estimated_rewards = np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
             axis=1,
         )
         estimated_rewards += switch_indicator * iw * (reward - q_hat_factual)
+
         return estimated_rewards
 
     def _estimate_mse_score(
@@ -1537,7 +1526,7 @@ class SwitchDoublyRobust(DoublyRobust):
             based on Section 5 of Su et al.(2020).
 
         """
-        n_rounds = reward.shape[0]
+        n = reward.shape[0]
         # estimate the sample variance of Switch-DR (Eq.(8) of Wang et al.(2017))
         sample_variance = np.var(
             self._estimate_round_rewards(
@@ -1549,18 +1538,16 @@ class SwitchDoublyRobust(DoublyRobust):
                 position=position,
             )
         )
-        sample_variance /= n_rounds
+        sample_variance /= n
 
         # estimate the (high probability) upper bound of the bias of Switch-DR
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = action_dist[np.arange(n), action, position] / pscore
         if use_bias_upper_bound:
             bias_term = estimate_high_probability_upper_bound_bias(
                 reward=reward,
                 iw=iw,
                 iw_hat=iw * np.array(iw <= self.lambda_, dtype=int),
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
                 delta=delta,
             )
         else:
@@ -1568,9 +1555,7 @@ class SwitchDoublyRobust(DoublyRobust):
                 reward=reward,
                 iw=iw,
                 iw_hat=iw * np.array(iw <= self.lambda_, dtype=int),
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
         estimated_mse_score = sample_variance + (bias_term ** 2)
 
@@ -1680,19 +1665,16 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             Estimated rewards for each observation.
 
         """
-        n_rounds = action.shape[0]
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        n = action.shape[0]
+        iw = action_dist[np.arange(n), action, position] / pscore
         if self.lambda_ < np.inf:
             iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
         else:
             iw_hat = iw
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        q_hat_factual = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         estimated_rewards = np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
@@ -1752,7 +1734,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             based on Section 5 of Su et al.(2020).
 
         """
-        n_rounds = reward.shape[0]
+        n = reward.shape[0]
         # estimate the sample variance of DRos
         sample_variance = np.var(
             self._estimate_round_rewards(
@@ -1764,10 +1746,10 @@ class DoublyRobustWithShrinkage(DoublyRobust):
                 position=position,
             )
         )
-        sample_variance /= n_rounds
+        sample_variance /= n
 
         # estimate the (high probability) upper bound of the bias of DRos
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = action_dist[np.arange(n), action, position] / pscore
         if self.lambda_ < np.inf:
             iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
         else:
@@ -1777,9 +1759,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
                 reward=reward,
                 iw=iw,
                 iw_hat=iw_hat,
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
                 delta=delta,
             )
         else:
@@ -1787,9 +1767,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
                 reward=reward,
                 iw=iw,
                 iw_hat=iw_hat,
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
         estimated_mse_score = sample_variance + (bias_term ** 2)
 
@@ -1889,8 +1867,7 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
             Estimated rewards for each observation.
 
         """
-        n_rounds = action.shape[0]
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
         iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
         estimated_rewards = iw_hat * reward
 
@@ -1945,7 +1922,7 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
             based on Section 5 of Su et al.(2020).
 
         """
-        n_rounds = reward.shape[0]
+        n = reward.shape[0]
         # estimate the sample variance of DRos
         sample_variance = np.var(
             self._estimate_round_rewards(
@@ -1956,10 +1933,10 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
                 position=position,
             )
         )
-        sample_variance /= n_rounds
+        sample_variance /= n
 
         # estimate the (high probability) upper bound of the bias of SGIPW
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = action_dist[np.arange(n), action, position] / pscore
         iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
         if use_bias_upper_bound:
             bias_term = estimate_high_probability_upper_bound_bias(
@@ -2078,16 +2055,13 @@ class SubGaussianDoublyRobust(DoublyRobust):
             Estimated rewards for each observation.
 
         """
-        n_rounds = action.shape[0]
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        n = action.shape[0]
+        iw = action_dist[np.arange(n), action, position] / pscore
         iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        q_hat_factual = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         estimated_rewards = np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
@@ -2147,7 +2121,7 @@ class SubGaussianDoublyRobust(DoublyRobust):
             based on Section 5 of Su et al.(2020).
 
         """
-        n_rounds = reward.shape[0]
+        n = reward.shape[0]
         # estimate the sample variance of DRos
         sample_variance = np.var(
             self._estimate_round_rewards(
@@ -2159,19 +2133,17 @@ class SubGaussianDoublyRobust(DoublyRobust):
                 position=position,
             )
         )
-        sample_variance /= n_rounds
+        sample_variance /= n
 
         # estimate the (high probability) upper bound of the bias of SGDR
-        iw = action_dist[np.arange(n_rounds), action, position] / pscore
+        iw = action_dist[np.arange(n), action, position] / pscore
         iw_hat = iw / (1 - self.lambda_ + self.lambda_ * iw)
         if use_bias_upper_bound:
             bias_term = estimate_high_probability_upper_bound_bias(
                 reward=reward,
                 iw=iw,
                 iw_hat=iw_hat,
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
                 delta=delta,
             )
         else:
@@ -2179,9 +2151,7 @@ class SubGaussianDoublyRobust(DoublyRobust):
                 reward=reward,
                 iw=iw,
                 iw_hat=iw_hat,
-                q_hat=estimated_rewards_by_reg_model[
-                    np.arange(n_rounds), action, position
-                ],
+                q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
         estimated_mse_score = sample_variance + (bias_term ** 2)
 
@@ -2286,6 +2256,7 @@ class BalancedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         """
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
+
         iw = estimated_importance_weights
         # weight clipping
         if isinstance(iw, np.ndarray):
