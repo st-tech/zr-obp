@@ -44,6 +44,55 @@ class MultiLoggersOffPolicyEvaluation(OffPolicyEvaluation):
     Examples
     ----------
 
+        .. code-block:: python
+
+            # a case of implementing OPE (with multiple loggers) of an synthetic evaluation policy
+            >>> from obp.dataset import (
+                    SyntheticMultiLoggersBanditDataset,
+                    logistic_reward_function,
+                )
+            >>> from obp.ope import (
+                    MultiLoggersOffPolicyEvaluation,
+                    MultiLoggersNaiveInverseProbabilityWeighting as NaiveIPW,
+                    MultiLoggersBalancedInverseProbabilityWeighting as BalIPW,
+                    MultiLoggersWeightedInverseProbabilityWeighting as WeightedIPW,
+                )
+            >>> from obp.utils import softmax
+
+            # (1) Synthetic Data Generation
+            >>> dataset = SyntheticMultiLoggersBanditDataset(
+                    n_actions=10,
+                    dim_context=5,
+                    reward_function=logistic_reward_function,
+                    betas=[-5, 0, 5],
+                    rhos=[1, 1, 1],
+                    random_state=12345,
+                )
+            >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=10000)
+
+            # (2) Synthetic Evaluation Policy
+            >>> expected_reward = bandit_feedback["expected_reward"]
+            >>> pi_e = softmax(10 * expected_reward)[:, :, np.newaxis]
+
+            # (3) Off-Policy Evaluation
+            >>> ope = MultiLoggersOffPolicyEvaluation(
+                    bandit_feedback=bandit_feedback,
+                    ope_estimators=[NaiveIPW(), BalIPW(), WeightedIPW()]
+                )
+            >>> estimated_policy_values = ope.estimate_policy_values(action_dist=pi_e)
+            >>> estimated_policy_values
+
+            {'multi_ipw': 0.735773315700805,
+            'multi_bal_ipw': 0.7369963734186821,
+            'multi_weighted_ipw': 0.7340662935948596}
+
+            # (4) Ground-truth Policy Value of the Synthetic Evaluation Policy
+            >>> dataset.calc_ground_truth_policy_value(
+                    action_dist=pi_e, expected_reward=expected_reward,
+                )
+
+            0.7406153992278186
+
     """
 
     def __post_init__(self) -> None:
