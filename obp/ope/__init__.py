@@ -27,6 +27,7 @@ from obp.ope.estimators_multi import MultiLoggersBalancedDoublyRobust
 from obp.ope.estimators_multi import MultiLoggersBalancedInverseProbabilityWeighting
 from obp.ope.estimators_multi import MultiLoggersNaiveDoublyRobust
 from obp.ope.estimators_multi import MultiLoggersNaiveInverseProbabilityWeighting
+from obp.ope.estimators_multi import MultiLoggersWeightedDoublyRobust
 from obp.ope.estimators_multi import MultiLoggersWeightedInverseProbabilityWeighting
 from obp.ope.estimators_slate import SelfNormalizedSlateIndependentIPS
 from obp.ope.estimators_slate import SelfNormalizedSlateRewardInteractionIPS
@@ -73,6 +74,7 @@ __all__ = [
     "MultiLoggersBalancedInverseProbabilityWeighting",
     "MultiLoggersNaiveDoublyRobust",
     "MultiLoggersBalancedDoublyRobust",
+    "MultiLoggersWeightedDoublyRobust",
     "OffPolicyEvaluation",
     "SlateOffPolicyEvaluation",
     "ContinuousOffPolicyEvaluation",

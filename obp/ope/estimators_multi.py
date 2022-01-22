@@ -122,7 +122,7 @@ class MultiLoggersNaiveInverseProbabilityWeighting(BaseMultiLoggersOffPolicyEsti
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
-        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
             If `use_estimated_pscore` is False, `pscore` must be given.
 
         stratum_idx: array-like, shape (n_rounds,)
@@ -670,7 +670,7 @@ class MultiLoggersWeightedInverseProbabilityWeighting(
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
-        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
             If `use_estimated_pscore` is False, `pscore` must be given.
 
         stratum_idx: array-like, shape (n_rounds,)
@@ -702,25 +702,25 @@ class MultiLoggersWeightedInverseProbabilityWeighting(
         for k in unique_stratum_idx:
             idx_ = stratum_idx == k
             var_k[k] = np.var(reward[idx_] * iw[idx_])
-        inv_weight_k = var_k * np.sum(n_data_strata / var_k)
+        weight_k = n_data_strata / (var_k * np.sum(n_data_strata / var_k))
 
-        return reward * iw * (1.0 / inv_weight_k[stratum_idx])
+        return reward * iw * weight_k[stratum_idx]
 
 
 @dataclass
 class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
-    """Multi-Loggers Naive Doubly Robust (Multi-DR) Estimator.
+    """Multi-Loggers Naive Doubly Robust (Multi-Naive-DR) Estimator.
 
     Note
     -------
     This estimator is called Average DR in Kallus et al.(2021).
 
-    Multi-DR estimates the policy value of evaluation policy :math:`\\pi_e`
+    Multi-Naive-DR estimates the policy value of evaluation policy :math:`\\pi_e`
     using logged data collected by multiple logging/behavior policies as
 
     .. math::
 
-        \\hat{V}_{\\mathrm{Multi-DR}} (\\pi_e; \\mathcal{D}, \\hat{q})
+        \\hat{V}_{\\mathrm{Multi-Naive-DR}} (\\pi_e; \\mathcal{D}, \\hat{q})
         := \\sum_{k=1}^K \\rho_k \\mathbb{E}_{n_k} [\\hat{q}(x_i,\\pi_e) + w_k(x_i,a_i) (r_i - \\hat{q}(x_i,a_i))],
 
     where :math:`\\mathcal{D}_k=\\{(x_i,a_i,r_i)\\}_{i=1}^{n_k}` is logged bandit data with :math:`n_k` observations collected by
@@ -732,7 +732,7 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
     :math:`\\hat{q} (x_i,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
     When the clipping is applied, a large importance weight is clipped as :math:`\\hat{w}_k(x,a) := \\min \\{ \\lambda, w_k(x,a) \\}`, where :math:`\\lambda (>0)` is a hyperparameter to specify a maximum allowed importance weight.
 
-    Multi-DR applies the standard DR to each stratum and takes the weighted average of the K datasets.
+    Multi-Naive-DR applies the standard DR to each stratum and takes the weighted average of the K datasets.
 
     Parameters
     ------------
@@ -743,7 +743,7 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
     use_estimated_pscore: bool, default=False.
         If True, `estimated_pscore` is used, otherwise, `pscore` (the true propensity scores) is used.
 
-    estimator_name: str, default='multi_ipw'.
+    estimator_name: str, default='multi_dr'.
         Name of the estimator.
 
     References
@@ -797,7 +797,7 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         pscore: array-like, shape (n_rounds,)
-        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
             If `use_estimated_pscore` is False, `pscore` must be given.
 
         stratum_idx: array-like, shape (n_rounds,)
@@ -820,7 +820,6 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             Estimated rewards for each observation.
 
         """
-        n_rounds = action.shape[0]
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
         rho_k = np.unique(stratum_idx, return_counts=True)[1] / stratum_idx.shape[0]
@@ -828,13 +827,11 @@ class MultiLoggersNaiveDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
         # weight clipping
         if isinstance(iw, np.ndarray):
             iw = np.minimum(iw, self.lambda_)
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        q_hat_factual = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+
+        n = action.shape[0]
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         estimated_rewards = np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
@@ -1147,20 +1144,17 @@ class MultiLoggersBalancedDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             Estimated rewards for each observation.
 
         """
-        n_rounds = action.shape[0]
         if position is None:
             position = np.zeros(action_dist.shape[0], dtype=int)
         iw_avg = action_dist[np.arange(action.shape[0]), action, position] / pscore_avg
         # weight clipping
         if isinstance(iw_avg, np.ndarray):
             iw_avg = np.minimum(iw_avg, self.lambda_)
-        q_hat_at_position = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), :, position
-        ]
-        q_hat_factual = estimated_rewards_by_reg_model[
-            np.arange(n_rounds), action, position
-        ]
-        pi_e_at_position = action_dist[np.arange(n_rounds), :, position]
+
+        n = action.shape[0]
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
         estimated_rewards = np.average(
             q_hat_at_position,
             weights=pi_e_at_position,
@@ -1351,3 +1345,132 @@ class MultiLoggersBalancedDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
+
+
+@dataclass
+class MultiLoggersWeightedDoublyRobust(MultiLoggersNaiveDoublyRobust):
+    """Multi-Loggers Naive Doubly Robust (Multi-Weighted-DR) Estimator.
+
+    Note
+    -------
+    This estimator is called Prevision Weighted DR in Kallus et al.(2021).
+
+    Multi-Weighted-DR estimates the policy value of evaluation policy :math:`\\pi_e`
+    using logged data collected by multiple logging/behavior policies as
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{Multi-Weighted-DR}} (\\pi_e; \\mathcal{D}, \\hat{q})
+        := \\sum_{k=1}^K \\M^{*}_k \\mathbb{E}_{n_k} [\\hat{q}(x_i,\\pi_e) + w_k(x_i,a_i) (r_i - \\hat{q}(x_i,a_i))],
+
+    where :math:`\\mathcal{D}_k=\\{(x_i,a_i,r_i)\\}_{i=1}^{n_k}` is logged bandit data with :math:`n_k` observations collected by
+    the k-th behavior policy :math:`\\pi_k`. :math:`w_k(x,a):=\\pi_e (a|x)/\\pi_k (a|x)` is the importance weight given :math:`x` and :math:`a` computed for the k-th behavior policy.
+    We can represent the whole logged bandit data as :math:`\\mathcal{D}_k=\\{(k_i,x_i,a_i,r_i)\\}_{i=1}^{n}` where :math:`k_i` is the index to indicate the logging/behavior policy that generates i-th data, i.e., :math:`\\pi_{k_i}`.
+    Note that :math:`n := \\sum_{k=1}^K` is the total number of logged bandit data, and :math:`\\rho_k := n_k / n` is the dataset proporsions.
+    :math:`\\mathbb{E}_{n}[\\cdot]` is the empirical average over :math:`n` observations in :math:`\\mathcal{D}`.
+    :math:`\\hat{q} (x,a)` is the estimated expected reward given :math:`x` and :math:`a`.
+    :math:`\\hat{q} (x_i,\\pi):= \\mathbb{E}_{a \\sim \\pi(a|x)}[\\hat{q}(x,a)]` is the expectation of the estimated reward function over :math:`\\pi`.
+    When the clipping is applied, a large importance weight is clipped as :math:`\\hat{w}_k(x,a) := \\min \\{ \\lambda, w_k(x,a) \\}`, where :math:`\\lambda (>0)` is a hyperparameter to specify a maximum allowed importance weight.
+
+    Multi-Weighted-DR prioritizes the strata generaetd by the logging/behavior policies similar to the evaluation policy.
+    The weight for the k-th logging/behavior policy :math:`\\M^*_k` is defined based on
+    the divergence between the evaluation policy :math:`\\pi_e` and :math:`\\pi_k`.
+
+    Parameters
+    ------------
+    lambda_: float, default=np.inf
+        A maximum possible value of the importance weight.
+        When a positive finite value is given, importance weights larger than `lambda_` will be clipped.
+
+    use_estimated_pscore: bool, default=False.
+        If True, `estimated_pscore` is used, otherwise, `pscore` (the true propensity scores) is used.
+
+    estimator_name: str, default='multi_weighted_dr'.
+        Name of the estimator.
+
+    References
+    ------------
+    Aman Agarwal, Soumya Basu, Tobias Schnabel, and Thorsten Joachims.
+    "Effective Evaluation using Logged Bandit Feedback from Multiple Loggers.", 2018.
+
+    Nathan Kallus, Yuta Saito, and Masatoshi Uehara.
+    "Optimal Off-Policy Evaluation from Multiple Logging Policies.", 2021.
+
+    """
+
+    estimator_name: str = "multi_weighted_dr"
+
+    def _estimate_round_rewards(
+        self,
+        reward: np.ndarray,
+        action: np.ndarray,
+        pscore: np.ndarray,
+        stratum_idx: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        position: Optional[np.ndarray] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate round-wise (or sample-wise) rewards.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_k(a_i|x_i)`.
+            If `use_estimated_pscore` is False, `pscore` must be given.
+
+        stratum_idx: array-like, shape (n_rounds,)
+            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
+
+        position: array-like, shape (n_rounds,), default=None
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+            If None, the effect of position on the reward will be ignored.
+            (If only a single action is chosen for each data, you can just ignore this argument.)
+
+        Returns
+        ----------
+        estimated_rewards: array-like, shape (n_rounds,)
+            Estimated rewards for each observation.
+
+        """
+        if position is None:
+            position = np.zeros(action_dist.shape[0], dtype=int)
+        iw = action_dist[np.arange(action.shape[0]), action, position] / pscore
+        # weight clipping
+        if isinstance(iw, np.ndarray):
+            iw = np.minimum(iw, self.lambda_)
+
+        n = action.shape[0]
+        q_hat_at_position = estimated_rewards_by_reg_model[np.arange(n), :, position]
+        q_hat_factual = estimated_rewards_by_reg_model[np.arange(n), action, position]
+        pi_e_at_position = action_dist[np.arange(n), :, position]
+        estimated_rewards = np.average(
+            q_hat_at_position,
+            weights=pi_e_at_position,
+            axis=1,
+        )
+
+        unique_stratum_idx, n_data_strata = np.unique(stratum_idx, return_counts=True)
+        var_k = np.zeros(unique_stratum_idx.shape[0])
+        for k in unique_stratum_idx:
+            idx_ = stratum_idx == k
+            var_k[k] = np.var(
+                estimated_rewards[idx_]
+                + iw[idx_] * (reward[idx_] - q_hat_factual[idx_])
+            )
+        weight_k = n_data_strata / (var_k * np.sum(n_data_strata / var_k))
+        estimated_rewards += iw * (reward - q_hat_factual) * weight_k[stratum_idx]
+
+        return estimated_rewards
