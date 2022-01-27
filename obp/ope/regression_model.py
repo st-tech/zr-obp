@@ -37,7 +37,7 @@ class RegressionModel(BaseEstimator):
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
-        Context vectors characterizing actions (i.e., vector representation of each action).
+        Context vectors characterizing actions (i.e., a vector representation or an embedding of each action).
         If None, one-hot encoding of the action variable is used as default.
 
     fitting_method: str, default='normal'
@@ -115,11 +115,11 @@ class RegressionModel(BaseEstimator):
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a regression model assumes that only a single action is chosen for each data.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-            When either of 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
+            When either 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
 
         """
         check_bandit_feedback_inputs(
@@ -130,7 +130,7 @@ class RegressionModel(BaseEstimator):
             position=position,
             action_context=self.action_context,
         )
-        n_rounds = context.shape[0]
+        n = context.shape[0]
 
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
@@ -144,43 +144,39 @@ class RegressionModel(BaseEstimator):
                 raise ValueError(
                     "when `fitting_method` is either 'iw' or 'mrdr', `action_dist` (a 3-dimensional ndarray) must be given"
                 )
-            if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
+            if action_dist.shape != (n, self.n_actions, self.len_list):
                 raise ValueError(
-                    f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                    f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n, self.n_actions, self.len_list}), but is {action_dist.shape}"
                 )
             if not np.allclose(action_dist.sum(axis=1), 1):
                 raise ValueError("`action_dist` must be a probability distribution")
         if pscore is None:
             pscore = np.ones_like(action) / self.n_actions
 
-        for position_ in np.arange(self.len_list):
-            idx = position == position_
+        for pos_ in np.arange(self.len_list):
+            idx = position == pos_
             X = self._pre_process_for_reg_model(
                 context=context[idx],
                 action=action[idx],
                 action_context=self.action_context,
             )
             if X.shape[0] == 0:
-                raise ValueError(f"No training data at position {position_}")
+                raise ValueError(f"No training data at position {pos_}")
             # train the base model according to the given `fitting method`
             if self.fitting_method == "normal":
-                self.base_model_list[position_].fit(X, reward[idx])
+                self.base_model_list[pos_].fit(X, reward[idx])
             else:
-                action_dist_at_position = action_dist[
-                    np.arange(n_rounds),
-                    action,
-                    position_ * np.ones(n_rounds, dtype=int),
-                ][idx]
+                action_dist_at_pos = action_dist[np.arange(n), action, pos_][idx]
                 if self.fitting_method == "iw":
-                    sample_weight = action_dist_at_position / pscore[idx]
-                    self.base_model_list[position_].fit(
+                    sample_weight = action_dist_at_pos / pscore[idx]
+                    self.base_model_list[pos_].fit(
                         X, reward[idx], sample_weight=sample_weight
                     )
                 elif self.fitting_method == "mrdr":
-                    sample_weight = action_dist_at_position
+                    sample_weight = action_dist_at_pos
                     sample_weight *= 1.0 - pscore[idx]
                     sample_weight /= pscore[idx] ** 2
-                    self.base_model_list[position_].fit(
+                    self.base_model_list[pos_].fit(
                         X, reward[idx], sample_weight=sample_weight
                     )
 
@@ -194,33 +190,26 @@ class RegressionModel(BaseEstimator):
 
         Returns
         -----------
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
+        q_hat: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
             Expected rewards of new data estimated by the regression model.
 
         """
-        n_rounds_of_new_data = context.shape[0]
-        ones_n_rounds_arr = np.ones(n_rounds_of_new_data, int)
-        estimated_rewards_by_reg_model = np.zeros(
-            (n_rounds_of_new_data, self.n_actions, self.len_list)
-        )
+        n = context.shape[0]
+        q_hat = np.zeros((n, self.n_actions, self.len_list))
         for action_ in np.arange(self.n_actions):
-            for position_ in np.arange(self.len_list):
+            for pos_ in np.arange(self.len_list):
                 X = self._pre_process_for_reg_model(
                     context=context,
-                    action=action_ * ones_n_rounds_arr,
+                    action=action_ * np.ones(n, int),
                     action_context=self.action_context,
                 )
-                estimated_rewards_ = (
-                    self.base_model_list[position_].predict_proba(X)[:, 1]
-                    if is_classifier(self.base_model_list[position_])
-                    else self.base_model_list[position_].predict(X)
+                q_hat_ = (
+                    self.base_model_list[pos_].predict_proba(X)[:, 1]
+                    if is_classifier(self.base_model_list[pos_])
+                    else self.base_model_list[pos_].predict(X)
                 )
-                estimated_rewards_by_reg_model[
-                    np.arange(n_rounds_of_new_data),
-                    action_ * ones_n_rounds_arr,
-                    position_ * ones_n_rounds_arr,
-                ] = estimated_rewards_
-        return estimated_rewards_by_reg_model
+                q_hat[np.arange(n), action_, pos_] = q_hat_
+        return q_hat
 
     def fit_predict(
         self,
@@ -254,16 +243,16 @@ class RegressionModel(BaseEstimator):
         pscore: array-like, shape (n_rounds,), default=None
             Action choice probabilities (propensity score) of a behavior policy
             in the training set of logged bandit data.
-            If None, the the behavior policy is assumed to be a uniform one.
+            If None, the the behavior policy is assumed to be uniform random.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a regression model assumes that only a single action is chosen for each data.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list), default=None
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-            When either of 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
+            When either 'iw' or 'mrdr' is set to `fitting_method`, `action_dist` must be given.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
@@ -276,7 +265,7 @@ class RegressionModel(BaseEstimator):
 
         Returns
         -----------
-        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+        q_hat: array-like, shape (n_rounds, n_actions, len_list)
             Expected rewards of new data estimated by the regression model.
 
         """
@@ -323,9 +312,7 @@ class RegressionModel(BaseEstimator):
             )
             return self.predict(context=context)
         else:
-            estimated_rewards_by_reg_model = np.zeros(
-                (n_rounds, self.n_actions, self.len_list)
-            )
+            q_hat = np.zeros((n_rounds, self.n_actions, self.len_list))
         kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         kf.get_n_splits(context)
         for train_idx, test_idx in kf.split(context):
@@ -340,10 +327,8 @@ class RegressionModel(BaseEstimator):
                 position=position[train_idx],
                 action_dist=action_dist_tr,
             )
-            estimated_rewards_by_reg_model[test_idx, :, :] = self.predict(
-                context=context[test_idx]
-            )
-        return estimated_rewards_by_reg_model
+            q_hat[test_idx, :, :] = self.predict(context=context[test_idx])
+        return q_hat
 
     def _pre_process_for_reg_model(
         self,
@@ -367,7 +352,7 @@ class RegressionModel(BaseEstimator):
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_context: array-like, shape shape (n_actions, dim_action_context)
-            Context vectors characterizing actions (i.e., vector representation of each action).
+            Context vectors characterizing actions (i.e., a vector representation or an embedding of each action).
 
         """
         return np.c_[context, action_context[action]]

@@ -116,7 +116,7 @@ class UniformSampleWeightLearner(BaseOfflinePolicyLearner):
             self.base_classifier = LogisticRegression(random_state=12345)
         else:
             if not is_classifier(self.base_classifier):
-                raise ValueError("base_classifier must be a classifier")
+                raise ValueError("`base_classifier` must be a classifier")
         self.base_classifier_list = [
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]

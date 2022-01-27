@@ -54,11 +54,11 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         Output space of the neural network policy.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
-        The i th element specifies the size of the i th layer.
+        The i-th element specifies the size of the i-th layer.
 
     activation: str, default='relu'
         Activation function.
-        Must be one of the following:
+        Must be one of the followings:
         - 'identity', the identity function, :math:`f(x) = x`.
         - 'logistic', the sigmoid function, :math:`f(x) = \\frac{1}{1 + \\exp(x)}`.
         - 'tanh', the hyperbolic tangent function, `:math:f(x) = \\frac{\\exp(x) - \\exp(-x)}{\\exp(x) + \\exp(-x)}`
@@ -66,7 +66,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
     solver: str, default='adam'
         Optimizer of the neural network.
-        Must be one of the following:
+        Must be one of the followings:
         - 'sgd', Stochastic Gradient Descent.
         - 'adam', Adam (Kingma and Ba 2014).
         - 'adagrad', Adagrad (Duchi et al. 2011).
@@ -198,12 +198,12 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             [not isinstance(h, int) or h <= 0 for h in self.hidden_layer_size]
         ):
             raise ValueError(
-                f"hidden_layer_size must be tuple of positive integers, but {self.hidden_layer_size} is given"
+                f"`hidden_layer_size` must be a tuple of positive integers, but {self.hidden_layer_size} is given"
             )
 
         if self.solver not in ("adagrad", "sgd", "adam"):
             raise ValueError(
-                f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
+                f"`solver` must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
         check_scalar(self.alpha, "alpha", float, min_val=0.0)
@@ -212,7 +212,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             not isinstance(self.batch_size, int) or self.batch_size <= 0
         ):
             raise ValueError(
-                f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
+                f"`batch_size` must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
         check_scalar(self.learning_rate_init, "learning_rate_init", float)
@@ -224,7 +224,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
-            raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
+            raise ValueError(f"`shuffle` must be a bool, but {self.shuffle} is given")
 
         check_scalar(self.tol, "tol", float)
         if self.tol <= 0.0:
@@ -234,12 +234,12 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
-                f"nesterovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
+                f"`nesterovs_momentum` must be a bool, but {self.nesterovs_momentum} is given"
             )
 
         if not isinstance(self.early_stopping, bool):
             raise ValueError(
-                f"early_stopping must be a bool, but {self.early_stopping} is given"
+                f"`early_stopping` must be a bool, but {self.early_stopping} is given"
             )
 
         check_scalar(
@@ -258,7 +258,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         if self.q_func_estimator_hyperparams is not None:
             if not isinstance(self.q_func_estimator_hyperparams, dict):
                 raise ValueError(
-                    "q_func_estimator_hyperparams must be a dict"
+                    "`q_func_estimator_hyperparams` must be a dict"
                     f", but {type(self.q_func_estimator_hyperparams)} is given"
                 )
 
@@ -278,7 +278,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             activation_layer = nn.ELU
         else:
             raise ValueError(
-                "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
+                "`activation` must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
             )
 
         layer_list = []
@@ -337,7 +337,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         elif isinstance(self.batch_size, int) and self.batch_size > 0:
             batch_size_ = self.batch_size
         else:
-            raise ValueError("batch_size must be a positive integer or 'auto'")
+            raise ValueError("`batch_size` must be a positive integer or 'auto'")
 
         dataset = NNPolicyDatasetForContinuousAction(
             torch.from_numpy(context).float(),
@@ -458,7 +458,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             )
         else:
             raise NotImplementedError(
-                "solver must be one of 'adam', 'adagrad', or 'sgd'"
+                "`solver` must be one of 'adam', 'adagrad', or 'sgd'"
             )
 
         training_data_loader, validation_data_loader = self._create_train_data_for_opl(
@@ -642,11 +642,11 @@ class QFuncEstimatorForContinuousAction:
         Number of dimensions of context vectors.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
-        The i th element specifies the size of the i th layer.
+        The i-th element specifies the size of the i-th layer.
 
     activation: str, default='relu'
         Activation function.
-        Must be one of the following:
+        Must be one of the followings:
         - 'identity', the identity function, :math:`f(x) = x`.
         - 'logistic', the sigmoid function, :math:`f(x) = \\frac{1}{1 + \\exp(x)}`.
         - 'tanh', the hyperbolic tangent function, `:math:f(x) = \\frac{\\exp(x) - \\exp(-x)}{\\exp(x) + \\exp(-x)}`
@@ -654,7 +654,7 @@ class QFuncEstimatorForContinuousAction:
 
     solver: str, default='adam'
         Optimizer of the neural network.
-        Must be one of the following:
+        Must be one of the followings:
         - 'sgd', Stochastic Gradient Descent.
         - 'adam', Adam (Kingma and Ba 2014).
         - 'adagrad', Adagrad (Duchi et al. 2011).
@@ -761,12 +761,12 @@ class QFuncEstimatorForContinuousAction:
             [not isinstance(h, int) or h <= 0 for h in self.hidden_layer_size]
         ):
             raise ValueError(
-                f"hidden_layer_size must be tuple of positive integers, but {self.hidden_layer_size} is given"
+                f"`hidden_layer_size` must be a tuple of positive integers, but {self.hidden_layer_size} is given"
             )
 
         if self.solver not in ("adagrad", "sgd", "adam"):
             raise ValueError(
-                f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
+                f"`solver` must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
         check_scalar(self.alpha, "alpha", float, min_val=0.0)
@@ -775,7 +775,7 @@ class QFuncEstimatorForContinuousAction:
             not isinstance(self.batch_size, int) or self.batch_size <= 0
         ):
             raise ValueError(
-                f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
+                f"`batch_size` must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
         check_scalar(self.learning_rate_init, "learning_rate_init", float)
@@ -787,7 +787,7 @@ class QFuncEstimatorForContinuousAction:
         check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
-            raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
+            raise ValueError(f"`shuffle` must be a bool, but {self.shuffle} is given")
 
         check_scalar(self.tol, "tol", float)
         if self.tol <= 0.0:
@@ -797,12 +797,12 @@ class QFuncEstimatorForContinuousAction:
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
-                f"nesterovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
+                f"`nesterovs_momentum` must be a bool, but {self.nesterovs_momentum} is given"
             )
 
         if not isinstance(self.early_stopping, bool):
             raise ValueError(
-                f"early_stopping must be a bool, but {self.early_stopping} is given"
+                f"`early_stopping` must be a bool, but {self.early_stopping} is given"
             )
 
         check_scalar(
@@ -834,7 +834,7 @@ class QFuncEstimatorForContinuousAction:
             activation_layer = nn.ELU
         else:
             raise ValueError(
-                "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
+                "`activation` must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
                 f", but {self.activation} is given"
             )
 
@@ -880,7 +880,7 @@ class QFuncEstimatorForContinuousAction:
         elif isinstance(self.batch_size, int) and self.batch_size > 0:
             batch_size_ = self.batch_size
         else:
-            raise ValueError("batch_size must be a positive integer or 'auto'")
+            raise ValueError("`batch_size` must be a positive integer or 'auto'")
 
         feature = np.c_[context, action[:, np.newaxis]]
         dataset = QFuncEstimatorDatasetForContinuousAction(
@@ -976,7 +976,7 @@ class QFuncEstimatorForContinuousAction:
             )
         else:
             raise NotImplementedError(
-                "solver must be one of 'adam', 'adagrad', or 'sgd'"
+                "`solver` must be one of 'adam', 'adagrad', or 'sgd'"
             )
 
         (

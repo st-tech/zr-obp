@@ -35,7 +35,7 @@ from .base import BaseOfflinePolicyLearner
 
 @dataclass
 class IPWLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner based on Inverse Probability Weighting.
+    """Off-policy learner based on Inverse Probability Weighting and Supervised Classification.
 
     Parameters
     -----------
@@ -68,7 +68,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             self.base_classifier = LogisticRegression(random_state=12345)
         else:
             if not is_classifier(self.base_classifier):
-                raise ValueError("base_classifier must be a classifier")
+                raise ValueError("`base_classifier` must be a classifier")
         self.base_classifier_list = [
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]
@@ -94,8 +94,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Propensity scores, the probability of behavior policy choosing a particular action
-            in the given logged bandit data.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         Returns
         --------
@@ -172,16 +171,14 @@ class IPWLearner(BaseOfflinePolicyLearner):
             if position is None:
                 raise ValueError("When `self.len_list > 1`, `position` must be given.")
 
-        for position_ in np.arange(self.len_list):
+        for p in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
-                context=context[position == position_],
-                action=action[position == position_],
-                reward=reward[position == position_],
-                pscore=pscore[position == position_],
+                context=context[position == p],
+                action=action[position == p],
+                reward=reward[position == p],
+                pscore=pscore[position == p],
             )
-            self.base_classifier_list[position_].fit(
-                X=X, y=y, sample_weight=sample_weight
-            )
+            self.base_classifier_list[p].fit(X=X, y=y, sample_weight=sample_weight)
 
     def predict(self, context: np.ndarray) -> np.ndarray:
         """Predict best actions for new data.
@@ -189,7 +186,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Note
         --------
         Action set predicted by this `predict` method can contain duplicate items.
-        If you want a non-repetitive action set, then please use the `sample_action` method.
+        If a non-repetitive action set is needed, please use the `sample_action` method.
 
         Parameters
         -----------
@@ -199,27 +196,27 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Action choices by a classifier, which can contain duplicate items.
-            If you want a non-repetitive action set, please use the `sample_action` method.
+            Action choices made by a classifier, which can contain duplicate items.
+            If a non-repetitive action set is needed, please use the `sample_action` method.
 
         """
         check_array(array=context, name="context", expected_dim=2)
 
         n_rounds = context.shape[0]
         action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
-        for position_ in np.arange(self.len_list):
-            predicted_actions_at_position = self.base_classifier_list[
-                position_
-            ].predict(context)
+        for p in np.arange(self.len_list):
+            predicted_actions_at_position = self.base_classifier_list[p].predict(
+                context
+            )
             action_dist[
                 np.arange(n_rounds),
                 predicted_actions_at_position,
-                np.ones(n_rounds, dtype=int) * position_,
+                np.ones(n_rounds, dtype=int) * p,
             ] += 1
         return action_dist
 
     def predict_score(self, context: np.ndarray) -> np.ndarray:
-        """Predict non-negative scores for all possible action and position.
+        """Predict non-negative scores for all possible pairs of actions and positions.
 
         Parameters
         -----------
@@ -229,18 +226,18 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         score_predicted: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Scores for all possible pairs of action and position predicted by a classifier.
+            Scores for all possible pairs of actions and positions predicted by a classifier.
 
         """
         check_array(array=context, name="context", expected_dim=2)
 
-        n_rounds = context.shape[0]
-        score_predicted = np.zeros((n_rounds, self.n_actions, self.len_list))
-        for position_ in np.arange(self.len_list):
-            score_predicteds_at_position = self.base_classifier_list[
-                position_
-            ].predict_proba(context)
-            score_predicted[:, :, position_] = score_predicteds_at_position
+        n = context.shape[0]
+        score_predicted = np.zeros((n, self.n_actions, self.len_list))
+        for p in np.arange(self.len_list):
+            score_predicteds_at_position = self.base_classifier_list[p].predict_proba(
+                context
+            )
+            score_predicted[:, :, p] = score_predicteds_at_position
         return score_predicted
 
     def sample_action(
@@ -274,7 +271,8 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice by scaling the scores before applying softmax.
+            A temperature parameter that controls the randomness of the action choice
+            by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
         random_state: int, default=None
@@ -283,22 +281,20 @@ class IPWLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         sampled_ranking: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Ranking of actions sampled by the Gumbel softmax trick.
+            Ranking of actions sampled via the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
-        n_rounds = context.shape[0]
+        n = context.shape[0]
         random_ = check_random_state(random_state)
-        sampled_ranking = np.zeros((n_rounds, self.n_actions, self.len_list))
+        sampled_ranking = np.zeros((n, self.n_actions, self.len_list))
         scores = self.predict_score(context=context).mean(2) / tau
         scores += random_.gumbel(size=scores.shape)
         sampled_ranking_full = np.argsort(-scores, axis=1)
-        for position_ in np.arange(self.len_list):
-            sampled_ranking[
-                np.arange(n_rounds), sampled_ranking_full[:, position_], position_
-            ] = 1
+        for p in np.arange(self.len_list):
+            sampled_ranking[np.arange(n), sampled_ranking_full[:, p], p] = 1
         return sampled_ranking
 
     def predict_proba(
@@ -329,7 +325,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice
+            A temperature parameter that controls the randomness of the action choice
             by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
@@ -470,7 +466,7 @@ class QLearner(BaseOfflinePolicyLearner):
 
         where :math:`\\hat{q}(x,a)` is an estimator for the q function :math:`\\q(x,a) := \\mathbb{E} [r \\mid x, a]`.
         Note that action sets predicted by this `predict` method can contain duplicate items.
-        If you want a non-repetitive action set, then please use the `sample_action` method.
+        If a non-repetitive action set is needed, please use the `sample_action` method.
 
         Parameters
         -----------
@@ -480,7 +476,7 @@ class QLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Deterministic action choices by the QLearner.
+            Deterministic action choices made by the QLearner.
             The output can contain duplicated items (when `len_list > 1`).
 
         """
@@ -490,18 +486,14 @@ class QLearner(BaseOfflinePolicyLearner):
         q_hat = self.predict_score(context=context)
         q_hat_argmax = np.argmax(q_hat, axis=1).astype(int)
 
-        n_rounds = context.shape[0]
+        n = context.shape[0]
         action_dist = np.zeros_like(q_hat)
         for p in np.arange(self.len_list):
-            action_dist[
-                np.arange(n_rounds),
-                q_hat_argmax[:, p],
-                p,
-            ] = 1
+            action_dist[np.arange(n), q_hat_argmax[:, p], p] = 1
         return action_dist
 
     def predict_score(self, context: np.ndarray) -> np.ndarray:
-        """Predict the expected reward for all possible action and position.
+        """Predict the expected rewards for all possible pairs of actions and positions.
 
         Parameters
         -----------
@@ -511,7 +503,7 @@ class QLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         q_hat: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Expected reward for all possible pairs of action and position. :math:`\\hat{q}(x,a)`.
+            Expected rewards for all possible pairs of actions and positions. :math:`\\hat{q}(x,a)`.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -550,7 +542,7 @@ class QLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice
+            A temperature parameter that controls the randomness of the action choice
             by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
@@ -560,20 +552,20 @@ class QLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         sampled_action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Ranking of actions sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
+            Ranking of actions sampled from the Plackett-Luce ranking distribution via the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
         check_scalar(tau, name="tau", target_type=(int, float), min_val=0)
 
-        n_rounds = context.shape[0]
+        n = context.shape[0]
         random_ = check_random_state(random_state)
-        sampled_action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        sampled_action = np.zeros((n, self.n_actions, self.len_list))
         scores = self.predict_score(context=context).mean(2) / tau
         scores += random_.gumbel(size=scores.shape)
         ranking = np.argsort(-scores, axis=1)
-        for position_ in np.arange(self.len_list):
-            sampled_action[np.arange(n_rounds), ranking[:, position_], position_] = 1
+        for p in np.arange(self.len_list):
+            sampled_action[np.arange(n), ranking[:, p], p] = 1
         return sampled_action
 
     def predict_proba(
@@ -589,9 +581,9 @@ class QLearner(BaseOfflinePolicyLearner):
 
         .. math::
 
-            \\pi_{k} (a|x) = \\frac{\\mathrm{exp}( \\hat{q}_{k}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}_{k}(x,a^{\\prime}) / \\tau)}
+            \\pi_{l} (a|x) = \\frac{\\mathrm{exp}( \\hat{q}_{l}(x,a) / \\tau)}{\\sum_{a^{\\prime} \\in \\mathcal{A}} \\mathrm{exp}( \\hat{q}_{l}(x,a^{\\prime}) / \\tau)}
 
-        where :math:`\\pi_{k} (a|x)` is the resulting action choice probabilities at position :math:`l`.
+        where :math:`\\pi_{l} (a|x)` is the resulting action choice probabilities at position :math:`l`.
         :math:`\\tau` is a temperature hyperparameter.
         :math:`\\hat{q}: \\mathcal{X} \\times \\mathcal{A} \\times \\mathcal{K} \\rightarrow \\mathbb{R}_{+}`
         is a q function estimator for position :math:`l`, which is now implemented in the `predict_score` method.
@@ -602,7 +594,7 @@ class QLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice
+            A temperature parameter that controls the randomness of the action choice
             by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
@@ -622,7 +614,7 @@ class QLearner(BaseOfflinePolicyLearner):
 
 @dataclass
 class NNPolicyLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner based on a neural network policy.
+    """Off-policy learner parameterized by on a neural network.
 
     Parameters
     -----------
@@ -652,11 +644,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         , respectively.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
-        The i th element specifies the size of the i th layer.
+        The i-th element specifies the size of the i-th layer.
 
     activation: str, default='relu'
         Activation function.
-        Must be one of the following:
+        Must be one of the followings:
 
         - 'identity', the identity function, :math:`f(x) = x`.
         - 'logistic', the sigmoid function, :math:`f(x) = \\frac{1}{1 + \\exp(x)}`.
@@ -665,7 +657,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
     solver: str, default='adam'
         Optimizer of the neural network.
-        Must be one of the following:
+        Must be one of the followings:
 
         - 'sgd', Stochastic Gradient Descent.
         - 'adam', Adam (Kingma and Ba 2014).
@@ -774,7 +766,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if self.off_policy_objective not in ["dm", "ipw", "dr"]:
             raise ValueError(
-                "off_policy_objective must be one of 'dm', 'ipw', or 'dr'"
+                "`off_policy_objective` must be one of 'dm', 'ipw', or 'dr'"
                 f", but {self.off_policy_objective} is given"
             )
 
@@ -796,12 +788,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             [not isinstance(h, int) or h <= 0 for h in self.hidden_layer_size]
         ):
             raise ValueError(
-                f"hidden_layer_size must be tuple of positive integers, but {self.hidden_layer_size} is given"
+                f"`hidden_layer_size` must be a tuple of positive integers, but {self.hidden_layer_size} is given"
             )
 
         if self.solver not in ("adagrad", "sgd", "adam"):
             raise ValueError(
-                f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
+                f"`solver` must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
         check_scalar(self.alpha, "alpha", float, min_val=0.0)
@@ -810,7 +802,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             not isinstance(self.batch_size, int) or self.batch_size <= 0
         ):
             raise ValueError(
-                f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
+                f"`batch_size` must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
         check_scalar(self.learning_rate_init, "learning_rate_init", float)
@@ -822,7 +814,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
-            raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
+            raise ValueError(f"`shuffle` must be a bool, but {self.shuffle} is given")
 
         check_scalar(self.tol, "tol", float)
         if self.tol <= 0.0:
@@ -832,12 +824,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
-                f"nesterovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
+                f"`nesterovs_momentum` must be a bool, but {self.nesterovs_momentum} is given"
             )
 
         if not isinstance(self.early_stopping, bool):
             raise ValueError(
-                f"early_stopping must be a bool, but {self.early_stopping} is given"
+                f"`early_stopping` must be a bool, but {self.early_stopping} is given"
             )
 
         check_scalar(
@@ -851,7 +843,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         if self.q_func_estimator_hyperparams is not None:
             if not isinstance(self.q_func_estimator_hyperparams, dict):
                 raise ValueError(
-                    "q_func_estimator_hyperparams must be a dict"
+                    "`q_func_estimator_hyperparams` must be a dict"
                     f", but {type(self.q_func_estimator_hyperparams)} is given"
                 )
         check_scalar(self.beta_1, "beta_1", float, min_val=0.0, max_val=1.0)
@@ -875,7 +867,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             activation_layer = nn.ELU
         else:
             raise ValueError(
-                "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
+                "`activation` must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
                 f", but {self.activation} is given"
             )
 
@@ -926,8 +918,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
         pscore: array-like, shape (n_rounds,), default=None
-            Propensity scores, the probability of behavior policy choosing a particular action
-            in the given logged bandit data.
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -1074,7 +1065,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
         else:
             raise NotImplementedError(
-                "solver must be one of 'adam', 'adagrad', or 'sgd'"
+                "`solver` must be one of 'adam', 'adagrad', or 'sgd'"
             )
 
         training_data_loader, validation_data_loader = self._create_train_data_for_opl(
@@ -1180,7 +1171,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (batch_size, n_actions, len_list)
-            Action choice probabilities of the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         Returns
         ----------
@@ -1195,13 +1186,13 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         elif self.off_policy_objective == "ipw":
-            n_rounds = action.shape[0]
-            idx_tensor = torch.arange(n_rounds, dtype=torch.long)
-            # with torch.no_grad():
-            current_pi = action_dist[idx_tensor, action, 0]
-            iw = current_pi / pscore
-            # log_prob = torch.log(action_dist[idx_tensor, action, 0])
-            estimated_policy_value_arr = iw * reward  # * log_prob
+            n = action.shape[0]
+            idx_tensor = torch.arange(n, dtype=torch.long)
+            with torch.no_grad():
+                current_pi = action_dist[idx_tensor, action, 0]
+                iw = current_pi / pscore
+            log_prob = torch.log(action_dist[idx_tensor, action, 0])
+            estimated_policy_value_arr = iw * reward * log_prob
 
         elif self.off_policy_objective == "dr":
             n_rounds = action.shape[0]
@@ -1239,7 +1230,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         """
         idx_tensor = torch.arange(action.shape[0], dtype=torch.long)
@@ -1253,7 +1244,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Note
         --------
         Action set predicted by this `predict` method can contain duplicate items.
-        If you want a non-repetitive action set, then please use the `sample_action` method.
+        If a non-repetitive action set is needed, please use the `sample_action` method.
 
         Parameters
         -----------
@@ -1263,8 +1254,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         action_dist: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Action choices by a classifier, which can contain duplicate items.
-            If you want a non-repetitive action set, please use the `sample_action` method.
+            Action choices made by a classifier, which can contain duplicate items.
+            If a non-repetitive action set is needed, please use the `sample_action` method.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -1276,10 +1267,10 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         self.nn_model.eval()
         x = torch.from_numpy(context).float()
         y = self.nn_model(x).detach().numpy()
+        n = context.shape[0]
         predicted_actions = np.argmax(y, axis=1)
-        n_rounds = context.shape[0]
-        action_dist = np.zeros((n_rounds, self.n_actions, 1))
-        action_dist[np.arange(n_rounds), predicted_actions, 0] = 1
+        action_dist = np.zeros((n, self.n_actions, 1))
+        action_dist[np.arange(n), predicted_actions, 0] = 1
 
         return action_dist
 
@@ -1314,7 +1305,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             Context vectors for new data.
 
         tau: int or float, default=1.0
-            A temperature parameter, controlling the randomness of the action choice
+            A temperature parameter that controls the randomness of the action choice
             by scaling the scores before applying softmax.
             As :math:`\\tau \\rightarrow \\infty`, the algorithm will select arms uniformly at random.
 
@@ -1324,7 +1315,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         Returns
         -----------
         sampled_action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Ranking of actions sampled from the Plackett-Luce ranking distribution by the Gumbel softmax trick.
+            Ranking of actions sampled from the Plackett-Luce ranking distribution via the Gumbel softmax trick.
 
         """
         check_array(array=context, name="context", expected_dim=2)
@@ -1334,14 +1325,14 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
-        n_rounds = context.shape[0]
+        n = context.shape[0]
         random_ = check_random_state(random_state)
-        sampled_action = np.zeros((n_rounds, self.n_actions, self.len_list))
+        sampled_action = np.zeros((n, self.n_actions, self.len_list))
         scores = self.predict_proba(context=context).mean(2) / tau
         scores += random_.gumbel(size=scores.shape)
         ranking = np.argsort(-scores, axis=1)
-        for position_ in np.arange(self.len_list):
-            sampled_action[np.arange(n_rounds), ranking[:, position_], position_] = 1
+        for p in np.arange(self.len_list):
+            sampled_action[np.arange(n), ranking[:, p], p] = 1
         return sampled_action
 
     def predict_proba(
@@ -1401,11 +1392,11 @@ class QFuncEstimator:
         Number of dimensions of context vectors.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
-        The i th element specifies the size of the i th layer.
+        The i-th element specifies the size of the i-th layer.
 
     activation: str, default='relu'
         Activation function.
-        Must be one of the following:
+        Must be one of the followings:
         - 'identity', the identity function, :math:`f(x) = x`.
         - 'logistic', the sigmoid function, :math:`f(x) = \\frac{1}{1 + \\exp(x)}`.
         - 'tanh', the hyperbolic tangent function, `:math:f(x) = \\frac{\\exp(x) - \\exp(-x)}{\\exp(x) + \\exp(-x)}`
@@ -1413,7 +1404,7 @@ class QFuncEstimator:
 
     solver: str, default='adam'
         Optimizer of the neural network.
-        Must be one of the following:
+        Must be one of the followings:
         - 'sgd', Stochastic Gradient Descent.
         - 'adam', Adam (Kingma and Ba 2014).
         - 'adagrad', Adagrad (Duchi et al. 2011).
@@ -1515,12 +1506,12 @@ class QFuncEstimator:
             [not isinstance(h, int) or h <= 0 for h in self.hidden_layer_size]
         ):
             raise ValueError(
-                f"hidden_layer_size must be tuple of positive integers, but {self.hidden_layer_size} is given"
+                f"`hidden_layer_size` must be a tuple of positive integers, but {self.hidden_layer_size} is given"
             )
 
         if self.solver not in ("adagrad", "sgd", "adam"):
             raise ValueError(
-                f"solver must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
+                f"`solver` must be one of 'adam', 'adagrad', or 'sgd', but {self.solver} is given"
             )
 
         check_scalar(self.alpha, "alpha", float, min_val=0.0)
@@ -1529,7 +1520,7 @@ class QFuncEstimator:
             not isinstance(self.batch_size, int) or self.batch_size <= 0
         ):
             raise ValueError(
-                f"batch_size must be a positive integer or 'auto', but {self.batch_size} is given"
+                f"`batch_size` must be a positive integer or 'auto', but {self.batch_size} is given"
             )
 
         check_scalar(self.learning_rate_init, "learning_rate_init", float)
@@ -1541,7 +1532,7 @@ class QFuncEstimator:
         check_scalar(self.max_iter, "max_iter", int, min_val=1)
 
         if not isinstance(self.shuffle, bool):
-            raise ValueError(f"shuffle must be a bool, but {self.shuffle} is given")
+            raise ValueError(f"`shuffle` must be a bool, but {self.shuffle} is given")
 
         check_scalar(self.tol, "tol", float)
         if self.tol <= 0.0:
@@ -1551,12 +1542,12 @@ class QFuncEstimator:
 
         if not isinstance(self.nesterovs_momentum, bool):
             raise ValueError(
-                f"nesterovs_momentum must be a bool, but {self.nesterovs_momentum} is given"
+                f"`nesterovs_momentum` must be a bool, but {self.nesterovs_momentum} is given"
             )
 
         if not isinstance(self.early_stopping, bool):
             raise ValueError(
-                f"early_stopping must be a bool, but {self.early_stopping} is given"
+                f"`early_stopping` must be a bool, but {self.early_stopping} is given"
             )
 
         check_scalar(
@@ -1588,7 +1579,7 @@ class QFuncEstimator:
             activation_layer = nn.ELU
         else:
             raise ValueError(
-                "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
+                "`activation` must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'"
                 f", but {self.activation} is given"
             )
 
@@ -1729,7 +1720,7 @@ class QFuncEstimator:
             )
         else:
             raise NotImplementedError(
-                "solver must be one of 'adam', 'adagrad', or 'sgd'"
+                "`solver` must be one of 'adam', 'adagrad', or 'sgd'"
             )
 
         (
@@ -1794,7 +1785,7 @@ class QFuncEstimator:
             Context vectors for new data.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of the evaluation policy (must be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         Returns
         -----------
