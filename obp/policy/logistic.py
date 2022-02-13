@@ -233,7 +233,7 @@ class LogisticUCB(BaseLogisticPolicy):
         ).flatten()
         std = np.array(
             [
-                np.sqrt(np.sum((model._q ** (-1)) * (context ** 2)))
+                np.sqrt(np.sum((model._q ** (-1)) * (context**2)))
                 for model in self.model_list
             ]
         ).flatten()
@@ -347,7 +347,7 @@ class MiniBatchLogisticRegression:
             options={"maxiter": 20, "disp": False},
         ).x
         P = (1 + np.exp(1 + X.dot(self._m))) ** (-1)
-        self._q = self._q + (P * (1 - P)).dot(X ** 2)
+        self._q = self._q + (P * (1 - P)).dot(X**2)
 
     def sd(self) -> np.ndarray:
         """Standard deviation for the coefficient vector."""
