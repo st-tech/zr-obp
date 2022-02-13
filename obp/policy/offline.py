@@ -614,7 +614,7 @@ class QLearner(BaseOfflinePolicyLearner):
 
 @dataclass
 class NNPolicyLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner parameterized by on a neural network.
+    """Off-policy learner parameterized by a neural network.
 
     Parameters
     -----------
@@ -1175,43 +1175,36 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         Returns
         ----------
-        estimated_policy_value_arr: array-like, shape (batch_size,)
+        estimated_policy_grad: array-like, shape (batch_size,)
             Rewards of each data estimated by an OPE estimator.
 
         """
+        current_pi = action_dist[:, :, 0].detach()
+        log_prob = torch.log(action_dist[:, :, 0])
+        idx_tensor = torch.arange(action.shape[0], dtype=torch.long)
+
         if self.off_policy_objective == "dm":
-            estimated_policy_value_arr = self.q_func_estimator.predict(
+            q_hat = self.q_func_estimator.predict(
                 context=context,
-                action_dist=action_dist,
             )
+            estimated_policy_grad = torch.sum(q_hat * current_pi * log_prob, dim=1)
 
         elif self.off_policy_objective == "ipw":
-            n = action.shape[0]
-            idx_tensor = torch.arange(n, dtype=torch.long)
-            with torch.no_grad():
-                current_pi = action_dist[idx_tensor, action, 0]
-                iw = current_pi / pscore
-            log_prob = torch.log(action_dist[idx_tensor, action, 0])
-            estimated_policy_value_arr = iw * reward * log_prob
+            iw = current_pi[idx_tensor, action] / pscore
+            estimated_policy_grad = iw * reward
+            estimated_policy_grad *= log_prob[idx_tensor, action]
 
         elif self.off_policy_objective == "dr":
-            n_rounds = action.shape[0]
-            idx_tensor = torch.arange(n_rounds, dtype=torch.long)
-            iw = action_dist[idx_tensor, action, 0] / pscore
-            q_hat_baseline = self.q_func_estimator.predict(
+            q_hat = self.q_func_estimator.predict(
                 context=context,
-                action_dist=action_dist,
             )
-            action_dist_ = torch.zeros((n_rounds, self.n_actions, self.len_list))
-            action_dist_[idx_tensor, action, 0] = 1
-            q_hat_actions = self.q_func_estimator.predict(
-                context=context,
-                action_dist=action_dist_,
-            )
-            estimated_policy_value_arr = iw * (reward - q_hat_actions)
-            estimated_policy_value_arr += q_hat_baseline
+            q_hat_factual = q_hat[idx_tensor, action]
+            iw = current_pi[idx_tensor, action] / pscore
+            estimated_policy_grad = iw * (reward - q_hat_factual)
+            estimated_policy_grad *= log_prob[idx_tensor, action]
+            estimated_policy_grad += torch.sum(q_hat * current_pi * log_prob, dim=1)
 
-        return estimated_policy_value_arr
+        return estimated_policy_grad
 
     def _estimate_policy_constraint(
         self,
@@ -1775,7 +1768,6 @@ class QFuncEstimator:
     def predict(
         self,
         context: torch.Tensor,
-        action_dist: torch.Tensor,
     ) -> torch.Tensor:
         """Predict best continuous actions for new data.
 
@@ -1784,9 +1776,6 @@ class QFuncEstimator:
         context: Tensor, shape (n_rounds_of_new_data, dim_context)
             Context vectors for new data.
 
-        action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-
         Returns
         -----------
         estimated_expected_rewards: Tensor, shape (n_rounds_of_new_data,)
@@ -1794,17 +1783,13 @@ class QFuncEstimator:
 
         """
         check_tensor(tensor=context, name="context", expected_dim=2)
-        check_tensor(tensor=action_dist, name="action_dist", expected_dim=3)
         if context.shape[1] != self.dim_context:
             raise ValueError(
                 "Expected `context.shape[1] == self.dim_context`, but found it False"
             )
 
         self.nn_model.eval()
-        q_hat = self.nn_model(context)
-        estimated_expected_rewards = (q_hat * action_dist[:, :, 0]).mean(1)
-
-        return estimated_expected_rewards
+        return self.nn_model(context)
 
 
 @dataclass
