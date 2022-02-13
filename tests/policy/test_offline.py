@@ -33,7 +33,7 @@ invalid_input_of_ipw_learner_init = [
         base_classifier,
         "len_list == 20, must be <= 10",
     ),
-    (10, 1, base_regressor, "base_classifier must be a classifier"),
+    (10, 1, base_regressor, "`base_classifier` must be a classifier"),
 ]
 
 valid_input_of_ipw_learner_init = [
@@ -548,7 +548,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "off_policy_objective must be one of 'dm', 'ipw', or 'dr'",
+        "`off_policy_objective` must be one of 'dm', 'ipw', or 'dr'",
     ),
     (
         10,
@@ -576,7 +576,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "off_policy_objective must be one of 'dm', 'ipw', or 'dr'",
+        "`off_policy_objective` must be one of 'dm', 'ipw', or 'dr'",
     ),
     (
         10,
@@ -772,7 +772,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "hidden_layer_size must be tuple of positive integers",
+        "`hidden_layer_size` must be a tuple of positive integers",
     ),
     (
         10,
@@ -800,7 +800,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'",
+        "`activation` must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'",
     ),
     (
         10,
@@ -828,7 +828,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "solver must be one of 'adam', 'adagrad', or 'sgd'",
+        "`solver` must be one of 'adam', 'adagrad', or 'sgd'",
     ),
     (
         10,
@@ -884,7 +884,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "batch_size must be a positive integer or 'auto'",
+        "`batch_size` must be a positive integer or 'auto'",
     ),
     (
         10,
@@ -968,7 +968,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "shuffle must be a bool",
+        "`shuffle` must be a bool",
     ),
     (
         10,
@@ -1080,7 +1080,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "nesterovs_momentum must be a bool",
+        "`nesterovs_momentum` must be a bool",
     ),
     (
         10,
@@ -1108,7 +1108,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "early_stopping must be a bool",
+        "`early_stopping` must be a bool",
     ),
     (
         10,
@@ -1136,7 +1136,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         ValueError,
-        "solver must be one of 'adam', 'adagrad', or 'sgd',",
+        "`solver` must be one of 'adam', 'adagrad', or 'sgd',",
     ),
     (
         10,

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from obp.dataset import SyntheticBanditDatasetWithMultiLoggers
+from obp.dataset import SyntheticMultiLoggersBanditDataset
 
 
 # n_actions, dim_context, reward_type, reward_std, betas, rhos, n_deficient_actions, action_context, random_state, err, description
@@ -326,7 +326,7 @@ def test_synthetic_multi_init_using_invalid_inputs(
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = SyntheticBanditDatasetWithMultiLoggers(
+        _ = SyntheticMultiLoggersBanditDataset(
             n_actions=n_actions,
             dim_context=dim_context,
             reward_type=reward_type,
@@ -344,13 +344,13 @@ def test_synthetic_obtain_batch_bandit_feedback():
     rhos = [1, 1, 1]
     # n_rounds
     with pytest.raises(ValueError):
-        dataset = SyntheticBanditDatasetWithMultiLoggers(
+        dataset = SyntheticMultiLoggersBanditDataset(
             n_actions=2, betas=betas, rhos=rhos
         )
         dataset.obtain_batch_bandit_feedback(n_rounds=0)
 
     with pytest.raises(TypeError):
-        dataset = SyntheticBanditDatasetWithMultiLoggers(
+        dataset = SyntheticMultiLoggersBanditDataset(
             n_actions=2, betas=betas, rhos=rhos
         )
         dataset.obtain_batch_bandit_feedback(n_rounds="3")
@@ -359,7 +359,7 @@ def test_synthetic_obtain_batch_bandit_feedback():
     n_rounds = 10
     n_actions = 5
     for n_deficient_actions in [0, 2]:
-        dataset = SyntheticBanditDatasetWithMultiLoggers(
+        dataset = SyntheticMultiLoggersBanditDataset(
             n_actions=n_actions,
             betas=betas,
             rhos=rhos,
@@ -382,8 +382,8 @@ def test_synthetic_obtain_batch_bandit_feedback():
             and len(bandit_feedback["action"]) == n_rounds
         )
         assert (
-            bandit_feedback["strata"].ndim == 1
-            and len(bandit_feedback["strata"]) == n_rounds
+            bandit_feedback["stratum_idx"].ndim == 1
+            and len(bandit_feedback["stratum_idx"]) == n_rounds
         )
         assert bandit_feedback["position"] is None
         assert (
@@ -401,13 +401,13 @@ def test_synthetic_obtain_batch_bandit_feedback():
         assert np.allclose(bandit_feedback["pi_b"][:, :, 0].sum(1), np.ones(n_rounds))
         assert (bandit_feedback["pi_b"] == 0).sum() == n_deficient_actions * n_rounds
         assert np.allclose(
-            bandit_feedback["pi_b_star"][:, :, 0].sum(1), np.ones(n_rounds)
+            bandit_feedback["pi_b_avg"][:, :, 0].sum(1), np.ones(n_rounds)
         )
         assert (
             bandit_feedback["pscore"].ndim == 1
             and len(bandit_feedback["pscore"]) == n_rounds
         )
         assert (
-            bandit_feedback["pscore_star"].ndim == 1
-            and len(bandit_feedback["pscore_star"]) == n_rounds
+            bandit_feedback["pscore_avg"].ndim == 1
+            and len(bandit_feedback["pscore_avg"]) == n_rounds
         )

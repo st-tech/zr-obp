@@ -64,7 +64,7 @@ class SlateStandardIPSMock(SlateStandardIPS):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Returns
         ----------
@@ -116,7 +116,7 @@ class SlateIndependentIPSMock(SlateIndependentIPS):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Returns
         ----------
@@ -168,7 +168,7 @@ class SlateRewardInteractionIPSMock(SlateRewardInteractionIPS):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Returns
         ----------
@@ -226,7 +226,7 @@ class SlateCascadeDoublyRobustMock(SlateCascadeDoublyRobust):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value using nonparametric bootstrap.
+        """Estimate the confidence interval of the policy value using bootstrap.
 
         Returns
         ----------

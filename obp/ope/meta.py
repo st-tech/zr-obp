@@ -125,10 +125,16 @@ class OffPolicyEvaluation:
                     raise ValueError(
                         f"Expected `estimated_rewards_by_reg_model[{estimator_name}].shape == action_dist.shape`, but found it False."
                     )
-        elif estimated_rewards_by_reg_model.shape != action_dist.shape:
-            raise ValueError(
-                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
+        else:
+            check_array(
+                array=estimated_rewards_by_reg_model,
+                name="estimated_rewards_by_reg_model",
+                expected_dim=3,
             )
+            if estimated_rewards_by_reg_model.shape != action_dist.shape:
+                raise ValueError(
+                    "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
+                )
         for var_name, value_or_dict in {
             "estimated_pscore": estimated_pscore,
             "estimated_importance_weights": estimated_importance_weights,
@@ -216,7 +222,7 @@ class OffPolicyEvaluation:
         Parameters
         ------------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
             Expected rewards given each round, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -273,12 +279,12 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of policy values using nonparametric bootstrap.
+        """Estimate confidence intervals of policy values using bootstrap.
 
         Parameters
         ------------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -358,7 +364,7 @@ class OffPolicyEvaluation:
         Parameters
         ------------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
             Expected rewards given each round, action, and position estimated by regression model, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -446,7 +452,7 @@ class OffPolicyEvaluation:
         Parameters
         ----------
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -565,7 +571,7 @@ class OffPolicyEvaluation:
             With Open Bandit Dataset, we use an on-policy estimate of the policy value as its ground-truth.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -649,7 +655,7 @@ class OffPolicyEvaluation:
             With Open Bandit Dataset, we use an on-policy estimate of the policy value as ground-truth.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -714,7 +720,7 @@ class OffPolicyEvaluation:
             List of the names of evaluation policies.
 
         action_dist_list: List[array-like, shape (n_rounds, n_actions, len_list)]
-            List of action choice probabilities of evaluation policies (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            List of action choice probabilities of the evaluation policies (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list) or Dict[str, array-like], default=None
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
@@ -755,7 +761,7 @@ class OffPolicyEvaluation:
         """
         if len(policy_name_list) != len(action_dist_list):
             raise ValueError(
-                "the length of policy_name_list must be the same as action_dist_list"
+                "the length of `policy_name_list` must be the same as `action_dist_list`"
             )
         if fig_dir is not None:
             assert isinstance(fig_dir, Path), "`fig_dir` must be a Path"

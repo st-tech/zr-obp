@@ -190,7 +190,7 @@ class BaseOfflinePolicyLearner(metaclass=ABCMeta):
         Returns
         -----------
         action: array-like, shape (n_rounds_of_new_data, n_actions, len_list)
-            Action choices by a policy trained by calling the `fit` method.
+            Action choices made by a policy trained by calling the `fit` method.
 
         """
         raise NotImplementedError
@@ -224,7 +224,7 @@ class BaseContinuousOfflinePolicyLearner(metaclass=ABCMeta):
         Returns
         -----------
         action: array-like, shape (n_rounds_of_new_data,)
-            Action choices by a policy trained by calling the `fit` method.
+            Action choices made by a policy trained by calling the `fit` method.
 
         """
         raise NotImplementedError

@@ -22,6 +22,13 @@ from obp.ope.estimators_continuous import gaussian_kernel
 from obp.ope.estimators_continuous import KernelizedDoublyRobust
 from obp.ope.estimators_continuous import KernelizedInverseProbabilityWeighting
 from obp.ope.estimators_continuous import triangular_kernel
+from obp.ope.estimators_multi import BaseMultiLoggersOffPolicyEstimator
+from obp.ope.estimators_multi import MultiLoggersBalancedDoublyRobust
+from obp.ope.estimators_multi import MultiLoggersBalancedInverseProbabilityWeighting
+from obp.ope.estimators_multi import MultiLoggersNaiveDoublyRobust
+from obp.ope.estimators_multi import MultiLoggersNaiveInverseProbabilityWeighting
+from obp.ope.estimators_multi import MultiLoggersWeightedDoublyRobust
+from obp.ope.estimators_multi import MultiLoggersWeightedInverseProbabilityWeighting
 from obp.ope.estimators_slate import SelfNormalizedSlateIndependentIPS
 from obp.ope.estimators_slate import SelfNormalizedSlateRewardInteractionIPS
 from obp.ope.estimators_slate import SelfNormalizedSlateStandardIPS
@@ -37,6 +44,7 @@ from obp.ope.estimators_tuning import SubGaussianInverseProbabilityWeightingTuni
 from obp.ope.estimators_tuning import SwitchDoublyRobustTuning
 from obp.ope.meta import OffPolicyEvaluation
 from obp.ope.meta_continuous import ContinuousOffPolicyEvaluation
+from obp.ope.meta_multi import MultiLoggersOffPolicyEvaluation
 from obp.ope.meta_slate import SlateOffPolicyEvaluation
 from obp.ope.regression_model import RegressionModel
 from obp.ope.regression_model_slate import SlateRegressionModel
@@ -60,9 +68,17 @@ __all__ = [
     "DoublyRobustWithShrinkageTuning",
     "SubGaussianInverseProbabilityWeightingTuning",
     "SubGaussianDoublyRobustTuning",
+    "BaseMultiLoggersOffPolicyEstimator",
+    "MultiLoggersNaiveInverseProbabilityWeighting",
+    "MultiLoggersWeightedInverseProbabilityWeighting",
+    "MultiLoggersBalancedInverseProbabilityWeighting",
+    "MultiLoggersNaiveDoublyRobust",
+    "MultiLoggersBalancedDoublyRobust",
+    "MultiLoggersWeightedDoublyRobust",
     "OffPolicyEvaluation",
     "SlateOffPolicyEvaluation",
     "ContinuousOffPolicyEvaluation",
+    "MultiLoggersOffPolicyEvaluation",
     "RegressionModel",
     "SlateRegressionModel",
     "SlateStandardIPS",
