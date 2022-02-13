@@ -432,7 +432,7 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
 
 @pytest.mark.parametrize(
     "action_dist, estimated_rewards_by_reg_model, description",
-    valid_input_of_create_estimator_inputs,
+    valid_input_of_create_estimator_inputs[:-1],
 )
 def test_meta_estimate_policy_values_using_valid_input_data(
     action_dist,
@@ -447,6 +447,7 @@ def test_meta_estimate_policy_values_using_valid_input_data(
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[dm]
     )
+    ope_.is_model_dependent = True
     assert ope_.estimate_policy_values(
         action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
@@ -457,6 +458,7 @@ def test_meta_estimate_policy_values_using_valid_input_data(
     ope_ = OffPolicyEvaluation(
         bandit_feedback=synthetic_bandit_feedback, ope_estimators=[dm, ipw]
     )
+    ope_.is_model_dependent = True
     assert ope_.estimate_policy_values(
         action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,

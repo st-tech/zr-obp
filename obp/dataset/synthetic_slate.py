@@ -313,11 +313,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     ) -> np.ndarray:
         """Obtain an action interaction weight matrix for standard decay reward structure (symmetric matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
-        for position_ in np.arange(len_list):
-            action_interaction_weight_matrix[:, position_] = -self.decay_function(
-                np.abs(np.arange(len_list) - position_)
+        for pos_ in np.arange(len_list):
+            action_interaction_weight_matrix[:, pos_] = -self.decay_function(
+                np.abs(np.arange(len_list) - pos_)
             )
-            action_interaction_weight_matrix[position_, position_] = 0
+            action_interaction_weight_matrix[pos_, pos_] = 0
         return action_interaction_weight_matrix
 
     def obtain_cascade_decay_action_interaction_weight_matrix(
@@ -326,13 +326,13 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
     ) -> np.ndarray:
         """Obtain an action interaction weight matrix for cascade decay reward structure (upper triangular matrix)"""
         action_interaction_weight_matrix = np.identity(len_list)
-        for position_ in np.arange(len_list):
-            action_interaction_weight_matrix[:, position_] = -self.decay_function(
-                np.abs(np.arange(len_list) - position_)
+        for pos_ in np.arange(len_list):
+            action_interaction_weight_matrix[:, pos_] = -self.decay_function(
+                np.abs(np.arange(len_list) - pos_)
             )
-            for position_2 in np.arange(len_list):
-                if position_ <= position_2:
-                    action_interaction_weight_matrix[position_2, position_] = 0
+            for pos_2 in np.arange(len_list):
+                if pos_ <= pos_2:
+                    action_interaction_weight_matrix[pos_2, pos_] = 0
         return action_interaction_weight_matrix
 
     def _calc_pscore_given_policy_logit(
@@ -357,19 +357,19 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_actions = len(all_slate_actions)
         unique_action_set_2d = np.tile(np.arange(self.n_unique_action), (n_actions, 1))
         pscores = np.ones(n_actions)
-        for position_ in np.arange(self.len_list):
+        for pos_ in np.arange(self.len_list):
             action_index = np.where(
-                unique_action_set_2d == all_slate_actions[:, position_][:, np.newaxis]
+                unique_action_set_2d == all_slate_actions[:, pos_][:, np.newaxis]
             )[1]
             pscores *= softmax(policy_logit_i_[unique_action_set_2d])[
                 np.arange(n_actions), action_index
             ]
             # delete actions
-            if position_ + 1 != self.len_list:
-                mask = np.ones((n_actions, self.n_unique_action - position_))
+            if pos_ + 1 != self.len_list:
+                mask = np.ones((n_actions, self.n_unique_action - pos_))
                 mask[np.arange(n_actions), action_index] = 0
                 unique_action_set_2d = unique_action_set_2d[mask.astype(bool)].reshape(
-                    (-1, self.n_unique_action - position_ - 1)
+                    (-1, self.n_unique_action - pos_ - 1)
                 )
 
         return pscores
@@ -396,20 +396,20 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         n_actions = len(all_slate_actions)
         unique_action_set_2d = np.tile(np.arange(self.n_unique_action), (n_actions, 1))
         pscores = np.ones(n_actions)
-        for position_ in np.arange(self.len_list):
+        for pos_ in np.arange(self.len_list):
             action_index = np.where(
-                unique_action_set_2d == all_slate_actions[:, position_][:, np.newaxis]
+                unique_action_set_2d == all_slate_actions[:, pos_][:, np.newaxis]
             )[1]
             score_ = policy_softmax_i_[unique_action_set_2d]
             pscores *= np.divide(score_, score_.sum(axis=1, keepdims=True))[
                 np.arange(n_actions), action_index
             ]
             # delete actions
-            if position_ + 1 != self.len_list:
-                mask = np.ones((n_actions, self.n_unique_action - position_))
+            if pos_ + 1 != self.len_list:
+                mask = np.ones((n_actions, self.n_unique_action - pos_))
                 mask[np.arange(n_actions), action_index] = 0
                 unique_action_set_2d = unique_action_set_2d[mask.astype(bool)].reshape(
-                    (-1, self.n_unique_action - position_ - 1)
+                    (-1, self.n_unique_action - pos_ - 1)
                 )
 
         return pscores
@@ -490,14 +490,14 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             unique_action_set = np.arange(self.n_unique_action)
             score_ = softmax(evaluation_policy_logit_[i : i + 1])[0]
             pscore_i = 1.0
-            for position_ in np.arange(self.len_list):
-                action_ = action[i * self.len_list + position_]
+            for pos_ in np.arange(self.len_list):
+                action_ = action[i * self.len_list + pos_]
                 action_index_ = np.where(unique_action_set == action_)[0][0]
                 # calculate joint pscore
                 pscore_i *= score_[action_index_]
-                pscore_cascade[i * self.len_list + position_] = pscore_i
+                pscore_cascade[i * self.len_list + pos_] = pscore_i
                 # update the pscore given the remaining items for nonfactorizable policy
-                if not self.is_factorizable and position_ != self.len_list - 1:
+                if not self.is_factorizable and pos_ != self.len_list - 1:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == action_
                     )
@@ -506,10 +506,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     )[0]
                 # calculate pscore_item_position
                 if return_pscore_item_position:
-                    if position_ == 0:
-                        pscore_item_position_i_l = pscore_i
+                    if pos_ == 0:
+                        pscore_item_pos_i_l = pscore_i
                     elif self.is_factorizable:
-                        pscore_item_position_i_l = score_[action_index_]
+                        pscore_item_pos_i_l = score_[action_index_]
                     else:
                         if isinstance(clip_logit_value, float):
                             pscores = self._calc_pscore_given_policy_softmax(
@@ -521,12 +521,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                                 all_slate_actions=enumerated_slate_actions,
                                 policy_logit_i_=evaluation_policy_logit_[i],
                             )
-                        pscore_item_position_i_l = pscores[
-                            enumerated_slate_actions[:, position_] == action_
+                        pscore_item_pos_i_l = pscores[
+                            enumerated_slate_actions[:, pos_] == action_
                         ].sum()
-                    pscore_item_position[
-                        i * self.len_list + position_
-                    ] = pscore_item_position_i_l
+                    pscore_item_position[i * self.len_list + pos_] = pscore_item_pos_i_l
             # impute joint pscore
             start_idx = i * self.len_list
             end_idx = start_idx + self.len_list
@@ -613,19 +611,19 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             unique_action_set = np.arange(self.n_unique_action)
             score_ = softmax(behavior_policy_logit_[i : i + 1, unique_action_set])[0]
             pscore_i = 1.0
-            for position_ in np.arange(self.len_list):
+            for pos_ in np.arange(self.len_list):
                 sampled_action = self.random_.choice(
                     unique_action_set, p=score_, replace=False
                 )
-                action[i * self.len_list + position_] = sampled_action
+                action[i * self.len_list + pos_] = sampled_action
                 sampled_action_index = np.where(unique_action_set == sampled_action)[0][
                     0
                 ]
                 # calculate joint pscore
                 pscore_i *= score_[sampled_action_index]
-                pscore_cascade[i * self.len_list + position_] = pscore_i
+                pscore_cascade[i * self.len_list + pos_] = pscore_i
                 # update the pscore given the remaining items for nonfactorizable behavior policy
-                if not self.is_factorizable and position_ != self.len_list - 1:
+                if not self.is_factorizable and pos_ != self.len_list - 1:
                     unique_action_set = np.delete(
                         unique_action_set, unique_action_set == sampled_action
                     )
@@ -635,11 +633,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 # calculate pscore_item_position
                 if return_pscore_item_position:
                     if self.behavior_policy_function is None:  # uniform random
-                        pscore_item_position_i_l = 1 / self.n_unique_action
+                        pscore_item_pos_i_l = 1 / self.n_unique_action
                     elif self.is_factorizable:
-                        pscore_item_position_i_l = score_[sampled_action_index]
-                    elif position_ == 0:
-                        pscore_item_position_i_l = pscore_i
+                        pscore_item_pos_i_l = score_[sampled_action_index]
+                    elif pos_ == 0:
+                        pscore_item_pos_i_l = pscore_i
                     else:
                         if isinstance(clip_logit_value, float):
                             pscores = self._calc_pscore_given_policy_softmax(
@@ -651,12 +649,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                                 all_slate_actions=enumerated_slate_actions,
                                 policy_logit_i_=behavior_policy_logit_[i],
                             )
-                        pscore_item_position_i_l = pscores[
-                            enumerated_slate_actions[:, position_] == sampled_action
+                        pscore_item_pos_i_l = pscores[
+                            enumerated_slate_actions[:, pos_] == sampled_action
                         ].sum()
-                    pscore_item_position[
-                        i * self.len_list + position_
-                    ] = pscore_item_position_i_l
+                    pscore_item_position[i * self.len_list + pos_] = pscore_item_pos_i_l
             # impute joint pscore
             start_idx = i * self.len_list
             end_idx = start_idx + self.len_list
@@ -699,12 +695,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             sampled_reward_list = list()
             discount_factors = np.ones(expected_reward_factual.shape[0])
             sampled_rewards_at_position = np.zeros(expected_reward_factual.shape[0])
-            for position_ in np.arange(self.len_list):
+            for pos_ in np.arange(self.len_list):
                 discount_factors *= sampled_rewards_at_position * self.attractiveness[
-                    position_
+                    pos_
                 ] + (1 - sampled_rewards_at_position)
                 expected_reward_factual_at_position = (
-                    discount_factors * expected_reward_factual[:, position_]
+                    discount_factors * expected_reward_factual[:, pos_]
                 )
                 sampled_rewards_at_position = self.random_.binomial(
                     n=1, p=expected_reward_factual_at_position
@@ -714,11 +710,11 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
 
         elif self.reward_type == "continuous":
             reward = np.zeros(expected_reward_factual.shape)
-            for position_ in np.arange(self.len_list):
-                mean = expected_reward_factual[:, position_]
+            for pos_ in np.arange(self.len_list):
+                mean = expected_reward_factual[:, pos_]
                 a = (self.reward_min - mean) / self.reward_std
                 b = (self.reward_max - mean) / self.reward_std
-                reward[:, position_] = truncnorm.rvs(
+                reward[:, pos_] = truncnorm.rvs(
                     a=a,
                     b=b,
                     loc=mean,
@@ -801,10 +797,8 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
             # expected_reward_factual: array-like, shape (n_rounds, len_list)
             expected_reward_factual = np.array(
                 [
-                    expected_reward_tile[
-                        np.arange(n_rounds), action_2d[:, position_], position_
-                    ]
-                    for position_ in np.arange(self.len_list)
+                    expected_reward_tile[np.arange(n_rounds), action_2d[:, pos_], pos_]
+                    for pos_ in np.arange(self.len_list)
                 ]
             ).T
         else:
@@ -961,10 +955,10 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 [
                     expected_slot_reward_tile[
                         np.arange(n_slate_actions) % n_slate_actions,
-                        np.array(enumerated_slate_actions)[:, position_],
-                        position_,
+                        np.array(enumerated_slate_actions)[:, pos_],
+                        pos_,
                     ]
-                    for position_ in np.arange(self.len_list)
+                    for pos_ in np.arange(self.len_list)
                 ]
             ).T
             policy_value = (pscores * expected_slate_rewards.sum(axis=1)).sum()
@@ -1008,18 +1002,15 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                     previous_slot_expected_reward = np.zeros(
                         expected_slate_rewards_.shape[0]
                     )
-                    for position_ in np.arange(self.len_list):
+                    for pos_ in np.arange(self.len_list):
                         discount_factors *= (
-                            previous_slot_expected_reward
-                            * self.attractiveness[position_]
+                            previous_slot_expected_reward * self.attractiveness[pos_]
                             + (1 - previous_slot_expected_reward)
                         )
-                        expected_slate_rewards_[:, position_] = (
-                            discount_factors * expected_slate_rewards_[:, position_]
+                        expected_slate_rewards_[:, pos_] = (
+                            discount_factors * expected_slate_rewards_[:, pos_]
                         )
-                        previous_slot_expected_reward = expected_slate_rewards_[
-                            :, position_
-                        ]
+                        previous_slot_expected_reward = expected_slate_rewards_[:, pos_]
 
                 policy_value += (
                     pscores_.flatten() * expected_slate_rewards_.sum(axis=1)
@@ -1205,12 +1196,12 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         evaluation_policy_action_dist = []
         for i in range(n_rounds):
             if not self.is_factorizable:
-                for position_ in range(self.len_list - 1):
-                    action_ = action[i][position_]
+                for pos_ in range(self.len_list - 1):
+                    action_ = action[i][pos_]
                     # mask action choice probability of the previously chosen action
                     # to avoid overflow in softmax function, set -1e4 instead of -np.inf
                     # (make action choice probability 0 for the previously chosen action by softmax)
-                    evaluation_policy_logit_[i, position_ + 1 :, action_] = -1e4
+                    evaluation_policy_logit_[i, pos_ + 1 :, action_] = -1e4
             # (len_list, n_unique_action)
             evaluation_policy_action_dist.append(softmax(evaluation_policy_logit_[i]))
         # (n_rounds, len_list, n_unique_action) -> (n_rounds * len_list * n_unique_action, )
@@ -1444,37 +1435,37 @@ def action_interaction_reward_function(
     if reward_type == "binary":
         expected_reward = logit(expected_reward)
     expected_reward_factual = np.zeros_like(action_2d, dtype="float16")
-    for position_ in np.arange(len_list):
+    for pos_ in np.arange(len_list):
         tmp_fixed_reward = expected_reward[
             np.arange(len(action_2d)) // n_enumerated_slate_actions,
-            action_2d[:, position_],
+            action_2d[:, pos_],
         ]
         if reward_structure == "independent":
             continue
         elif is_additive:
-            for position2_ in np.arange(len_list):
+            for pos2_ in np.arange(len_list):
                 if is_cascade:
-                    if position_ <= position2_:
+                    if pos_ <= pos2_:
                         break
-                elif position_ == position2_:
+                elif pos_ == pos2_:
                     continue
                 tmp_fixed_reward += action_interaction_weight_matrix[
-                    action_2d[:, position_], action_2d[:, position2_]
+                    action_2d[:, pos_], action_2d[:, pos2_]
                 ]
         else:
-            for position2_ in np.arange(len_list):
+            for pos2_ in np.arange(len_list):
                 if is_cascade:
-                    if position_ <= position2_:
+                    if pos_ <= pos2_:
                         break
-                elif position_ == position2_:
+                elif pos_ == pos2_:
                     continue
                 expected_reward_ = expected_reward[
                     np.arange(len(action_2d)) // n_enumerated_slate_actions,
-                    action_2d[:, position2_],
+                    action_2d[:, pos2_],
                 ]
-                weight_ = action_interaction_weight_matrix[position_, position2_]
+                weight_ = action_interaction_weight_matrix[pos_, pos2_]
                 tmp_fixed_reward += expected_reward_ * weight_
-        expected_reward_factual[:, position_] = tmp_fixed_reward
+        expected_reward_factual[:, pos_] = tmp_fixed_reward
 
     if reward_type == "binary":
         expected_reward_factual = sigmoid(expected_reward_factual)

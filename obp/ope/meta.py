@@ -125,10 +125,16 @@ class OffPolicyEvaluation:
                     raise ValueError(
                         f"Expected `estimated_rewards_by_reg_model[{estimator_name}].shape == action_dist.shape`, but found it False."
                     )
-        elif estimated_rewards_by_reg_model.shape != action_dist.shape:
-            raise ValueError(
-                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
+        else:
+            check_array(
+                array=estimated_rewards_by_reg_model,
+                name="estimated_rewards_by_reg_model",
+                expected_dim=3,
             )
+            if estimated_rewards_by_reg_model.shape != action_dist.shape:
+                raise ValueError(
+                    "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
+                )
         for var_name, value_or_dict in {
             "estimated_pscore": estimated_pscore,
             "estimated_importance_weights": estimated_importance_weights,

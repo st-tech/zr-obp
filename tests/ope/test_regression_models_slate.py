@@ -788,10 +788,10 @@ def calc_ground_truth_mean_reward_function_given_enumerated_slate_actions(
             [
                 expected_slot_reward_tile[
                     np.arange(n_enumerated_slate_actions) % n_enumerated_slate_actions,
-                    np.array(enumerated_slate_actions)[:, position_],
-                    position_,
+                    np.array(enumerated_slate_actions)[:, pos_],
+                    pos_,
                 ]
-                for position_ in np.arange(dataset.len_list)
+                for pos_ in np.arange(dataset.len_list)
             ]
         ).T
     else:
@@ -812,14 +812,14 @@ def calc_ground_truth_mean_reward_function_given_enumerated_slate_actions(
         if dataset.reward_type == "binary":
             discount_factors = np.ones(expected_slate_rewards.shape[0])
             previous_slot_expected_reward = np.zeros(expected_slate_rewards.shape[0])
-            for position_ in np.arange(dataset.len_list):
+            for pos_ in np.arange(dataset.len_list):
                 discount_factors *= (
-                    previous_slot_expected_reward * dataset.attractiveness[position_]
+                    previous_slot_expected_reward * dataset.attractiveness[pos_]
                     + (1 - previous_slot_expected_reward)
                 )
-                expected_slate_rewards[:, position_] = (
-                    discount_factors * expected_slate_rewards[:, position_]
+                expected_slate_rewards[:, pos_] = (
+                    discount_factors * expected_slate_rewards[:, pos_]
                 )
-                previous_slot_expected_reward = expected_slate_rewards[:, position_]
+                previous_slot_expected_reward = expected_slate_rewards[:, pos_]
 
     return (pscores * expected_slate_rewards.sum(axis=1)).sum()

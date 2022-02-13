@@ -22,6 +22,7 @@ from ..utils import check_confidence_interval_arguments
 from .estimators import DirectMethod as DM
 from .estimators_multi import MultiLoggersBalancedDoublyRobust as BalDR
 from .estimators_multi import MultiLoggersNaiveDoublyRobust as NaiveDR
+from .estimators_multi import MultiLoggersWeightedDoublyRobust as WeightedDR
 from .meta import OffPolicyEvaluation
 
 
@@ -108,6 +109,7 @@ class MultiLoggersOffPolicyEvaluation(OffPolicyEvaluation):
                 isinstance(estimator, DM)
                 or isinstance(estimator, NaiveDR)
                 or isinstance(estimator, BalDR)
+                or isinstance(estimator, WeightedDR)
             ):
                 self.is_model_dependent = True
 
@@ -135,10 +137,16 @@ class MultiLoggersOffPolicyEvaluation(OffPolicyEvaluation):
                     raise ValueError(
                         f"Expected `estimated_rewards_by_reg_model[{estimator_name}].shape == action_dist.shape`, but found it False."
                     )
-        elif estimated_rewards_by_reg_model.shape != action_dist.shape:
-            raise ValueError(
-                "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
+        else:
+            check_array(
+                array=estimated_rewards_by_reg_model,
+                name="estimated_rewards_by_reg_model",
+                expected_dim=3,
             )
+            if estimated_rewards_by_reg_model.shape != action_dist.shape:
+                raise ValueError(
+                    "Expected `estimated_rewards_by_reg_model.shape == action_dist.shape`, but found it False"
+                )
         for var_name, value_or_dict in {
             "estimated_pscore": estimated_pscore,
             "estimated_pscore_avg": estimated_pscore_avg,

@@ -136,10 +136,19 @@ class ContinuousOffPolicyEvaluation:
                     raise ValueError(
                         f"Expected `estimated_rewards_by_reg_model[{estimator_name}].shape == action_by_evaluation_policy.shape`, but found it False"
                     )
-        elif estimated_rewards_by_reg_model.shape != action_by_evaluation_policy.shape:
-            raise ValueError(
-                "Expected `estimated_rewards_by_reg_model.shape == action_by_evaluation_policy.shape`, but found it False"
+        else:
+            check_array(
+                array=estimated_rewards_by_reg_model,
+                name="estimated_rewards_by_reg_model",
+                expected_dim=1,
             )
+            if (
+                estimated_rewards_by_reg_model.shape
+                != action_by_evaluation_policy.shape
+            ):
+                raise ValueError(
+                    "Expected `estimated_rewards_by_reg_model.shape == action_by_evaluation_policy.shape`, but found it False"
+                )
         estimator_inputs = {
             estimator_name: {
                 input_: self.bandit_feedback[input_]

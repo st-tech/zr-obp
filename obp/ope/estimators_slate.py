@@ -664,9 +664,9 @@ class SlateCascadeDoublyRobust(BaseSlateOffPolicyEstimator):
         # (n_rounds_, len_list, n_unique_action) -> (n_rounds_ * len_list, )
         q_hat_for_observed_action = []
         for i in range(self.n_rounds_):
-            for position_ in range(self.len_list):
+            for pos_ in range(self.len_list):
                 q_hat_for_observed_action.append(
-                    q_hat_3d[i, position_, action[i * self.len_list + position_]]
+                    q_hat_3d[i, pos_, action[i * self.len_list + pos_]]
                 )
         q_hat_for_observed_action = np.array(q_hat_for_observed_action)
         # the expected Q function under the evaluation policy
@@ -952,8 +952,8 @@ class BaseSlateSelfNormalizedInverseProbabilityWeighting(
         """
         estimated_rewards = np.zeros_like(behavior_policy_pscore)
         iw = np.zeros_like(behavior_policy_pscore)
-        for position_ in range(self.len_list):
-            idx = position == position_
+        for pos_ in range(self.len_list):
+            idx = position == pos_
             iw[idx] = evaluation_policy_pscore[idx] / behavior_policy_pscore[idx]
             estimated_rewards[idx] = reward[idx] * iw[idx] / iw[idx].mean()
         return estimated_rewards

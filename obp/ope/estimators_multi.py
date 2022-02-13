@@ -1487,7 +1487,7 @@ class MultiLoggersBalancedDoublyRobust(BaseMultiLoggersOffPolicyEstimator):
 
 @dataclass
 class MultiLoggersWeightedDoublyRobust(MultiLoggersNaiveDoublyRobust):
-    """Multi-Loggers Naive Doubly Robust (Multi-Weighted-DR) Estimator.
+    """Multi-Loggers Weighted Doubly Robust (Multi-Weighted-DR) Estimator.
 
     Note
     -------
