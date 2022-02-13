@@ -116,7 +116,7 @@ class UniformSampleWeightLearner(BaseOfflinePolicyLearner):
             self.base_classifier = LogisticRegression(random_state=12345)
         else:
             if not is_classifier(self.base_classifier):
-                raise ValueError("base_classifier must be a classifier")
+                raise ValueError("`base_classifier` must be a classifier")
         self.base_classifier_list = [
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]
@@ -147,27 +147,27 @@ class UniformSampleWeightLearner(BaseOfflinePolicyLearner):
         if position is None or self.len_list == 1:
             position = np.zeros_like(action, dtype=int)
 
-        for position_ in np.arange(self.len_list):
+        for pos_ in np.arange(self.len_list):
             X, sample_weight, y = self._create_train_data_for_opl(
-                context=context[position == position_],
-                action=action[position == position_],
-                reward=reward[position == position_],
-                pscore=pscore[position == position_],
+                context=context[position == pos_],
+                action=action[position == pos_],
+                reward=reward[position == pos_],
+                pscore=pscore[position == pos_],
             )
-            self.base_classifier_list[position_].fit(X=X, y=y)
+            self.base_classifier_list[pos_].fit(X=X, y=y)
 
     def predict(self, context: np.ndarray) -> np.ndarray:
 
         n_rounds = context.shape[0]
         action_dist = np.zeros((n_rounds, self.n_actions, self.len_list))
-        for position_ in np.arange(self.len_list):
-            predicted_actions_at_position = self.base_classifier_list[
-                position_
-            ].predict(context)
+        for pos_ in np.arange(self.len_list):
+            predicted_actions_at_position = self.base_classifier_list[pos_].predict(
+                context
+            )
             action_dist[
                 np.arange(n_rounds),
                 predicted_actions_at_position,
-                np.ones(n_rounds, dtype=int) * position_,
+                np.ones(n_rounds, dtype=int) * pos_,
             ] += 1
         return action_dist
 

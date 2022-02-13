@@ -137,7 +137,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "hidden_layer_size must be tuple of positive integers",
+        "`hidden_layer_size` must be a tuple of positive integers",
     ),
     (
         10,
@@ -163,7 +163,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "activation must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'",
+        "`activation` must be one of 'identity', 'logistic', 'tanh', 'relu', or 'elu'",
     ),
     (
         10,
@@ -189,7 +189,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "solver must be one of 'adam', 'adagrad', or 'sgd'",
+        "`solver` must be one of 'adam', 'adagrad', or 'sgd'",
     ),
     (
         10,
@@ -241,7 +241,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "batch_size must be a positive integer or 'auto'",
+        "`batch_size` must be a positive integer or 'auto'",
     ),
     (
         10,
@@ -319,7 +319,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "shuffle must be a bool",
+        "`shuffle` must be a bool",
     ),
     (
         10,
@@ -423,7 +423,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "nesterovs_momentum must be a bool",
+        "`nesterovs_momentum` must be a bool",
     ),
     (
         10,
@@ -449,7 +449,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "early_stopping must be a bool",
+        "`early_stopping` must be a bool",
     ),
     (
         10,
@@ -475,7 +475,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         None,
-        "solver must be one of 'adam', 'adagrad', or 'sgd',",
+        "`solver` must be one of 'adam', 'adagrad', or 'sgd',",
     ),
     (
         10,
@@ -631,7 +631,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         "",  #
-        "q_func_estimator_hyperparams must be a dict,",
+        "`q_func_estimator_hyperparams` must be a dict,",
     ),
 ]
 

@@ -48,7 +48,7 @@ def estimate_confidence_interval_by_bootstrap(
     n_bootstrap_samples: int = 10000,
     random_state: Optional[int] = None,
 ) -> Dict[str, float]:
-    """Estimate confidence interval using nonparametric bootstrap.
+    """Estimate confidence interval using bootstrap.
 
     Parameters
     ----------
@@ -222,7 +222,7 @@ def check_bandit_feedback_inputs(
         Context vectors observed for each data, i.e., :math:`x_i`.
 
     action: array-like, shape (n_rounds,)
-        Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,)
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -234,7 +234,7 @@ def check_bandit_feedback_inputs(
         Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore: array-like, shape (n_rounds,)
-        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Context vectors characterizing each action.
@@ -324,25 +324,26 @@ def check_ope_inputs(
     Parameters
     -----------
     action_dist: array-like, shape (n_rounds, n_actions, len_list)
-        Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+        Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
     position: array-like, shape (n_rounds,), default=None
         Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     action: array-like, shape (n_rounds,), default=None
-        Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,), default=None
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
     pscore: array-like, shape (n_rounds,)
-            Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
         Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
     estimated_importance_weights: array-like, shape (n_rounds,), default=None
         Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
+
     """
     # action_dist
     check_array(array=action_dist, name="action_dist", expected_dim=3)
@@ -411,6 +412,63 @@ def check_ope_inputs(
             raise ValueError("`pscore` must be positive")
 
 
+def check_multi_loggers_ope_inputs(
+    action_dist: np.ndarray,
+    position: Optional[np.ndarray] = None,
+    action: Optional[np.ndarray] = None,
+    reward: Optional[np.ndarray] = None,
+    stratum_idx: Optional[np.ndarray] = None,
+    pscore: Optional[np.ndarray] = None,
+    estimated_rewards_by_reg_model: Optional[np.ndarray] = None,
+) -> Optional[ValueError]:
+    """Check inputs for ope with multiple loggers.
+
+    Parameters
+    -----------
+    action_dist: array-like, shape (n_rounds, n_actions, len_list)
+        Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+    position: array-like, shape (n_rounds,), default=None
+        Indices to differentiate positions in a recommendation interface where the actions are presented.
+
+    action: array-like, shape (n_rounds,), default=None
+        Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+    reward: array-like, shape (n_rounds,), default=None
+        Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+    stratum_idx: array-like, shape (n_rounds,)
+        Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
+
+    pscore: array-like, shape (n_rounds,)
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+
+    estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list), default=None
+        Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
+
+    """
+    check_ope_inputs(
+        action_dist=action_dist,
+        position=position,
+        action=action,
+        reward=reward,
+        pscore=pscore,
+        estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
+    )
+
+    # stratum idx
+    if stratum_idx is not None:
+        check_array(array=stratum_idx, name="stratum_idx", expected_dim=1)
+        if not (action_dist.shape[0] == stratum_idx.shape[0]):
+            raise ValueError(
+                "Expected `action_dist.shape[0] == stratum_idx.shape[0]`, but found it False"
+            )
+        if not (
+            np.issubdtype(stratum_idx.dtype, np.integer) and stratum_idx.min() >= 0
+        ):
+            raise ValueError("`stratum_idx` elements must be non-negative integers")
+
+
 def check_continuous_bandit_feedback_inputs(
     context: np.ndarray,
     action_by_behavior_policy: np.ndarray,
@@ -426,7 +484,7 @@ def check_continuous_bandit_feedback_inputs(
         Context vectors observed for each data, i.e., :math:`x_i`.
 
     action_by_behavior_policy: array-like, shape (n_rounds,)
-        Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,)
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
@@ -435,7 +493,7 @@ def check_continuous_bandit_feedback_inputs(
         Expected reward of each data, i.e., :math:`\\mathbb{E}[r_i|x_i,a_i]`.
 
     pscore: array-like, shape (n_rounds,), default=None
-        Probability densities of the continuous action values sampled by a behavior policy
+        Probability densities of the continuous action values sampled by the logging/behavior policy
         (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     """
@@ -490,13 +548,13 @@ def check_continuous_ope_inputs(
         Continuous action values given by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(x_t)`.
 
     action_by_behavior_policy: array-like, shape (n_rounds,), default=None
-        Continuous action values sampled by a behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+        Continuous action values sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
     reward: array-like, shape (n_rounds,), default=None
         Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
 
     pscore: array-like, shape (n_rounds,), default=None
-        Probability densities of the continuous action values sampled by a behavior policy
+        Probability densities of the continuous action values sampled by the logging/behavior policy
         (generalized propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     estimated_rewards_by_reg_model: array-like, shape (n_rounds,), default=None
@@ -583,10 +641,10 @@ def _check_slate_ope_inputs(
         Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of behavior policy (propensity scores).
+        Action choice probabilities of the logging/behavior policy (propensity scores).
 
     evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of evaluation policy.
+        Action choice probabilities of the evaluation policy.
 
     pscore_type: str
         Either "pscore", "pscore_item_position", or "pscore_cascade".
@@ -654,10 +712,10 @@ def check_sips_inputs(
         Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     evaluation_policy_pscore: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of evaluation policy, i.e., :math:`\\pi_e(a_i|x_i)`.
+        Action choice probabilities of the evaluation policy, i.e., :math:`\\pi_e(a_i|x_i)`.
 
     """
     _check_slate_ope_inputs(
@@ -757,7 +815,7 @@ def check_rips_inputs(
         Indices to differentiate positions in a recommendation interface where the actions are presented.
 
     pscore_cascade: array-like, shape (<= n_rounds * len_list,)
-        Action choice probabilities of behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+        Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
 
     evaluation_policy_pscore_cascade: array-like, shape (<= n_rounds * len_list,)
         Action choice probabilities above the slot (:math:`l`) by the evaluation policy, i.e., :math:`\\pi_e(\\{a_{t, j}\\}_{j \\le k}|x_t)`.
@@ -862,7 +920,7 @@ def check_cascade_dr_inputs(
         , i.e., :math:`\\hat{Q}_{i,l}(x_i, a_i(1), \\ldots, a_i(l-1), a_i(l)) \\forall a_i(l) \\in \\mathcal{A}`.
 
     evaluation_policy_action_dist: array-like (<= n_rounds * len_list * n_unique_actions, )
-        Action choice probabilities of evaluation policy for all possible actions
+        Action choice probabilities of the evaluation policy for all possible actions
         , i.e., :math:`\\pi_e(a_i(l) | x_i, a_i(1), \\ldots, a_i(l-1)) \\forall a_i(l) \\in \\mathcal{A}`.
 
     """

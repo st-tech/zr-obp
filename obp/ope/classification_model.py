@@ -20,7 +20,7 @@ from ..utils import sample_action_fast
 
 @dataclass
 class ImportanceWeightEstimator(BaseEstimator):
-    """Machine learning model to estimate the importance weights induced by behavior and evaluation policies leveraging  classifier-based density ratio estimation.
+    """Machine learning model to estimate the importance weights induced by the behavior and evaluation policies leveraging  classifier-based density ratio estimation.
 
     Parameters
     ------------
@@ -35,7 +35,7 @@ class ImportanceWeightEstimator(BaseEstimator):
         When Open Bandit Dataset is used, 3 should be set.
 
     action_context: array-like, shape (n_actions, dim_action_context), default=None
-        Context vectors characterizing actions (i.e., vector representation of each action).
+        Context vectors characterizing actions (i.e., a vector representation or an embedding of each action).
         If None, one-hot encoding of the action variable is used as default.
         If fitting_method is 'raw', one-hot encoding will be used as action_context.
 
@@ -43,7 +43,7 @@ class ImportanceWeightEstimator(BaseEstimator):
         Method to fit the classification model.
         Must be one of ['sample', 'raw']. Each method is defined as follows:
             - sample: actions are sampled from behavior and evaluation policies, respectively.
-            - raw: action_dist_at_position are directly encoded as action features.
+            - raw: action_dist_at_pos are directly encoded as action features.
         If fitting_method is 'raw', one-hot encoding will be used as action_context.
 
     calibration_cv: int, default=2
@@ -113,15 +113,15 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a classification model assumes that there is only a single position in  a recommendation interface.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         random_state: int, default=None
             `random_state` affects the sampling of actions from the evaluation policy.
@@ -135,7 +135,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             action_context=self.action_context,
         )
         check_array(array=action_dist, name="action_dist", expected_dim=3)
-        n_rounds = context.shape[0]
+        n = context.shape[0]
 
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
@@ -145,36 +145,36 @@ class ImportanceWeightEstimator(BaseEstimator):
                 raise ValueError(
                     f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
-        if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
+        if action_dist.shape != (n, self.n_actions, self.len_list):
             raise ValueError(
-                f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n, self.n_actions, self.len_list}), but is {action_dist.shape}"
             )
         if not np.allclose(action_dist.sum(axis=1), 1):
             raise ValueError("`action_dist` must be a probability distribution")
 
         # If self.fitting_method != "sample", `sampled_action` has no information
-        sampled_action = np.zeros(n_rounds, dtype=int)
+        sampled_action = np.zeros(n, dtype=int)
         if self.fitting_method == "sample":
-            for position_ in np.arange(self.len_list):
-                idx = position == position_
+            for pos_ in np.arange(self.len_list):
+                idx = position == pos_
                 sampled_action_at_position = sample_action_fast(
-                    action_dist=action_dist[idx][:, :, position_],
+                    action_dist=action_dist[idx][:, :, pos_],
                     random_state=random_state,
                 )
                 sampled_action[idx] = sampled_action_at_position
 
-        for position_ in np.arange(self.len_list):
-            idx = position == position_
-            action_dist_at_position = action_dist[idx][:, :, position_]
+        for pos_ in np.arange(self.len_list):
+            idx = position == pos_
+            action_dist_at_pos = action_dist[idx][:, :, pos_]
             X, y = self._pre_process_for_clf_model(
                 context=context[idx],
                 action=action[idx],
-                action_dist_at_position=action_dist_at_position,
+                action_dist_at_pos=action_dist_at_pos,
                 sampled_action_at_position=sampled_action[idx],
             )
             if X.shape[0] == 0:
-                raise ValueError(f"No training data at position {position_}")
-            self.base_model_list[position_].fit(X, y)
+                raise ValueError(f"No training data at position {pos_}")
+            self.base_model_list[pos_].fit(X, y)
 
     def predict(
         self,
@@ -190,12 +190,12 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a classification model assumes that there is only a single position in  a recommendation interface.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         Returns
         ----------
@@ -203,18 +203,16 @@ class ImportanceWeightEstimator(BaseEstimator):
             Importance weights estimated via supervised classification, i.e., :math:`\\hat{w}(x_t, a_t)`.
 
         """
-        proba_of_evaluation_policy = np.zeros(action.shape[0])
-        for position_ in np.arange(self.len_list):
-            idx = position == position_
+        proba_eval_policy = np.zeros(action.shape[0])
+        for pos_ in np.arange(self.len_list):
+            idx = position == pos_
             X, _, = self._pre_process_for_clf_model(
                 context=context[idx],
                 action=action[idx],
                 is_prediction=True,
             )
-            proba_of_evaluation_policy[idx] = self.base_model_list[
-                position_
-            ].predict_proba(X)[:, 1]
-        return proba_of_evaluation_policy / (1 - proba_of_evaluation_policy)
+            proba_eval_policy[idx] = self.base_model_list[pos_].predict_proba(X)[:, 1]
+        return proba_eval_policy / (1 - proba_eval_policy)
 
     def fit_predict(
         self,
@@ -238,15 +236,15 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
-            Action choice probabilities of evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a classification model assumes that there is only a single position in  a recommendation interface.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
@@ -274,9 +272,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             position=position,
             action_context=self.action_context,
         )
-        check_array(array=action_dist, name="action_dist", expected_dim=3)
-
-        n_rounds = context.shape[0]
+        n = context.shape[0]
 
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
@@ -286,12 +282,13 @@ class ImportanceWeightEstimator(BaseEstimator):
                     f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
 
+        check_array(array=action_dist, name="action_dist", expected_dim=3)
         check_scalar(n_folds, "n_folds", int, min_val=1)
         check_random_state(random_state)
 
-        if action_dist.shape != (n_rounds, self.n_actions, self.len_list):
+        if action_dist.shape != (n, self.n_actions, self.len_list):
             raise ValueError(
-                f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n_rounds, self.n_actions, self.len_list}), but is {action_dist.shape}"
+                f"shape of `action_dist` must be (n_rounds, n_actions, len_list)=({n, self.n_actions, self.len_list}), but is {action_dist.shape}"
             )
         if not np.allclose(action_dist.sum(axis=1), 1):
             raise ValueError("`action_dist` must be a probability distribution")
@@ -306,7 +303,7 @@ class ImportanceWeightEstimator(BaseEstimator):
             )
             return self.predict(context=context, action=action, position=position)
         else:
-            estimated_importance_weights = np.zeros(n_rounds)
+            estimated_importance_weights = np.zeros(n)
         kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         kf.get_n_splits(context)
         if evaluate_model_performance:
@@ -327,28 +324,26 @@ class ImportanceWeightEstimator(BaseEstimator):
             if evaluate_model_performance:
                 sampled_action = np.zeros(test_idx.shape[0], dtype=int)
                 if self.fitting_method == "sample":
-                    for position_ in np.arange(self.len_list):
-                        idx = position[test_idx] == position_
+                    for pos_ in np.arange(self.len_list):
+                        idx = position[test_idx] == pos_
                         sampled_action_at_position = sample_action_fast(
-                            action_dist=action_dist[test_idx][idx][:, :, position_],
+                            action_dist=action_dist[test_idx][idx][:, :, pos_],
                             random_state=random_state,
                         )
                         sampled_action[idx] = sampled_action_at_position
-                for position_ in np.arange(self.len_list):
-                    idx = position[test_idx] == position_
-                    action_dist_at_position = action_dist[test_idx][idx][
-                        :, :, position_
-                    ]
+                for pos_ in np.arange(self.len_list):
+                    idx = position[test_idx] == pos_
+                    action_dist_at_pos = action_dist[test_idx][idx][:, :, pos_]
                     X, y = self._pre_process_for_clf_model(
                         context=context[test_idx][idx],
                         action=action[test_idx][idx],
-                        action_dist_at_position=action_dist_at_position,
+                        action_dist_at_pos=action_dist_at_pos,
                         sampled_action_at_position=sampled_action[idx],
                     )
-                    proba_of_evaluation_policy = self.base_model_list[
-                        position_
-                    ].predict_proba(X)[:, 1]
-                    self.eval_result["proba"].append(proba_of_evaluation_policy)
+                    proba_eval_policy = self.base_model_list[pos_].predict_proba(X)[
+                        :, 1
+                    ]
+                    self.eval_result["proba"].append(proba_eval_policy)
                     self.eval_result["y"].append(y)
         return estimated_importance_weights
 
@@ -356,7 +351,7 @@ class ImportanceWeightEstimator(BaseEstimator):
         self,
         context: np.ndarray,
         action: np.ndarray,
-        action_dist_at_position: Optional[np.ndarray] = None,
+        action_dist_at_pos: Optional[np.ndarray] = None,
         sampled_action_at_position: Optional[np.ndarray] = None,
         is_prediction: bool = False,
     ) -> np.ndarray:
@@ -373,11 +368,11 @@ class ImportanceWeightEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
 
-        action_dist_at_position: array-like, shape (n_rounds, n_actions,)
-            Action choice probabilities of evaluation policy of each position (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+        action_dist_at_pos: array-like, shape (n_rounds, n_actions,)
+            Action choice probabilities of the evaluation policy of each position (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
 
         sampled_action_at_position: array-like, shape (n_rounds, n_actions,)
             Actions sampled by evaluation policy for each data at each position.
@@ -387,7 +382,7 @@ class ImportanceWeightEstimator(BaseEstimator):
         if is_prediction:
             return behavior_policy_feature, None
         if self.fitting_method == "raw":
-            evaluation_policy_feature = np.c_[context, action_dist_at_position]
+            evaluation_policy_feature = np.c_[context, action_dist_at_pos]
         elif self.fitting_method == "sample":
             evaluation_policy_feature = np.c_[
                 context, self.action_context[sampled_action_at_position]
@@ -469,12 +464,12 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a classification model assumes that there is only a single position in  a recommendation interface.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         """
         check_bandit_feedback_inputs(
@@ -493,11 +488,11 @@ class PropensityScoreEstimator(BaseEstimator):
                     f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
 
-        for position_ in np.arange(self.len_list):
-            idx = position == position_
+        for pos_ in np.arange(self.len_list):
+            idx = position == pos_
             if context[idx].shape[0] == 0:
-                raise ValueError(f"No training data at position {position_}")
-            self.base_model_list[position_].fit(context[idx], action[idx])
+                raise ValueError(f"No training data at position {pos_}")
+            self.base_model_list[pos_].fit(context[idx], action[idx])
 
     def predict(
         self,
@@ -513,12 +508,12 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds_of_new_data,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds_of_new_data,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a classification model assumes that there is only a single position in  a recommendation interface.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         Returns
         ----------
@@ -527,11 +522,11 @@ class PropensityScoreEstimator(BaseEstimator):
 
         """
         estimated_pscore = np.zeros(action.shape[0])
-        for position_ in np.arange(self.len_list):
-            idx = position == position_
+        for pos_ in np.arange(self.len_list):
+            idx = position == pos_
             if context[idx].shape[0] == 0:
                 continue
-            estimated_pscore[idx] = self.base_model_list[position_].predict_proba(
+            estimated_pscore[idx] = self.base_model_list[pos_].predict_proba(
                 context[idx]
             )[np.arange(action[idx].shape[0]), action[idx]]
         return estimated_pscore
@@ -557,12 +552,12 @@ class PropensityScoreEstimator(BaseEstimator):
             Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         action: array-like, shape (n_rounds,)
-            Actions sampled by behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, a classification model assumes that there is only a single position.
-            When `len_list` > 1, this position argument has to be set.
+            When `len_list` > 1, an array must be given as `position`.
 
         n_folds: int, default=1
             Number of folds in the cross-fitting procedure.
@@ -590,9 +585,6 @@ class PropensityScoreEstimator(BaseEstimator):
             position=position,
             action_context=np.eye(self.n_actions, dtype=int),
         )
-
-        n_rounds = context.shape[0]
-
         if position is None or self.len_list == 1:
             position = np.zeros_like(action)
         else:
@@ -600,7 +592,6 @@ class PropensityScoreEstimator(BaseEstimator):
                 raise ValueError(
                     f"`position` elements must be smaller than `len_list`, but the maximum value is {position.max()} (>= {self.len_list})"
                 )
-
         check_scalar(n_folds, "n_folds", int, min_val=1)
         check_random_state(random_state)
 
@@ -612,7 +603,7 @@ class PropensityScoreEstimator(BaseEstimator):
             )
             return self.predict(context=context, action=action, position=position)
         else:
-            estimated_pscore = np.zeros(n_rounds)
+            estimated_pscore = np.zeros(context.shape[0])
         kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         kf.get_n_splits(context)
         if evaluate_model_performance:
@@ -630,11 +621,11 @@ class PropensityScoreEstimator(BaseEstimator):
                 position=position[test_idx],
             )
             if evaluate_model_performance:
-                for position_ in np.arange(self.len_list):
-                    idx = position[test_idx] == position_
+                for pos_ in np.arange(self.len_list):
+                    idx = position[test_idx] == pos_
                     if context[test_idx][idx].shape[0] == 0:
                         continue
-                    proba_eval = self.base_model_list[position_].predict_proba(
+                    proba_eval = self.base_model_list[pos_].predict_proba(
                         context[test_idx][idx]
                     )
                     self.eval_result["proba"].append(proba_eval)

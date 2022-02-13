@@ -347,8 +347,8 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_behav
     # check pscore joint
     pscore_cascade = []
     pscore_above = 1.0
-    for position_ in np.arange(len_list):
-        pscore_above *= 1.0 / (n_unique_action - position_)
+    for pos_ in np.arange(len_list):
+        pscore_above *= 1.0 / (n_unique_action - pos_)
         pscore_cascade.append(pscore_above)
     assert np.allclose(
         bandit_feedback_df["pscore_cascade"], np.tile(pscore_cascade, n_rounds)
@@ -394,7 +394,7 @@ def test_synthetic_slate_obtain_batch_bandit_feedback_using_uniform_random_facto
     # check pscore joint
     pscore_cascade = []
     pscore_above = 1.0
-    for position_ in np.arange(len_list):
+    for pos_ in np.arange(len_list):
         pscore_above *= 1.0 / n_unique_action
         pscore_cascade.append(pscore_above)
     assert np.allclose(

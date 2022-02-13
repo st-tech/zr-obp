@@ -23,7 +23,7 @@ Pillow = "9.0.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.2"
-black = "^21.8b0"
+black = "22.1.0"
 pytest = "^6.2.5"
 isort = "^5.9.3"
 

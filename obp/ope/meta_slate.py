@@ -252,7 +252,7 @@ class SlateOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate the confidence intervals of the policy values using nonparametric bootstrap.
+        """Estimate the confidence intervals of the policy values using bootstrap.
 
         Parameters
         ------------

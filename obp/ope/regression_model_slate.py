@@ -182,19 +182,19 @@ class SlateRegressionModel(BaseEstimator):
         n_rounds_ = len(action)
         sample_weight = np.ones(n_rounds_)
 
-        for position_ in range(self.len_list)[::-1]:
+        for pos_ in range(self.len_list)[::-1]:
             X, y = self._preprocess_for_reg_model(
                 context=context,
                 action=action,
                 reward=reward,
                 evaluation_policy_action_dist=evaluation_policy_action_dist,
-                position_=position_,
+                position_=pos_,
             )
 
             if self.fitting_method == "iw":
-                sample_weight = iw[:, position_]
+                sample_weight = iw[:, pos_]
 
-            self.base_model_list[position_].fit(X, y, sample_weight=sample_weight)
+            self.base_model_list[pos_].fit(X, y, sample_weight=sample_weight)
 
     def predict(
         self,
@@ -230,10 +230,10 @@ class SlateRegressionModel(BaseEstimator):
         action = action.reshape((-1, self.len_list))
         # (n_rounds_, len_list, n_unique_action, )
         q_hat = np.zeros((n_rounds_of_new_data, self.len_list, self.n_unique_action))
-        for position_ in range(self.len_list)[::-1]:
+        for pos_ in range(self.len_list)[::-1]:
             # the action vector shrinks every time as the position_ decreases
             # (n_rounds_of_new_data, position_ - 1)
-            action = action[:, :position_]
+            action = action[:, :pos_]
             # (n_rounds_of_new_data, dim_context) -> (n_rounds_of_new_data * n_unique_action, dim_context)
             context_ = []
             # (n_rounds_of_new_data, position_) -> (n_rounds_of_new_data * n_unique_action, position_)
@@ -245,8 +245,8 @@ class SlateRegressionModel(BaseEstimator):
             # (n_rounds_of_new_data * n_unique_action, dim_context + position_)
             X = np.concatenate([context_, action_], axis=1)
             # (n_rounds_of_new_data * n_unique_action, ) -> (n_rounds_of_new_data, n_unique_action)
-            q_hat[:, position_, :] = (
-                self.base_model_list[position_]
+            q_hat[:, pos_, :] = (
+                self.base_model_list[pos_]
                 .predict(X)
                 .reshape((-1, self.n_unique_action))
             )

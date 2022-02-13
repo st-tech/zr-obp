@@ -9,9 +9,9 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 import pytest
 
-from obp.ope import BaseContinuousOffPolicyEstimator
-from obp.ope import ContinuousOffPolicyEvaluation
-from obp.ope import KernelizedDoublyRobust
+from obp.ope import BaseOffPolicyEstimator
+from obp.ope import DirectMethod
+from obp.ope import MultiLoggersOffPolicyEvaluation
 from obp.types import BanditFeedback
 from obp.utils import check_confidence_interval_arguments
 
@@ -25,31 +25,142 @@ mock_confidence_interval = {
 
 
 @dataclass
-class KernelizedInverseProbabilityWeightingMock(BaseContinuousOffPolicyEstimator):
-    """Mock Kernelized Inverse Probability Weighting."""
+class DirectMethodMock(BaseOffPolicyEstimator):
+    """Direct Method (DM) Mock."""
 
-    eps: float = 0.1
-    estimator_name: str = "ipw"
+    estimator_name: str = "dm"
 
     def _estimate_round_rewards(
         self,
-        reward: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
-        pscore: np.ndarray,
-        action_by_evaluation_policy: np.ndarray,
+        position: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
-    ) -> np.ndarray:
-        return np.ones_like(reward)
+    ) -> float:
+        return 1
+
+    def estimate_policy_value(
+        self,
+        position: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        **kwargs,
+    ) -> float:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        position: array-like, shape (n_rounds,)
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
+
+        Returns
+        ----------
+        mock_policy_value: float
+        """
+        return mock_policy_value
+
+    def estimate_interval(
+        self,
+        position: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate the confidence interval of the policy value using bootstrap.
+
+        Parameters
+        ----------
+        position: array-like, shape (n_rounds,)
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_rewards_by_reg_model: array-like, shape (n_rounds, n_actions, len_list)
+            Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in bootstrap sampling.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
+        Returns
+        ----------
+        mock_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+        """
+        check_confidence_interval_arguments(
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+        return mock_confidence_interval
+
+
+@dataclass
+class InverseProbabilityWeightingMock(BaseOffPolicyEstimator):
+    """Inverse Probability Weighting (IPW) Mock."""
+
+    estimator_name: str = "ipw"
+    eps: float = 0.1
+
+    def _estimate_round_rewards(
+        self,
+        position: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_rewards_by_reg_model: np.ndarray,
+        **kwargs,
+    ) -> float:
+        return 1
 
     def estimate_policy_value(
         self,
         reward: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
+        action: np.ndarray,
+        stratum_idx: np.ndarray,
+        position: np.ndarray,
         pscore: np.ndarray,
-        action_by_evaluation_policy: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         **kwargs,
-    ) -> float:
-        """Estimate policy value of an evaluation policy.
+    ) -> np.ndarray:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        position: array-like, shape (n_rounds,)
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+
+        stratum_idx: array-like, shape (n_rounds,)
+            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
 
         Returns
         ----------
@@ -61,9 +172,12 @@ class KernelizedInverseProbabilityWeightingMock(BaseContinuousOffPolicyEstimator
     def estimate_interval(
         self,
         reward: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        stratum_idx: np.ndarray,
         pscore: np.ndarray,
-        action_by_evaluation_policy: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -71,62 +185,112 @@ class KernelizedInverseProbabilityWeightingMock(BaseContinuousOffPolicyEstimator
     ) -> Dict[str, float]:
         """Estimate the confidence interval of the policy value using bootstrap.
 
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        position: array-like, shape (n_rounds,)
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+
+        stratum_idx: array-like, shape (n_rounds,)
+            Indices to differentiate the logging/behavior policy that generate each data, i.e., :math:`k`.
+
+        pscore: array-like, shape (n_rounds,)
+            Action choice probabilities of the logging/behavior policy (propensity scores), i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities
+            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in bootstrap sampling.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
         Returns
         ----------
         mock_confidence_interval: Dict[str, float]
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        check_confidence_interval_arguments(
-            alpha=alpha,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
-        )
         return {k: v + self.eps for k, v in mock_confidence_interval.items()}
 
 
 @dataclass
-class KernelizedDoublyRobustMock(BaseContinuousOffPolicyEstimator):
-    """Mock Kernelized Doubly Robust."""
+class BalancedInverseProbabilityWeightingMock(BaseOffPolicyEstimator):
+    """Balanced Inverse Probability Weighting (IPW) Mock."""
 
-    estimator_name: str = "kernelized_dr"
+    estimator_name: str = "bal_ipw"
+    eps: float = 0.1
 
     def _estimate_round_rewards(
         self,
-        reward: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
-        pscore: np.ndarray,
-        action_by_evaluation_policy: np.ndarray,
+        position: np.ndarray,
+        action_dist: np.ndarray,
         estimated_rewards_by_reg_model: np.ndarray,
         **kwargs,
-    ) -> np.ndarray:
-        return np.ones_like(reward)
+    ) -> float:
+        return 1
 
     def estimate_policy_value(
         self,
         reward: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
-        pscore: np.ndarray,
-        action_by_evaluation_policy: np.ndarray,
-        estimated_rewards_by_reg_model: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        pscore_avg: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         **kwargs,
-    ) -> float:
-        """Estimate policy value of an evaluation policy.
+    ) -> np.ndarray:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        position: array-like, shape (n_rounds,)
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+
+        pscore_avg: array-like, shape (n_rounds,)
+            Action choice probabilities of the average logging/behavior policy, i.e., :math:`\\pi_{avg}(a_i|x_i)`.
+            If `use_estimated_pscore` is False, `pscore_avg` must be given.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
 
         Returns
         ----------
         mock_policy_value: float
 
         """
-        return mock_policy_value
+        return mock_policy_value + self.eps
 
     def estimate_interval(
         self,
         reward: np.ndarray,
-        action_by_behavior_policy: np.ndarray,
-        pscore: np.ndarray,
-        action_by_evaluation_policy: np.ndarray,
-        estimated_rewards_by_reg_model: np.ndarray,
+        action: np.ndarray,
+        position: np.ndarray,
+        pscore_avg: np.ndarray,
+        action_dist: np.ndarray,
+        estimated_pscore: Optional[np.ndarray] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
@@ -134,46 +298,72 @@ class KernelizedDoublyRobustMock(BaseContinuousOffPolicyEstimator):
     ) -> Dict[str, float]:
         """Estimate the confidence interval of the policy value using bootstrap.
 
+        Parameters
+        ----------
+        reward: array-like, shape (n_rounds,)
+            Rewards observed for each data in logged bandit data, i.e., :math:`r_i`.
+
+        action: array-like, shape (n_rounds,)
+            Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
+
+        position: array-like, shape (n_rounds,)
+            Indices to differentiate positions in a recommendation interface where the actions are presented.
+
+        pscore_avg: array-like, shape (n_rounds,)
+            Action choice probabilities of the average logging/behavior policy, i.e., :math:`\\pi_{avg}(a_i|x_i)`.
+            If `use_estimated_pscore` is False, `pscore_avg` must be given.
+
+        action_dist: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities
+            by the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        estimated_pscore: array-like, shape (n_rounds,), default=None
+            Estimated behavior policy (propensity scores), i.e., :math:`\\hat{\\pi}_b(a_i|x_i)`.
+
+        alpha: float, default=0.05
+            Significance level.
+
+        n_bootstrap_samples: int, default=10000
+            Number of resampling performed in bootstrap sampling.
+
+        random_state: int, default=None
+            Controls the random seed in bootstrap sampling.
+
         Returns
         ----------
         mock_confidence_interval: Dict[str, float]
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        check_confidence_interval_arguments(
-            alpha=alpha,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
-        )
-        return {k: v for k, v in mock_confidence_interval.items()}
+        return {k: v + self.eps for k, v in mock_confidence_interval.items()}
 
 
 # define Mock instances
-ipw = KernelizedInverseProbabilityWeightingMock()
-ipw2 = KernelizedInverseProbabilityWeightingMock(eps=0.02)
-ipw3 = KernelizedInverseProbabilityWeightingMock(estimator_name="ipw3")
-dr = KernelizedDoublyRobustMock(estimator_name="dr")
+dm = DirectMethodMock()
+ipw = InverseProbabilityWeightingMock(eps=0.01)
+ipw2 = InverseProbabilityWeightingMock(eps=0.02)
+ipw3 = BalancedInverseProbabilityWeightingMock(estimator_name="ipw3")
 
 
-def test_meta_post_init(synthetic_continuous_bandit_feedback: BanditFeedback) -> None:
+def test_meta_post_init(synthetic_multi_bandit_feedback: BanditFeedback) -> None:
     """
     Test the __post_init__ function
     """
     # __post_init__ saves the latter estimator when the same estimator name is used
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[ipw, ipw2]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[ipw, ipw2]
     )
     assert ope_.ope_estimators_ == {"ipw": ipw2}, "__post_init__ returns a wrong value"
     # __post_init__ can handle the same estimator if the estimator names are different
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[ipw, ipw3]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[ipw, ipw3]
     )
     assert ope_.ope_estimators_ == {
         "ipw": ipw,
         "ipw3": ipw3,
     }, "__post_init__ returns a wrong value"
     # __post__init__ raises RuntimeError when necessary_keys are not included in the bandit_feedback
-    necessary_keys = ["action_by_behavior_policy", "reward", "pscore"]
+    necessary_keys = ["action", "position", "reward"]
     for i in range(len(necessary_keys)):
         for deleted_keys in itertools.combinations(necessary_keys, i + 1):
             invalid_bandit_feedback_dict = {key: "_" for key in necessary_keys}
@@ -181,219 +371,225 @@ def test_meta_post_init(synthetic_continuous_bandit_feedback: BanditFeedback) ->
             for k in deleted_keys:
                 del invalid_bandit_feedback_dict[k]
             with pytest.raises(RuntimeError, match=r"Missing key*"):
-                _ = ContinuousOffPolicyEvaluation(
+                _ = MultiLoggersOffPolicyEvaluation(
                     bandit_feedback=invalid_bandit_feedback_dict, ope_estimators=[ipw]
                 )
 
 
 def test_meta_estimated_rewards_by_reg_model_inputs(
-    synthetic_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the estimate_policy_values/estimate_intervals functions wrt estimated_rewards_by_reg_model
     """
-    kdr = KernelizedDoublyRobust(kernel="cosine", bandwidth=0.1)
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_bandit_feedback,
-        ope_estimators=[kdr],
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[DirectMethod()]
     )
 
-    action_by_evaluation_policy = np.zeros((synthetic_bandit_feedback["n_rounds"],))
+    action_dist = np.zeros(
+        (
+            synthetic_multi_bandit_feedback["n_rounds"],
+            synthetic_multi_bandit_feedback["n_actions"],
+        )
+    )
     with pytest.raises(ValueError):
         ope_.estimate_policy_values(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=None,
         )
 
     with pytest.raises(ValueError):
         ope_.estimate_intervals(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=None,
         )
 
 
-# action_by_evaluation_policy, estimated_rewards_by_reg_model, description
+# action_dist, estimated_rewards_by_reg_model, description
 invalid_input_of_create_estimator_inputs = [
     (
-        np.zeros(5),  #
-        np.zeros(4),  #
+        np.zeros((2, 3, 4)),
+        np.zeros((2, 3, 3)),
         "Expected `estimated_rewards_by_reg_model.shape",
     ),
     (
-        np.zeros(5),
-        {"dr": np.zeros(4)},
-        r"Expected `estimated_rewards_by_reg_model\[dr\].shape",
+        np.zeros((2, 3, 4)),
+        {"dm": np.zeros((2, 3, 3))},
+        r"Expected `estimated_rewards_by_reg_model\[dm\].shape",
     ),
     (
-        np.zeros(5),
-        {"dr": None},
-        r"`estimated_rewards_by_reg_model\[dr\]` must be 1D array",
+        np.zeros((2, 3, 4)),
+        {"dm": None},
+        r"`estimated_rewards_by_reg_model\[dm\]` must be 3D array",
     ),
-    (
-        np.zeros((2, 3)),
-        None,
-        "`action_by_evaluation_policy` must be 1D array",
-    ),
-    ("3", None, "`action_by_evaluation_policy` must be 1D array"),
-    (None, None, "`action_by_evaluation_policy` must be 1D array"),
+    (np.zeros((2, 3)), None, "`action_dist` must be 3D array"),
+    ("3", None, "`action_dist` must be 3D array"),
+    (None, None, "`action_dist` must be 3D array"),
 ]
 
 valid_input_of_create_estimator_inputs = [
     (
-        np.zeros(5),
-        np.zeros(5),
+        np.zeros((2, 3, 4)),
+        np.zeros((2, 3, 4)),
         "same shape",
     ),
     (
-        np.zeros(5),
-        {"dr": np.zeros(5)},
+        np.zeros((2, 3, 4)),
+        {"dm": np.zeros((2, 3, 4))},
         "same shape",
     ),
-    (np.zeros(5), None, "`estimated_rewards_by_reg_model` is None"),
+    (np.zeros((2, 3, 1)), None, "`estimated_rewards_by_reg_model` is None"),
 ]
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description",
+    "action_dist, estimated_rewards_by_reg_model, description",
     invalid_input_of_create_estimator_inputs,
 )
 def test_meta_create_estimator_inputs_using_invalid_input_data(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the _create_estimator_inputs using valid data
     """
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[ipw]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[ipw]
     )
     # raise ValueError when the shape of two arrays are different
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_._create_estimator_inputs(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
     # _create_estimator_inputs function is called in the following functions
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.estimate_policy_values(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.estimate_intervals(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.summarize_off_policy_estimates(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.evaluate_performance_of_estimators(
             ground_truth_policy_value=0.1,
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = ope_.summarize_estimators_comparison(
             ground_truth_policy_value=0.1,
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         )
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description",
+    "action_dist, estimated_rewards_by_reg_model, description",
     valid_input_of_create_estimator_inputs,
 )
 def test_meta_create_estimator_inputs_using_valid_input_data(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the _create_estimator_inputs using invalid data
     """
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[ipw]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[ipw]
     )
     estimator_inputs = ope_._create_estimator_inputs(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
     assert set(estimator_inputs.keys()) == set(["ipw"])
     assert set(estimator_inputs["ipw"].keys()) == set(
         [
             "reward",
-            "action_by_behavior_policy",
+            "action",
             "pscore",
-            "action_by_evaluation_policy",
+            "position",
+            "action_dist",
+            "stratum_idx",
+            "pscore_avg",
             "estimated_rewards_by_reg_model",
+            "estimated_pscore",
+            "estimated_pscore_avg",
         ]
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
     # _create_estimator_inputs function is called in the following functions
     _ = ope_.estimate_policy_values(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
     _ = ope_.estimate_intervals(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
     _ = ope_.summarize_off_policy_estimates(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
     _ = ope_.evaluate_performance_of_estimators(
         ground_truth_policy_value=0.1,
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
     _ = ope_.summarize_estimators_comparison(
         ground_truth_policy_value=0.1,
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     )
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description",
-    valid_input_of_create_estimator_inputs,
+    "action_dist, estimated_rewards_by_reg_model, description",
+    valid_input_of_create_estimator_inputs[:-1],
 )
 def test_meta_estimate_policy_values_using_valid_input_data(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the response of estimate_policy_values using valid data
     """
     # single ope estimator
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[dr]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[dm]
     )
+    ope_.is_model_dependent = True
     assert ope_.estimate_policy_values(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     ) == {
-        "dr": mock_policy_value
-    }, "OffPolicyEvaluation.estimate_policy_values ([DoublyRobust]) returns a wrong value"
+        "dm": mock_policy_value
+    }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod]) returns a wrong value"
     # multiple ope estimators
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[dr, ipw]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[dm, ipw]
     )
+    ope_.is_model_dependent = True
     assert ope_.estimate_policy_values(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
     ) == {
-        "dr": mock_policy_value,
+        "dm": mock_policy_value,
         "ipw": mock_policy_value + ipw.eps,
-    }, "OffPolicyEvaluation.estimate_policy_values ([DoublyRobust, IPW]) returns a wrong value"
+    }, "OffPolicyEvaluation.estimate_policy_values ([DirectMethod, IPW]) returns a wrong value"
 
 
 # alpha, n_bootstrap_samples, random_state, err, description
@@ -431,7 +627,7 @@ valid_input_of_estimate_intervals = [
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description_1",
+    "action_dist, estimated_rewards_by_reg_model, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -439,7 +635,7 @@ valid_input_of_estimate_intervals = [
     invalid_input_of_estimate_intervals,
 )
 def test_meta_estimate_intervals_using_invalid_input_data(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description_1: str,
     alpha,
@@ -447,17 +643,17 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     random_state,
     err,
     description_2: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the response of estimate_intervals using invalid data
     """
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[dr]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[dm]
     )
     with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.estimate_intervals(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -466,7 +662,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     # estimate_intervals function is called in summarize_off_policy_estimates
     with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.summarize_off_policy_estimates(
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -475,7 +671,7 @@ def test_meta_estimate_intervals_using_invalid_input_data(
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description_1",
+    "action_dist, estimated_rewards_by_reg_model, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -483,49 +679,49 @@ def test_meta_estimate_intervals_using_invalid_input_data(
     valid_input_of_estimate_intervals,
 )
 def test_meta_estimate_intervals_using_valid_input_data(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description_1: str,
     alpha: float,
     n_bootstrap_samples: int,
     random_state: int,
     description_2: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the response of estimate_intervals using valid data
     """
     # single ope estimator
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[dr]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[dm]
     )
     assert ope_.estimate_intervals(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         alpha=alpha,
         n_bootstrap_samples=n_bootstrap_samples,
         random_state=random_state,
     ) == {
-        "dr": mock_confidence_interval
-    }, "OffPolicyEvaluation.estimate_intervals ([DoublyRobust]) returns a wrong value"
+        "dm": mock_confidence_interval
+    }, "OffPolicyEvaluation.estimate_intervals ([DirectMethod]) returns a wrong value"
     # multiple ope estimators
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[dr, ipw]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[dm, ipw]
     )
     assert ope_.estimate_intervals(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         alpha=alpha,
         n_bootstrap_samples=n_bootstrap_samples,
         random_state=random_state,
     ) == {
-        "dr": mock_confidence_interval,
+        "dm": mock_confidence_interval,
         "ipw": {k: v + ipw.eps for k, v in mock_confidence_interval.items()},
-    }, "OffPolicyEvaluation.estimate_intervals ([DoublyRobust, IPW]) returns a wrong value"
+    }, "OffPolicyEvaluation.estimate_intervals ([DirectMethod, IPW]) returns a wrong value"
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description_1",
+    "action_dist, estimated_rewards_by_reg_model, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -533,23 +729,23 @@ def test_meta_estimate_intervals_using_valid_input_data(
     valid_input_of_estimate_intervals,
 )
 def test_meta_summarize_off_policy_estimates(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description_1: str,
     alpha: float,
     n_bootstrap_samples: int,
     random_state: int,
     description_2: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the response of summarize_off_policy_estimates using valid data
     """
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[ipw, ipw3]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[ipw, ipw3]
     )
     value, interval = ope_.summarize_off_policy_estimates(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         alpha=alpha,
         n_bootstrap_samples=n_bootstrap_samples,
@@ -564,7 +760,7 @@ def test_meta_summarize_off_policy_estimates(
     ).T
     expected_value["relative_estimated_policy_value"] = (
         expected_value["estimated_policy_value"]
-        / synthetic_continuous_bandit_feedback["reward"].mean()
+        / synthetic_multi_bandit_feedback["reward"].mean()
     )
     expected_interval = pd.DataFrame(
         {
@@ -575,15 +771,15 @@ def test_meta_summarize_off_policy_estimates(
     assert_frame_equal(value, expected_value), "Invalid summarization (policy value)"
     assert_frame_equal(interval, expected_interval), "Invalid summarization (interval)"
     # check relative estimated policy value when the average of bandit_feedback["reward"] is zero
-    zero_reward_bandit_feedback = deepcopy(synthetic_continuous_bandit_feedback)
+    zero_reward_bandit_feedback = deepcopy(synthetic_multi_bandit_feedback)
     zero_reward_bandit_feedback["reward"] = np.zeros(
         zero_reward_bandit_feedback["reward"].shape[0]
     )
-    ope_ = ContinuousOffPolicyEvaluation(
+    ope_ = MultiLoggersOffPolicyEvaluation(
         bandit_feedback=zero_reward_bandit_feedback, ope_estimators=[ipw, ipw3]
     )
     value, _ = ope_.summarize_off_policy_estimates(
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
         alpha=alpha,
         n_bootstrap_samples=n_bootstrap_samples,
@@ -629,7 +825,7 @@ valid_input_of_evaluation_performance_of_estimators = [
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description_1",
+    "action_dist, estimated_rewards_by_reg_model, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -637,26 +833,26 @@ valid_input_of_evaluation_performance_of_estimators = [
     invalid_input_of_evaluation_performance_of_estimators,
 )
 def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description_1: str,
     metric,
     ground_truth_policy_value,
     err,
     description_2: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the response of evaluate_performance_of_estimators using invalid data
     """
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[dr]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[dm]
     )
     with pytest.raises(err, match=f"{description_2}*"):
         _ = ope_.evaluate_performance_of_estimators(
             ground_truth_policy_value=ground_truth_policy_value,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             metric=metric,
         )
     # estimate_intervals function is called in summarize_off_policy_estimates
@@ -664,13 +860,13 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
         _ = ope_.summarize_estimators_comparison(
             ground_truth_policy_value=ground_truth_policy_value,
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-            action_by_evaluation_policy=action_by_evaluation_policy,
+            action_dist=action_dist,
             metric=metric,
         )
 
 
 @pytest.mark.parametrize(
-    "action_by_evaluation_policy, estimated_rewards_by_reg_model, description_1",
+    "action_dist, estimated_rewards_by_reg_model, description_1",
     valid_input_of_create_estimator_inputs,
 )
 @pytest.mark.parametrize(
@@ -678,13 +874,13 @@ def test_meta_evaluate_performance_of_estimators_using_invalid_input_data(
     valid_input_of_evaluation_performance_of_estimators,
 )
 def test_meta_evaluate_performance_of_estimators_using_valid_input_data(
-    action_by_evaluation_policy,
+    action_dist,
     estimated_rewards_by_reg_model,
     description_1: str,
     metric,
     ground_truth_policy_value,
     description_2: str,
-    synthetic_continuous_bandit_feedback: BanditFeedback,
+    synthetic_multi_bandit_feedback: BanditFeedback,
 ) -> None:
     """
     Test the response of evaluate_performance_of_estimators using valid data
@@ -708,13 +904,13 @@ def test_meta_evaluate_performance_of_estimators_using_valid_input_data(
             "ipw3": (mock_policy_value + ipw3.eps - ground_truth_policy_value) ** 2,
         }
     # check performance estimators
-    ope_ = ContinuousOffPolicyEvaluation(
-        bandit_feedback=synthetic_continuous_bandit_feedback, ope_estimators=[ipw, ipw3]
+    ope_ = MultiLoggersOffPolicyEvaluation(
+        bandit_feedback=synthetic_multi_bandit_feedback, ope_estimators=[ipw, ipw3]
     )
     performance = ope_.evaluate_performance_of_estimators(
         ground_truth_policy_value=ground_truth_policy_value,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         metric=metric,
     )
     for k, v in performance.items():
@@ -723,7 +919,7 @@ def test_meta_evaluate_performance_of_estimators_using_valid_input_data(
     performance_df = ope_.summarize_estimators_comparison(
         ground_truth_policy_value=ground_truth_policy_value,
         estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
-        action_by_evaluation_policy=action_by_evaluation_policy,
+        action_dist=action_dist,
         metric=metric,
     )
     assert_frame_equal(
