@@ -72,7 +72,7 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
     n_cat_per_dim: int, default=10
         Number of categories (cardinality) per category dimension.
 
-    dim_latent_param_mat: int, default=5
+    latent_param_mat_dim: int, default=5
         Number of dimensions of the latent parameter matrix to define the expected rewards.
         We assume that each category has a corresponding latent parameter representation, which
         affects the expected reward of the category. This parameter matrix is unobserved to the estimators.
@@ -180,7 +180,7 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
     ] = None
     beta: float = 0.0
     n_cat_per_dim: int = 10
-    dim_latent_param_mat: int = 5
+    latent_param_mat_dim: int = 5
     n_cat_dim: int = 3
     n_unobserved_cat_dim: int = 0
     n_irrelevant_cat_dim: int = 0
@@ -192,31 +192,31 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
         """Initialize Class."""
         super().__post_init__()
         check_scalar(self.n_cat_per_dim, "n_cat_per_dim", int, min_val=1)
-        check_scalar(self.dim_latent_param_mat, "dim_latent_param_mat", int, min_val=1)
+        check_scalar(self.latent_param_mat_dim, "latent_param_mat_dim", int, min_val=1)
         check_scalar(self.n_cat_dim, "n_cat_dim", int, min_val=1)
         check_scalar(
             self.n_unobserved_cat_dim,
             "n_unobserved_cat_dim",
             int,
             min_val=0,
-            max_val=self.n_cat_dim - 1,
+            max_val=self.n_cat_dim,
         )
         check_scalar(
             self.n_irrelevant_cat_dim,
             "n_irrelevant_cat_dim",
             int,
             min_val=0,
-            max_val=self.n_cat_dim - 1,
+            max_val=self.n_cat_dim,
         )
         self.n_cat_dim += 1
         self.n_unobserved_cat_dim += 1
         self.n_irrelevant_cat_dim += 1
-        self.define_action_embed()
+        self._define_action_embed()
 
-    def define_action_embed(self) -> None:
+    def _define_action_embed(self) -> None:
         """Define action embeddings and latent category parameter matrices."""
         self.latent_cat_param = self.random_.normal(
-            size=(self.n_cat_dim, self.n_cat_per_dim, self.dim_latent_param_mat)
+            size=(self.n_cat_dim, self.n_cat_per_dim, self.latent_param_mat_dim)
         )
         self.p_e_a = softmax(
             self.random_.normal(
@@ -327,7 +327,7 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
             position=None,  # position effect is not considered in synthetic data
             reward=rewards,
             expected_reward=q_x_a,
-            q_x_e=q_x_e,
+            q_x_e=q_x_e[:, :, self.n_unobserved_cat_dim :],
             p_e_a=self.p_e_a[:, :, self.n_unobserved_cat_dim :],
             pi_b=pi_b[:, :, np.newaxis],
             pscore=pi_b[np.arange(n_rounds), actions],

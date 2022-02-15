@@ -42,9 +42,6 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     n_actions: int
         Number of actions in the logged data.
 
-    delta: float, default=0.05
-        Confidence level used to estimate the deviation bound in data-driven action embedding selection.
-
     embedding_selection_method, default=None
         Method to conduct data-driven action embedding selection. Must be one of None, 'exact', or 'greedy'.
         If None, the given action embedding (action context) will be used to estimate the marginal importance weights.
@@ -54,6 +51,9 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     min_emb_dim: int, default=1
         Minimum number of action embedding dimensions to be used in estimating the marginal importance weights.
+
+    delta: float, default=0.05
+        Confidence level used to estimate the deviation bound in data-driven action embedding selection.
 
     estimator_name: str, default='mipw'.
         Name of the estimator.
@@ -66,9 +66,9 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     """
 
     n_actions: int
-    delta: float = 0.05
     embedding_selection_method: Optional[str] = None
     min_emb_dim: int = 1
+    delta: float = 0.05
     estimator_name: str = "mipw"
 
     def __post_init__(self) -> None:
@@ -207,12 +207,12 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     def estimate_policy_value(
         self,
-        context: np.ndarray,
         reward: np.ndarray,
         action: np.ndarray,
         action_embed: np.ndarray,
         pi_b: np.ndarray,
         action_dist: np.ndarray,
+        context: Optional[np.ndarray] = None,
         p_e_a: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         **kwargs,
@@ -241,6 +241,9 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             Indices to differentiate positions in a recommendation interface where the actions are presented.
             If None, the effect of position on the reward will be ignored.
             (If only a single action is chosen for each data, you can just ignore this argument.)
+
+        context: array-like, shape (n_rounds, dim_context), default=None
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
             Conditional distribution of action embeddings given each action.
@@ -276,6 +279,8 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             position = np.zeros(action_dist.shape[0], dtype=int)
         if p_e_a is not None:
             check_array(array=p_e_a, name="p_e_a", expected_dim=3)
+        else:
+            check_array(array=context, name="context", expected_dim=2)
 
         if self.embedding_selection_method == "exact":
             return self._estimate_with_exact_pruning(
@@ -420,12 +425,12 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
     def estimate_interval(
         self,
-        context: np.ndarray,
         reward: np.ndarray,
         action: np.ndarray,
         action_embed: np.ndarray,
         pi_b: np.ndarray,
         action_dist: np.ndarray,
+        context: Optional[np.ndarray] = None,
         position: Optional[np.ndarray] = None,
         p_e_a: Optional[np.ndarray] = None,
         alpha: float = 0.05,
@@ -452,6 +457,9 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
+
+        context: array-like, shape (n_rounds, dim_context), default=None
+            Context vectors observed for each data in logged bandit data, i.e., :math:`x_i`.
 
         position: array-like, shape (n_rounds,), default=None
             Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -501,6 +509,8 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             position = np.zeros(action_dist.shape[0], dtype=int)
         if p_e_a is not None:
             check_array(array=p_e_a, name="p_e_a", expected_dim=3)
+        else:
+            check_array(array=context, name="context", expected_dim=2)
 
         estimated_round_rewards = self._estimate_round_rewards(
             context=context,
@@ -544,18 +554,18 @@ class SelfNormalizedMarginalizedInverseProbabilityWeighting(
     n_actions: int
         Number of actions in the logged data.
 
-    min_emb_dim: int, default=1
-        Minimum number of action embedding dimensions to be used in estimating the marginal importance weights.
-
-    delta: float, default=0.05
-        Confidence level used to estimate the deviation bound in data-driven action embedding selection.
-
     embedding_selection_method, default=None
         Method to conduct data-driven action embedding selection. Must be one of None, 'exact', or 'greedy'.
         If None, the given action embedding (action context) will be used to estimate the marginal importance weights.
         If 'greed', a greedy version of embedding selection will be applied, which is significantly faster than 'exact',
         but might be worse in terms of OPE performance.
         If the number of action embedding dimensions is larger than 20, 'greedy' is a recommended choice.
+
+    min_emb_dim: int, default=1
+        Minimum number of action embedding dimensions to be used in estimating the marginal importance weights.
+
+    delta: float, default=0.05
+        Confidence level used to estimate the deviation bound in data-driven action embedding selection.
 
     estimator_name: str, default='snmipw'.
         Name of the estimator.
@@ -567,9 +577,6 @@ class SelfNormalizedMarginalizedInverseProbabilityWeighting(
 
     """
 
-    min_emb_dim: int = 1
-    delta: float = 0.05
-    embedding_selection_method: Optional[str] = None
     estimator_name: str = "snmipw"
 
     def _estimate_round_rewards(
