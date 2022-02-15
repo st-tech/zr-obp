@@ -403,6 +403,10 @@ def test_meta_create_estimator_inputs_using_valid_input_data(
             "estimated_rewards_by_reg_model",
             "estimated_pscore",
             "estimated_importance_weights",
+            "p_e_a",
+            "pi_b",
+            "context",
+            "action_embed",
         ]
     ), f"Invalid response of _create_estimator_inputs (test case: {description})"
     # _create_estimator_inputs function is called in the following functions

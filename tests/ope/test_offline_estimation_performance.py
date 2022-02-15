@@ -13,18 +13,20 @@ from sklearn.svm import SVC
 import torch
 
 from obp.dataset import logistic_reward_function
-from obp.dataset import SyntheticBanditDataset
+from obp.dataset import SyntheticBanditDatasetWithActionEmbeds
 from obp.ope import BalancedInverseProbabilityWeighting
 from obp.ope import DirectMethod
 from obp.ope import DoublyRobustTuning
 from obp.ope import DoublyRobustWithShrinkageTuning
 from obp.ope import ImportanceWeightEstimator
 from obp.ope import InverseProbabilityWeightingTuning
+from obp.ope import MarginalizedInverseProbabilityWeighting
 from obp.ope import OffPolicyEvaluation
 from obp.ope import PropensityScoreEstimator
 from obp.ope import RegressionModel
 from obp.ope import SelfNormalizedDoublyRobust
 from obp.ope import SelfNormalizedInverseProbabilityWeighting
+from obp.ope import SelfNormalizedMarginalizedInverseProbabilityWeighting
 from obp.ope import SubGaussianDoublyRobustTuning
 from obp.ope import SubGaussianInverseProbabilityWeightingTuning
 from obp.ope import SwitchDoublyRobustTuning
@@ -63,17 +65,17 @@ base_model_dict = dict(
 
 offline_experiment_configurations = [
     (
+        1000,
+        10,
+        5,
+        "logistic_regression",
+        "logistic_regression",
+        "logistic_regression",
+    ),
+    (
         600,
         10,
-        5,
-        "logistic_regression",
-        "logistic_regression",
-        "logistic_regression",
-    ),
-    (
-        300,
-        3,
-        2,
+        10,
         "lightgbm",
         "lightgbm",
         "lightgbm",
@@ -85,22 +87,6 @@ offline_experiment_configurations = [
         "random_forest",
         "random_forest",
         "random_forest",
-    ),
-    (
-        500,
-        3,
-        5,
-        "logistic_regression",
-        "random_forest",
-        "random_forest",
-    ),
-    (
-        800,
-        10,
-        10,
-        "lightgbm",
-        "logistic_regression",
-        "logistic_regression",
     ),
 ]
 
@@ -149,7 +135,7 @@ ope_estimators = [
     NaiveEstimator(),
     DirectMethod(),
     InverseProbabilityWeightingTuning(
-        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
+        lambdas=[100, 500, 1000, 5000, np.inf],
         tuning_method="mse",
         estimator_name="ipw (tuning-mse)",
     ),
@@ -206,7 +192,7 @@ ope_estimators = [
         estimator_name="sg-dr (tuning-slope)",
     ),
     InverseProbabilityWeightingTuning(
-        lambdas=[10, 50, 100, 500, 1000, 5000, np.inf],
+        lambdas=[10, 100, 1000],
         estimator_name="cipw (estimated pscore)",
         use_estimated_pscore=True,
     ),
@@ -246,10 +232,12 @@ def test_offline_estimation_performance(
 ) -> None:
     def process(i: int):
         # synthetic data generator
-        dataset = SyntheticBanditDataset(
+        dataset = SyntheticBanditDatasetWithActionEmbeds(
             n_actions=n_actions,
             dim_context=dim_context,
             beta=3.0,
+            n_cat_dim=3,
+            n_cat_per_dim=5,
             reward_function=logistic_reward_function,
             random_state=i,
         )
@@ -296,13 +284,13 @@ def test_offline_estimation_performance(
             base_model=base_model_dict[base_model_for_pscore_estimator](
                 **hyperparams[base_model_for_pscore_estimator]
             ),
-            calibration_cv=2,
+            calibration_cv=3,
         )
         estimated_pscore = pscore_estimator.fit_predict(
             action=bandit_feedback_test["action"],
             position=bandit_feedback_test["position"],
             context=bandit_feedback_test["context"],
-            n_folds=2,
+            n_folds=3,
             random_state=12345,
         )
         # fit importance weight estimators
@@ -326,7 +314,15 @@ def test_offline_estimation_performance(
         # evaluate estimators' performances using relative estimation error (relative-ee)
         ope = OffPolicyEvaluation(
             bandit_feedback=bandit_feedback_test,
-            ope_estimators=ope_estimators,
+            ope_estimators=ope_estimators
+            + [
+                MarginalizedInverseProbabilityWeighting(
+                    n_actions=n_actions, estimator_name="mipw"
+                ),
+                SelfNormalizedMarginalizedInverseProbabilityWeighting(
+                    n_actions=n_actions, estimator_name="snmipw"
+                ),
+            ],
         )
         relative_ee_i = ope.evaluate_performance_of_estimators(
             ground_truth_policy_value=dataset.calc_ground_truth_policy_value(
@@ -337,6 +333,8 @@ def test_offline_estimation_performance(
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             estimated_pscore=estimated_pscore,
             estimated_importance_weights=estimated_importance_weights_dict,
+            action_embed=bandit_feedback_test["action_embed"],
+            pi_b=bandit_feedback_test["pi_b"],
             metric="relative-ee",
         )
 
@@ -348,6 +346,7 @@ def test_offline_estimation_performance(
         verbose=0,
     )([delayed(process)(i) for i in np.arange(n_runs)])
     metric_dict = {est.estimator_name: dict() for est in ope_estimators}
+    metric_dict.update({"mipw": dict(), "snmipw": dict()})
     for i, relative_ee_i in enumerate(processed):
         for (
             estimator_name,
@@ -378,8 +377,10 @@ def test_offline_estimation_performance(
         "dr-os (estimated pscore)",
         "bipw (svc sample)",
         "bipw (random_forest sample)",
+        "mipw",
+        "snmipw",
     ]
     for estimator_name in tested_estimators:
         assert (
-            relative_ee_df_mean[estimator_name] / relative_ee_df_mean["naive"] < 1.25
+            relative_ee_df_mean[estimator_name] / relative_ee_df_mean["naive"] < 1.5
         ), f"{estimator_name} is significantly worse than naive (on-policy) estimator"
