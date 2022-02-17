@@ -5,7 +5,7 @@ from obp.dataset import logistic_reward_function
 from obp.dataset import SyntheticBanditDatasetWithActionEmbeds
 
 
-# n_actions, dim_context, reward_type, reward_std, beta, n_cat_per_dim, latent_param_mat_dim, n_cat_dim, n_unobserved_cat_dim, n_irrelevant_cat_dim, n_deficient_actions, action_context, random_state, err, description
+# n_actions, dim_context, reward_type, reward_std, beta, n_cat_per_dim, latent_param_mat_dim, n_cat_dim, p_e_a_param_std, n_unobserved_cat_dim, n_irrelevant_cat_dim, n_deficient_actions, action_context, random_state, err, description
 invalid_input_of_init = [
     (
         "3",  #
@@ -16,6 +16,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -33,6 +34,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -50,6 +52,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -67,6 +70,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -84,6 +88,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -101,6 +106,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -118,6 +124,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -135,6 +142,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -152,6 +160,7 @@ invalid_input_of_init = [
         1.0,  #
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -169,6 +178,7 @@ invalid_input_of_init = [
         0,  #
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -186,6 +196,7 @@ invalid_input_of_init = [
         1,
         1.0,  #
         1,
+        1.0,
         0,
         0,
         0,
@@ -203,6 +214,7 @@ invalid_input_of_init = [
         1,
         0,  #
         1,
+        1.0,
         0,
         0,
         0,
@@ -220,6 +232,7 @@ invalid_input_of_init = [
         1,
         1,
         1.0,  #
+        1.0,
         0,
         0,
         0,
@@ -237,6 +250,7 @@ invalid_input_of_init = [
         1,
         1,
         0,  #
+        1.0,
         0,
         0,
         0,
@@ -254,6 +268,43 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        "1.0",  #
+        0,
+        0,
+        0,
+        None,
+        12345,
+        TypeError,
+        r"p_e_a_param_std must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        -1.0,  #
+        0,
+        0,
+        0,
+        None,
+        12345,
+        ValueError,
+        r"p_e_a_param_std == -1.0, must be >= 0.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
         0.0,  #
         0,
         0,
@@ -271,6 +322,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         -1,  #
         0,
         0,
@@ -288,6 +340,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         2,  #
         0,
         0,
@@ -305,6 +358,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0.0,  #
         0,
@@ -322,7 +376,8 @@ invalid_input_of_init = [
         1,
         1,
         1,
-        1,
+        1.0,
+        0,
         -1,  #
         0,
         None,
@@ -339,6 +394,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         2,  #
         0,
@@ -356,6 +412,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         "0",  #
@@ -373,6 +430,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         1.0,  #
@@ -390,6 +448,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         10,  #
@@ -407,6 +466,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -424,6 +484,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -441,6 +502,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -458,6 +520,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -475,6 +538,7 @@ invalid_input_of_init = [
         1,
         1,
         1,
+        1.0,
         0,
         0,
         0,
@@ -487,7 +551,7 @@ invalid_input_of_init = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, dim_context, reward_type, reward_std, beta, n_cat_per_dim, latent_param_mat_dim, n_cat_dim, n_unobserved_cat_dim, n_irrelevant_cat_dim, n_deficient_actions, action_context, random_state, err, description",
+    "n_actions, dim_context, reward_type, reward_std, beta, n_cat_per_dim, latent_param_mat_dim, n_cat_dim, p_e_a_param_std, n_unobserved_cat_dim, n_irrelevant_cat_dim, n_deficient_actions, action_context, random_state, err, description",
     invalid_input_of_init,
 )
 def test_synthetic_init_using_invalid_inputs(
@@ -499,6 +563,7 @@ def test_synthetic_init_using_invalid_inputs(
     n_cat_per_dim,
     latent_param_mat_dim,
     n_cat_dim,
+    p_e_a_param_std,
     n_unobserved_cat_dim,
     n_irrelevant_cat_dim,
     n_deficient_actions,
@@ -518,6 +583,7 @@ def test_synthetic_init_using_invalid_inputs(
             n_cat_per_dim=n_cat_per_dim,
             latent_param_mat_dim=latent_param_mat_dim,
             n_cat_dim=n_cat_dim,
+            p_e_a_param_std=p_e_a_param_std,
             n_unobserved_cat_dim=n_unobserved_cat_dim,
             n_irrelevant_cat_dim=n_irrelevant_cat_dim,
             action_context=action_context,

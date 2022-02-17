@@ -5,6 +5,7 @@
 from dataclasses import dataclass
 from typing import Callable
 from typing import Optional
+from typing import Union
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -79,6 +80,10 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
 
     n_cat_dim: int, default=3
         Number of action/item category dimensions.
+
+    p_e_a_param_std: int or float, default=1.0
+        Standard deviation of the normal distribution to sample the parameters of the action embedding distribution.
+        A large value generates a near-deterministic embedding distribution, while a small value generates a near-uniform embedding distribution.
 
     n_unobserved_cat_dim: int, default=0
         Number of unobserved category dimensions.
@@ -174,14 +179,15 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
     dim_context: int = 1
     reward_type: str = RewardType.BINARY.value
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
-    reward_std: float = 1.0
+    reward_std: Union[int, float] = 1.0
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
     ] = None
-    beta: float = 0.0
+    beta: Union[int, float] = 0.0
     n_cat_per_dim: int = 10
     latent_param_mat_dim: int = 5
     n_cat_dim: int = 3
+    p_e_a_param_std: Union[int, float] = 1.0
     n_unobserved_cat_dim: int = 0
     n_irrelevant_cat_dim: int = 0
     n_deficient_actions: int = 0
@@ -194,6 +200,7 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
         check_scalar(self.n_cat_per_dim, "n_cat_per_dim", int, min_val=1)
         check_scalar(self.latent_param_mat_dim, "latent_param_mat_dim", int, min_val=1)
         check_scalar(self.n_cat_dim, "n_cat_dim", int, min_val=1)
+        check_scalar(self.p_e_a_param_std, "p_e_a_param_std", (int, float), min_val=0.0)
         check_scalar(
             self.n_unobserved_cat_dim,
             "n_unobserved_cat_dim",
@@ -220,7 +227,8 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
         )
         self.p_e_a = softmax(
             self.random_.normal(
-                size=(self.n_actions, self.n_cat_per_dim, self.n_cat_dim)
+                scale=self.p_e_a_param_std,
+                size=(self.n_actions, self.n_cat_per_dim, self.n_cat_dim),
             ),
         )
         self.action_context_reg = np.zeros((self.n_actions, self.n_cat_dim), dtype=int)
