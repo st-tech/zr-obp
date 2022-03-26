@@ -55,18 +55,18 @@ The following figure presents the displayed fashion items as actions where there
 
 The dataset was collected during a 7-day experiment on three “campaigns,” corresponding to all, men's, and women's items, respectively.
 Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection.
-Open Bandit Dataset is unique in that it contains a set of *multiple* logged bandit datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see Section 5 of the reference [paper](https://arxiv.org/abs/2008.07146) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
+Open Bandit Dataset is unique in that it contains a set of *multiple* logged bandit datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see Section 5 of the reference [paper](https://arxiv.org/abs/2008.07146) for the details of the evaluation of OPE protocol using Open Bandit Dataset).
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/obd_stats.png" width="90%"/></div>
 
 The small size version of our data is available at [obd](./obd).
 We release the full size version of our data at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
-Please download the full size version for research.
-Please see [obd/README.md](./obd/README.md) for the dataset description.
+Please download the full size version for research uses.
+Please also see [obd/README.md](./obd/README.md) for the detailed dataset description.
 
 ## Open Bandit Pipeline (OBP)
 
-*Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair, transparent, and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
+*Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/overview.png" width="80%"/></div>
 <figcaption>
@@ -135,7 +135,7 @@ Open Bandit Pipeline consists of the following main modules.
 
 </details>
 
-Please refer to Section 2 and the Appendix of the reference [paper](https://arxiv.org/abs/2008.07146) for the formulation of OPE and the definitions of the estimators.
+Please refer to Section 2 and the Appendix of the reference [paper](https://arxiv.org/abs/2008.07146) for the standard formulation of OPE and the definitions of a range of OPE estimators.
 Note that, in addition to the above algorithms and estimators, Open Bandit Pipeline provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
 Moreover, Open Bandit Pipeline provides an interface for handling real-world logged bandit data.
@@ -327,7 +327,7 @@ The paper has been accepted at *NeurIPS2021 Datasets and Benchmarks Track*. The 
 
 # Sister Package: pyIEOE
 
-We also develop a Python package called [**pyIEOE**](https://github.com/sony/pyIEOE), which allows practitioners to easily evaluate the robustness of OPE estimators.
+In addition to OBP, we develop a Python package called [**pyIEOE**](https://github.com/sony/pyIEOE), which allows practitioners to easily evaluate and compare the robustness of OPE estimators.
 
 Please also see the following reference paper about IEOE (accepted at RecSys'21).
 
@@ -336,10 +336,10 @@ Yuta Saito, Takuma Udagawa, Haruka Kiyohara, Kazuki Mogi, Yusuke Narita, Kei Tat
 [https://arxiv.org/abs/2108.13703](https://arxiv.org/abs/2108.13703)
 
 # Google Group
-If you are interested in the Open Bandit Project, you can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
+If you are interested in the Open Bandit Project, please follow its updates via the google group: https://groups.google.com/g/open-bandit-project
 
 # Contribution
-Any contributions to the Open Bandit Pipeline are more than welcome!
+Any contributions to Open Bandit Pipeline are more than welcome!
 Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute to the project.
 
 # License
