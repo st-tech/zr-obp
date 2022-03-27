@@ -5,6 +5,8 @@ from typing import Optional
 
 import numpy as np
 from scipy import stats
+from sklearn.base import ClassifierMixin
+from sklearn.base import is_classifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import check_scalar
@@ -42,6 +44,11 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     n_actions: int
         Number of actions in the logged data.
 
+    p_a_e_estimator: ClassifierMixin, default=`sklearn.linear_model.LogisticRegression(max_iter=1000, random_state=12345)`
+        A sklearn classifier to estimate :math:`\\pi(a|x,e)`.
+        It is then used to estimate the marginal importance weight as
+        :math:`\\hat{w}(x,e) = \\mathbb{E}_{\\hat{\\pi}(a|x,e)}[w(x,a)]`.
+
     embedding_selection_method, default=None
         Method to conduct data-driven action embedding selection. Must be one of None, 'exact', or 'greedy'.
         If None, the given action embedding (action context) will be used to estimate the marginal importance weights.
@@ -66,6 +73,9 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     """
 
     n_actions: int
+    p_a_e_estimator: ClassifierMixin = LogisticRegression(
+        max_iter=1000, random_state=12345
+    )
     embedding_selection_method: Optional[str] = None
     min_emb_dim: int = 1
     delta: float = 0.05
@@ -93,6 +103,8 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
                     "If given, `embedding_selection_method` must be either 'exact' or 'greedy', but"
                     f"{self.embedding_selection_method} is given."
                 )
+        if not is_classifier(self.p_a_e_estimator):
+            raise ValueError("`p_a_e_estimator` must be a classifier.")
 
     def _estimate_round_rewards(
         self,
@@ -117,7 +129,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -171,12 +183,12 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             )
             self.max_w_x_e = w_x_e.max()
 
-            if with_dev:
-                r_hat = reward * w_x_e
-                cnf = np.sqrt(np.var(r_hat) / (n - 1))
-                cnf *= stats.t.ppf(1.0 - (self.delta / 2), n - 1)
+        if with_dev:
+            r_hat = reward * w_x_e
+            cnf = np.sqrt(np.var(r_hat) / (n - 1))
+            cnf *= stats.t.ppf(1.0 - (self.delta / 2), n - 1)
 
-                return r_hat.mean(), cnf
+            return r_hat.mean(), cnf
 
         return reward * w_x_e
 
@@ -192,15 +204,14 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         n = action.shape[0]
         w_x_a = pi_e / pi_b
         w_x_a = np.where(w_x_a < np.inf, w_x_a, 0)
-        p_a_e_model = LogisticRegression(max_iter=1000, random_state=12345)
         c = OneHotEncoder(
             sparse=False,
             drop="first",
         ).fit_transform(action_embed)
         x_e = np.c_[context, c]
         p_a_e = np.zeros((n, self.n_actions))
-        p_a_e_model.fit(x_e, action)
-        p_a_e[:, np.unique(action)] = p_a_e_model.predict_proba(x_e)
+        self.p_a_e_estimator.fit(x_e, action)
+        p_a_e[:, np.unique(action)] = self.p_a_e_estimator.predict_proba(x_e)
         w_x_e = (w_x_a * p_a_e).sum(1)
 
         return w_x_e
@@ -227,7 +238,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -416,7 +427,6 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
                 if (np.abs(theta_j - theta_i) <= cnf_i + C * cnf_j).all():
                     theta_list.append(theta_i), cnf_list.append(cnf_i)
                 else:
-                    exclude_d_idx = np.where(current_feat != exclude_d, True, False)
                     return theta_j[-1]
             exclude_d_idx = np.where(current_feat != exclude_d, True, False)
             current_feat = current_feat[exclude_d_idx]
@@ -448,7 +458,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         action: array-like, shape (n_rounds,)
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -602,7 +612,7 @@ class SelfNormalizedMarginalizedInverseProbabilityWeighting(
         action: array-like, shape (n_rounds,)
             Actions sampled by the logging/behavior policy for each data in logged bandit data, i.e., :math:`a_i`.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -656,11 +666,11 @@ class SelfNormalizedMarginalizedInverseProbabilityWeighting(
             )
             self.max_w_x_e = w_x_e.max()
 
-            if with_dev:
-                r_hat = reward * w_x_e
-                cnf = np.sqrt(np.var(r_hat) / (n - 1))
-                cnf *= stats.t.ppf(1.0 - (self.delta / 2), n - 1)
+        if with_dev:
+            r_hat = reward * w_x_e
+            cnf = np.sqrt(np.var(r_hat) / (n - 1))
+            cnf *= stats.t.ppf(1.0 - (self.delta / 2), n - 1)
 
-                return r_hat.mean(), cnf
+            return r_hat.mean(), cnf
 
         return reward * w_x_e / w_x_e.mean()

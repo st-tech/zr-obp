@@ -14,6 +14,8 @@ from ..types import BanditFeedback
 from ..utils import sample_action_fast
 from ..utils import softmax
 from .reward_type import RewardType
+from .synthetic import linear_reward_function
+from .synthetic import logistic_reward_function
 from .synthetic import SyntheticBanditDataset
 
 
@@ -48,8 +50,8 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function defining the expected reward for each given action-context pair,
         i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
-        If None, context **independent** expected rewards will be
-        sampled from the uniform distribution automatically.
+        If None, `obp.dataset.logistic_reward_function` is used when `reward_type='binary'` and
+        `obp.dataset.linear_reward_function` is used when `reward_type='continuous'`.
 
     reward_std: float, default=1.0
         Standard deviation of the reward distribution.
@@ -219,6 +221,12 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
         self.n_unobserved_cat_dim += 1
         self.n_irrelevant_cat_dim += 1
         self._define_action_embed()
+
+        if self.reward_function is None:
+            if RewardType(self.reward_type) == RewardType.BINARY:
+                self.reward_function = logistic_reward_function
+            elif RewardType(self.reward_type) == RewardType.CONTINUOUS:
+                self.reward_function = linear_reward_function
 
     def _define_action_embed(self) -> None:
         """Define action embeddings and latent category parameter matrices."""

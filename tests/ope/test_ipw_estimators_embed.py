@@ -3,17 +3,20 @@ import re
 from conftest import generate_action_dist
 import numpy as np
 import pytest
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import Ridge
 
 from obp.ope import MarginalizedInverseProbabilityWeighting as MIPW
 from obp.ope import SelfNormalizedMarginalizedInverseProbabilityWeighting as SNMIPW
 from obp.types import BanditFeedback
 
 
-# n_actions, delta, embedding_selection_method, min_emb_dim, err, description
+# n_actions, delta, p_a_e_estimator, embedding_selection_method, min_emb_dim, err, description
 invalid_input_of_ipw_init = [
     (
         2.0,  #
         0.05,
+        RandomForestClassifier,
         None,
         1,
         TypeError,
@@ -22,6 +25,7 @@ invalid_input_of_ipw_init = [
     (
         0,  #
         0.05,
+        RandomForestClassifier,
         None,
         1,
         ValueError,
@@ -30,6 +34,7 @@ invalid_input_of_ipw_init = [
     (
         2,
         "0.05",  #
+        RandomForestClassifier,
         None,
         1,
         TypeError,
@@ -38,6 +43,7 @@ invalid_input_of_ipw_init = [
     (
         2,
         -0.05,  #
+        RandomForestClassifier,
         None,
         1,
         ValueError,
@@ -46,6 +52,7 @@ invalid_input_of_ipw_init = [
     (
         2,
         1.05,  #
+        RandomForestClassifier,
         None,
         1,
         ValueError,
@@ -54,6 +61,25 @@ invalid_input_of_ipw_init = [
     (
         2,
         0.05,
+        None,  #
+        None,
+        1,
+        ValueError,
+        r"`p_a_e_estimator` must be a classifier.",
+    ),
+    (
+        2,
+        0.05,
+        Ridge,  #
+        None,
+        1,
+        ValueError,
+        r"`p_a_e_estimator` must be a classifier.",
+    ),
+    (
+        2,
+        0.05,
+        RandomForestClassifier,
         "None",  #
         1,
         ValueError,
@@ -62,6 +88,7 @@ invalid_input_of_ipw_init = [
     (
         2,
         0.05,
+        RandomForestClassifier,
         None,
         1.0,  #
         TypeError,
@@ -70,6 +97,7 @@ invalid_input_of_ipw_init = [
     (
         2,
         0.05,
+        RandomForestClassifier,
         None,
         0,
         ValueError,
@@ -79,12 +107,13 @@ invalid_input_of_ipw_init = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, delta, embedding_selection_method, min_emb_dim, err, description",
+    "n_actions, delta, p_a_e_estimator, embedding_selection_method, min_emb_dim, err, description",
     invalid_input_of_ipw_init,
 )
 def test_mipw_init_using_invalid_inputs(
     n_actions,
     delta,
+    p_a_e_estimator,
     embedding_selection_method,
     min_emb_dim,
     err,
@@ -94,6 +123,7 @@ def test_mipw_init_using_invalid_inputs(
         _ = MIPW(
             n_actions=n_actions,
             delta=delta,
+            p_a_e_estimator=p_a_e_estimator,
             embedding_selection_method=embedding_selection_method,
             min_emb_dim=min_emb_dim,
         )
@@ -102,6 +132,7 @@ def test_mipw_init_using_invalid_inputs(
         _ = SNMIPW(
             n_actions=n_actions,
             delta=delta,
+            p_a_e_estimator=p_a_e_estimator,
             embedding_selection_method=embedding_selection_method,
             min_emb_dim=min_emb_dim,
         )

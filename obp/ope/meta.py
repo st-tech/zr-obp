@@ -260,7 +260,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -343,7 +343,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -444,7 +444,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -556,7 +556,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -696,7 +696,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -799,7 +799,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
@@ -887,7 +887,7 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
-        action_embed: array-like, shape (n_actions, dim_action_embed)
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
             Context vectors characterizing actions or action embeddings such as item category information.
             This is used to estimate the marginal importance weights.
 
