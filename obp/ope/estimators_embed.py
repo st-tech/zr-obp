@@ -44,7 +44,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     n_actions: int
         Number of actions in the logged data.
 
-    p_a_e_estimator: ClassifierMixin, default=`sklearn.linear_model.LogisticRegression(max_iter=1000, random_state=12345)`
+    pi_a_x_e_estimator: ClassifierMixin, default=`sklearn.linear_model.LogisticRegression(max_iter=1000, random_state=12345)`
         A sklearn classifier to estimate :math:`\\pi(a|x,e)`.
         It is then used to estimate the marginal importance weight as
         :math:`\\hat{w}(x,e) = \\mathbb{E}_{\\hat{\\pi}(a|x,e)}[w(x,a)]`.
@@ -73,7 +73,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
     """
 
     n_actions: int
-    p_a_e_estimator: ClassifierMixin = LogisticRegression(
+    pi_a_x_e_estimator: ClassifierMixin = LogisticRegression(
         max_iter=1000, random_state=12345
     )
     embedding_selection_method: Optional[str] = None
@@ -103,8 +103,8 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
                     "If given, `embedding_selection_method` must be either 'exact' or 'greedy', but"
                     f"{self.embedding_selection_method} is given."
                 )
-        if not is_classifier(self.p_a_e_estimator):
-            raise ValueError("`p_a_e_estimator` must be a classifier.")
+        if not is_classifier(self.pi_a_x_e_estimator):
+            raise ValueError("`pi_a_x_e_estimator` must be a classifier.")
 
     def _estimate_round_rewards(
         self,
@@ -209,10 +209,10 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             drop="first",
         ).fit_transform(action_embed)
         x_e = np.c_[context, c]
-        p_a_e = np.zeros((n, self.n_actions))
-        self.p_a_e_estimator.fit(x_e, action)
-        p_a_e[:, np.unique(action)] = self.p_a_e_estimator.predict_proba(x_e)
-        w_x_e = (w_x_a * p_a_e).sum(1)
+        pi_a_x_e = np.zeros((n, self.n_actions))
+        self.pi_a_x_e_estimator.fit(x_e, action)
+        pi_a_x_e[:, np.unique(action)] = self.pi_a_x_e_estimator.predict_proba(x_e)
+        w_x_e = (w_x_a * pi_a_x_e).sum(1)
 
         return w_x_e
 
@@ -403,8 +403,8 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         while current_feat.shape[0] > self.min_emb_dim:
             theta_list_, cnf_list_, d_list_ = [], [], []
             for d in current_feat:
-                exclude_d_idx = np.where(current_feat != d, True, False)
-                candidate_feat = current_feat[exclude_d_idx]
+                idx_without_d = np.where(current_feat != d, True, False)
+                candidate_feat = current_feat[idx_without_d]
                 theta, cnf = self._estimate_round_rewards(
                     context=context,
                     reward=reward,
@@ -420,15 +420,15 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
 
             idx_list = np.argsort(cnf_list_)[::-1]
             for idx in idx_list:
-                exclude_d = d_list_[idx]
+                excluded_dim = d_list_[idx]
                 theta_i, cnf_i = theta_list_[idx], cnf_list_[idx]
                 theta_j, cnf_j = np.array(theta_list), np.array(cnf_list)
                 if (np.abs(theta_j - theta_i) <= cnf_i + C * cnf_j).all():
                     theta_list.append(theta_i), cnf_list.append(cnf_i)
                 else:
                     return theta_j[-1]
-            exclude_d_idx = np.where(current_feat != exclude_d, True, False)
-            current_feat = current_feat[exclude_d_idx]
+            idx_without_d = np.where(current_feat != excluded_dim, True, False)
+            current_feat = current_feat[idx_without_d]
 
         return theta_j[-1]
 
