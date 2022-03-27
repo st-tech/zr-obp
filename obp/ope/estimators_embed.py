@@ -293,28 +293,27 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         else:
             check_array(array=context, name="context", expected_dim=2)
 
-        if self.embedding_selection_method == "exact":
-            return self._estimate_with_exact_pruning(
-                context=context,
-                reward=reward,
-                action=action,
-                action_embed=action_embed,
-                position=position,
-                pi_b=pi_b,
-                action_dist=action_dist,
-            )
-
-        elif self.embedding_selection_method == "greedy":
-            return self._estimate_with_greedy_pruning(
-                context=context,
-                reward=reward,
-                action=action,
-                action_embed=action_embed,
-                position=position,
-                pi_b=pi_b,
-                action_dist=action_dist,
-            )
-
+        if action_embed.shape[1] > 1 and self.embedding_selection_method is not None:
+            if self.embedding_selection_method == "exact":
+                return self._estimate_with_exact_pruning(
+                    context=context,
+                    reward=reward,
+                    action=action,
+                    action_embed=action_embed,
+                    position=position,
+                    pi_b=pi_b,
+                    action_dist=action_dist,
+                )
+            elif self.embedding_selection_method == "greedy":
+                return self._estimate_with_greedy_pruning(
+                    context=context,
+                    reward=reward,
+                    action=action,
+                    action_embed=action_embed,
+                    position=position,
+                    pi_b=pi_b,
+                    action_dist=action_dist,
+                )
         else:
             return self._estimate_round_rewards(
                 context=context,
