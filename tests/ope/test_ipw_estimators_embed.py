@@ -357,8 +357,14 @@ def test_ipw_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     mipw = MIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"])
-    mipw_exact = MIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"], embedding_selection_method="exact")
-    mipw_greedy = MIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"], embedding_selection_method="greedy")
+    mipw_exact = MIPW(
+        n_actions=synthetic_bandit_feedback_with_embed["n_actions"],
+        embedding_selection_method="exact",
+    )
+    mipw_greedy = MIPW(
+        n_actions=synthetic_bandit_feedback_with_embed["n_actions"],
+        embedding_selection_method="greedy",
+    )
     snmipw = SNMIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"])
     # ipw estimators can be used without estimated_rewards_by_reg_model
     for estimator in [mipw, mipw_exact, mipw_greedy, snmipw]:
