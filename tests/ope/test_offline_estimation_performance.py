@@ -319,6 +319,11 @@ def test_offline_estimation_performance(
                 MarginalizedInverseProbabilityWeighting(
                     n_actions=n_actions, estimator_name="mipw"
                 ),
+                MarginalizedInverseProbabilityWeighting(
+                    n_actions=n_actions,
+                    embedding_selection_method="greedy",
+                    estimator_name="mipw (greedy selection)"
+                ),
                 SelfNormalizedMarginalizedInverseProbabilityWeighting(
                     n_actions=n_actions, estimator_name="snmipw"
                 ),
@@ -346,7 +351,7 @@ def test_offline_estimation_performance(
         verbose=0,
     )([delayed(process)(i) for i in np.arange(n_runs)])
     metric_dict = {est.estimator_name: dict() for est in ope_estimators}
-    metric_dict.update({"mipw": dict(), "snmipw": dict()})
+    metric_dict.update({"mipw": dict(), "mipw (greedy selection)": dict(), "snmipw": dict()})
     for i, relative_ee_i in enumerate(processed):
         for (
             estimator_name,
@@ -378,6 +383,7 @@ def test_offline_estimation_performance(
         "bipw (svc sample)",
         "bipw (random_forest sample)",
         "mipw",
+        "mipw (greedy selection)",
         "snmipw",
     ]
     for estimator_name in tested_estimators:

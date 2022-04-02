@@ -314,51 +314,32 @@ def test_mipw_using_invalid_input_data(
 ) -> None:
     # prepare ipw instances
     mipw = MIPW(n_actions=2)
-    snmipw = MIPW(n_actions=2)
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = mipw.estimate_policy_value(
-            action_dist=action_dist,
-            context=context,
-            action=action,
-            reward=reward,
-            action_embed=action_embed,
-            pi_b=pi_b,
-            p_e_a=p_e_a,
-            position=position,
-        )
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = mipw.estimate_interval(
-            action_dist=action_dist,
-            context=context,
-            action=action,
-            reward=reward,
-            action_embed=action_embed,
-            pi_b=pi_b,
-            p_e_a=p_e_a,
-            position=position,
-        )
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = snmipw.estimate_policy_value(
-            action_dist=action_dist,
-            context=context,
-            action=action,
-            reward=reward,
-            action_embed=action_embed,
-            pi_b=pi_b,
-            p_e_a=p_e_a,
-            position=position,
-        )
-    with pytest.raises(ValueError, match=f"{description}*"):
-        _ = snmipw.estimate_interval(
-            action_dist=action_dist,
-            context=context,
-            action=action,
-            reward=reward,
-            action_embed=action_embed,
-            pi_b=pi_b,
-            p_e_a=p_e_a,
-            position=position,
-        )
+    mipw_exact = MIPW(n_actions=2, embedding_selection_method="exact")
+    mipw_greedy = MIPW(n_actions=2, embedding_selection_method="greedy")
+    snmipw = SNMIPW(n_actions=2)
+    for est in [mipw, mipw_exact, mipw_greedy, snmipw]:
+        with pytest.raises(ValueError, match=f"{description}*"):
+            _ = est.estimate_policy_value(
+                action_dist=action_dist,
+                context=context,
+                action=action,
+                reward=reward,
+                action_embed=action_embed,
+                pi_b=pi_b,
+                p_e_a=p_e_a,
+                position=position,
+            )
+        with pytest.raises(ValueError, match=f"{description}*"):
+            _ = est.estimate_interval(
+                action_dist=action_dist,
+                context=context,
+                action=action,
+                reward=reward,
+                action_embed=action_embed,
+                pi_b=pi_b,
+                p_e_a=p_e_a,
+                position=position,
+            )
 
 
 def test_ipw_using_random_evaluation_policy(
@@ -376,9 +357,11 @@ def test_ipw_using_random_evaluation_policy(
     }
     input_dict["action_dist"] = action_dist
     mipw = MIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"])
-    snmipw = MIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"])
+    mipw_exact = MIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"], embedding_selection_method="exact")
+    mipw_greedy = MIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"], embedding_selection_method="greedy")
+    snmipw = SNMIPW(n_actions=synthetic_bandit_feedback_with_embed["n_actions"])
     # ipw estimators can be used without estimated_rewards_by_reg_model
-    for estimator in [mipw, snmipw]:
+    for estimator in [mipw, mipw_exact, mipw_greedy, snmipw]:
         estimated_policy_value = estimator.estimate_policy_value(**input_dict)
         assert isinstance(
             estimated_policy_value, float
