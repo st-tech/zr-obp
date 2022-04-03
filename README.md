@@ -44,8 +44,7 @@
 *Open Bandit Dataset* is a public real-world logged bandit dataset.
 This dataset is provided by [ZOZO, Inc.](https://corp.zozo.com/en/about/profile/), the largest fashion e-commerce company in Japan.
 The company uses some multi-armed bandit algorithms to recommend fashion items to users in a large-scale fashion e-commerce platform called [ZOZOTOWN](https://zozo.jp/).
-The following figure presents the displayed fashion items as actions.
-The figure shows that there are three *positions* in the data.
+The following figure presents the displayed fashion items as actions where there are three *positions* in the recommendation interface.
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/recommended_fashion_items.png" width="45%"/></div>
 <figcaption>
@@ -54,21 +53,20 @@ The figure shows that there are three *positions* in the data.
 </p>
 </figcaption>
 
-We collected the dataset in a 7-day experiment in late November 2019 on three “campaigns,” corresponding to all, men's, and women's items, respectively.
+The dataset was collected during a 7-day experiment on three “campaigns,” corresponding to all, men's, and women's items, respectively.
 Each campaign randomly used either the Uniform Random policy or the Bernoulli Thompson Sampling (Bernoulli TS) policy for the data collection.
-Open Bandit Dataset is unique in that it contains a set of *multiple* logged bandit datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see Section 5 of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/evaluation_ope.html) for the details of the evaluation of OPE protocol with Open Bandit Dataset).
+Open Bandit Dataset is unique in that it contains a set of *multiple* logged bandit datasets collected by running different policies on the same platform. This enables realistic and reproducible experimental comparisons of different OPE estimators for the first time (see Section 5 of the reference [paper](https://arxiv.org/abs/2008.07146) for the details of the evaluation of OPE protocol using Open Bandit Dataset).
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/obd_stats.png" width="90%"/></div>
 
 The small size version of our data is available at [obd](./obd).
-One can use this example data to run some [examples](./examples).
 We release the full size version of our data at [https://research.zozo.com/data.html](https://research.zozo.com/data.html).
 Please download the full size version for research uses.
-Please see [obd/README.md](./obd/README.md) for the dataset description.
+Please also see [obd/README.md](./obd/README.md) for the detailed dataset description.
 
 ## Open Bandit Pipeline (OBP)
 
-*Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair, transparent, and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
+*Open Bandit Pipeline* is an open-source Python software including a series of modules for implementing dataset preprocessing, policy learning methods, and OPE estimators. Our software provides a complete, standardized experimental procedure for OPE research, ensuring that performance comparisons are fair and reproducible. It also enables fast and accurate OPE implementation through a single unified interface, simplifying the practical use of OPE.
 
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/overview.png" width="80%"/></div>
 <figcaption>
@@ -81,7 +79,7 @@ Open Bandit Pipeline consists of the following main modules.
 
 - [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit data. It also provides tools to generate synthetic bandit data and transform multi-class classification data to bandit data.
 - [**policy module**](./obp/policy/): This module provides interfaces for implementing new online and offline bandit policies. It also implements several standard policy learning methods.
-- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when we want to implement the ReplayMethod to evaluate the performance of online bandit policies with logged bandit data. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/st-tech/zr-obp/blob/master/examples/quickstart/online.ipynb) for the quickstart guide of implementing OPE of online bandit algorithms.
+- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when you use the ReplayMethod to evaluate online bandit policies. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) for a quickstart guide of implementing OPE of online bandit algorithms.
 - [**ope module**](./obp/ope/): This module provides generic abstract interfaces to support custom implementations so that researchers can evaluate their own estimators easily. It also implements several basic and advanced OPE estimators.
 
 ### Supported Bandit Algorithms and OPE Estimators
@@ -137,7 +135,7 @@ Open Bandit Pipeline consists of the following main modules.
 
 </details>
 
-Please refer to Section 2/Appendix of the reference [paper](https://arxiv.org/abs/2008.07146) or the package [documentation](https://zr-obp.readthedocs.io/en/latest/ope.html) for the basic formulation of OPE and the supported estimators.
+Please refer to Section 2 and the Appendix of the reference [paper](https://arxiv.org/abs/2008.07146) for the standard formulation of OPE and the definitions of a range of OPE estimators.
 Note that, in addition to the above algorithms and estimators, Open Bandit Pipeline provides flexible interfaces.
 Therefore, researchers can easily implement their own algorithms or estimators and evaluate them with our data and pipeline.
 Moreover, Open Bandit Pipeline provides an interface for handling real-world logged bandit data.
@@ -327,11 +325,21 @@ Bibtex:
 
 The paper has been accepted at *NeurIPS2021 Datasets and Benchmarks Track*. The camera-ready version of the paper is available [here](https://datasets-benchmarks-proceedings.neurips.cc/paper/2021/hash/33e75ff09dd601bbe69f351039152189-Abstract-round2.html).
 
+# Sister Package: pyIEOE
+
+In addition to OBP, we develop a Python package called [**pyIEOE**](https://github.com/sony/pyIEOE), which allows practitioners to easily evaluate and compare the robustness of OPE estimators.
+
+Please also see the following reference paper about IEOE (accepted at RecSys'21).
+
+Yuta Saito, Takuma Udagawa, Haruka Kiyohara, Kazuki Mogi, Yusuke Narita, Kei Tateno.<br>
+**Evaluating the Robustness of Off-Policy Evaluation**<br>
+[https://arxiv.org/abs/2108.13703](https://arxiv.org/abs/2108.13703)
+
 # Google Group
-If you are interested in the Open Bandit Project, you can follow the updates at its google group: https://groups.google.com/g/open-bandit-project
+If you are interested in the Open Bandit Project, please follow its updates via the google group: https://groups.google.com/g/open-bandit-project
 
 # Contribution
-Any contributions to the Open Bandit Pipeline are more than welcome!
+Any contributions to Open Bandit Pipeline are more than welcome!
 Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute to the project.
 
 # License

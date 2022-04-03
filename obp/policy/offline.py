@@ -743,7 +743,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     solver: str = "adam"
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
-    learning_rate_init: float = 0.0001
+    learning_rate_init: float = 0.001
     max_iter: int = 200
     shuffle: bool = True
     random_state: Optional[int] = None
@@ -1081,25 +1081,23 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             self.nn_model.train()
             for x, a, r, p, pos in training_data_loader:
                 optimizer.zero_grad()
-                action_dist_by_current_policy = self.nn_model(x).unsqueeze(-1)
-                policy_value_arr = self._estimate_policy_value(
+                pi = self.nn_model(x).unsqueeze(-1)
+                policy_grad_arr = self._estimate_policy_gradient(
                     context=x,
                     reward=r,
                     action=a,
                     pscore=p,
-                    action_dist=action_dist_by_current_policy,
+                    action_dist=pi,
                     position=pos,
                 )
                 policy_constraint = self._estimate_policy_constraint(
                     action=a,
                     pscore=p,
-                    action_dist=action_dist_by_current_policy,
+                    action_dist=pi,
                 )
-                variance_constraint = torch.var(policy_value_arr)
-                negative_loss = policy_value_arr.mean()
-                negative_loss += self.policy_reg_param * policy_constraint
-                negative_loss -= self.var_reg_param * variance_constraint
-                loss = -negative_loss
+                loss = -policy_grad_arr.mean()
+                loss += self.policy_reg_param * policy_constraint
+                loss += self.var_reg_param * torch.var(policy_grad_arr)
                 loss.backward()
                 optimizer.step()
 
@@ -1116,25 +1114,23 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             if self.early_stopping:
                 self.nn_model.eval()
                 for x, a, r, p, pos in validation_data_loader:
-                    action_dist_by_current_policy = self.nn_model(x).unsqueeze(-1)
-                    policy_value_arr = self._estimate_policy_value(
+                    pi = self.nn_model(x).unsqueeze(-1)
+                    policy_grad_arr = self._estimate_policy_gradient(
                         context=x,
                         reward=r,
                         action=a,
                         pscore=p,
-                        action_dist=action_dist_by_current_policy,
+                        action_dist=pi,
                         position=pos,
                     )
                     policy_constraint = self._estimate_policy_constraint(
                         action=a,
                         pscore=p,
-                        action_dist=action_dist_by_current_policy,
+                        action_dist=pi,
                     )
-                    variance_constraint = torch.var(policy_value_arr)
-                    negative_loss = policy_value_arr.mean()
-                    negative_loss += self.policy_reg_param * policy_constraint
-                    negative_loss -= self.var_reg_param * variance_constraint
-                    loss = -negative_loss
+                    loss = -policy_grad_arr.mean()
+                    loss += self.policy_reg_param * policy_constraint
+                    loss += self.var_reg_param * torch.var(policy_grad_arr)
                     loss_value = loss.item()
                     if previous_validation_loss is not None:
                         if loss_value - previous_validation_loss < self.tol:
@@ -1145,7 +1141,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                         break
                     previous_validation_loss = loss_value
 
-    def _estimate_policy_value(
+    def _estimate_policy_gradient(
         self,
         context: torch.Tensor,
         action: torch.Tensor,
@@ -1154,7 +1150,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
         action_dist: torch.Tensor,
         position: torch.Tensor,
     ) -> torch.Tensor:
-        """Calculate policy loss used in the policy gradient method.
+        """Estimate the policy gradient.
 
         Parameters
         -----------
@@ -1175,7 +1171,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         Returns
         ----------
-        estimated_policy_grad: array-like, shape (batch_size,)
+        estimated_policy_grad_arr: array-like, shape (batch_size,)
             Rewards of each data estimated by an OPE estimator.
 
         """
@@ -1187,12 +1183,12 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             q_hat = self.q_func_estimator.predict(
                 context=context,
             )
-            estimated_policy_grad = torch.sum(q_hat * current_pi * log_prob, dim=1)
+            estimated_policy_grad_arr = torch.sum(q_hat * current_pi * log_prob, dim=1)
 
         elif self.off_policy_objective == "ipw":
             iw = current_pi[idx_tensor, action] / pscore
-            estimated_policy_grad = iw * reward
-            estimated_policy_grad *= log_prob[idx_tensor, action]
+            estimated_policy_grad_arr = iw * reward
+            estimated_policy_grad_arr *= log_prob[idx_tensor, action]
 
         elif self.off_policy_objective == "dr":
             q_hat = self.q_func_estimator.predict(
@@ -1200,11 +1196,11 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
             q_hat_factual = q_hat[idx_tensor, action]
             iw = current_pi[idx_tensor, action] / pscore
-            estimated_policy_grad = iw * (reward - q_hat_factual)
-            estimated_policy_grad *= log_prob[idx_tensor, action]
-            estimated_policy_grad += torch.sum(q_hat * current_pi * log_prob, dim=1)
+            estimated_policy_grad_arr = iw * (reward - q_hat_factual)
+            estimated_policy_grad_arr *= log_prob[idx_tensor, action]
+            estimated_policy_grad_arr += torch.sum(q_hat * current_pi * log_prob, dim=1)
 
-        return estimated_policy_grad
+        return estimated_policy_grad_arr
 
     def _estimate_policy_constraint(
         self,
@@ -1477,7 +1473,7 @@ class QFuncEstimator:
     solver: str = "adam"
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
-    learning_rate_init: float = 0.0001
+    learning_rate_init: float = 0.001
     max_iter: int = 200
     shuffle: bool = True
     random_state: Optional[int] = None

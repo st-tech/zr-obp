@@ -22,6 +22,10 @@ from obp.ope.estimators_continuous import gaussian_kernel
 from obp.ope.estimators_continuous import KernelizedDoublyRobust
 from obp.ope.estimators_continuous import KernelizedInverseProbabilityWeighting
 from obp.ope.estimators_continuous import triangular_kernel
+from obp.ope.estimators_embed import (
+    SelfNormalizedMarginalizedInverseProbabilityWeighting,
+)
+from obp.ope.estimators_embed import MarginalizedInverseProbabilityWeighting
 from obp.ope.estimators_multi import BaseMultiLoggersOffPolicyEstimator
 from obp.ope.estimators_multi import MultiLoggersBalancedDoublyRobust
 from obp.ope.estimators_multi import MultiLoggersBalancedInverseProbabilityWeighting
@@ -68,6 +72,8 @@ __all__ = [
     "DoublyRobustWithShrinkageTuning",
     "SubGaussianInverseProbabilityWeightingTuning",
     "SubGaussianDoublyRobustTuning",
+    "MarginalizedInverseProbabilityWeighting",
+    "SelfNormalizedMarginalizedInverseProbabilityWeighting",
     "BaseMultiLoggersOffPolicyEstimator",
     "MultiLoggersNaiveInverseProbabilityWeighting",
     "MultiLoggersWeightedInverseProbabilityWeighting",

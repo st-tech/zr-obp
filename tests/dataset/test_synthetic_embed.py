@@ -1,19 +1,11 @@
 import numpy as np
 import pytest
 
-from obp.dataset import SyntheticBanditDataset
-from obp.dataset.synthetic import linear_behavior_policy
-from obp.dataset.synthetic import linear_reward_function
-from obp.dataset.synthetic import logistic_polynomial_reward_function
-from obp.dataset.synthetic import logistic_reward_function
-from obp.dataset.synthetic import logistic_sparse_reward_function
-from obp.dataset.synthetic import polynomial_behavior_policy
-from obp.dataset.synthetic import polynomial_reward_function
-from obp.dataset.synthetic import sparse_reward_function
-from obp.utils import softmax
+from obp.dataset import logistic_reward_function
+from obp.dataset import SyntheticBanditDatasetWithActionEmbeds
 
 
-# n_actions, dim_context, reward_type, reward_std, beta, n_deficient_actions, action_context, random_state, err, description
+# n_actions, dim_context, reward_type, reward_std, beta, n_cat_per_dim, latent_param_mat_dim, n_cat_dim, p_e_a_param_std, n_unobserved_cat_dim, n_irrelevant_cat_dim, n_deficient_actions, action_context, random_state, err, description
 invalid_input_of_init = [
     (
         "3",  #
@@ -21,6 +13,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -33,6 +31,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -45,6 +49,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -57,6 +67,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -69,6 +85,12 @@ invalid_input_of_init = [
         "aaa",  #
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -81,6 +103,12 @@ invalid_input_of_init = [
         "binary",
         "1.0",  #
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -93,6 +121,12 @@ invalid_input_of_init = [
         "binary",
         -1.0,  #
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -105,6 +139,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         "0.0",  #
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         None,
         12345,
@@ -117,6 +157,264 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1.0,  #
+        1,
+        1,
+        1.0,
+        0,
+        0,
+        0,
+        None,
+        12345,
+        TypeError,
+        r"n_cat_per_dim must be an instance of <class 'int'>, not <class 'float'>.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        0,  #
+        1,
+        1,
+        1.0,
+        0,
+        0,
+        0,
+        None,
+        12345,
+        ValueError,
+        r"n_cat_per_dim == 0, must be >= 1.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1.0,  #
+        1,
+        1.0,
+        0,
+        0,
+        0,
+        None,
+        12345,
+        TypeError,
+        r"latent_param_mat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        0,  #
+        1,
+        1.0,
+        0,
+        0,
+        0,
+        None,
+        12345,
+        ValueError,
+        r"latent_param_mat_dim == 0, must be >= 1.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1.0,  #
+        1.0,
+        0,
+        0,
+        0,
+        None,
+        12345,
+        TypeError,
+        r"n_cat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        0,  #
+        1.0,
+        0,
+        0,
+        0,
+        None,
+        12345,
+        ValueError,
+        r"n_cat_dim == 0, must be >= 1.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        "1.0",  #
+        0,
+        0,
+        0,
+        None,
+        12345,
+        TypeError,
+        r"p_e_a_param_std must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        -1.0,  #
+        0,
+        0,
+        0,
+        None,
+        12345,
+        ValueError,
+        r"p_e_a_param_std == -1.0, must be >= 0.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0.0,  #
+        0,
+        0,
+        None,
+        12345,
+        TypeError,
+        r"n_unobserved_cat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
+        -1,  #
+        0,
+        0,
+        None,
+        12345,
+        ValueError,
+        r"n_unobserved_cat_dim == -1, must be >= 0.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
+        2,  #
+        0,
+        0,
+        None,
+        12345,
+        ValueError,
+        r"n_unobserved_cat_dim == 2, must be <= 1.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0.0,  #
+        0,
+        None,
+        12345,
+        TypeError,
+        r"n_irrelevant_cat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        -1,  #
+        0,
+        None,
+        12345,
+        ValueError,
+        r"n_irrelevant_cat_dim == -1, must be >= 0.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        2,  #
+        0,
+        None,
+        12345,
+        ValueError,
+        r"n_irrelevant_cat_dim == 2, must be <= 1.",
+    ),
+    (
+        3,
+        5,
+        "binary",
+        1.0,
+        0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         "0",  #
         None,
         12345,
@@ -129,6 +427,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         1.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         1.0,  #
         None,
         12345,
@@ -141,6 +445,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         10,  #
         None,
         12345,
@@ -153,6 +463,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         np.eye(5),  #
         12345,
@@ -165,6 +481,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         np.ones((3, 1, 1)),  #
         12345,
@@ -177,6 +499,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         "np.ones((3, 1, 1))",  #
         12345,
@@ -189,6 +517,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         np.eye(3),
         None,  #
@@ -201,6 +535,12 @@ invalid_input_of_init = [
         "binary",
         1.0,
         0.0,
+        1,
+        1,
+        1,
+        1.0,
+        0,
+        0,
         0,
         np.eye(3),
         "",  #
@@ -211,7 +551,7 @@ invalid_input_of_init = [
 
 
 @pytest.mark.parametrize(
-    "n_actions, dim_context, reward_type, reward_std, beta, n_deficient_actions, action_context, random_state, err, description",
+    "n_actions, dim_context, reward_type, reward_std, beta, n_cat_per_dim, latent_param_mat_dim, n_cat_dim, p_e_a_param_std, n_unobserved_cat_dim, n_irrelevant_cat_dim, n_deficient_actions, action_context, random_state, err, description",
     invalid_input_of_init,
 )
 def test_synthetic_init_using_invalid_inputs(
@@ -220,6 +560,12 @@ def test_synthetic_init_using_invalid_inputs(
     reward_type,
     reward_std,
     beta,
+    n_cat_per_dim,
+    latent_param_mat_dim,
+    n_cat_dim,
+    p_e_a_param_std,
+    n_unobserved_cat_dim,
+    n_irrelevant_cat_dim,
     n_deficient_actions,
     action_context,
     random_state,
@@ -227,13 +573,19 @@ def test_synthetic_init_using_invalid_inputs(
     description,
 ):
     with pytest.raises(err, match=f"{description}*"):
-        _ = SyntheticBanditDataset(
+        _ = SyntheticBanditDatasetWithActionEmbeds(
             n_actions=n_actions,
             dim_context=dim_context,
             reward_type=reward_type,
             reward_std=reward_std,
             beta=beta,
             n_deficient_actions=n_deficient_actions,
+            n_cat_per_dim=n_cat_per_dim,
+            latent_param_mat_dim=latent_param_mat_dim,
+            n_cat_dim=n_cat_dim,
+            p_e_a_param_std=p_e_a_param_std,
+            n_unobserved_cat_dim=n_unobserved_cat_dim,
+            n_irrelevant_cat_dim=n_irrelevant_cat_dim,
             action_context=action_context,
             random_state=random_state,
         )
@@ -242,7 +594,7 @@ def test_synthetic_init_using_invalid_inputs(
 def test_synthetic_init():
     # when reward_function is None, expected_reward is randomly sampled in [0, 1]
     # this check includes the test of `sample_contextfree_expected_reward` function
-    dataset = SyntheticBanditDataset(n_actions=2, beta=0)
+    dataset = SyntheticBanditDatasetWithActionEmbeds(n_actions=2, beta=0)
     assert len(dataset.expected_reward) == 2
     assert np.all(0 <= dataset.expected_reward) and np.all(dataset.expected_reward <= 1)
 
@@ -290,7 +642,7 @@ valid_input_of_sample_reward = [
 )
 def test_synthetic_sample_reward_using_invalid_inputs(context, action, description):
     n_actions = 10
-    dataset = SyntheticBanditDataset(n_actions=n_actions)
+    dataset = SyntheticBanditDatasetWithActionEmbeds(n_actions=n_actions)
 
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = dataset.sample_reward(context=context, action=action)
@@ -302,7 +654,7 @@ def test_synthetic_sample_reward_using_invalid_inputs(context, action, descripti
 )
 def test_synthetic_sample_reward_using_valid_inputs(context, action, description):
     n_actions = 10
-    dataset = SyntheticBanditDataset(n_actions=n_actions, dim_context=3)
+    dataset = SyntheticBanditDatasetWithActionEmbeds(n_actions=n_actions, dim_context=3)
 
     reward = dataset.sample_reward(context=context, action=action)
     assert isinstance(reward, np.ndarray), "Invalid response of sample_reward"
@@ -312,19 +664,26 @@ def test_synthetic_sample_reward_using_valid_inputs(context, action, description
 def test_synthetic_obtain_batch_bandit_feedback():
     # n_rounds
     with pytest.raises(ValueError):
-        dataset = SyntheticBanditDataset(n_actions=2)
+        dataset = SyntheticBanditDatasetWithActionEmbeds(n_actions=2)
         dataset.obtain_batch_bandit_feedback(n_rounds=0)
 
     with pytest.raises(TypeError):
-        dataset = SyntheticBanditDataset(n_actions=2)
+        dataset = SyntheticBanditDatasetWithActionEmbeds(n_actions=2)
         dataset.obtain_batch_bandit_feedback(n_rounds="3")
 
     # bandit feedback
     n_rounds = 10
     n_actions = 5
+    n_cat_dim = 3
+    n_cat_per_dim = 5
     for n_deficient_actions in [0, 2]:
-        dataset = SyntheticBanditDataset(
-            n_actions=n_actions, beta=0, n_deficient_actions=n_deficient_actions
+        dataset = SyntheticBanditDatasetWithActionEmbeds(
+            n_actions=n_actions,
+            beta=0,
+            n_cat_per_dim=n_cat_per_dim,
+            n_cat_dim=n_cat_dim,
+            reward_function=logistic_reward_function,
+            n_deficient_actions=n_deficient_actions,
         )
         bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         assert bandit_feedback["n_rounds"] == n_rounds
@@ -335,7 +694,11 @@ def test_synthetic_obtain_batch_bandit_feedback():
         )
         assert (
             bandit_feedback["action_context"].shape[0] == n_actions
-            and bandit_feedback["action_context"].shape[1] == n_actions
+            and bandit_feedback["action_context"].shape[1] == n_cat_dim
+        )
+        assert (
+            bandit_feedback["action_embed"].shape[0] == n_rounds
+            and bandit_feedback["action_embed"].shape[1] == n_cat_dim
         )
         assert (
             bandit_feedback["action"].ndim == 1
@@ -349,6 +712,16 @@ def test_synthetic_obtain_batch_bandit_feedback():
         assert (
             bandit_feedback["expected_reward"].shape[0] == n_rounds
             and bandit_feedback["expected_reward"].shape[1] == n_actions
+        )
+        assert (
+            bandit_feedback["q_x_e"].shape[0] == n_rounds
+            and bandit_feedback["q_x_e"].shape[1] == n_cat_per_dim
+            and bandit_feedback["q_x_e"].shape[2] == n_cat_dim
+        )
+        assert (
+            bandit_feedback["p_e_a"].shape[0] == n_actions
+            and bandit_feedback["p_e_a"].shape[1] == n_cat_per_dim
+            and bandit_feedback["p_e_a"].shape[2] == n_cat_dim
         )
         assert (
             bandit_feedback["pi_b"].shape[0] == n_rounds
@@ -404,7 +777,7 @@ def test_synthetic_calc_policy_value_using_invalid_inputs(
     description,
 ):
     n_actions = 10
-    dataset = SyntheticBanditDataset(n_actions=n_actions)
+    dataset = SyntheticBanditDatasetWithActionEmbeds(n_actions=n_actions)
 
     with pytest.raises(ValueError, match=f"{description}*"):
         _ = dataset.calc_ground_truth_policy_value(
@@ -422,7 +795,7 @@ def test_synthetic_calc_policy_value_using_valid_inputs(
     description,
 ):
     n_actions = 10
-    dataset = SyntheticBanditDataset(n_actions=n_actions)
+    dataset = SyntheticBanditDatasetWithActionEmbeds(n_actions=n_actions)
 
     policy_value = dataset.calc_ground_truth_policy_value(
         expected_reward=expected_reward, action_dist=action_dist
@@ -430,130 +803,3 @@ def test_synthetic_calc_policy_value_using_valid_inputs(
     assert isinstance(
         policy_value, float
     ), "Invalid response of calc_ground_truth_policy_value"
-
-
-def test_synthetic_logistic_reward_function():
-    for logistic_reward_function_ in [
-        logistic_reward_function,
-        logistic_polynomial_reward_function,
-        logistic_sparse_reward_function,
-    ]:
-        # context
-        with pytest.raises(ValueError):
-            context = np.array([1.0, 1.0])
-            logistic_reward_function_(context=context, action_context=np.eye(2))
-
-        with pytest.raises(ValueError):
-            context = [1.0, 1.0]
-            logistic_reward_function_(context=context, action_context=np.eye(2))
-
-        # action_context
-        with pytest.raises(ValueError):
-            action_context = np.array([1.0, 1.0])
-            logistic_reward_function_(
-                context=np.ones([2, 2]), action_context=action_context
-            )
-
-        with pytest.raises(ValueError):
-            action_context = [1.0, 1.0]
-            logistic_reward_function_(
-                context=np.ones([2, 2]), action_context=action_context
-            )
-
-        # expected_reward
-        n_rounds = 10
-        dim_context = 3
-        n_actions = 5
-        context = np.ones([n_rounds, dim_context])
-        action_context = np.eye(n_actions)
-        expected_reward = logistic_reward_function_(
-            context=context, action_context=action_context
-        )
-        assert (
-            expected_reward.shape[0] == n_rounds
-            and expected_reward.shape[1] == n_actions
-        )
-        assert np.all(0 <= expected_reward) and np.all(expected_reward <= 1)
-
-
-def test_synthetic_continuous_reward_function():
-    for continuous_reward_function in [
-        linear_reward_function,
-        polynomial_reward_function,
-        sparse_reward_function,
-    ]:
-        # context
-        with pytest.raises(ValueError):
-            context = np.array([1.0, 1.0])
-            continuous_reward_function(context=context, action_context=np.eye(2))
-
-        with pytest.raises(ValueError):
-            context = [1.0, 1.0]
-            continuous_reward_function(context=context, action_context=np.eye(2))
-
-        # action_context
-        with pytest.raises(ValueError):
-            action_context = np.array([1.0, 1.0])
-            continuous_reward_function(
-                context=np.ones([2, 2]), action_context=action_context
-            )
-
-        with pytest.raises(ValueError):
-            action_context = [1.0, 1.0]
-            continuous_reward_function(
-                context=np.ones([2, 2]), action_context=action_context
-            )
-
-        # expected_reward
-        n_rounds = 10
-        dim_context = 3
-        n_actions = 5
-        context = np.ones([n_rounds, dim_context])
-        action_context = np.eye(n_actions)
-        expected_reward = continuous_reward_function(
-            context=context, action_context=action_context
-        )
-        assert (
-            expected_reward.shape[0] == n_rounds
-            and expected_reward.shape[1] == n_actions
-        )
-
-
-def test_synthetic_behavior_policy_function():
-    for behavior_policy_function in [
-        linear_behavior_policy,
-        polynomial_behavior_policy,
-    ]:
-        # context
-        with pytest.raises(ValueError):
-            context = np.array([1.0, 1.0])
-            behavior_policy_function(context=context, action_context=np.eye(2))
-
-        with pytest.raises(ValueError):
-            context = [1.0, 1.0]
-            behavior_policy_function(context=context, action_context=np.eye(2))
-
-        # action_context
-        with pytest.raises(ValueError):
-            action_context = np.array([1.0, 1.0])
-            behavior_policy_function(
-                context=np.ones([2, 2]), action_context=action_context
-            )
-
-        with pytest.raises(ValueError):
-            action_context = [1.0, 1.0]
-            behavior_policy_function(
-                context=np.ones([2, 2]), action_context=action_context
-            )
-
-        # pscore (action choice probabilities by behavior policy)
-        n_rounds = 10
-        dim_context = 3
-        n_actions = 5
-        context = np.ones([n_rounds, dim_context])
-        action_context = np.eye(n_actions)
-        action_prob = softmax(
-            behavior_policy_function(context=context, action_context=action_context)
-        )
-        assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
-        assert np.all(0 <= action_prob) and np.all(action_prob <= 1)

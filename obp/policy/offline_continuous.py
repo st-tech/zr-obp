@@ -157,7 +157,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
     solver: str = "adam"
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
-    learning_rate_init: float = 0.0001
+    learning_rate_init: float = 0.001
     max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None
@@ -478,19 +478,15 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             for x, a, r, p in training_data_loader:
                 optimizer.zero_grad()
                 action_by_current_policy = self.nn_model(x).flatten()
-                loss = (
-                    -1.0
-                    * self._estimate_policy_value(
-                        context=x,
-                        reward=r,
-                        action=a,
-                        pscore=p,
-                        action_by_current_policy=action_by_current_policy,
-                    ).mean()
-                )
+                loss = -self._estimate_policy_gradient(
+                    context=x,
+                    reward=r,
+                    action=a,
+                    pscore=p,
+                    action_by_current_policy=action_by_current_policy,
+                ).mean()
                 loss.backward()
                 optimizer.step()
-
                 loss_value = loss.item()
                 if previous_training_loss is not None:
                     if loss_value - previous_training_loss < self.tol:
@@ -505,16 +501,13 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 self.nn_model.eval()
                 for x, a, r, p in validation_data_loader:
                     action_by_current_policy = self.nn_model(x).flatten()
-                    loss = (
-                        -1.0
-                        * self._estimate_policy_value(
-                            context=x,
-                            reward=r,
-                            action=a,
-                            pscore=p,
-                            action_by_current_policy=action_by_current_policy,
-                        ).mean()
-                    )
+                    loss = -self._estimate_policy_gradient(
+                        context=x,
+                        reward=r,
+                        action=a,
+                        pscore=p,
+                        action_by_current_policy=action_by_current_policy,
+                    ).mean()
                     loss_value = loss.item()
                     self.val_loss_curve.append(-loss_value)
                     if previous_validation_loss is not None:
@@ -526,7 +519,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                         break
                     previous_validation_loss = loss_value
 
-    def _estimate_policy_value(
+    def _estimate_policy_gradient(
         self,
         context: torch.Tensor,
         action: torch.Tensor,
@@ -534,7 +527,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         pscore: torch.Tensor,
         action_by_current_policy: torch.Tensor,
     ) -> float:
-        """Calculate policy loss used in the policy gradient method.
+        """Estimate the policy gradient.
 
         Parameters
         -----------
@@ -555,7 +548,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
 
         Returns
         ----------
-        estimated_policy_value_arr: array-like, shape (batch_size,)
+        estimated_policy_grad_arr: array-like, shape (batch_size,)
             Rewards of each data estimated by an OPE estimator.
 
         """
@@ -571,7 +564,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
             )
 
         if self.pg_method == "dpg":
-            estimated_policy_value_arr = self.q_func_estimator.predict(
+            estimated_policy_grad_arr = self.q_func_estimator.predict(
                 context=context,
                 action=action_by_current_policy,
             )
@@ -579,8 +572,8 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         elif self.pg_method == "ipw":
             u = action_by_current_policy - action
             u /= self.bandwidth
-            estimated_policy_value_arr = gaussian_kernel(u) * reward / pscore
-            estimated_policy_value_arr /= self.bandwidth
+            estimated_policy_grad_arr = gaussian_kernel(u) * reward / pscore
+            estimated_policy_grad_arr /= self.bandwidth
 
         elif self.pg_method == "dr":
             u = action_by_current_policy - action
@@ -589,11 +582,11 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 context=context,
                 action=action_by_current_policy,
             )
-            estimated_policy_value_arr = gaussian_kernel(u) * (reward - q_hat) / pscore
-            estimated_policy_value_arr /= self.bandwidth
-            estimated_policy_value_arr += q_hat
+            estimated_policy_grad_arr = gaussian_kernel(u) * (reward - q_hat) / pscore
+            estimated_policy_grad_arr /= self.bandwidth
+            estimated_policy_grad_arr += q_hat
 
-        return estimated_policy_value_arr
+        return estimated_policy_grad_arr
 
     def predict(self, context: np.ndarray) -> np.ndarray:
         """Predict best continuous actions for new data.
@@ -739,7 +732,7 @@ class QFuncEstimatorForContinuousAction:
     solver: str = "adam"
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
-    learning_rate_init: float = 0.0001
+    learning_rate_init: float = 0.001
     max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None

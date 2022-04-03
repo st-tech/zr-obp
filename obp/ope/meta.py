@@ -89,7 +89,7 @@ class OffPolicyEvaluation:
 
     def __post_init__(self) -> None:
         """Initialize class."""
-        for key_ in ["action", "position", "reward"]:
+        for key_ in ["action", "position", "reward", "context"]:
             if key_ not in self.bandit_feedback:
                 raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
         self.ope_estimators_ = dict()
@@ -109,6 +109,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
     ) -> Dict[str, Dict[str, np.ndarray]]:
         """Create input dictionary to estimate policy value using subclasses of `BaseOffPolicyEstimator`"""
         check_array(array=action_dist, name="action_dist", expected_dim=3)
@@ -138,6 +141,9 @@ class OffPolicyEvaluation:
         for var_name, value_or_dict in {
             "estimated_pscore": estimated_pscore,
             "estimated_importance_weights": estimated_importance_weights,
+            "action_embed": action_embed,
+            "pi_b": pi_b,
+            "p_e_a": p_e_a,
         }.items():
             if value_or_dict is None:
                 pass
@@ -153,16 +159,24 @@ class OffPolicyEvaluation:
                             f"Expected `{var_name}[{estimator_name}].shape[0] == action_dist.shape[0]`, but found it False"
                         )
             else:
-                check_array(array=value_or_dict, name=var_name, expected_dim=1)
-                if value_or_dict.shape[0] != action_dist.shape[0]:
-                    raise ValueError(
-                        f"Expected `{var_name}.shape[0] == action_dist.shape[0]`, but found it False"
-                    )
+                expected_dim = 1
+                if var_name in ["p_e_a", "pi_b"]:
+                    expected_dim = 3
+                elif var_name in ["action_embed"]:
+                    expected_dim = 2
+                check_array(
+                    array=value_or_dict, name=var_name, expected_dim=expected_dim
+                )
+                if var_name != "p_e_a":
+                    if value_or_dict.shape[0] != action_dist.shape[0]:
+                        raise ValueError(
+                            f"Expected `{var_name}.shape[0] == action_dist.shape[0]`, but found it False"
+                        )
 
         estimator_inputs = {
             estimator_name: {
                 input_: self.bandit_feedback[input_]
-                for input_ in ["reward", "action", "position"]
+                for input_ in ["action", "position", "reward", "context"]
             }
             for estimator_name in self.ope_estimators_
         }
@@ -182,6 +196,9 @@ class OffPolicyEvaluation:
                     "estimated_rewards_by_reg_model": estimated_rewards_by_reg_model,
                     "estimated_pscore": estimated_pscore,
                     "estimated_importance_weights": estimated_importance_weights,
+                    "action_embed": action_embed,
+                    "pi_b": pi_b,
+                    "p_e_a": p_e_a,
                 },
             )
         return estimator_inputs
@@ -216,6 +233,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
     ) -> Dict[str, float]:
         """Estimate the policy value of evaluation policy.
 
@@ -240,6 +260,21 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
+            Context vectors characterizing actions or action embeddings such as item category information.
+            This is used to estimate the marginal importance weights.
+
+        pi_b: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the logging/behavior policy, i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
+            Conditional distribution of action embeddings given each action.
+            This distribution is available only when we use synthetic bandit data, i.e.,
+            `obp.dataset.SyntheticBanditDatasetWithActionEmbeds`.
+            See the output of the `obtain_batch_bandit_feedback` argument of this class.
+            If `p_e_a` is given, MIPW uses the true marginal importance weights based on this distribution.
+            The performance of MIPW with the true weights is useful in synthetic experiments of research papers.
+
         Returns
         ----------
         policy_value_dict: Dict[str, float]
@@ -258,6 +293,9 @@ class OffPolicyEvaluation:
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             estimated_pscore=estimated_pscore,
             estimated_importance_weights=estimated_importance_weights,
+            action_embed=action_embed,
+            pi_b=pi_b,
+            p_e_a=p_e_a,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_dict[estimator_name] = estimator.estimate_policy_value(
@@ -275,6 +313,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -301,6 +342,21 @@ class OffPolicyEvaluation:
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`.
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
+            Context vectors characterizing actions or action embeddings such as item category information.
+            This is used to estimate the marginal importance weights.
+
+        pi_b: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the logging/behavior policy, i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
+            Conditional distribution of action embeddings given each action.
+            This distribution is available only when we use synthetic bandit data, i.e.,
+            `obp.dataset.SyntheticBanditDatasetWithActionEmbeds`.
+            See the output of the `obtain_batch_bandit_feedback` argument of this class.
+            If `p_e_a` is given, MIPW uses the true marginal importance weights based on this distribution.
+            The performance of MIPW with the true weights is useful in synthetic experiments of research papers.
 
         alpha: float, default=0.05
             Significance level.
@@ -334,6 +390,9 @@ class OffPolicyEvaluation:
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             estimated_pscore=estimated_pscore,
             estimated_importance_weights=estimated_importance_weights,
+            action_embed=action_embed,
+            pi_b=pi_b,
+            p_e_a=p_e_a,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             policy_value_interval_dict[estimator_name] = estimator.estimate_interval(
@@ -355,6 +414,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -382,6 +444,21 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
+            Context vectors characterizing actions or action embeddings such as item category information.
+            This is used to estimate the marginal importance weights.
+
+        pi_b: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the logging/behavior policy, i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
+            Conditional distribution of action embeddings given each action.
+            This distribution is available only when we use synthetic bandit data, i.e.,
+            `obp.dataset.SyntheticBanditDatasetWithActionEmbeds`.
+            See the output of the `obtain_batch_bandit_feedback` argument of this class.
+            If `p_e_a` is given, MIPW uses the true marginal importance weights based on this distribution.
+            The performance of MIPW with the true weights is useful in synthetic experiments of research papers.
+
         alpha: float, default=0.05
             Significance level.
 
@@ -403,6 +480,9 @@ class OffPolicyEvaluation:
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 estimated_pscore=estimated_pscore,
                 estimated_importance_weights=estimated_importance_weights,
+                action_embed=action_embed,
+                pi_b=pi_b,
+                p_e_a=p_e_a,
             ),
             index=["estimated_policy_value"],
         )
@@ -412,6 +492,9 @@ class OffPolicyEvaluation:
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 estimated_pscore=estimated_pscore,
                 estimated_importance_weights=estimated_importance_weights,
+                action_embed=action_embed,
+                pi_b=pi_b,
+                p_e_a=p_e_a,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
@@ -440,6 +523,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -469,6 +555,21 @@ class OffPolicyEvaluation:
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`.
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
+            Context vectors characterizing actions or action embeddings such as item category information.
+            This is used to estimate the marginal importance weights.
+
+        pi_b: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the logging/behavior policy, i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
+            Conditional distribution of action embeddings given each action.
+            This distribution is available only when we use synthetic bandit data, i.e.,
+            `obp.dataset.SyntheticBanditDatasetWithActionEmbeds`.
+            See the output of the `obtain_batch_bandit_feedback` argument of this class.
+            If `p_e_a` is given, MIPW uses the true marginal importance weights based on this distribution.
+            The performance of MIPW with the true weights is useful in synthetic experiments of research papers.
 
         alpha: float, default=0.05
             Significance level.
@@ -502,6 +603,9 @@ class OffPolicyEvaluation:
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             estimated_pscore=estimated_pscore,
             estimated_importance_weights=estimated_importance_weights,
+            action_embed=action_embed,
+            pi_b=pi_b,
+            p_e_a=p_e_a,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_round_rewards_dict[
@@ -545,6 +649,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
         metric: str = "se",
     ) -> Dict[str, float]:
         """Evaluate the accuracy of OPE estimators.
@@ -589,6 +696,21 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
+            Context vectors characterizing actions or action embeddings such as item category information.
+            This is used to estimate the marginal importance weights.
+
+        pi_b: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the logging/behavior policy, i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
+            Conditional distribution of action embeddings given each action.
+            This distribution is available only when we use synthetic bandit data, i.e.,
+            `obp.dataset.SyntheticBanditDatasetWithActionEmbeds`.
+            See the output of the `obtain_batch_bandit_feedback` argument of this class.
+            If `p_e_a` is given, MIPW uses the true marginal importance weights based on this distribution.
+            The performance of MIPW with the true weights is useful in synthetic experiments of research papers.
+
         metric: str, default="se"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be either "relative-ee" or "se".
@@ -619,6 +741,9 @@ class OffPolicyEvaluation:
             estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
             estimated_pscore=estimated_pscore,
             estimated_importance_weights=estimated_importance_weights,
+            action_embed=action_embed,
+            pi_b=pi_b,
+            p_e_a=p_e_a,
         )
         for estimator_name, estimator in self.ope_estimators_.items():
             estimated_policy_value = estimator.estimate_policy_value(
@@ -644,6 +769,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
         metric: str = "se",
     ) -> DataFrame:
         """Summarize the performance comparison among OPE estimators.
@@ -671,6 +799,21 @@ class OffPolicyEvaluation:
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
 
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
+            Context vectors characterizing actions or action embeddings such as item category information.
+            This is used to estimate the marginal importance weights.
+
+        pi_b: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the logging/behavior policy, i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
+            Conditional distribution of action embeddings given each action.
+            This distribution is available only when we use synthetic bandit data, i.e.,
+            `obp.dataset.SyntheticBanditDatasetWithActionEmbeds`.
+            See the output of the `obtain_batch_bandit_feedback` argument of this class.
+            If `p_e_a` is given, MIPW uses the true marginal importance weights based on this distribution.
+            The performance of MIPW with the true weights is useful in synthetic experiments of research papers.
+
         metric: str, default="se"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Must be either "relative-ee" or "se".
@@ -688,6 +831,9 @@ class OffPolicyEvaluation:
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 estimated_pscore=estimated_pscore,
                 estimated_importance_weights=estimated_importance_weights,
+                action_embed=action_embed,
+                pi_b=pi_b,
+                p_e_a=p_e_a,
                 metric=metric,
             ),
             index=[metric],
@@ -705,6 +851,9 @@ class OffPolicyEvaluation:
         estimated_importance_weights: Optional[
             Union[np.ndarray, Dict[str, np.ndarray]]
         ] = None,
+        action_embed: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        pi_b: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
+        p_e_a: Optional[Union[np.ndarray, Dict[str, np.ndarray]]] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -737,6 +886,21 @@ class OffPolicyEvaluation:
             Importance weights estimated via supervised classification implemented by `obp.ope.ImportanceWeightEstimator`.
             When an array-like is given, all OPE estimators use it.
             When a dict with an estimator's name as its key is given, the corresponding value is used for the estimator.
+
+        action_embed: array-like, shape (n_rounds, dim_action_embed)
+            Context vectors characterizing actions or action embeddings such as item category information.
+            This is used to estimate the marginal importance weights.
+
+        pi_b: array-like, shape (n_rounds, n_actions, len_list)
+            Action choice probabilities of the logging/behavior policy, i.e., :math:`\\pi_b(a_i|x_i)`.
+
+        p_e_a: array-like, shape (n_actions, n_cat_per_dim, n_cat_dim), default=None
+            Conditional distribution of action embeddings given each action.
+            This distribution is available only when we use synthetic bandit data, i.e.,
+            `obp.dataset.SyntheticBanditDatasetWithActionEmbeds`.
+            See the output of the `obtain_batch_bandit_feedback` argument of this class.
+            If `p_e_a` is given, MIPW uses the true marginal importance weights based on this distribution.
+            The performance of MIPW with the true weights is useful in synthetic experiments of research papers.
 
         alpha: float, default=0.05
             Significance level.
@@ -778,6 +942,9 @@ class OffPolicyEvaluation:
                 estimated_rewards_by_reg_model=estimated_rewards_by_reg_model,
                 estimated_pscore=estimated_pscore,
                 estimated_importance_weights=estimated_importance_weights,
+                action_embed=action_embed,
+                pi_b=pi_b,
+                p_e_a=p_e_a,
             )
             for estimator_name, estimator in self.ope_estimators_.items():
                 estimated_round_rewards_dict[estimator_name][
