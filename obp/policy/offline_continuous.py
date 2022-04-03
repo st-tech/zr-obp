@@ -487,7 +487,6 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
                 ).mean()
                 loss.backward()
                 optimizer.step()
-
                 loss_value = loss.item()
                 if previous_training_loss is not None:
                     if loss_value - previous_training_loss < self.tol:

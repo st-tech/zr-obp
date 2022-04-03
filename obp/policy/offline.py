@@ -1082,7 +1082,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             for x, a, r, p, pos in training_data_loader:
                 optimizer.zero_grad()
                 pi = self.nn_model(x).unsqueeze(-1)
-                policy_grad_arr = -self._estimate_policy_gradient(
+                policy_grad_arr = self._estimate_policy_gradient(
                     context=x,
                     reward=r,
                     action=a,
@@ -1115,7 +1115,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 self.nn_model.eval()
                 for x, a, r, p, pos in validation_data_loader:
                     pi = self.nn_model(x).unsqueeze(-1)
-                    policy_grad_arr = -self._estimate_policy_gradient(
+                    policy_grad_arr = self._estimate_policy_gradient(
                         context=x,
                         reward=r,
                         action=a,
