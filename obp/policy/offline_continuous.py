@@ -157,7 +157,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
     solver: str = "adam"
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
-    learning_rate_init: float = 0.001
+    learning_rate_init: float = 0.0001
     max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None
@@ -732,7 +732,7 @@ class QFuncEstimatorForContinuousAction:
     solver: str = "adam"
     alpha: float = 0.0001
     batch_size: Union[int, str] = "auto"
-    learning_rate_init: float = 0.001
+    learning_rate_init: float = 0.0001
     max_iter: int = 100
     shuffle: bool = True
     random_state: Optional[int] = None
