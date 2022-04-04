@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "obp"
-version = "0.5.2"
+version = "0.5.4"
 description = "Open Bandit Pipeline: a python library for off-policy evaluation and learning"
 authors = ["Yuta Saito <ys552@cornell.edu>"]
 license = "Apache License 2.0"
@@ -19,7 +19,7 @@ seaborn = "^0.11.2"
 pyieoe = "^0.1.1"
 pingouin = "^0.4.0"
 mypy-extensions = "^0.4.3"
-Pillow = "9.0.0"
+Pillow = "9.1.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.2"
