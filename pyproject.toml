@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "obp"
-version = "0.5.2"
+version = "0.5.4"
 description = "Open Bandit Pipeline: a python library for off-policy evaluation and learning"
 authors = ["Yuta Saito <ys552@cornell.edu>"]
 license = "Apache License 2.0"
