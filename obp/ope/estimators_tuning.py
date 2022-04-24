@@ -41,11 +41,11 @@ class BaseOffPolicyEstimatorTuning:
         which improves the original SLOPE proposed by Su et al.(2020).
 
     use_bias_upper_bound: bool, default=True
-        Whether to use bias upper bound in hyperparameter tuning.
+        Whether to use a bias upper bound in hyperparameter tuning.
         If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
     delta: float, default=0.05
-        A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+        A confidence delta to construct a high probability upper bound used in SLOPE.
 
     use_estimated_pscore: bool, default=False.
         If True, `estimated_pscore` is used, otherwise, `pscore` (the true propensity scores) is used.
@@ -380,6 +380,8 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         A list of candidate clipping hyperparameters.
         The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
         or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+        The candidate hyperparameter values will be sorted automatically to ensure the monotonicity
+        assumption of SLOPE.
 
     tuning_method: str, default="slope".
         A method used to tune the hyperparameter of an OPE estimator.
@@ -388,11 +390,11 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         which improves the original SLOPE proposed by Su et al.(2020).
 
     use_bias_upper_bound: bool, default=True
-        Whether to use bias upper bound in hyperparameter tuning.
+        Whether to use a bias upper bound in hyperparameter tuning.
         If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
     delta: float, default=0.05
-        A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+        A confidence delta to construct a high probability upper bound used in SLOPE.
 
     use_estimated_pscore: bool, default=False.
         If True, `estimated_pscore` is used, otherwise, `pscore` (the true propensity scores) is used.
@@ -417,6 +419,7 @@ class InverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = InverseProbabilityWeighting
         super()._check_lambdas()
         super()._check_init_inputs()
+        self.lambdas.sort(reverse=True)
 
     def estimate_policy_value(
         self,
@@ -583,6 +586,8 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         A list of candidate clipping hyperparameters.
         The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
         or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+        The candidate hyperparameter values will be sorted automatically to ensure the monotonicity
+        assumption of SLOPE.
 
     tuning_method: str, default="slope".
         A method used to tune the hyperparameter of an OPE estimator.
@@ -614,6 +619,7 @@ class DoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = DoublyRobust
         super()._check_lambdas()
         super()._check_init_inputs()
+        self.lambdas.sort(reverse=True)
 
     def estimate_policy_value(
         self,
@@ -801,6 +807,8 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         A list of candidate switching hyperparameters.
         The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
         or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+        The candidate hyperparameter values will be sorted automatically to ensure the monotonicity
+        assumption of SLOPE.
 
     tuning_method: str, default="slope".
         A method used to tune the hyperparameter of an OPE estimator.
@@ -831,6 +839,7 @@ class SwitchDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = SwitchDoublyRobust
         super()._check_lambdas()
         super()._check_init_inputs()
+        self.lambdas.sort(reverse=True)
 
     def estimate_policy_value(
         self,
@@ -1018,6 +1027,8 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         A list of candidate shrinkage hyperparameters.
         The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
         or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+        The candidate hyperparameter values will be sorted automatically to ensure the monotonicity
+        assumption of SLOPE.
 
     tuning_method: str, default="slope".
         A method used to tune the hyperparameter of an OPE estimator.
@@ -1048,6 +1059,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = DoublyRobustWithShrinkage
         super()._check_lambdas()
         super()._check_init_inputs()
+        self.lambdas.sort(reverse=True)
 
     def estimate_policy_value(
         self,
@@ -1234,6 +1246,8 @@ class SubGaussianInverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning)
         A list of candidate hyperparameter values, which should be in the range of [0.0, 1.0].
         The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
         or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+        The candidate hyperparameter values will be sorted automatically to ensure the monotonicity
+        assumption of SLOPE.
 
     tuning_method: str, default="slope".
         A method used to tune the hyperparameter of an OPE estimator.
@@ -1242,11 +1256,11 @@ class SubGaussianInverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning)
         which improves the original SLOPE proposed by Su et al.(2020).
 
     use_bias_upper_bound: bool, default=True
-        Whether to use bias upper bound in hyperparameter tuning.
+        Whether to use a bias upper bound in hyperparameter tuning.
         If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
     delta: float, default=0.05
-        A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+        A confidence delta to construct a high probability upper bound used in SLOPE.
 
     use_estimated_pscore: bool, default=False.
         If True, `estimated_pscore` is used, otherwise, `pscore` (the true propensity scores) is used.
@@ -1274,6 +1288,7 @@ class SubGaussianInverseProbabilityWeightingTuning(BaseOffPolicyEstimatorTuning)
         self.base_ope_estimator = SubGaussianInverseProbabilityWeighting
         super()._check_lambdas(max_val=1.0)
         super()._check_init_inputs()
+        self.lambdas.sort()
 
     def estimate_policy_value(
         self,
@@ -1437,6 +1452,8 @@ class SubGaussianDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         A list of candidate hyperparameter values, which should be in the range of [0.0, 1.0].
         The automatic hyperparameter tuning procedure proposed by Su et al.(2020)
         or Tucker and Lee.(2021) will choose the best hyperparameter value from the logged data.
+        The candidate hyperparameter values will be sorted automatically to ensure the monotonicity
+        assumption of SLOPE.
 
     tuning_method: str, default="slope".
         A method used to tune the hyperparameter of an OPE estimator.
@@ -1470,6 +1487,7 @@ class SubGaussianDoublyRobustTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = SubGaussianDoublyRobust
         super()._check_lambdas(max_val=1.0)
         super()._check_init_inputs()
+        self.lambdas.sort()
 
     def estimate_policy_value(
         self,

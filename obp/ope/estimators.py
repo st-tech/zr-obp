@@ -526,11 +526,11 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound in hyperparameter tuning.
+            Whether to use a bias upper bound in hyperparameter tuning.
             If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
         delta: float, default=0.05
-            A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+            A confidence delta to construct a high probability upper bound used in SLOPE.
 
         Returns
         ----------
@@ -1207,11 +1207,11 @@ class DoublyRobust(BaseOffPolicyEstimator):
             Estimated expected rewards given context, action, and position, i.e., :math:`\\hat{q}(x_i,a_i)`.
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound in hyperparameter tuning.
+            Whether to use a bias upper bound in hyperparameter tuning.
             If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
         delta: float, default=0.05
-            A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+            A confidence delta to construct a high probability upper bound used in SLOPE.
 
         Returns
         ----------
@@ -1511,11 +1511,11 @@ class SwitchDoublyRobust(DoublyRobust):
             (If only a single action is chosen for each data, you can just ignore this argument.)
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound in hyperparameter tuning.
+            Whether to use a bias upper bound in hyperparameter tuning.
             If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
         delta: float, default=0.05
-            A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+            A confidence delta to construct a high probability upper bound used in SLOPE.
 
         Returns
         ----------
@@ -1719,11 +1719,11 @@ class DoublyRobustWithShrinkage(DoublyRobust):
             Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound in hyperparameter tuning.
+            Whether to use a bias upper bound in hyperparameter tuning.
             If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
         delta: float, default=0.05
-            A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+            A confidence delta to construct a high probability upper bound used in SLOPE.
 
         Returns
         ----------
@@ -1907,11 +1907,11 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
             Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound in hyperparameter tuning.
+            Whether to use a bias upper bound in hyperparameter tuning.
             If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
         delta: float, default=0.05
-            A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+            A confidence delta to construct a high probability upper bound used in SLOPE.
 
         Returns
         ----------
@@ -2106,11 +2106,11 @@ class SubGaussianDoublyRobust(DoublyRobust):
             Indices to differentiate positions in a recommendation interface where the actions are presented.
 
         use_bias_upper_bound: bool, default=True
-            Whether to use bias upper bound in hyperparameter tuning.
+            Whether to use a bias upper bound in hyperparameter tuning.
             If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
         delta: float, default=0.05
-            A confidence delta to construct a high probability upper bound based on Bernstein inequality.
+            A confidence delta to construct a high probability upper bound used in SLOPE.
 
         Returns
         ----------
