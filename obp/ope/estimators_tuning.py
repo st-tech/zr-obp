@@ -44,7 +44,7 @@ class BaseOffPolicyEstimatorTuning:
         Whether to use a bias upper bound in hyperparameter tuning.
         If False, the direct bias estimator is used to estimate the MSE. See Su et al.(2020) for details.
 
-    delta: float, default=0.05
+    delta: float, default=0.1
         A confidence delta to construct a high probability upper bound used in SLOPE.
 
     use_estimated_pscore: bool, default=False.
@@ -70,7 +70,7 @@ class BaseOffPolicyEstimatorTuning:
     lambdas: List[float] = None
     tuning_method: str = "slope"
     use_bias_upper_bound: bool = True
-    delta: float = 0.05
+    delta: float = 0.1
     use_estimated_pscore: bool = False
 
     def __new__(cls, *args, **kwargs):
@@ -151,7 +151,6 @@ class BaseOffPolicyEstimatorTuning:
     ) -> float:
         """Find the best hyperparameter value from the candidate set by SLOPE."""
         C = np.sqrt(6) - 1
-        theta_list, cnf_list = [], []
         theta_list_for_sort, cnf_list_for_sort = [], []
         for hyperparam_ in self.lambdas:
             estimated_round_rewards = self.base_ope_estimator(
@@ -172,6 +171,7 @@ class BaseOffPolicyEstimatorTuning:
             )
             cnf_list_for_sort.append(cnf)
 
+        theta_list, cnf_list = [], []
         sorted_idx_list = np.argsort(cnf_list_for_sort)[::-1]
         for i, idx in enumerate(sorted_idx_list):
             cnf_i = cnf_list_for_sort[idx]
@@ -1059,7 +1059,7 @@ class DoublyRobustWithShrinkageTuning(BaseOffPolicyEstimatorTuning):
         self.base_ope_estimator = DoublyRobustWithShrinkage
         super()._check_lambdas()
         super()._check_init_inputs()
-        self.lambdas.sort(reverse=True)
+        self.lambdas.sort()
 
     def estimate_policy_value(
         self,
