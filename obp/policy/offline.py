@@ -796,6 +796,8 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             )
 
         if self.off_policy_objective == "ipw-subgauss":
+            if self.lambda_ is None:
+                self.lambda_ = 0.001
             check_scalar(
                 self.lambda_,
                 "lambda_",
@@ -803,28 +805,26 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
                 min_val=0.0,
                 max_val=1.0,
             )
-            if self.lambda_ is None:
-                self.lambda_ = 0.01
 
         elif self.off_policy_objective == "snipw":
-            check_scalar(
-                self.lambda_,
-                "lambda_",
-                (int, float),
-                min_val=0.0,
-            )
             if self.lambda_ is None:
                 self.lambda_ = 0.0
-
-        elif self.off_policy_objective == "ipw-os":
             check_scalar(
                 self.lambda_,
                 "lambda_",
                 (int, float),
                 min_val=0.0,
             )
+
+        elif self.off_policy_objective == "ipw-os":
             if self.lambda_ is None:
                 self.lambda_ = 10000
+            check_scalar(
+                self.lambda_,
+                "lambda_",
+                (int, float),
+                min_val=0.0,
+            )
 
         check_scalar(
             self.policy_reg_param,
@@ -939,7 +939,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         self.nn_model = nn.Sequential(OrderedDict(layer_list))
 
-        if self.off_policy_objective != "ipw":
+        if self.off_policy_objective in ["dr", "dm"]:
             if self.q_func_estimator_hyperparams is not None:
                 self.q_func_estimator_hyperparams["n_actions"] = self.n_actions
                 self.q_func_estimator_hyperparams["dim_context"] = self.dim_context
@@ -1090,7 +1090,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             position = np.zeros_like(action, dtype=int)
 
         # train q function estimator when it is needed to train NNPolicy
-        if self.off_policy_objective != "ipw":
+        if self.off_policy_objective in ["dr", "dm"]:
             self.q_func_estimator.fit(
                 context=context,
                 action=action,
@@ -1263,13 +1263,15 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         elif self.off_policy_objective == "ipw-os":
             iw = current_pi[idx_tensor, action] / pscore
-            iw_ = (self.lambda_ * iw) / (iw**2 + self.lambda_)
+            iw_ = (self.lambda_ - (iw**2)) / ((iw**2 + self.lambda_) ** 2)
+            iw_ *= self.lambda_ * iw
             estimated_policy_grad_arr = iw_ * reward
             estimated_policy_grad_arr *= log_prob[idx_tensor, action]
 
         elif self.off_policy_objective == "ipw-subgauss":
             iw = current_pi[idx_tensor, action] / pscore
-            iw_ = iw / (1 - self.lambda_ + self.lambda_ * iw)
+            iw_ = (1 - self.lambda_) * iw
+            iw_ /= (1 - self.lambda_ + self.lambda_ * iw) ** 2
             estimated_policy_grad_arr = iw_ * reward
             estimated_policy_grad_arr *= log_prob[idx_tensor, action]
 
