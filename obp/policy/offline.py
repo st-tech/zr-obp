@@ -348,7 +348,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
 
 @dataclass
 class QLearner(BaseOfflinePolicyLearner):
-    """Off-policy learner based on Direct Method.
+    """Off-policy learner based on Direct Method (Reward Regression).
 
     Parameters
     -----------
@@ -628,20 +628,28 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     dim_context: int
         Number of dimensions of context vectors.
 
+    off_policy_objective: str
+        An OPE estimator used to estimate the policy gradient.
+        Must be one of 'dm', 'ipw', 'dr', 'snipw', 'ipw-os', and 'ipw-subgauss'.
+        They stand for
+            - Direct Method
+            - Inverse Probability Weighting
+            - Doubly Robust
+            - Self-Normalized Inverse Probability Weighting
+            - Inverse Probability Weighting with Optimistic Shrinkage
+            - Inverse Probability Weighting with Sungaussian Weight
+        , respectively.
+
+    lambda_: float, default=np.inf
+        A hyperparameter used for 'snipw', 'ipw-os', and 'ipw-subgauss'.
+        When `off_policy_objective`='snipw', `lambda_` is used to shift the reward.
+        Otherwise, `lambda_` is used to modify or shrinkage the importance weight.
+
     policy_reg_param: float, default=0.0
         A hypeparameter to control the policy regularization. :math:`\\lambda_{pol}`.
 
     var_reg_param: float, default=0.0
         A hypeparameter to control the variance regularization. :math:`\\lambda_{var}`.
-
-    off_policy_objective: str
-        An OPE estimator to estimate the objective function.
-        Must be one of `dm`, `ipw`, and `dr`.
-        They stand for
-            - Direct Method
-            - Inverse Probability Weighting
-            - Doubly Robust
-        , respectively.
 
     hidden_layer_size: Tuple[int, ...], default = (100,)
         The i-th element specifies the size of the i-th layer.
@@ -730,12 +738,22 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
     "Adam: A Method for Stochastic Optimization.", 2014
 
     John Duchi, Elad Hazan, and Yoram Singer.
-    "Adaptive Subgradient Methods for Online Learning and Stochastic Optimization", 2011.
+    "Adaptive Subgradient Methods for Online Learning and Stochastic Optimization.", 2011.
+
+    Thorsten Joachims, Adith Swaminathan, and Maarten de Rijke.
+    ""Deep Learning for Logged Bandit Feedback."", 2018.
+
+    Yi Su, Maria Dimakopoulou, Akshay Krishnamurthy, and Miroslav Dudik.
+    "Doubly Robust Off-Policy Evaluation with Shrinkage.", 2020.
+
+    Alberto Maria Metelli, Alessio Russo, and Marcello Restelli.
+    "Subgaussian and Differentiable Importance Sampling for Off-Policy Evaluation and Learning.", 2021.
 
     """
 
     dim_context: Optional[int] = None
     off_policy_objective: Optional[str] = None
+    lambda_: Optional[float] = None
     policy_reg_param: float = 0.0
     var_reg_param: float = 0.0
     hidden_layer_size: Tuple[int, ...] = (100,)
@@ -764,10 +782,48 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         check_scalar(self.dim_context, "dim_context", int, min_val=1)
 
-        if self.off_policy_objective not in ["dm", "ipw", "dr"]:
+        if self.off_policy_objective not in [
+            "dm",
+            "ipw",
+            "dr",
+            "snipw",
+            "ipw-os",
+            "ipw-subgauss",
+        ]:
             raise ValueError(
-                "`off_policy_objective` must be one of 'dm', 'ipw', or 'dr'"
+                "`off_policy_objective` must be one of 'dm', 'ipw', 'dr', 'snipw', 'ipw-os', 'ipw-subgauss'"
                 f", but {self.off_policy_objective} is given"
+            )
+
+        if self.off_policy_objective == "ipw-subgauss":
+            if self.lambda_ is None:
+                self.lambda_ = 0.001
+            check_scalar(
+                self.lambda_,
+                "lambda_",
+                (int, float),
+                min_val=0.0,
+                max_val=1.0,
+            )
+
+        elif self.off_policy_objective == "snipw":
+            if self.lambda_ is None:
+                self.lambda_ = 0.0
+            check_scalar(
+                self.lambda_,
+                "lambda_",
+                (int, float),
+                min_val=0.0,
+            )
+
+        elif self.off_policy_objective == "ipw-os":
+            if self.lambda_ is None:
+                self.lambda_ = 10000
+            check_scalar(
+                self.lambda_,
+                "lambda_",
+                (int, float),
+                min_val=0.0,
             )
 
         check_scalar(
@@ -883,7 +939,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         self.nn_model = nn.Sequential(OrderedDict(layer_list))
 
-        if self.off_policy_objective != "ipw":
+        if self.off_policy_objective in ["dr", "dm"]:
             if self.q_func_estimator_hyperparams is not None:
                 self.q_func_estimator_hyperparams["n_actions"] = self.n_actions
                 self.q_func_estimator_hyperparams["dim_context"] = self.dim_context
@@ -1034,7 +1090,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             position = np.zeros_like(action, dtype=int)
 
         # train q function estimator when it is needed to train NNPolicy
-        if self.off_policy_objective != "ipw":
+        if self.off_policy_objective in ["dr", "dm"]:
             self.q_func_estimator.fit(
                 context=context,
                 action=action,
@@ -1199,6 +1255,25 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
             estimated_policy_grad_arr = iw * (reward - q_hat_factual)
             estimated_policy_grad_arr *= log_prob[idx_tensor, action]
             estimated_policy_grad_arr += torch.sum(q_hat * current_pi * log_prob, dim=1)
+
+        elif self.off_policy_objective == "snipw":
+            iw = current_pi[idx_tensor, action] / pscore
+            estimated_policy_grad_arr = iw * (reward - self.lambda_)
+            estimated_policy_grad_arr *= log_prob[idx_tensor, action]
+
+        elif self.off_policy_objective == "ipw-os":
+            iw = current_pi[idx_tensor, action] / pscore
+            iw_ = (self.lambda_ - (iw**2)) / ((iw**2 + self.lambda_) ** 2)
+            iw_ *= self.lambda_ * iw
+            estimated_policy_grad_arr = iw_ * reward
+            estimated_policy_grad_arr *= log_prob[idx_tensor, action]
+
+        elif self.off_policy_objective == "ipw-subgauss":
+            iw = current_pi[idx_tensor, action] / pscore
+            iw_ = (1 - self.lambda_) * iw
+            iw_ /= (1 - self.lambda_ + self.lambda_ * iw) ** 2
+            estimated_policy_grad_arr = iw_ * reward
+            estimated_policy_grad_arr *= log_prob[idx_tensor, action]
 
         return estimated_policy_grad_arr
 
