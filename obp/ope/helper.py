@@ -227,7 +227,8 @@ def estimate_student_t_lower_bound(x: np.ndarray, delta: float = 0.05) -> float:
     check_scalar(delta, "delta", (int, float), min_val=0.0, max_val=1.0)
 
     n = x.shape[0]
-    ci = sqrt(var(x) / (n - 1)) * stats.t(n - 1).ppf(1.0 - delta)
+    ci = sqrt(var(x) / (n - 1))
+    ci *= stats.t(n - 1).ppf(1.0 - delta)
     lower_bound_estimate = x.mean() - ci
 
     return lower_bound_estimate
