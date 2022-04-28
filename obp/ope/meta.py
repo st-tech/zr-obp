@@ -149,15 +149,26 @@ class OffPolicyEvaluation:
                 pass
             elif isinstance(value_or_dict, dict):
                 for estimator_name, value in value_or_dict.items():
+                    expected_dim = 1
+                    if var_name in ["p_e_a", "pi_b"]:
+                        expected_dim = 3
+                    elif var_name in ["action_embed"]:
+                        expected_dim = 2
                     check_array(
                         array=value,
                         name=f"{var_name}[{estimator_name}]",
-                        expected_dim=1,
+                        expected_dim=expected_dim,
                     )
-                    if value.shape[0] != action_dist.shape[0]:
-                        raise ValueError(
-                            f"Expected `{var_name}[{estimator_name}].shape[0] == action_dist.shape[0]`, but found it False"
-                        )
+                    if var_name != "p_e_a":
+                        if value.shape[0] != action_dist.shape[0]:
+                            raise ValueError(
+                                f"Expected `{var_name}[{estimator_name}].shape[0] == action_dist.shape[0]`, but found it False"
+                            )
+                    else:
+                        if value.shape[0] != action_dist.shape[1]:
+                            raise ValueError(
+                                f"Expected `{var_name}[{estimator_name}].shape[0] == action_dist.shape[1]`, but found it False"
+                            )
             else:
                 expected_dim = 1
                 if var_name in ["p_e_a", "pi_b"]:
@@ -171,6 +182,11 @@ class OffPolicyEvaluation:
                     if value_or_dict.shape[0] != action_dist.shape[0]:
                         raise ValueError(
                             f"Expected `{var_name}.shape[0] == action_dist.shape[0]`, but found it False"
+                        )
+                else:
+                    if value.shape[0] != action_dist.shape[1]:
+                        raise ValueError(
+                            f"Expected `{var_name}[{estimator_name}].shape[0] == action_dist.shape[1]`, but found it False"
                         )
 
         estimator_inputs = {
