@@ -44,7 +44,7 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
     reward_type: str, default='binary'
         Whether the rewards are 'binary' or 'continuous'.
         When 'binary', rewards are sampled from the Bernoulli distribution.
-        When 'continuous', rewards are sampled from the truncated Normal distribution with `scale=1`.
+        When 'continuous', rewards are sampled from the Normal distribution.
         The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
 
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
@@ -73,7 +73,7 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
         while a negative value leads to a sub-optimal behavior policy.
 
     n_cat_per_dim: int, default=10
-        Number of categories (cardinality) per category dimension.
+        Number of categories (cardinality) per each category dimension.
 
     latent_param_mat_dim: int, default=5
         Number of dimensions of the latent parameter matrix to define the expected rewards.
@@ -85,7 +85,8 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
 
     p_e_a_param_std: int or float, default=1.0
         Standard deviation of the normal distribution to sample the parameters of the action embedding distribution.
-        A large value generates a near-deterministic embedding distribution, while a small value generates a near-uniform embedding distribution.
+        A large value generates a near-deterministic embedding distribution,
+        while a small value generates a near-uniform embedding distribution.
 
     n_unobserved_cat_dim: int, default=0
         Number of unobserved category dimensions.
@@ -333,7 +334,7 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
             n_rounds=n_rounds,
             n_actions=self.n_actions,
             action_context=self.action_context_reg[
-                :, 1:
+                :, self.n_unobserved_cat_dim :
             ],  # action context used for training a reg model
             action_embed=action_embed[
                 :, self.n_unobserved_cat_dim :
@@ -344,7 +345,9 @@ class SyntheticBanditDatasetWithActionEmbeds(SyntheticBanditDataset):
             reward=rewards,
             expected_reward=q_x_a,
             q_x_e=q_x_e[:, :, self.n_unobserved_cat_dim :],
-            p_e_a=self.p_e_a[:, :, self.n_unobserved_cat_dim :],
+            p_e_a=self.p_e_a[
+                :, :, self.n_unobserved_cat_dim :
+            ],  # true probability distribution of the action embeddings
             pi_b=pi_b[:, :, np.newaxis],
             pscore=pi_b[np.arange(n_rounds), actions],
         )
