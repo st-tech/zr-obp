@@ -1441,7 +1441,7 @@ def action_interaction_reward_function(
             action_2d[:, pos_],
         ]
         if reward_structure == "independent":
-            continue
+            pass
         elif is_additive:
             for pos2_ in np.arange(len_list):
                 if is_cascade:
