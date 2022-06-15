@@ -347,17 +347,29 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             comb_list = list(itertools.combinations(feat_list, i))
             theta_list_, cnf_list_ = [], []
             for comb in comb_list:
-                theta, cnf = self._estimate_round_rewards(
-                    context=context,
-                    reward=reward,
-                    action=action,
-                    action_embed=action_embed[:, comb],
-                    pi_b=pi_b,
-                    action_dist=action_dist,
-                    position=position,
-                    p_e_a=p_e_a[:, :, comb],
-                    with_dev=True,
-                )
+                if p_e_a is None:
+                    theta, cnf = self._estimate_round_rewards(
+                        context=context,
+                        reward=reward,
+                        action=action,
+                        action_embed=action_embed[:, comb],
+                        pi_b=pi_b,
+                        action_dist=action_dist,
+                        position=position,
+                        with_dev=True,
+                    )
+                else:
+                    theta, cnf = self._estimate_round_rewards(
+                        context=context,
+                        reward=reward,
+                        action=action,
+                        action_embed=action_embed[:, comb],
+                        pi_b=pi_b,
+                        action_dist=action_dist,
+                        position=position,
+                        p_e_a=p_e_a[:, :, comb],
+                        with_dev=True,
+                    )
                 if len(theta_list) > 0:
                     theta_list_.append(theta), cnf_list_.append(cnf)
                 else:
@@ -392,17 +404,29 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         current_feat, C = np.arange(n_emb_dim), np.sqrt(6) - 1
 
         # init
-        theta, cnf = self._estimate_round_rewards(
-            context=context,
-            reward=reward,
-            action=action,
-            action_embed=action_embed[:, current_feat],
-            pi_b=pi_b,
-            action_dist=action_dist,
-            position=position,
-            p_e_a=p_e_a[:, :, current_feat],
-            with_dev=True,
-        )
+        if p_e_a is None:
+            theta, cnf = self._estimate_round_rewards(
+                context=context,
+                reward=reward,
+                action=action,
+                action_embed=action_embed[:, current_feat],
+                pi_b=pi_b,
+                action_dist=action_dist,
+                position=position,
+                with_dev=True,
+            )
+        else:
+            theta, cnf = self._estimate_round_rewards(
+                context=context,
+                reward=reward,
+                action=action,
+                action_embed=action_embed[:, current_feat],
+                pi_b=pi_b,
+                action_dist=action_dist,
+                position=position,
+                p_e_a=p_e_a[:, :, current_feat],
+                with_dev=True,
+            )
         theta_list.append(theta), cnf_list.append(cnf)
 
         # iterate
@@ -411,17 +435,29 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             for d in current_feat:
                 idx_without_d = np.where(current_feat != d, True, False)
                 candidate_feat = current_feat[idx_without_d]
-                theta, cnf = self._estimate_round_rewards(
-                    context=context,
-                    reward=reward,
-                    action=action,
-                    action_embed=action_embed[:, candidate_feat],
-                    pi_b=pi_b,
-                    action_dist=action_dist,
-                    position=position,
-                    p_e_a=p_e_a[:, :, candidate_feat],
-                    with_dev=True,
-                )
+                if p_e_a is None:
+                    theta, cnf = self._estimate_round_rewards(
+                        context=context,
+                        reward=reward,
+                        action=action,
+                        action_embed=action_embed[:, candidate_feat],
+                        pi_b=pi_b,
+                        action_dist=action_dist,
+                        position=position,
+                        with_dev=True,
+                    )
+                else:
+                    theta, cnf = self._estimate_round_rewards(
+                        context=context,
+                        reward=reward,
+                        action=action,
+                        action_embed=action_embed[:, candidate_feat],
+                        pi_b=pi_b,
+                        action_dist=action_dist,
+                        position=position,
+                        p_e_a=p_e_a[:, :, candidate_feat],
+                        with_dev=True,
+                    )
                 d_list_.append(d)
                 theta_list_.append(theta), cnf_list_.append(cnf)
 
