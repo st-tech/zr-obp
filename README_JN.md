@@ -324,7 +324,7 @@ Open Bandit Pipelineへのどんな貢献も歓迎いたします. プロジェ�
 
 # プロジェクトチーム
 
-- [齋藤優太](https://usaito.github.io/) (**Main Contributor**; 半熟仮想株式会社 / コーネル大学)
+- [齋藤優太](https://usait0.com/ja/) (**Main Contributor**; 半熟仮想株式会社 / コーネル大学)
 - [粟飯原俊介](https://www.linkedin.com/in/shunsukeaihara/) (ZOZO研究所)
 - 松谷恵 (ZOZO研究所)
 - [成田悠輔](https://www.yusuke-narita.com/) (半熟仮想株式会社 / イェール大学)
@@ -381,9 +381,17 @@ Open Bandit Pipelineへのどんな貢献も歓迎いたします. プロジェ�
 
 19. James McInerney, Brian Brost, Praveen Chandar, Rishabh Mehrotra, and Benjamin Carterette. [Counterfactual Evaluation of Slate Recommendations with Sequential Reward Interactions](https://arxiv.org/abs/2007.12986). In *Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery&Data Mining*, 1779–1788, 2020.
 
-20.  Yusuke Narita, Shota Yasui, and Kohei Yata. [Debiased Off-Policy Evaluation for Recommendation Systems](https://arxiv.org/abs/2002.08536). *arXiv preprint arXiv:2002.08536*, 2020.
+20. Yusuke Narita, Shota Yasui, and Kohei Yata. [Debiased Off-Policy Evaluation for Recommendation Systems](https://dl.acm.org/doi/10.1145/3460231.3474231). In *Proceedings of the Fifteenth ACM Conference on Recommender Systems*, 372-379, 2021.
 
 21. Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. [Open Graph Benchmark: Datasets for Machine Learning on Graphs](https://arxiv.org/abs/2005.00687). In *Advances in Neural Information Processing Systems*. 2020.
+
+22. Noveen Sachdeva, Yi Su, and Thorsten Joachims. [Off-policy Bandits with Deficient Support](https://dl.acm.org/doi/10.1145/3394486.3403139). In *Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining*, 965-975, 2021.
+
+23. Yi Su, Pavithra Srinath, and Akshay Krishnamurthy. [Adaptive Estimator Selection for Off-Policy Evaluation](https://proceedings.mlr.press/v119/su20d.html). In *Proceedings of the 38th International Conference on Machine Learning*, 9196-9205, 2021.
+
+24. Haruka Kiyohara, Yuta Saito, Tatsuya Matsuhiro, Yusuke Narita, Nobuyuki Shimizu, Yasuo Yamamoto. [Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model](https://dl.acm.org/doi/10.1145/3488560.3498380). In *Proceedings of the Fifteenth ACM International Conference on Web Search and Data Mining*, 487-497, 2022.
+
+25. Yuta Saito and Thorsten Joachims. [Off-Policy Evaluation for Large Action Spaces via Embeddings](https://arxiv.org/abs/2202.06317). In *Proceedings of the 39th International Conference on Machine Learning*, 2022.
 
 </details>
 
