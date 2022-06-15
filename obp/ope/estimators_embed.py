@@ -303,6 +303,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
                     position=position,
                     pi_b=pi_b,
                     action_dist=action_dist,
+                    p_e_a=p_e_a,
                 )
             elif self.embedding_selection_method == "greedy":
                 return self._estimate_with_greedy_pruning(
@@ -313,6 +314,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
                     position=position,
                     pi_b=pi_b,
                     action_dist=action_dist,
+                    p_e_a=p_e_a,
                 )
         else:
             return self._estimate_round_rewards(
@@ -335,6 +337,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         pi_b: np.ndarray,
         action_dist: np.ndarray,
         position: np.ndarray,
+        p_e_a: Optional[np.ndarray] = None,
     ) -> float:
         """Apply an exact version of data-drive action embedding selection."""
         n_emb_dim = action_embed.shape[1]
@@ -352,6 +355,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
                     pi_b=pi_b,
                     action_dist=action_dist,
                     position=position,
+                    p_e_a=p_e_a[:, :, comb],
                     with_dev=True,
                 )
                 if len(theta_list) > 0:
@@ -380,6 +384,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
         pi_b: np.ndarray,
         action_dist: np.ndarray,
         position: np.ndarray,
+        p_e_a: Optional[np.ndarray] = None,
     ) -> float:
         """Apply a greedy version of data-drive action embedding selection."""
         n_emb_dim = action_embed.shape[1]
@@ -395,6 +400,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
             pi_b=pi_b,
             action_dist=action_dist,
             position=position,
+            p_e_a=p_e_a[:, :, current_feat],
             with_dev=True,
         )
         theta_list.append(theta), cnf_list.append(cnf)
@@ -413,6 +419,7 @@ class MarginalizedInverseProbabilityWeighting(BaseOffPolicyEstimator):
                     pi_b=pi_b,
                     action_dist=action_dist,
                     position=position,
+                    p_e_a=p_e_a[:, :, candidate_feat],
                     with_dev=True,
                 )
                 d_list_.append(d)
