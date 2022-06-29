@@ -554,7 +554,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         """
 
         def gaussian_kernel(u: torch.Tensor) -> torch.Tensor:
-            return torch.exp(-(u**2) / 2) / ((2 * np.pi) ** 0.5)
+            return torch.exp(-(u ** 2) / 2) / ((2 * np.pi) ** 0.5)
 
         if self.output_space is not None:
             action_by_current_policy = torch.clamp(

@@ -237,14 +237,16 @@ class SyntheticBanditDataset(BaseBanditDataset):
     def sample_reward_given_expected_reward(
         self,
         expected_reward: np.ndarray,
-        action: np.ndarray,
+        action: Optional[np.ndarray] = None,
     ) -> np.ndarray:
+        if action is not None:
+            expected_reward = expected_reward[np.arange(action.shape[0]), action]
+
         """Sample reward given expected rewards"""
-        expected_reward_factual = expected_reward[np.arange(action.shape[0]), action]
         if RewardType(self.reward_type) == RewardType.BINARY:
-            reward = self.random_.binomial(n=1, p=expected_reward_factual)
+            reward = self.random_.binomial(n=1, p=expected_reward)
         elif RewardType(self.reward_type) == RewardType.CONTINUOUS:
-            mean = expected_reward_factual
+            mean = expected_reward
             a = (self.reward_min - mean) / self.reward_std
             b = (self.reward_max - mean) / self.reward_std
             reward = truncnorm.rvs(
@@ -346,7 +348,8 @@ class SyntheticBanditDataset(BaseBanditDataset):
         actions = sample_action_fast(pi_b, random_state=self.random_state)
 
         # sample rewards based on the context and action
-        rewards = self.sample_reward_given_expected_reward(expected_reward_, actions)
+        factual_reward = self.sample_reward_given_expected_reward(expected_reward_)
+        rewards = factual_reward[np.arange(actions.shape[0]), actions]
 
         return dict(
             n_rounds=n_rounds,
@@ -356,6 +359,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             action=actions,
             position=None,  # position effect is not considered in synthetic data
             reward=rewards,
+            factual_reward=factual_reward,
             expected_reward=expected_reward_,
             pi_b=pi_b[:, :, np.newaxis],
             pscore=pi_b[np.arange(n_rounds), actions],

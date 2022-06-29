@@ -965,7 +965,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
         else:
             n_batch = (
                 n_rounds * n_enumerated_slate_actions * self.len_list - 1
-            ) // 10**7 + 1
+            ) // 10 ** 7 + 1
             batch_size = (n_rounds - 1) // n_batch + 1
             n_batch = (n_rounds - 1) // batch_size + 1
 
@@ -1078,7 +1078,7 @@ class SyntheticSlateBanditDataset(BaseBanditDataset):
                 .flatten()
             )
             random_pscore = np.ones(context.shape[0] * self.len_list) / (
-                self.n_unique_action**self.len_list
+                self.n_unique_action ** self.len_list
             )
         else:
             random_pscore_cascade = (

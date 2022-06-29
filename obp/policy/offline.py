@@ -1263,7 +1263,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         elif self.off_policy_objective == "ipw-os":
             iw = current_pi[idx_tensor, action] / pscore
-            iw_ = (self.lambda_ - (iw**2)) / ((iw**2 + self.lambda_) ** 2)
+            iw_ = (self.lambda_ - (iw ** 2)) / ((iw ** 2 + self.lambda_) ** 2)
             iw_ *= self.lambda_ * iw
             estimated_policy_grad_arr = iw_ * reward
             estimated_policy_grad_arr *= log_prob[idx_tensor, action]

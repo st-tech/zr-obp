@@ -305,7 +305,8 @@ class SyntheticMultiLoggersBanditDataset(SyntheticBanditDataset):
             pi_b_avg += rho * softmax(beta * pi_b_logits)
 
         # sample rewards based on the context and action
-        rewards = self.sample_reward_given_expected_reward(expected_reward_, actions)
+        factual_reward = self.sample_reward_given_expected_reward(expected_reward_)
+        rewards = factual_reward[np.arange(actions.shape[0]), actions]
 
         return dict(
             n_rounds=n_rounds,
@@ -316,6 +317,7 @@ class SyntheticMultiLoggersBanditDataset(SyntheticBanditDataset):
             action=actions,
             position=None,  # position effect is not considered in synthetic data
             reward=rewards,
+            factual_reward=factual_reward,
             expected_reward=expected_reward_,
             stratum_idx=stratum_idx,
             pi_b=pi_b[:, :, np.newaxis],

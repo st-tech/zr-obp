@@ -149,6 +149,7 @@ def feedback_key_set() -> Set[str]:
         "action_context",
         "context",
         "expected_reward",
+        "factual_reward",
         "n_actions",
         "n_rounds",
         "position",

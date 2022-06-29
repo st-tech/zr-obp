@@ -40,30 +40,29 @@ def run_bandit_simulation(
         Action choice probabilities (can be deterministic).
 
     """
-    for key_ in ["action", "position", "reward", "pscore", "context"]:
+    for key_ in ["position", "reward", "factual_reward", "pscore", "context"]:
         if key_ not in bandit_feedback:
             raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
     check_bandit_feedback_inputs(
         context=bandit_feedback["context"],
         action=bandit_feedback["action"],
         reward=bandit_feedback["reward"],
+        factual_reward=bandit_feedback["factual_reward"],
         position=bandit_feedback["position"],
         pscore=bandit_feedback["pscore"],
     )
 
     policy_ = policy
     selected_actions_list = list()
-    dim_context = bandit_feedback["context"].shape[1]
     if bandit_feedback["position"] is None:
         bandit_feedback["position"] = np.zeros_like(
             bandit_feedback["action"], dtype=int
         )
-    for action_, reward_, position_, context_ in tqdm(
+    for position_, context_, factual_reward in tqdm(
         zip(
-            bandit_feedback["action"],
-            bandit_feedback["reward"],
             bandit_feedback["position"],
             bandit_feedback["context"],
+            bandit_feedback["factual_reward"],
         ),
         total=bandit_feedback["n_rounds"],
     ):
@@ -72,26 +71,52 @@ def run_bandit_simulation(
         if policy_.policy_type == PolicyType.CONTEXT_FREE:
             selected_actions = policy_.select_action()
         elif policy_.policy_type == PolicyType.CONTEXTUAL:
-            selected_actions = policy_.select_action(context_.reshape(1, dim_context))
-        action_match_ = action_ == selected_actions[position_]
-        # update parameters of a bandit policy
-        # only when selected actions&positions are equal to logged actions&positions
-        if action_match_:
-            if policy_.policy_type == PolicyType.CONTEXT_FREE:
-                policy_.update_params(action=action_, reward=reward_)
-            elif policy_.policy_type == PolicyType.CONTEXTUAL:
-                policy_.update_params(
-                    action=action_,
-                    reward=reward_,
-                    context=context_.reshape(1, dim_context),
-                )
+            selected_actions = policy_.select_action(np.expand_dims(context_, axis=0))
+        else:
+            raise RuntimeError(
+                f"Policy type {policy_.policy_type} of policy {policy_.policy_name} is unsupported"
+            )
+
+        action_ = selected_actions[position_]
+        reward_ = factual_reward[action_]
+
+        update_policy(policy_, context_, action_, reward_)
         selected_actions_list.append(selected_actions)
 
     action_dist = convert_to_action_dist(
-        n_actions=bandit_feedback["action"].max() + 1,
+        n_actions=policy.n_actions,
         selected_actions=np.array(selected_actions_list),
     )
     return action_dist
+
+
+def update_policy(
+    policy: BanditPolicy, context: np.ndarray, action: int, reward: int
+) -> None:
+    """Run an online bandit algorithm on the given logged bandit feedback data.
+
+    Parameters
+    ----------
+    policy: BanditPolicy
+        Online bandit policy to be updated.
+
+    context: np.ndarray
+        Context in which the policy observed the reward
+
+    action: int
+        Action taken by the policy as defined by the `policy` argument
+
+    reward: int
+        Reward observed by the policy as defined by the `policy` argument
+    """
+    if policy.policy_type == PolicyType.CONTEXT_FREE:
+        policy.update_params(action=action, reward=reward)
+    elif policy.policy_type == PolicyType.CONTEXTUAL:
+        policy.update_params(
+            action=action,
+            reward=reward,
+            context=np.expand_dims(context, axis=0),
+        )
 
 
 def calc_ground_truth_policy_value(

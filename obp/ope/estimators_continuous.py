@@ -27,13 +27,13 @@ def triangular_kernel(u: np.ndarray) -> np.ndarray:
 
 def gaussian_kernel(u: np.ndarray) -> np.ndarray:
     """Calculate gaussian kernel function."""
-    return np.exp(-(u**2) / 2) / np.sqrt(2 * np.pi)
+    return np.exp(-(u ** 2) / 2) / np.sqrt(2 * np.pi)
 
 
 def epanechnikov_kernel(u: np.ndarray) -> np.ndarray:
     """Calculate epanechnikov kernel function."""
     clipped_u = np.clip(u, -1.0, 1.0)
-    return 0.75 * (1 - clipped_u**2)
+    return 0.75 * (1 - clipped_u ** 2)
 
 
 def cosine_kernel(u: np.ndarray) -> np.ndarray:
