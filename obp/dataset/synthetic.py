@@ -53,6 +53,10 @@ class SyntheticBanditDataset(BaseBanditDataset):
         If None, context **independent** expected rewards will be
         sampled from the uniform distribution automatically.
 
+    delay_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
+        Function defining the delay rounds  for each given action-context pair,
+        If None, the `delay_rounds` key will be omitted from the dataset samples.
+
     reward_std: float, default=1.0
         Standard deviation of the reward distribution.
         A larger value leads to a noisier reward distribution.
@@ -157,6 +161,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
     dim_context: int = 1
     reward_type: str = RewardType.BINARY.value
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
+    delay_function: Optional[Callable[[int, float], np.ndarray]] = None
     reward_std: float = 1.0
     action_context: Optional[np.ndarray] = None
     behavior_policy_function: Optional[
@@ -351,6 +356,10 @@ class SyntheticBanditDataset(BaseBanditDataset):
         factual_reward = self.sample_reward_given_expected_reward(expected_reward_)
         rewards = factual_reward[np.arange(actions.shape[0]), actions]
 
+        round_delays = None
+        if self.delay_function:
+            round_delays = self.delay_function(actions.shape[0])
+
         return dict(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
@@ -361,6 +370,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             reward=rewards,
             factual_reward=factual_reward,
             expected_reward=expected_reward_,
+            round_delays=round_delays,
             pi_b=pi_b[:, :, np.newaxis],
             pscore=pi_b[np.arange(n_rounds), actions],
         )
@@ -397,6 +407,42 @@ class SyntheticBanditDataset(BaseBanditDataset):
             )
 
         return np.average(expected_reward, weights=action_dist[:, :, 0], axis=1).mean()
+
+    def count_ground_truth_policy_rewards(
+        self, factual_reward: np.ndarray, sampled_actions: np.ndarray
+    ) -> float:
+        """Count the policy rewards of given action distribution on the given factual_reward.
+
+        Parameters
+        -----------
+        factual_reward: array-like, shape (n_rounds, n_actions)
+            Factual reward given context (:math:`x`) and action (:math:`a`),
+            This is often the `factual_reward` of the test set of logged bandit data. The rewards are
+            sampled from the expected reward in the logged bandit data.
+
+        sampled_actions: array-like, shape (n_rounds, n_actions, len_list)
+            Action choices of the evaluation policy (should be deterministic).
+
+        Returns
+        ----------
+        policy_reward: float
+            The policy's reward of the given action distribution on the given logged bandit data.
+
+        """
+        check_array(array=factual_reward, name="expected_reward", expected_dim=2)
+        check_array(array=sampled_actions, name="action_dist", expected_dim=2)
+        if not np.isin(sampled_actions, [0, 1]).all():
+            raise ValueError("Expected `sampled_actions` to be binary action choices. ")
+        if factual_reward.shape[0] != sampled_actions.shape[0]:
+            raise ValueError(
+                "Expected `factual_reward.shape[0] = action_dist.shape[0]`, but found it False"
+            )
+        if factual_reward.shape[1] != sampled_actions.shape[1]:
+            raise ValueError(
+                "Expected `factual_reward.shape[1] = action_dist.shape[1]`, but found it False"
+            )
+
+        return np.sum(factual_reward * sampled_actions)
 
 
 def logistic_reward_function(
@@ -468,6 +514,48 @@ def logistic_polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
+        random_state=random_state,
+    )
+
+    return sigmoid(logits)
+
+
+def logistic_sparse_reward_function(
+    context: np.ndarray,
+    action_context: np.ndarray,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Logistic mean reward function for binary rewards with small effective feature dimension.
+
+    Note
+    ------
+    Polynomial and interaction features will be used to calculate the expected rewards.
+    `sklearn.preprocessing.PolynomialFeatures(degree=4)` is applied to generate high-dimensional feature vector.
+    After that, some dimensions will be dropped as irrelevant dimensions, producing sparse feature vector.
+
+    Parameters
+    -----------
+    context: array-like, shape (n_rounds, dim_context)
+        Context vectors characterizing each data (such as user information).
+
+    action_context: array-like, shape (n_actions, dim_action_context)
+        Vector representation of actions.
+
+    random_state: int, default=None
+        Controls the random seed in sampling dataset.
+
+    Returns
+    ---------
+    expected_reward: array-like, shape (n_rounds, n_actions)
+        Expected reward given context (:math:`x`) and action (:math:`a`),
+        i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
+
+    """
+    logits = _base_reward_function(
+        context=context,
+        action_context=action_context,
+        degree=4,
+        effective_dim_ratio=0.3,
         random_state=random_state,
     )
 
@@ -745,6 +833,49 @@ def _base_reward_function(
     )
 
     return expected_rewards
+
+
+@dataclass
+class ExponentialDelaySampler:
+    scale: float = 100.0
+    random_state: int = None
+
+    def __post_init__(self) -> None:
+        if self.random_state is None:
+            raise ValueError("`random_state` must be given")
+        self.random_ = check_random_state(self.random_state)
+
+    def exponential_delay_function(self, sample_rounds: int) -> np.ndarray:
+        """Exponential delay function used for sampling a number of delay rounds before rewards can be observed.
+
+        Note
+        ------
+        This implementation of the exponential delay function assumes that there is no causal relationship between the
+        context, action or reward and observed delay. Exponential delay function have been observed by Ktena, S.I. et al.
+
+        Parameters
+        -----------
+        sample_rounds: int
+            Number of rounds to sample delays for.
+
+        scale : float, default=100.0
+            The scale parameter, :math:`\beta = 1/\lambda`. Must be non-negative.
+
+        random_state: int, default=None
+            Controls the random seed in sampling dataset.
+
+        Returns
+        ---------
+        delay_rounds: array-like, shape (n_rounds, )
+            Rounded up round delays representing the amount of rounds before the policy can observe the rewards.
+
+        References
+        ------------
+        Ktena, S.I., Tejani, A., Theis, L., Myana, P.K., Dilipkumar, D., Huszár, F., Yoo, S. and Shi, W.
+        "Addressing delayed feedback for continuous training with neural networks in CTR prediction." 2019.
+
+        """
+        return np.ceil(self.random_.exponential(scale=self.scale, size=sample_rounds))
 
 
 def linear_behavior_policy(

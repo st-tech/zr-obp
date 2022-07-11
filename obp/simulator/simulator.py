@@ -3,10 +3,11 @@
 
 """Bandit Simulator."""
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, Dict, List
 from typing import Union
 
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 from ..policy import BaseContextFreePolicy
@@ -58,11 +59,20 @@ def run_bandit_simulation(
         bandit_feedback["position"] = np.zeros_like(
             bandit_feedback["action"], dtype=int
         )
-    for position_, context_, factual_reward in tqdm(
-        zip(
-            bandit_feedback["position"],
-            bandit_feedback["context"],
-            bandit_feedback["factual_reward"],
+
+    reward_round_lookup = None
+    if bandit_feedback["round_delays"] is not None:
+        reward_round_lookup = create_reward_round_lookup(
+            bandit_feedback["round_delays"]
+        )
+
+    for round_idx, (position_, context_, factual_reward) in tqdm(
+        enumerate(
+            zip(
+                bandit_feedback["position"],
+                bandit_feedback["context"],
+                bandit_feedback["factual_reward"],
+            )
         ),
         total=bandit_feedback["n_rounds"],
     ):
@@ -77,17 +87,81 @@ def run_bandit_simulation(
                 f"Policy type {policy_.policy_type} of policy {policy_.policy_name} is unsupported"
             )
 
+        selected_actions_list.append(selected_actions)
         action_ = selected_actions[position_]
         reward_ = factual_reward[action_]
 
-        update_policy(policy_, context_, action_, reward_)
-        selected_actions_list.append(selected_actions)
+        if bandit_feedback["round_delays"] is None:
+            update_policy(policy_, context_, action_, reward_)
+        else:
+            available_rounds = reward_round_lookup.get(round_idx, [])
+            delayed_update_policy(
+                available_rounds, bandit_feedback, selected_actions_list, policy_
+            )
+
+            if available_rounds:
+                del reward_round_lookup[round_idx]
+
+    if bandit_feedback["round_delays"] is not None:
+        for round_idx, available_rounds in reward_round_lookup.items():
+            delayed_update_policy(
+                available_rounds, bandit_feedback, selected_actions_list, policy_
+            )
 
     action_dist = convert_to_action_dist(
         n_actions=policy.n_actions,
         selected_actions=np.array(selected_actions_list),
     )
     return action_dist
+
+
+def delayed_update_policy(
+    available_rounds: List[int],
+    bandits_feedback: BanditFeedback,
+    selected_actions_list: List[np.ndarray],
+    policy_,
+) -> None:
+    for available_round_idx in available_rounds:
+        position_ = bandits_feedback["position"][available_round_idx]
+        available_action = selected_actions_list[available_round_idx][position_]
+        available_context = bandits_feedback["context"][available_round_idx]
+        available_factual_reward = bandits_feedback["factual_reward"][
+            available_round_idx
+        ][available_action]
+        update_policy(
+            policy_, available_context, available_action, available_factual_reward
+        )
+
+
+def create_reward_round_lookup(round_delays: np.ndarray) -> Dict[int, List[int]]:
+    """Convert an array of round delays to a dict mapping the available rewards for each round.
+
+    Parameters
+    ----------
+    round_delays: np.ndarray
+        A 1-dimensional numpy array containing the deltas representing how many rounds should be between the taken
+        action and reward observation.
+
+    Returns
+    --------
+    reward_round_lookup: Dict
+        A dict with the round at which feedback become available as a key and a list with the index of all actions
+        for which the reward becomes available in that round.
+
+    """
+    rounds = np.arange(len(round_delays))
+
+    reward_round_pdf = pd.DataFrame(
+        {"available_at_round": rounds + round_delays, "exposed_at_round": rounds}
+    )
+
+    reward_round_lookup = (
+        reward_round_pdf.groupby(["available_at_round"])["exposed_at_round"]
+        .apply(list)
+        .to_dict()
+    )
+
+    return reward_round_lookup
 
 
 def update_policy(
