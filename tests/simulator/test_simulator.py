@@ -7,7 +7,7 @@ from obp.policy import BaseContextFreePolicy
 from obp.policy.linear import LinTS, LinUCB
 
 from obp.policy.contextfree import EpsilonGreedy, Random, BernoulliTS
-from obp.dataset.synthetic import logistic_reward_function, sparse_reward_function
+from obp.dataset.synthetic import logistic_reward_function, ExponentialDelaySampler
 from obp.dataset import SyntheticBanditDataset
 from obp.policy.policy_type import PolicyType
 from obp.simulator import run_bandit_simulation
@@ -98,6 +98,25 @@ class BanditUpdateTracker(BaseContextFreePolicy):
         )
 
 
+def test_run_bandit_simulation_works_end_to_end_with_synthetic_bandit_dataset():
+    delay_function = ExponentialDelaySampler(
+        scale=1.0, random_state=12345
+    ).exponential_delay_function
+
+    dataset = SyntheticBanditDataset(
+        n_actions=3,
+        dim_context=1,
+        reward_type="binary",
+        reward_function=logistic_reward_function,
+        delay_function=delay_function,
+        random_state=12345,
+    )
+    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+
+    policy = EpsilonGreedy(n_actions=3, epsilon=0.1, random_state=12345)
+    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=policy)
+
+
 def test_run_bandit_simulation_applies_policy_in_delay_specified_order():
     n_rounds = 5
 
@@ -109,7 +128,7 @@ def test_run_bandit_simulation_applies_policy_in_delay_specified_order():
         random_state=12345,
     )
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    bandit_feedback["round_delays"] = np.asarray([2, 1, 2, 1, 0])
+    bandit_feedback["round_delays"] = np.tile([2, 1, 2, 1, 0], (3, 1)).T
 
     tracker = BanditUpdateTracker(n_actions=3, random_state=12345)
     _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
@@ -136,7 +155,7 @@ def test_run_bandit_simulation_applies_all_rewards_delayed_till_after_all_rounds
         random_state=12345,
     )
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    bandit_feedback["round_delays"] = np.asarray([2, 1, 2, 2, 2])
+    bandit_feedback["round_delays"] = np.tile([2, 1, 2, 2, 2], (3, 1)).T
 
     tracker = BanditUpdateTracker(n_actions=3, random_state=12345)
     _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
@@ -173,7 +192,7 @@ def test_run_bandit_simulation_does_not_crash_with_various_bandit_algorithms(pol
         random_state=12345,
     )
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    bandit_feedback["round_delays"] = np.asarray([2, 1, 2, 2, 2])
+    bandit_feedback["round_delays"] = np.tile([2, 1, 2, 2, 2], (3, 1)).T
 
     _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=policy)
 

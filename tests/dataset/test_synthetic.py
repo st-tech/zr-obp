@@ -312,12 +312,13 @@ def test_synthetic_sample_reward_using_valid_inputs(context, action, description
 
 
 def test_synthetic_sample_results_in_sampled_delay_when_delay_function_is_given():
+    n_actions = 3
     delay_function = ExponentialDelaySampler(
-        scale=100.0, random_state=12345
+        max_scale=100.0, random_state=12345
     ).exponential_delay_function
 
     dataset = SyntheticBanditDataset(
-        n_actions=10,
+        n_actions=n_actions,
         reward_function=logistic_sparse_reward_function,
         delay_function=delay_function,
         random_state=12345,
@@ -325,18 +326,46 @@ def test_synthetic_sample_results_in_sampled_delay_when_delay_function_is_given(
 
     actual_bandits_dataset = dataset.obtain_batch_bandit_feedback(n_rounds=5)
 
-    assert (
-        actual_bandits_dataset["round_delays"] == [266.0, 39.0, 21.0, 23.0, 84.0]
-    ).all()
+    expected_round_delays = np.tile([266.0, 39.0, 21.0, 23.0, 84.0], (n_actions, 1)).T
+    assert (actual_bandits_dataset["round_delays"] == expected_round_delays).all()
+
+
+def test_synthetic_sample_results_in_sampled_delay_with_weighted_delays_per_arm():
+    n_actions = 3
+    delay_function = ExponentialDelaySampler(
+        max_scale=100.0, min_scale=10.0, random_state=12345
+    ).exponential_delay_function_expected_reward_weighted
+
+    dataset = SyntheticBanditDataset(
+        n_actions=n_actions,
+        reward_function=logistic_sparse_reward_function,
+        delay_function=delay_function,
+        random_state=12345,
+    )
+
+    actual_bandits_dataset = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+
+    expected_round_delays = np.asarray(
+        [
+            [35.0, 38.0, 4.0],
+            [3.0, 84.0, 17.0],
+            [44.0, 106.0, 26.0],
+            [14.0, 138.0, 61.0],
+            [1.0, 12.0, 7.0],
+        ]
+    )
+    assert (actual_bandits_dataset["round_delays"] == expected_round_delays).all()
 
 
 def test_synthetic_sample_results_with_exponential_delay_function_has_different_delays_each_batch():
+    n_actions = 3
+
     delay_function = ExponentialDelaySampler(
-        scale=1000.0, random_state=12345
+        max_scale=1000.0, random_state=12345
     ).exponential_delay_function
 
     dataset = SyntheticBanditDataset(
-        n_actions=10,
+        n_actions=n_actions,
         reward_function=logistic_sparse_reward_function,
         delay_function=delay_function,
         random_state=12345,
@@ -344,17 +373,27 @@ def test_synthetic_sample_results_with_exponential_delay_function_has_different_
 
     actual_delays_1 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
     actual_delays_2 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
-    assert (actual_delays_1 == [2654.0, 381.0, 204.0, 229.0, 839.0]).all()
-    assert (actual_delays_2 == [906.0, 3339.0, 1059.0, 1382.0, 1061.0]).all()
+
+    expected_round_delays_1 = np.tile(
+        [2654.0, 381.0, 204.0, 229.0, 839.0], (n_actions, 1)
+    ).T
+    expected_round_delays_2 = np.tile(
+        [906.0, 3339.0, 1059.0, 1382.0, 1061.0], (n_actions, 1)
+    ).T
+
+    assert (actual_delays_1 == expected_round_delays_1).all()
+    assert (actual_delays_2 == expected_round_delays_2).all()
 
 
 def test_synthetic_sample_results_with_exponential_delay_function_has_same_delays_each_dataset():
+    n_actions = 3
+
     delay_function = ExponentialDelaySampler(
-        scale=1000.0, random_state=12345
+        max_scale=1000.0, random_state=12345
     ).exponential_delay_function
 
     dataset = SyntheticBanditDataset(
-        n_actions=10,
+        n_actions=n_actions,
         reward_function=logistic_sparse_reward_function,
         delay_function=delay_function,
         random_state=12345,
@@ -363,23 +402,31 @@ def test_synthetic_sample_results_with_exponential_delay_function_has_same_delay
     actual_delays_1 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
 
     delay_function = ExponentialDelaySampler(
-        scale=1000.0, random_state=12345
+        max_scale=1000.0, random_state=12345
     ).exponential_delay_function
 
     dataset = SyntheticBanditDataset(
-        n_actions=10,
+        n_actions=n_actions,
         reward_function=logistic_sparse_reward_function,
         delay_function=delay_function,
         random_state=12345,
     )
     actual_delays_2 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
-    assert (actual_delays_1 == [2654.0, 381.0, 204.0, 229.0, 839.0]).all()
-    assert (actual_delays_2 == [2654.0, 381.0, 204.0, 229.0, 839.0]).all()
+
+    expected_round_delays_1 = np.tile(
+        [2654.0, 381.0, 204.0, 229.0, 839.0], (n_actions, 1)
+    ).T
+    expected_round_delays_2 = np.tile(
+        [2654.0, 381.0, 204.0, 229.0, 839.0], (n_actions, 1)
+    ).T
+
+    assert (actual_delays_1 == expected_round_delays_1).all()
+    assert (actual_delays_2 == expected_round_delays_2).all()
 
 
 def test_synthetic_sample_results_do_not_contain_reward_delay_when_delay_function_is_none():
     dataset = SyntheticBanditDataset(
-        n_actions=10,
+        n_actions=3,
         reward_function=logistic_sparse_reward_function,
         random_state=12345,
     )
@@ -390,11 +437,13 @@ def test_synthetic_sample_results_do_not_contain_reward_delay_when_delay_functio
 
 
 def test_synthetic_sample_results_reward_delay_is_configurable_through_delay_function():
+    n_actions = 3
+
     def trivial_delay_func(*args, **kwargs):
         return np.asarray([1, 2, 3, 4, 5])
 
     dataset = SyntheticBanditDataset(
-        n_actions=10,
+        n_actions=3,
         reward_function=logistic_sparse_reward_function,
         delay_function=trivial_delay_func,
         random_state=12345,
@@ -406,21 +455,21 @@ def test_synthetic_sample_results_reward_delay_is_configurable_through_delay_fun
 
 
 @pytest.mark.parametrize(
-    "size, random_state, expected_delays",
+    "size, actions, random_state, expected_delays",
     [
-        (5, 12345, [266.0, 39.0, 21.0, 23.0, 84.0]),
-        (3, 12345, [266.0, 39.0, 21.0]),
-        (5, 54321, [243.0, 98.0, 157.0, 57.0, 79.0]),
+        (5, 3, 12345, np.tile([266.0, 39.0, 21.0, 23.0, 84.0], (3, 1)).T),
+        (3, 3, 12345, np.tile([266.0, 39.0, 21.0], (3, 1)).T),
+        (5, 3, 54321, np.tile([243.0, 98.0, 157.0, 57.0, 79.0], (3, 1)).T),
     ],
 )
 def test_exponential_delay_function_results_in_expected_seeded_discrete_delays(
-    size, random_state, expected_delays
+    size, actions, random_state, expected_delays
 ):
     delay_function = ExponentialDelaySampler(
-        scale=100.0, random_state=random_state
+        max_scale=100.0, random_state=random_state
     ).exponential_delay_function
 
-    actual_delays = delay_function(size)
+    actual_delays = delay_function(size, n_actions=actions)
     assert (actual_delays == expected_delays).all()
 
 
@@ -479,6 +528,36 @@ def test_synthetic_obtain_batch_bandit_feedback():
             bandit_feedback["pscore"].ndim == 1
             and len(bandit_feedback["pscore"]) == n_rounds
         )
+
+
+@pytest.mark.parametrize(
+    "size, actions, expected_reward, random_state, expected_delays",
+    [
+        (
+            2,
+            2,
+            np.asarray([[1, 0.01], [0.5, 0.5]]),
+            12344,
+            np.asarray([[2.0, 55.0], [3.0, 27.0]]),
+        ),
+        (
+            2,
+            2,
+            np.asarray([[0.1, 0.2], [0.3, 0.4]]),
+            12345,
+            np.asarray([[242.0, 32.0], [15.0, 15.0]]),
+        ),
+    ],
+)
+def test_exponential_delay_function_conditioned_on_expected_reward_results_in_expected_seeded_discrete_delays(
+    size, actions, expected_reward, random_state, expected_delays
+):
+    delay_function = ExponentialDelaySampler(
+        max_scale=100.0, min_scale=10.0, random_state=random_state
+    ).exponential_delay_function_expected_reward_weighted
+
+    actual_delays = delay_function(expected_rewards=expected_reward)
+    assert (actual_delays == expected_delays).all()
 
 
 # expected_reward, action_dist, description

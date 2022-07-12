@@ -2,6 +2,7 @@
 # Licensed under the Apache 2.0 License.
 
 """Bandit Simulator."""
+from collections import defaultdict
 from copy import deepcopy
 from typing import Callable, Dict, List
 from typing import Union
@@ -60,11 +61,11 @@ def run_bandit_simulation(
             bandit_feedback["action"], dtype=int
         )
 
-    reward_round_lookup = None
-    if bandit_feedback["round_delays"] is not None:
-        reward_round_lookup = create_reward_round_lookup(
-            bandit_feedback["round_delays"]
-        )
+    reward_round_lookup = defaultdict(list)
+    # if bandit_feedback["round_delays"] is not None:
+    #     reward_round_lookup = create_reward_round_lookup(
+    #         bandit_feedback["round_delays"]
+    #     )
 
     for round_idx, (position_, context_, factual_reward) in tqdm(
         enumerate(
@@ -94,6 +95,11 @@ def run_bandit_simulation(
         if bandit_feedback["round_delays"] is None:
             update_policy(policy_, context_, action_, reward_)
         else:
+            # Add the current round to the lookup
+            round_delay = bandit_feedback["round_delays"][round_idx, action_]
+            reward_round_lookup[round_delay + round_idx].append(round_idx)
+
+            # Update policy with all available rounds
             available_rounds = reward_round_lookup.get(round_idx, [])
             delayed_update_policy(
                 available_rounds, bandit_feedback, selected_actions_list, policy_
@@ -102,11 +108,10 @@ def run_bandit_simulation(
             if available_rounds:
                 del reward_round_lookup[round_idx]
 
-    if bandit_feedback["round_delays"] is not None:
-        for round_idx, available_rounds in reward_round_lookup.items():
-            delayed_update_policy(
-                available_rounds, bandit_feedback, selected_actions_list, policy_
-            )
+    for round_idx, available_rounds in reward_round_lookup.items():
+        delayed_update_policy(
+            available_rounds, bandit_feedback, selected_actions_list, policy_
+        )
 
     action_dist = convert_to_action_dist(
         n_actions=policy.n_actions,
