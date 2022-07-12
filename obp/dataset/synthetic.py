@@ -3,7 +3,7 @@
 
 """Class for Generating Synthetic Logged Bandit Data."""
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Tuple
 from typing import Optional
 
 import numpy as np
@@ -19,6 +19,8 @@ from ..utils import sigmoid
 from ..utils import softmax
 from .base import BaseBanditDataset
 from .reward_type import RewardType
+
+coef_func_signature = Callable[[np.ndarray, np.ndarray, np.random.RandomState], Tuple[np.ndarray, np.ndarray, np.ndarray]]
 
 
 @dataclass
@@ -449,9 +451,54 @@ class SyntheticBanditDataset(BaseBanditDataset):
         return np.sum(factual_reward * sampled_actions)
 
 
+def sample_random_uniform_coefficients(
+        effective_dim_action_context: int,
+        effective_dim_context: int,
+        random_: np.random.RandomState
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    context_coef_ = random_.uniform(-1, 1, size=effective_dim_context)
+    action_coef_ = random_.uniform(-1, 1, size=effective_dim_action_context)
+    context_action_coef_ = random_.uniform(
+        -1, 1, size=(effective_dim_context, effective_dim_action_context)
+    )
+    return context_coef_, action_coef_, context_action_coef_
+
+
+@dataclass()
+class CoefficientDrifter():
+    drift_interval: int
+    played_rounds: int = 0
+    random_state: int = 12345
+
+    def __post_init__(self) -> None:
+        if self.random_state is None:
+            raise ValueError("`random_state` must be given")
+        self.random_ = check_random_state(self.random_state)
+
+    def get_coefficients(
+            self,
+            n_rounds: int,
+            effective_dim_action_context: int,
+            effective_dim_context: int,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        # Available_rounds = current_round % drift_interval
+        # While required_rounds > 0:
+        #   Calculate available rounds in current coef
+        #   tile current coef for available rounds
+        #   if available rounds < required_rounds
+        #      sample new coef
+        #   required_rounds = required_rounds - available_rounds
+        # Stack all coef
+        #
+
+        return sample_random_uniform_coefficients(effective_dim_action_context, effective_dim_context, self.random_)
+
+
+
 def logistic_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards.
@@ -463,6 +510,10 @@ def logistic_reward_function(
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
+
+    coef_func: Callable, default=sample_random_uniform_coefficients
+        Function for generating the coefficients used for the context, action and context/action interactions.
+        By default, the coefficients are randomly uniformly drawn.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -479,6 +530,7 @@ def logistic_reward_function(
         action_context=action_context,
         degree=1,
         random_state=random_state,
+        coef_func=coef_func,
     )
 
     return sigmoid(logits)
@@ -487,6 +539,7 @@ def logistic_reward_function(
 def logistic_polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with polynomial feature transformations.
@@ -518,6 +571,7 @@ def logistic_polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
+        coef_func=coef_func,
         random_state=random_state,
     )
 
@@ -527,6 +581,7 @@ def logistic_polynomial_reward_function(
 def logistic_sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with small effective feature dimension.
@@ -560,6 +615,7 @@ def logistic_sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
+        coef_func=coef_func,
         random_state=random_state,
     )
 
@@ -569,6 +625,7 @@ def logistic_sparse_reward_function(
 def logistic_sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with small effective feature dimension.
@@ -602,6 +659,7 @@ def logistic_sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
+        coef_func=coef_func,
         random_state=random_state,
     )
 
@@ -611,6 +669,7 @@ def logistic_sparse_reward_function(
 def linear_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear mean reward function for continuous rewards.
@@ -637,6 +696,7 @@ def linear_reward_function(
         context=context,
         action_context=action_context,
         degree=1,
+        coef_func=coef_func,
         random_state=random_state,
     )
 
@@ -644,6 +704,7 @@ def linear_reward_function(
 def polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Polynomial mean reward function for continuous rewards.
@@ -675,6 +736,7 @@ def polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
+        coef_func=coef_func,
         random_state=random_state,
     )
 
@@ -682,6 +744,7 @@ def polynomial_reward_function(
 def sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Sparse mean reward function for continuous rewards.
@@ -715,6 +778,7 @@ def sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
+        coef_func=coef_func,
         random_state=random_state,
     )
 
@@ -724,6 +788,7 @@ def _base_reward_function(
     action_context: np.ndarray,
     degree: int = 3,
     effective_dim_ratio: float = 1.0,
+    coef_func: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Base function to define mean reward functions.
@@ -820,13 +885,12 @@ def _base_reward_function(
         effective_context_ = context_
         effective_action_context_ = action_context_
 
-    context_coef_ = random_.uniform(-1, 1, size=effective_dim_context)
-    action_coef_ = random_.uniform(-1, 1, size=effective_dim_action_context)
-    context_action_coef_ = random_.uniform(
-        -1, 1, size=(effective_dim_context, effective_dim_action_context)
-    )
+    context_coef_, action_coef_, context_action_coef_ = coef_func(effective_dim_action_context, effective_dim_context,
+                                                                  random_)
 
-    context_values = np.tile(effective_context_ @ context_coef_, (n_actions, 1)).T
+    context_coef_ = np.tile(context_coef_, (datasize, 1))
+    context_values = np.tile(np.sum(effective_context_ * context_coef_, axis=1), (n_actions, 1)).T
+    # context_values = np.tile(effective_context_ @ context_coef_, (n_actions, 1)).T
     action_values = np.tile(action_coef_ @ effective_action_context_.T, (datasize, 1))
     context_action_values = (
         effective_context_ @ context_action_coef_ @ effective_action_context_.T

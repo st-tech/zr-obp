@@ -1,10 +1,9 @@
-from functools import partial
-
 import numpy as np
 import pytest
 
 from obp.dataset import SyntheticBanditDataset
-from obp.dataset.synthetic import linear_behavior_policy, ExponentialDelaySampler
+from obp.dataset.synthetic import linear_behavior_policy, ExponentialDelaySampler, _base_reward_function, \
+    CoefficientDrifter
 from obp.dataset.synthetic import linear_reward_function
 from obp.dataset.synthetic import logistic_polynomial_reward_function
 from obp.dataset.synthetic import logistic_reward_function
@@ -751,3 +750,119 @@ def test_synthetic_behavior_policy_function():
         )
         assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
         assert np.all(0 <= action_prob) and np.all(action_prob <= 1)
+
+
+def test_base_reward_create_a_matrix_with_expected_rewards_with_identical_expectation_for_identical_rounds_():
+    context = np.asarray([
+        [1,2],
+        [3,2],
+        [3,2],
+    ])
+    action_context = np.asarray([
+        [1,0,0],
+        [0,0,1],
+        [0,1,0],
+    ])
+    actual_expected_rewards = _base_reward_function(
+        context, action_context, degree=5, effective_dim_ratio=1.0, random_state=12345)
+
+    expected_expected_rewards = np.asarray([
+        [-4.50475921, -5.60364479, -4.6827207 ],
+       [ 3.57444414,  7.18370309, -3.36258488],
+       [ 3.57444414,  7.18370309, -3.36258488]])
+
+    assert np.allclose(actual_expected_rewards, expected_expected_rewards)
+
+
+def test_coefficient_tracker_can_shift_expected_rewards_instantly_based_on_configured_intervals():
+    context = np.asarray([
+        [1,2],
+        [3,2],
+        [3,2],
+        [3,2],
+    ])
+    action_context = np.asarray([
+        [1,0,0],
+        [0,0,1],
+        [0,1,0],
+    ])
+    actual_expected_rewards = _base_reward_function(
+        context,
+        action_context,
+        degree=5,
+        effective_dim_ratio=1.0,
+        # coef_func=TODOCLASS,
+        random_state=12345
+    )
+
+    expected_expected_rewards = np.asarray([
+       [-4.50475921, -5.60364479, -4.6827207],
+       [ 3.57444414,  7.18370309, -3.36258488],
+       [ 3.57444414,  7.18370309, -3.36258488], # AFTER THIS ROUND, THE OUTCOME SHOULD CHANGE
+       [ 3.57444414,  7.18370309, -3.36258488]])
+
+    assert np.allclose(actual_expected_rewards, expected_expected_rewards)
+
+
+def test_coefficient_tracker_can_shift_coefficient_instantly_based_on_configured_interval():
+    drifter = CoefficientDrifter(drift_interval=3)
+
+    effective_dim_context = 4
+    effective_dim_action_context = 3
+    actual_context_coef, _, _ = drifter.get_coefficients(n_rounds=4, effective_dim_context=effective_dim_context, effective_dim_action_context=effective_dim_action_context)
+
+    expected_context_coef = np.asarray([
+       [-4.50475921, -5.60364479, -4.6827207 ],
+       [ 3.57444414,  7.18370309, -3.36258488],
+       [ 3.57444414,  7.18370309, -3.36258488], # AFTER THIS ROUND, THE OUTCOME SHOULD CHANGE
+       [ 3.57444414,  7.18370309, -3.36258488]]
+    )
+
+    assert np.allclose(actual_context_coef, expected_context_coef)
+
+
+def test_coefficient_tracker_can_shift_coefficient_multiple_times_instantly_based_on_configured_interval():
+    drifter = CoefficientDrifter(drift_interval=2)
+
+    effective_dim_context = 4
+    effective_dim_action_context = 3
+    actual_context_coef, _, _ = drifter.get_coefficients(n_rounds=4, effective_dim_context=effective_dim_context, effective_dim_action_context=effective_dim_action_context)
+
+    expected_context_coef = np.asarray([
+       [-4.50475921, -5.60364479, -4.6827207 ],
+       [ 3.57444414,  7.18370309, -3.36258488], # AFTER THIS ROUND, THE OUTCOME SHOULD CHANGE
+       [ 3.57444414,  7.18370309, -3.36258488],
+       [ 3.57444414,  7.18370309, -3.36258488], # AFTER THIS ROUND, THE OUTCOME SHOULD CHANGE AGAIN
+       [ 3.57444414,  7.18370309, -3.36258488],
+    ]
+    )
+
+    assert np.allclose(actual_context_coef, expected_context_coef)
+
+
+def test_coefficient_tracker_keeps_track_of_shifted_coefficient_based_on_configured_interval_between_batches():
+    drifter = CoefficientDrifter(drift_interval=2)
+
+    effective_dim_context = 4
+    effective_dim_action_context = 3
+    actual_context_coef, _, _ = drifter.get_coefficients(n_rounds=3, effective_dim_context=effective_dim_context, effective_dim_action_context=effective_dim_action_context)
+
+    expected_context_coef = np.asarray([
+       [-4.50475921, -5.60364479, -4.6827207 ],
+       [ 3.57444414,  7.18370309, -3.36258488], # AFTER THIS ROUND, THE OUTCOME SHOULD CHANGE
+       [ 3.57444414,  7.18370309, -3.36258488],]
+    )
+
+    assert np.allclose(actual_context_coef, expected_context_coef)
+
+    actual_context_coef, _, _ = drifter.get_coefficients(n_rounds=3, effective_dim_context=effective_dim_context, effective_dim_action_context=effective_dim_action_context)
+
+    expected_context_coef_2 = np.asarray([
+       [-4.50475921, -5.60364479, -4.6827207 ], # THIS ROUND SHOULD BE THE SAME AS THE LAST ONE FROM THE PREVIOUS
+       [ 3.57444414,  7.18370309, -3.36258488],
+       [ 3.57444414,  7.18370309, -3.36258488], # HERE THE COEF SHOULD CHANGE AGAIN
+    ]
+    )
+
+    assert np.allclose(actual_context_coef, expected_context_coef_2)
+
