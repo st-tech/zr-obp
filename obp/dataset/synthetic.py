@@ -2,9 +2,10 @@
 # Licensed under the Apache 2.0 License.
 
 """Class for Generating Synthetic Logged Bandit Data."""
+from collections import deque
 from dataclasses import dataclass
 from typing import Callable, Tuple
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 from scipy.stats import truncnorm
@@ -20,7 +21,189 @@ from ..utils import softmax
 from .base import BaseBanditDataset
 from .reward_type import RewardType
 
-coef_func_signature = Callable[[np.ndarray, np.ndarray, np.random.RandomState], Tuple[np.ndarray, np.ndarray, np.ndarray]]
+coef_func_signature = Callable[
+    [np.ndarray, np.ndarray, np.random.RandomState],
+    Tuple[np.ndarray, np.ndarray, np.ndarray],
+]
+
+
+def sample_random_uniform_coefficients(
+    effective_dim_action_context: int,
+    effective_dim_context: int,
+    random_: np.random.RandomState,
+    **kwargs,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    context_coef_ = random_.uniform(-1, 1, size=effective_dim_context)
+    action_coef_ = random_.uniform(-1, 1, size=effective_dim_action_context)
+    context_action_coef_ = random_.uniform(
+        -1, 1, size=(effective_dim_context, effective_dim_action_context)
+    )
+    return context_coef_, action_coef_, context_action_coef_
+
+
+@dataclass
+class CoefficientDrifter:
+    """Class for synthesizing bandit data.
+
+    Note
+    -----
+    By calling the `obtain_batch_bandit_feedback` method several times,
+    we can resample logged bandit data from the same data generating distribution.
+    This can be used to estimate confidence intervals of the performances of OPE estimators.
+
+    If None is given as `behavior_policy_function`, the behavior policy will be generated from the true expected reward function. See the description of the `beta` argument, which controls the behavior policy.
+
+    Parameters
+    -----------
+
+    References
+    ------------
+    Emanuele Cavenaghi, Gabriele Sottocornola, Fabio Stella, and Markus Zanker.
+    "Non stationary multi-armed bandit: Empirical evaluation of a new concept drift-aware algorithm.", 2021.
+
+    """
+
+    drift_interval: int
+    transition_period: int = 0
+    transition_type: str = "linear"  # linear or weighted_sampled
+    seasonal: bool = False
+    base_coefficient_weight: float = 0.0
+    effective_dim_action_context: Optional[int] = None
+    effective_dim_context: Optional[int] = None
+    played_rounds: int = 0
+    random_state: int = 12345
+
+    context_coefs: Optional[deque] = None
+    current_action_coef: Optional[np.ndarray] = None
+    current_action_context_coef: Optional[np.ndarray] = None
+    base_coef: Optional[np.ndarray] = None
+
+    def __post_init__(self) -> None:
+        if self.random_state is None:
+            raise ValueError("`random_state` must be given")
+        self.random_ = check_random_state(self.random_state)
+        self.available_rounds = self.drift_interval
+        self.context_coefs = deque(maxlen=2)
+        if self.effective_dim_action_context and self.effective_dim_context:
+            self.update_coef()
+
+    def update_coef(self) -> None:
+        if self.base_coef is None:
+            self.base_coef, _, _ = sample_random_uniform_coefficients(
+                self.effective_dim_action_context,
+                self.effective_dim_context,
+                self.random_,
+            )
+
+        if len(self.context_coefs) == 0:
+            (
+                tmp_context_coef,
+                tmp_action_coef,
+                tmp_action_context_coef,
+            ) = sample_random_uniform_coefficients(
+                self.effective_dim_action_context,
+                self.effective_dim_context,
+                self.random_,
+            )
+            self.context_coefs.append(tmp_context_coef)
+
+        # We only drift on the context_coef for now.
+        if self.current_action_coef is None:
+            self.current_action_coef = tmp_action_coef
+        if self.current_action_context_coef is None:
+            self.current_action_context_coef = tmp_action_context_coef
+
+        if self.seasonal and len(self.context_coefs) == 2:
+            self.context_coefs.rotate()
+        else:
+            (
+                tmp_context_coef,
+                tmp_action_coef,
+                tmp_action_context_coef,
+            ) = sample_random_uniform_coefficients(
+                self.effective_dim_action_context,
+                self.effective_dim_context,
+                self.random_,
+            )
+            self.context_coefs.append(tmp_context_coef)
+
+    def get_coefficients(
+        self,
+        n_rounds: int,
+        effective_dim_context: int = None,
+        effective_dim_action_context: int = None,
+        **kwargs,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if effective_dim_action_context and effective_dim_context:
+            eff_dim_not_set = (
+                not self.effective_dim_action_context and not self.effective_dim_context
+            )
+            eff_dim_equal = (
+                self.effective_dim_action_context == effective_dim_action_context
+                and self.effective_dim_context == effective_dim_context
+            )
+            if eff_dim_not_set or eff_dim_equal:
+                self.effective_dim_action_context = effective_dim_action_context
+                self.effective_dim_context = effective_dim_context
+            else:
+                raise RuntimeError("Trying to change the effective dimensions")
+
+        if len(self.context_coefs) == 0:
+            self.update_coef()
+
+        required_rounds = n_rounds
+        context_coefs = []
+
+        while required_rounds > 0:
+            if required_rounds >= self.available_rounds:
+                self.append_current_coefs(context_coefs, rounds=self.available_rounds)
+                required_rounds -= self.available_rounds
+                self.update_coef()
+                self.available_rounds = self.drift_interval
+            else:
+                self.append_current_coefs(context_coefs, rounds=required_rounds)
+                self.available_rounds -= required_rounds
+                required_rounds = 0
+
+        # For now, we only drift on the context coefs, rest is static
+        return (
+            np.vstack(context_coefs),
+            self.current_action_coef,
+            self.current_action_context_coef,
+        )
+
+    def append_current_coefs(
+        self, context_coefs: List[np.ndarray], rounds: int
+    ) -> None:
+        shift_start = self.available_rounds - self.transition_period
+
+        transition_steps = np.arange(start=1, stop=self.transition_period + 1)
+        if shift_start >= 0:
+            transition_steps = np.pad(transition_steps, pad_width=[(shift_start, 0)])
+        if shift_start < 0:
+            transition_steps = transition_steps[-shift_start:]
+
+        shift_remainder = self.available_rounds - rounds
+        if shift_remainder > 0:
+            transition_steps = transition_steps[shift_remainder:]
+
+        weights = transition_steps / (self.transition_period + 1)
+
+        if self.transition_type is "weighted_sampled":
+            weights = self.random_.binomial(n=1, p=weights)
+
+        A = np.tile(self.context_coefs[0], (rounds, 1))
+        B = np.tile(self.context_coefs[1], (rounds, 1))
+
+        base_coef = self.base_coefficient_weight * self.base_coef
+
+        coefs = (
+            base_coef
+            + A * np.expand_dims((1 - self.base_coefficient_weight) * (1 - weights), 1)
+            + B * np.expand_dims((1 - self.base_coefficient_weight) * weights, 1)
+        )
+
+        context_coefs.append(coefs)
 
 
 @dataclass
@@ -58,6 +241,10 @@ class SyntheticBanditDataset(BaseBanditDataset):
     delay_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function defining the delay rounds  for each given action-context pair,
         If None, the `delay_rounds` key will be omitted from the dataset samples.
+
+    coef_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=sample_random_uniform_coefficients
+        Function responsible for providing coefficients to the reward function. By default coefficients are sampled
+        as random uniform.
 
     reward_std: float, default=1.0
         Standard deviation of the reward distribution.
@@ -164,6 +351,9 @@ class SyntheticBanditDataset(BaseBanditDataset):
     reward_type: str = RewardType.BINARY.value
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
     delay_function: Optional[Callable[[int, float], np.ndarray]] = None
+    coef_function: Optional[
+        Callable[[int, float], np.ndarray]
+    ] = sample_random_uniform_coefficients
     reward_std: float = 1.0
     action_context: Optional[np.ndarray] = None
     behavior_policy_function: Optional[
@@ -237,6 +427,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
                 context=context,
                 action_context=self.action_context,
                 random_state=self.random_state,
+                coef_function=self.coef_function,
             )
 
         return expected_reward_
@@ -451,54 +642,10 @@ class SyntheticBanditDataset(BaseBanditDataset):
         return np.sum(factual_reward * sampled_actions)
 
 
-def sample_random_uniform_coefficients(
-        effective_dim_action_context: int,
-        effective_dim_context: int,
-        random_: np.random.RandomState
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    context_coef_ = random_.uniform(-1, 1, size=effective_dim_context)
-    action_coef_ = random_.uniform(-1, 1, size=effective_dim_action_context)
-    context_action_coef_ = random_.uniform(
-        -1, 1, size=(effective_dim_context, effective_dim_action_context)
-    )
-    return context_coef_, action_coef_, context_action_coef_
-
-
-@dataclass()
-class CoefficientDrifter():
-    drift_interval: int
-    played_rounds: int = 0
-    random_state: int = 12345
-
-    def __post_init__(self) -> None:
-        if self.random_state is None:
-            raise ValueError("`random_state` must be given")
-        self.random_ = check_random_state(self.random_state)
-
-    def get_coefficients(
-            self,
-            n_rounds: int,
-            effective_dim_action_context: int,
-            effective_dim_context: int,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        # Available_rounds = current_round % drift_interval
-        # While required_rounds > 0:
-        #   Calculate available rounds in current coef
-        #   tile current coef for available rounds
-        #   if available rounds < required_rounds
-        #      sample new coef
-        #   required_rounds = required_rounds - available_rounds
-        # Stack all coef
-        #
-
-        return sample_random_uniform_coefficients(effective_dim_action_context, effective_dim_context, self.random_)
-
-
-
 def logistic_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards.
@@ -511,7 +658,7 @@ def logistic_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
 
-    coef_func: Callable, default=sample_random_uniform_coefficients
+    coef_function: Callable, default=sample_random_uniform_coefficients
         Function for generating the coefficients used for the context, action and context/action interactions.
         By default, the coefficients are randomly uniformly drawn.
 
@@ -530,7 +677,7 @@ def logistic_reward_function(
         action_context=action_context,
         degree=1,
         random_state=random_state,
-        coef_func=coef_func,
+        coef_function=coef_function,
     )
 
     return sigmoid(logits)
@@ -539,7 +686,7 @@ def logistic_reward_function(
 def logistic_polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with polynomial feature transformations.
@@ -571,7 +718,7 @@ def logistic_polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
-        coef_func=coef_func,
+        coef_function=coef_function,
         random_state=random_state,
     )
 
@@ -581,7 +728,7 @@ def logistic_polynomial_reward_function(
 def logistic_sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with small effective feature dimension.
@@ -615,7 +762,7 @@ def logistic_sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
-        coef_func=coef_func,
+        coef_function=coef_function,
         random_state=random_state,
     )
 
@@ -625,7 +772,7 @@ def logistic_sparse_reward_function(
 def logistic_sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with small effective feature dimension.
@@ -659,7 +806,7 @@ def logistic_sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
-        coef_func=coef_func,
+        coef_function=coef_function,
         random_state=random_state,
     )
 
@@ -669,7 +816,7 @@ def logistic_sparse_reward_function(
 def linear_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear mean reward function for continuous rewards.
@@ -696,7 +843,7 @@ def linear_reward_function(
         context=context,
         action_context=action_context,
         degree=1,
-        coef_func=coef_func,
+        coef_function=coef_function,
         random_state=random_state,
     )
 
@@ -704,7 +851,7 @@ def linear_reward_function(
 def polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Polynomial mean reward function for continuous rewards.
@@ -736,7 +883,7 @@ def polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
-        coef_func=coef_func,
+        coef_function=coef_function,
         random_state=random_state,
     )
 
@@ -744,7 +891,7 @@ def polynomial_reward_function(
 def sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Sparse mean reward function for continuous rewards.
@@ -778,7 +925,7 @@ def sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
-        coef_func=coef_func,
+        coef_function=coef_function,
         random_state=random_state,
     )
 
@@ -788,7 +935,7 @@ def _base_reward_function(
     action_context: np.ndarray,
     degree: int = 3,
     effective_dim_ratio: float = 1.0,
-    coef_func: coef_func_signature = sample_random_uniform_coefficients,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Base function to define mean reward functions.
@@ -885,12 +1032,19 @@ def _base_reward_function(
         effective_context_ = context_
         effective_action_context_ = action_context_
 
-    context_coef_, action_coef_, context_action_coef_ = coef_func(effective_dim_action_context, effective_dim_context,
-                                                                  random_)
+    context_coef_, action_coef_, context_action_coef_ = coef_function(
+        n_rounds=datasize,
+        effective_dim_action_context=effective_dim_action_context,
+        effective_dim_context=effective_dim_context,
+        random_=random_,
+    )
 
-    context_coef_ = np.tile(context_coef_, (datasize, 1))
-    context_values = np.tile(np.sum(effective_context_ * context_coef_, axis=1), (n_actions, 1)).T
-    # context_values = np.tile(effective_context_ @ context_coef_, (n_actions, 1)).T
+    if context_coef_.shape[0] != datasize:
+        context_values = np.tile(effective_context_ @ context_coef_, (n_actions, 1)).T
+    else:
+        context_values = np.tile(
+            np.sum(effective_context_ * context_coef_, axis=1), (n_actions, 1)
+        ).T
     action_values = np.tile(action_coef_ @ effective_action_context_.T, (datasize, 1))
     context_action_values = (
         effective_context_ @ context_action_coef_ @ effective_action_context_.T
