@@ -70,13 +70,15 @@ class CoefficientDrifter:
     base_coefficient_weight: float = 0.0
     effective_dim_action_context: Optional[int] = None
     effective_dim_context: Optional[int] = None
-    played_rounds: int = 0
     random_state: int = 12345
 
+    played_rounds: int = 0
     context_coefs: Optional[deque] = None
-    current_action_coef: Optional[np.ndarray] = None
-    current_action_context_coef: Optional[np.ndarray] = None
-    base_coef: Optional[np.ndarray] = None
+    action_coefs: Optional[deque] = None
+    context_action_coefs: Optional[deque] = None
+    base_context_coef: Optional[np.ndarray] = None
+    base_action_coef: Optional[np.ndarray] = None
+    base_context_action_coef: Optional[np.ndarray] = None
 
     def __post_init__(self) -> None:
         if self.random_state is None:
@@ -84,37 +86,28 @@ class CoefficientDrifter:
         self.random_ = check_random_state(self.random_state)
         self.available_rounds = self.drift_interval
         self.context_coefs = deque(maxlen=2)
+        self.action_coefs = deque(maxlen=2)
+        self.context_action_coefs = deque(maxlen=2)
         if self.effective_dim_action_context and self.effective_dim_context:
             self.update_coef()
 
     def update_coef(self) -> None:
-        if self.base_coef is None:
-            self.base_coef, _, _ = sample_random_uniform_coefficients(
+        if self.base_context_coef is None:
+            self.base_context_coef, self.base_action_coef, self.base_context_action_coef = sample_random_uniform_coefficients(
                 self.effective_dim_action_context,
                 self.effective_dim_context,
                 self.random_,
             )
 
         if len(self.context_coefs) == 0:
-            (
-                tmp_context_coef,
-                tmp_action_coef,
-                tmp_action_context_coef,
-            ) = sample_random_uniform_coefficients(
-                self.effective_dim_action_context,
-                self.effective_dim_context,
-                self.random_,
-            )
-            self.context_coefs.append(tmp_context_coef)
-
-        # We only drift on the context_coef for now.
-        if self.current_action_coef is None:
-            self.current_action_coef = tmp_action_coef
-        if self.current_action_context_coef is None:
-            self.current_action_context_coef = tmp_action_context_coef
+            self.context_coefs.append(self.base_context_coef)
+            self.action_coefs.append(self.base_action_coef)
+            self.context_action_coefs.append(self.base_context_action_coef)
 
         if self.seasonal and len(self.context_coefs) == 2:
             self.context_coefs.rotate()
+            self.action_coefs.rotate()
+            self.context_action_coefs.rotate()
         else:
             (
                 tmp_context_coef,
@@ -126,6 +119,8 @@ class CoefficientDrifter:
                 self.random_,
             )
             self.context_coefs.append(tmp_context_coef)
+            self.action_coefs.append(tmp_action_coef)
+            self.context_action_coefs.append(tmp_action_context_coef)
 
     def get_coefficients(
         self,
@@ -153,27 +148,28 @@ class CoefficientDrifter:
 
         required_rounds = n_rounds
         context_coefs = []
+        action_coefs = []
+        context_action_coefs = []
 
         while required_rounds > 0:
             if required_rounds >= self.available_rounds:
-                self.append_current_coefs(context_coefs, rounds=self.available_rounds)
+                self.append_current_coefs(context_coefs, action_coefs, context_action_coefs, rounds=self.available_rounds)
                 required_rounds -= self.available_rounds
                 self.update_coef()
                 self.available_rounds = self.drift_interval
             else:
-                self.append_current_coefs(context_coefs, rounds=required_rounds)
+                self.append_current_coefs(context_coefs, action_coefs, context_action_coefs, rounds=required_rounds)
                 self.available_rounds -= required_rounds
                 required_rounds = 0
 
-        # For now, we only drift on the context coefs, rest is static
         return (
             np.vstack(context_coefs),
-            self.current_action_coef,
-            self.current_action_context_coef,
+            np.vstack(action_coefs),
+            np.vstack(context_action_coefs),
         )
 
     def append_current_coefs(
-        self, context_coefs: List[np.ndarray], rounds: int
+        self, context_coefs: List[np.ndarray], action_coefs: List[np.ndarray], context_action_coefs: List[np.ndarray], rounds: int
     ) -> None:
         shift_start = self.available_rounds - self.transition_period
 
@@ -192,18 +188,22 @@ class CoefficientDrifter:
         if self.transition_type is "weighted_sampled":
             weights = self.random_.binomial(n=1, p=weights)
 
-        A = np.tile(self.context_coefs[0], (rounds, 1))
-        B = np.tile(self.context_coefs[1], (rounds, 1))
+        context_coefs.append(self.compute_weighted_coefs(self.context_coefs, self.base_context_coef, rounds, weights))
+        action_coefs.append(self.compute_weighted_coefs(self.action_coefs, self.base_action_coef, rounds, weights))
+        context_action_coefs.append(self.compute_weighted_coefs(self.context_action_coefs, self.base_context_action_coef, rounds, weights))
 
-        base_coef = self.base_coefficient_weight * self.base_coef
 
+    def compute_weighted_coefs(self, coefs, base_coef, rounds, weights):
+        base_coef = self.base_coefficient_weight * base_coef
+
+        A = np.tile(coefs[0], [rounds] + [1 for _ in coefs[0].shape])
+        B = np.tile(coefs[1], [rounds] + [1 for _ in coefs[1].shape])
         coefs = (
-            base_coef
-            + A * np.expand_dims((1 - self.base_coefficient_weight) * (1 - weights), 1)
-            + B * np.expand_dims((1 - self.base_coefficient_weight) * weights, 1)
+                base_coef
+                + A * np.expand_dims((1 - self.base_coefficient_weight) * (1 - weights), list(range(1, len(A.shape))))
+                + B * np.expand_dims((1 - self.base_coefficient_weight) * weights, list(range(1, len(B.shape))))
         )
-
-        context_coefs.append(coefs)
+        return coefs
 
 
 @dataclass
@@ -1045,14 +1045,27 @@ def _base_reward_function(
         context_values = np.tile(
             np.sum(effective_context_ * context_coef_, axis=1), (n_actions, 1)
         ).T
-    action_values = np.tile(action_coef_ @ effective_action_context_.T, (datasize, 1))
-    context_action_values = (
-        effective_context_ @ context_action_coef_ @ effective_action_context_.T
-    )
+
+    action_values = action_coef_ @ effective_action_context_.T
+    if action_coef_.shape[0] != datasize:
+        action_values = np.tile(action_values, (datasize, 1))
+
+    if action_coef_.shape[0] != datasize:
+        context_action_values = (
+                effective_context_ @ context_action_coef_ @ effective_action_context_.T
+        )
+    else:
+        effective_context_ = np.expand_dims(effective_context_, axis=1)
+        context_action_coef_interactions = np.squeeze(np.matmul(effective_context_, context_action_coef_), axis=1)
+
+        context_action_values = (
+                context_action_coef_interactions @ effective_action_context_.T
+        )
+
     expected_rewards = context_values + action_values + context_action_values
-    expected_rewards = (
-        degree * (expected_rewards - expected_rewards.mean()) / expected_rewards.std()
-    )
+    # expected_rewards = (
+    #     degree * (expected_rewards - expected_rewards.mean()) / expected_rewards.std()
+    # )
 
     return expected_rewards
 

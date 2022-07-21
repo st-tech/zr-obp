@@ -852,22 +852,10 @@ def test_coefficient_tracker_can_shift_expected_rewards_instantly_based_on_confi
 
     expected_expected_rewards = np.asarray(
         [
-            [
-                -8.63608908,
-                -8.63608908,
-                -8.63608908,
-            ],  # This round has a different context and should have diff E[r]
-            [
-                2.57393219,
-                2.57393219,
-                2.57393219,
-            ],  # The next two rounds have the same context and should have identical
-            [2.57393219, 2.57393219, 2.57393219],  # E[r]
-            [
-                3.4882247,
-                3.4882247,
-                3.4882247,
-            ],  # This round has the same context but has experienced drift.
+            [-7.88993004, -7.88993004, -7.88993004],  # This round has a different context and should have diff E[r]
+            [ 0.9467916 ,  0.9467916 ,  0.9467916 ],  # The next two rounds have the same context and should have identical
+            [ 0.9467916 ,  0.9467916 ,  0.9467916 ],  # E[r]
+            [ 5.99634683,  5.99634683,  5.99634683],  # This round has the same context but has experienced drift.
         ]
     )
 
@@ -1164,3 +1152,64 @@ def test_coefficient_tracker_keeps_track_of_shifted_coefficient_based_on_configu
         )
 
     assert np.allclose(actual_context_coef, expected_context_coef_2)
+
+
+def test_coefficients_can_drift_for_the_action_coefs():
+    effective_dim_context = 4
+    effective_dim_action_context = 3
+
+    with mock.patch(
+        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        MockCoefSample().fake_sample,
+    ):
+        drifter = CoefficientDrifter(
+            drift_interval=2,
+            effective_dim_context=effective_dim_context,
+            effective_dim_action_context=effective_dim_action_context,
+        )
+
+        _, actual_action_coef, _ = drifter.get_coefficients(n_rounds=3)
+
+        expected_action_coef = np.asarray(
+            [
+                [2.0, 2.0, 2.0],
+                [2.0, 2.0, 2.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE
+                [3.0, 3.0, 3.0],
+            ]
+        )
+
+        assert np.allclose(actual_action_coef, expected_action_coef)
+
+
+
+def test_coefficients_can_drift_for_the_action_coefs():
+    effective_dim_context = 4
+    effective_dim_action_context = 3
+
+    with mock.patch(
+        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        MockCoefSample().fake_sample,
+    ):
+        drifter = CoefficientDrifter(
+            drift_interval=2,
+            effective_dim_context=effective_dim_context,
+            effective_dim_action_context=effective_dim_action_context,
+        )
+
+        _, _, actual_context_action_coef = drifter.get_coefficients(n_rounds=3)
+
+        expected_context_action_coef = np.asarray([[[2., 2., 2.],
+        [2., 2., 2.],
+        [2., 2., 2.],
+        [2., 2., 2.]],
+       [[2., 2., 2.],
+        [2., 2., 2.],
+        [2., 2., 2.],
+        [2., 2., 2.]],
+       [[3., 3., 3.],
+        [3., 3., 3.],
+        [3., 3., 3.],
+        [3., 3., 3.]]])
+
+        assert np.allclose(actual_context_action_coef, expected_context_action_coef)
+

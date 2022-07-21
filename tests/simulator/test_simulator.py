@@ -7,7 +7,8 @@ from obp.policy import BaseContextFreePolicy
 from obp.policy.linear import LinTS, LinUCB
 
 from obp.policy.contextfree import EpsilonGreedy, Random, BernoulliTS
-from obp.dataset.synthetic import logistic_reward_function, ExponentialDelaySampler
+from obp.dataset.synthetic import logistic_reward_function, ExponentialDelaySampler, CoefficientDrifter, \
+    logistic_sparse_reward_function
 from obp.dataset import SyntheticBanditDataset
 from obp.policy.policy_type import PolicyType
 from obp.simulator import run_bandit_simulation
@@ -223,3 +224,76 @@ def test_run_bandit_simulation_applies_policy_directly_when_no_delay():
     ]
 
     assert tracker.parameter_updates == expected_updates
+
+
+def test_simulator_can_create_identical_simulations_using_seeds():
+    sample_n_rounds = 40
+    drift_interval = 20
+    transition_period = 0
+    n_actions = 3
+    dim_context = 5
+
+    drifter = CoefficientDrifter(
+        drift_interval=drift_interval,
+        transition_period=transition_period,
+        transition_type="linear",  # linear or weighted_sampled
+        seasonal=False,
+        base_coefficient_weight=.3,
+        random_state=1234
+    )
+
+    dataset_1 = SyntheticBanditDataset(
+        n_actions=n_actions,
+        dim_context=dim_context,
+        reward_type="binary",  # "binary" or "continuous"
+        reward_function=logistic_sparse_reward_function,
+        delay_function=None,
+        coef_function=drifter.get_coefficients,
+        behavior_policy_function=None,  # uniformly random
+        random_state=12345,
+    )
+
+    training_bandit_dataset_1 = dataset_1.obtain_batch_bandit_feedback(n_rounds=sample_n_rounds)
+
+    policy = EpsilonGreedy(n_actions=n_actions, epsilon=0.1, random_state=12345)
+    train_action_dists_1 = run_bandit_simulation(
+        bandit_feedback=training_bandit_dataset_1,
+        policy=policy
+    )
+
+    rewards_1 = dataset_1.count_ground_truth_policy_rewards(train_action_dists_1.squeeze(axis=2)[:drift_interval],
+                                                            training_bandit_dataset_1["factual_reward"][
+                                                            :drift_interval])
+    drifter = CoefficientDrifter(
+        drift_interval=drift_interval,
+        transition_period=transition_period,
+        transition_type="linear",  # linear or weighted_sampled
+        seasonal=False,
+        base_coefficient_weight=1.0,
+        random_state=1234
+    )
+
+
+    dataset_2 = SyntheticBanditDataset(
+        n_actions=n_actions,
+        dim_context=dim_context,
+        reward_type="binary", # "binary" or "continuous"
+        reward_function=logistic_sparse_reward_function,
+        delay_function=None,
+        coef_function=drifter.get_coefficients,
+        behavior_policy_function=None, # uniformly random
+        random_state=12345,
+    )
+
+    training_bandit_dataset_2 = dataset_2.obtain_batch_bandit_feedback(n_rounds=sample_n_rounds)
+
+    policy = EpsilonGreedy(n_actions=n_actions, epsilon=0.1, random_state=12345)
+    train_action_dists_2 = run_bandit_simulation(
+        bandit_feedback=training_bandit_dataset_2,
+        policy=policy
+    )
+
+    rewards_2 = dataset_2.count_ground_truth_policy_rewards(train_action_dists_2.squeeze(axis=2)[:drift_interval],
+                                                      training_bandit_dataset_2["factual_reward"][:drift_interval])
+
+    assert rewards_1 == rewards_2
