@@ -42,256 +42,66 @@ def sample_random_uniform_coefficients(
 
 
 @dataclass
-class CoefficientDrifter:
-    """Class for synthesizing bandit data.
-
-    Note
-    -----
-    By calling the `obtain_batch_bandit_feedback` method several times,
-    we can resample logged bandit data from the same data generating distribution.
-    This can be used to estimate confidence intervals of the performances of OPE estimators.
-
-    If None is given as `behavior_policy_function`, the behavior policy will be generated from the true expected reward function. See the description of the `beta` argument, which controls the behavior policy.
-
-    Parameters
-    -----------
-
-    References
-    ------------
-    Emanuele Cavenaghi, Gabriele Sottocornola, Fabio Stella, and Markus Zanker.
-    "Non stationary multi-armed bandit: Empirical evaluation of a new concept drift-aware algorithm.", 2021.
-
-    """
-
-    drift_interval: int
-    transition_period: int = 0
-    transition_type: str = "linear"  # linear or weighted_sampled
-    seasonal: bool = False
-    base_coefficient_weight: float = 0.0
-    effective_dim_action_context: Optional[int] = None
-    effective_dim_context: Optional[int] = None
-    random_state: int = 12345
-
-    played_rounds: int = 0
-    context_coefs: Optional[deque] = None
-    action_coefs: Optional[deque] = None
-    context_action_coefs: Optional[deque] = None
-    base_context_coef: Optional[np.ndarray] = None
-    base_action_coef: Optional[np.ndarray] = None
-    base_context_action_coef: Optional[np.ndarray] = None
-
-    def __post_init__(self) -> None:
-        if self.random_state is None:
-            raise ValueError("`random_state` must be given")
-        self.random_ = check_random_state(self.random_state)
-        self.available_rounds = self.drift_interval
-        self.context_coefs = deque(maxlen=2)
-        self.action_coefs = deque(maxlen=2)
-        self.context_action_coefs = deque(maxlen=2)
-        if self.effective_dim_action_context and self.effective_dim_context:
-            self.update_coef()
-
-    def update_coef(self) -> None:
-        if self.base_context_coef is None:
-            self.base_context_coef, self.base_action_coef, self.base_context_action_coef = sample_random_uniform_coefficients(
-                self.effective_dim_action_context,
-                self.effective_dim_context,
-                self.random_,
-            )
-
-        if len(self.context_coefs) == 0:
-            self.context_coefs.append(self.base_context_coef)
-            self.action_coefs.append(self.base_action_coef)
-            self.context_action_coefs.append(self.base_context_action_coef)
-
-        if self.seasonal and len(self.context_coefs) == 2:
-            self.context_coefs.rotate()
-            self.action_coefs.rotate()
-            self.context_action_coefs.rotate()
-        else:
-            (
-                tmp_context_coef,
-                tmp_action_coef,
-                tmp_action_context_coef,
-            ) = sample_random_uniform_coefficients(
-                self.effective_dim_action_context,
-                self.effective_dim_context,
-                self.random_,
-            )
-            self.context_coefs.append(tmp_context_coef)
-            self.action_coefs.append(tmp_action_coef)
-            self.context_action_coefs.append(tmp_action_context_coef)
-
-    def get_coefficients(
-        self,
-        n_rounds: int,
-        effective_dim_context: int = None,
-        effective_dim_action_context: int = None,
-        **kwargs,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if effective_dim_action_context and effective_dim_context:
-            eff_dim_not_set = (
-                not self.effective_dim_action_context and not self.effective_dim_context
-            )
-            eff_dim_equal = (
-                self.effective_dim_action_context == effective_dim_action_context
-                and self.effective_dim_context == effective_dim_context
-            )
-            if eff_dim_not_set or eff_dim_equal:
-                self.effective_dim_action_context = effective_dim_action_context
-                self.effective_dim_context = effective_dim_context
-            else:
-                raise RuntimeError("Trying to change the effective dimensions")
-
-        if len(self.context_coefs) == 0:
-            self.update_coef()
-
-        required_rounds = n_rounds
-        context_coefs = []
-        action_coefs = []
-        context_action_coefs = []
-
-        while required_rounds > 0:
-            if required_rounds >= self.available_rounds:
-                self.append_current_coefs(context_coefs, action_coefs, context_action_coefs, rounds=self.available_rounds)
-                required_rounds -= self.available_rounds
-                self.update_coef()
-                self.available_rounds = self.drift_interval
-            else:
-                self.append_current_coefs(context_coefs, action_coefs, context_action_coefs, rounds=required_rounds)
-                self.available_rounds -= required_rounds
-                required_rounds = 0
-
-        return (
-            np.vstack(context_coefs),
-            np.vstack(action_coefs),
-            np.vstack(context_action_coefs),
-        )
-
-    def append_current_coefs(
-        self, context_coefs: List[np.ndarray], action_coefs: List[np.ndarray], context_action_coefs: List[np.ndarray], rounds: int
-    ) -> None:
-        shift_start = self.available_rounds - self.transition_period
-
-        transition_steps = np.arange(start=1, stop=self.transition_period + 1)
-        if shift_start >= 0:
-            transition_steps = np.pad(transition_steps, pad_width=[(shift_start, 0)])
-        if shift_start < 0:
-            transition_steps = transition_steps[-shift_start:]
-
-        shift_remainder = self.available_rounds - rounds
-        if shift_remainder > 0:
-            transition_steps = transition_steps[shift_remainder:]
-
-        weights = transition_steps / (self.transition_period + 1)
-
-        if self.transition_type is "weighted_sampled":
-            weights = self.random_.binomial(n=1, p=weights)
-
-        context_coefs.append(self.compute_weighted_coefs(self.context_coefs, self.base_context_coef, rounds, weights))
-        action_coefs.append(self.compute_weighted_coefs(self.action_coefs, self.base_action_coef, rounds, weights))
-        context_action_coefs.append(self.compute_weighted_coefs(self.context_action_coefs, self.base_context_action_coef, rounds, weights))
-
-
-    def compute_weighted_coefs(self, coefs, base_coef, rounds, weights):
-        base_coef = self.base_coefficient_weight * base_coef
-
-        A = np.tile(coefs[0], [rounds] + [1 for _ in coefs[0].shape])
-        B = np.tile(coefs[1], [rounds] + [1 for _ in coefs[1].shape])
-        coefs = (
-                base_coef
-                + A * np.expand_dims((1 - self.base_coefficient_weight) * (1 - weights), list(range(1, len(A.shape))))
-                + B * np.expand_dims((1 - self.base_coefficient_weight) * weights, list(range(1, len(B.shape))))
-        )
-        return coefs
-
-
-@dataclass
 class SyntheticBanditDataset(BaseBanditDataset):
     """Class for synthesizing bandit data.
-
     Note
     -----
     By calling the `obtain_batch_bandit_feedback` method several times,
     we can resample logged bandit data from the same data generating distribution.
     This can be used to estimate confidence intervals of the performances of OPE estimators.
-
     If None is given as `behavior_policy_function`, the behavior policy will be generated from the true expected reward function. See the description of the `beta` argument, which controls the behavior policy.
-
     Parameters
     -----------
     n_actions: int
         Number of actions.
-
     dim_context: int, default=1
         Number of dimensions of context vectors.
-
     reward_type: str, default='binary'
         Type of reward variable, which must be either 'binary' or 'continuous'.
         When 'binary', rewards are sampled from the Bernoulli distribution.
         When 'continuous', rewards are sampled from the truncated Normal distribution with `scale=1`.
         The mean parameter of the reward distribution is determined by the `reward_function` specified by the next argument.
-
     reward_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
         Function defining the expected reward for each given action-context pair,
         i.e., :math:`q: \\mathcal{X} \\times \\mathcal{A} \\rightarrow \\mathbb{R}`.
         If None, context **independent** expected rewards will be
         sampled from the uniform distribution automatically.
-
-    delay_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
-        Function defining the delay rounds  for each given action-context pair,
-        If None, the `delay_rounds` key will be omitted from the dataset samples.
-
-    coef_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=sample_random_uniform_coefficients
-        Function responsible for providing coefficients to the reward function. By default coefficients are sampled
-        as random uniform.
-
     reward_std: float, default=1.0
         Standard deviation of the reward distribution.
         A larger value leads to a noisier reward distribution.
         This argument is valid only when `reward_type="continuous"`.
-
     action_context: np.ndarray, default=None
          Vector representation of (discrete) actions.
          If None, one-hot representation will be used.
-
     behavior_policy_function: Callable[[np.ndarray, np.ndarray], np.ndarray], default=None
         Function generating logit values, which will be used to define the behavior policy via softmax transformation.
         If None, behavior policy will be generated by applying the softmax function to the expected reward.
         Thus, in this case, it is possible to control the optimality of the behavior policy by customizing `beta`.
         If `beta` is large, the behavior policy becomes near-deterministic/near-optimal,
         while a small or negative value of `beta` leads to a sub-optimal behavior policy.
-
     beta: int or float, default=1.0
         Inverse temperature parameter, which controls the optimality and entropy of the behavior policy.
         A large value leads to a near-deterministic behavior policy,
         while a small value leads to a near-uniform behavior policy.
         A positive value leads to a near-optimal behavior policy,
         while a negative value leads to a sub-optimal behavior policy.
-
     n_deficient_actions: int, default=0
         Number of deficient actions having zero probability of being selected in the logged bandit data.
         If there are some deficient actions, the full/common support assumption is very likely to be violated,
         leading to some bias for IPW-type estimators. See Sachdeva et al.(2020) for details.
         `n_deficient_actions` should be an integer smaller than `n_actions - 1` so that there exists at least one action
         that have a positive probability of being selected by the behavior policy.
-
     random_state: int, default=12345
         Controls the random seed in sampling synthetic bandit data.
-
     dataset_name: str, default='synthetic_bandit_dataset'
         Name of the dataset.
-
     Examples
     ----------
-
     .. code-block:: python
-
         >>> from obp.dataset import (
             SyntheticBanditDataset,
             logistic_reward_function
         )
-
         # generate synthetic contextual bandit feedback with 10 actions.
         >>> dataset = SyntheticBanditDataset(
                 n_actions=5,
@@ -335,25 +145,18 @@ class SyntheticBanditDataset(BaseBanditDataset):
             'pscore': array([0.28264435, 0.19326617, 0.23079467, ..., 0.28729378, 0.36637549,
                     0.13791739])
         }
-
     References
     ------------
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
-
     Noveen Sachdeva, Yi Su, and Thorsten Joachims.
     "Off-policy Bandits with Deficient Support.", 2020.
-
     """
 
     n_actions: int
     dim_context: int = 1
     reward_type: str = RewardType.BINARY.value
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
-    delay_function: Optional[Callable[[int, float], np.ndarray]] = None
-    coef_function: Optional[
-        Callable[[int, float], np.ndarray]
-    ] = sample_random_uniform_coefficients
     reward_std: float = 1.0
     action_context: Optional[np.ndarray] = None
     behavior_policy_function: Optional[
@@ -427,7 +230,6 @@ class SyntheticBanditDataset(BaseBanditDataset):
                 context=context,
                 action_context=self.action_context,
                 random_state=self.random_state,
-                coef_function=self.coef_function,
             )
 
         return expected_reward_
@@ -435,16 +237,14 @@ class SyntheticBanditDataset(BaseBanditDataset):
     def sample_reward_given_expected_reward(
         self,
         expected_reward: np.ndarray,
-        action: Optional[np.ndarray] = None,
+        action: np.ndarray,
     ) -> np.ndarray:
-        if action is not None:
-            expected_reward = expected_reward[np.arange(action.shape[0]), action]
-
         """Sample reward given expected rewards"""
+        expected_reward_factual = expected_reward[np.arange(action.shape[0]), action]
         if RewardType(self.reward_type) == RewardType.BINARY:
-            reward = self.random_.binomial(n=1, p=expected_reward)
+            reward = self.random_.binomial(n=1, p=expected_reward_factual)
         elif RewardType(self.reward_type) == RewardType.CONTINUOUS:
-            mean = expected_reward
+            mean = expected_reward_factual
             a = (self.reward_min - mean) / self.reward_std
             b = (self.reward_max - mean) / self.reward_std
             reward = truncnorm.rvs(
@@ -461,20 +261,16 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
     def sample_reward(self, context: np.ndarray, action: np.ndarray) -> np.ndarray:
         """Sample rewards given contexts and actions, i.e., :math:`r \\sim p(r | x, a)`.
-
         Parameters
         -----------
         context: array-like, shape (n_rounds, dim_context)
             Context vectors characterizing each data (such as user information).
-
         action: array-like, shape (n_rounds,)
             Actions chosen by the behavior policy for each context.
-
         Returns
         ---------
         reward: array-like, shape (n_rounds,)
             Sampled rewards given contexts and actions.
-
         """
         check_array(array=context, name="context", expected_dim=2)
         check_array(array=action, name="action", expected_dim=1)
@@ -491,17 +287,14 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
     def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedback:
         """Obtain batch logged bandit data.
-
         Parameters
         ----------
         n_rounds: int
             Data size of the synthetic logged bandit data.
-
         Returns
         ---------
         bandit_feedback: BanditFeedback
             Synthesized logged bandit data.
-
         """
         check_scalar(n_rounds, "n_rounds", int, min_val=1)
         contexts = self.random_.normal(size=(n_rounds, self.dim_context))
@@ -546,16 +339,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
         actions = sample_action_fast(pi_b, random_state=self.random_state)
 
         # sample rewards based on the context and action
-        factual_reward = self.sample_reward_given_expected_reward(expected_reward_)
-        rewards = factual_reward[np.arange(actions.shape[0]), actions]
-
-        round_delays = None
-        if self.delay_function:
-            round_delays = self.delay_function(
-                n_rounds=actions.shape[0],
-                n_actions=self.n_actions,
-                expected_rewards=expected_reward_,
-            )
+        rewards = self.sample_reward_given_expected_reward(expected_reward_, actions)
 
         return dict(
             n_rounds=n_rounds,
@@ -565,9 +349,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
             action=actions,
             position=None,  # position effect is not considered in synthetic data
             reward=rewards,
-            factual_reward=factual_reward,
             expected_reward=expected_reward_,
-            round_delays=round_delays,
             pi_b=pi_b[:, :, np.newaxis],
             pscore=pi_b[np.arange(n_rounds), actions],
         )
@@ -576,21 +358,17 @@ class SyntheticBanditDataset(BaseBanditDataset):
         self, expected_reward: np.ndarray, action_dist: np.ndarray
     ) -> float:
         """Calculate the policy value of given action distribution on the given expected_reward.
-
         Parameters
         -----------
         expected_reward: array-like, shape (n_rounds, n_actions)
             Expected reward given context (:math:`x`) and action (:math:`a`), i.e., :math:`q(x,a):=\\mathbb{E}[r|x,a]`.
             This is often the `expected_reward` of the test set of logged bandit data.
-
         action_dist: array-like, shape (n_rounds, n_actions, len_list)
             Action choice probabilities of the evaluation policy (can be deterministic), i.e., :math:`\\pi_e(a_i|x_i)`.
-
         Returns
         ----------
         policy_value: float
             The policy value of the given action distribution on the given logged bandit data.
-
         """
         check_array(array=expected_reward, name="expected_reward", expected_dim=2)
         check_array(array=action_dist, name="action_dist", expected_dim=3)
@@ -604,42 +382,6 @@ class SyntheticBanditDataset(BaseBanditDataset):
             )
 
         return np.average(expected_reward, weights=action_dist[:, :, 0], axis=1).mean()
-
-    def count_ground_truth_policy_rewards(
-        self, factual_reward: np.ndarray, sampled_actions: np.ndarray
-    ) -> float:
-        """Count the policy rewards of given action distribution on the given factual_reward.
-
-        Parameters
-        -----------
-        factual_reward: array-like, shape (n_rounds, n_actions)
-            Factual reward given context (:math:`x`) and action (:math:`a`),
-            This is often the `factual_reward` of the test set of logged bandit data. The rewards are
-            sampled from the expected reward in the logged bandit data.
-
-        sampled_actions: array-like, shape (n_rounds, n_actions, len_list)
-            Action choices of the evaluation policy (should be deterministic).
-
-        Returns
-        ----------
-        policy_reward: float
-            The policy's reward of the given action distribution on the given logged bandit data.
-
-        """
-        check_array(array=factual_reward, name="expected_reward", expected_dim=2)
-        check_array(array=sampled_actions, name="action_dist", expected_dim=2)
-        if not np.isin(sampled_actions, [0, 1]).all():
-            raise ValueError("Expected `sampled_actions` to be binary action choices. ")
-        if factual_reward.shape[0] != sampled_actions.shape[0]:
-            raise ValueError(
-                "Expected `factual_reward.shape[0] = action_dist.shape[0]`, but found it False"
-            )
-        if factual_reward.shape[1] != sampled_actions.shape[1]:
-            raise ValueError(
-                "Expected `factual_reward.shape[1] = action_dist.shape[1]`, but found it False"
-            )
-
-        return np.sum(factual_reward * sampled_actions)
 
 
 def logistic_reward_function(
@@ -1063,103 +805,11 @@ def _base_reward_function(
         )
 
     expected_rewards = context_values + action_values + context_action_values
-    # expected_rewards = (
-    #     degree * (expected_rewards - expected_rewards.mean()) / expected_rewards.std()
-    # )
+    expected_rewards = (
+        degree * (expected_rewards - expected_rewards.mean()) / expected_rewards.std()
+    )
 
     return expected_rewards
-
-
-@dataclass
-class ExponentialDelaySampler:
-    """Class for sampling delays from different exponential functions.
-
-    Parameters
-    -----------
-    max_scale: float, default=100.0
-        The maximum scale parameter for the exponential delay distribution. When there is no weighted exponential
-        function the max_scale becomes the default scale.
-
-    min_scale: float, default=10.0
-        The minimum scale parameter for the exponential delay distribution. Only used when sampling from a weighted
-        exponential function.
-
-    random_state: int, default=12345
-        Controls the random seed in sampling synthetic bandit data.
-    """
-
-    max_scale: float = 100.0
-    min_scale: float = 10.0
-    random_state: int = None
-
-    def __post_init__(self) -> None:
-        if self.random_state is None:
-            raise ValueError("`random_state` must be given")
-        self.random_ = check_random_state(self.random_state)
-
-    def exponential_delay_function(
-        self, n_rounds: int, n_actions: int, **kwargs
-    ) -> np.ndarray:
-        """Exponential delay function used for sampling a number of delay rounds before rewards can be observed.
-
-        Note
-        ------
-        This implementation of the exponential delay function assumes that there is no causal relationship between the
-        context, action or reward and observed delay. Exponential delay function have been observed by Ktena, S.I. et al.
-
-        Parameters
-        -----------
-        n_rounds: int
-            Number of rounds to sample delays for.
-
-        n_actions: int
-            Number of actions to sample delays for. If the exponential function is not parameterised the delays are
-            repeated for each actions.
-
-        Returns
-        ---------
-        delay_rounds: array-like, shape (n_rounds, )
-            Rounded up round delays representing the amount of rounds before the policy can observe the rewards.
-
-        References
-        ------------
-        Ktena, S.I., Tejani, A., Theis, L., Myana, P.K., Dilipkumar, D., Huszár, F., Yoo, S. and Shi, W.
-        "Addressing delayed feedback for continuous training with neural networks in CTR prediction." 2019.
-
-        """
-        delays_per_round = np.ceil(
-            self.random_.exponential(scale=self.max_scale, size=n_rounds)
-        )
-
-        return np.tile(delays_per_round, (n_actions, 1)).T
-
-    def exponential_delay_function_expected_reward_weighted(
-        self, expected_rewards: np.ndarray, **kwargs
-    ) -> np.ndarray:
-        """Exponential delay function used for sampling a number of delay rounds before rewards can be observed.
-        Each delay is conditioned on the expected reward by multiplying (1 - expected_reward) * scale. This creates
-        the assumption that the more likely a reward is going be observed, the more likely it will be that the reward
-        comes sooner. Eg. recommending an attractive item will likely result in a faster purchase.
-
-         Parameters
-         -----------
-         expected_rewards : array-like, shape (n_rounds, n_actions)
-             The expected reward between 0 and 1 for each arm for each round. This used to weight the scale of the
-             exponential function.
-
-         Returns
-         ---------
-         delay_rounds: array-like, shape (n_rounds, )
-             Rounded up round delays representing the amount of rounds before the policy can observe the rewards.
-        """
-        scale = self.min_scale + (
-            (1 - expected_rewards) * (self.max_scale - self.min_scale)
-        )
-        delays_per_round = np.ceil(
-            self.random_.exponential(scale=scale, size=expected_rewards.shape)
-        )
-
-        return delays_per_round
 
 
 def linear_behavior_policy(

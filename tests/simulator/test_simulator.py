@@ -7,20 +7,20 @@ from obp.policy import BaseContextFreePolicy
 from obp.policy.linear import LinTS, LinUCB
 
 from obp.policy.contextfree import EpsilonGreedy, Random, BernoulliTS
-from obp.dataset.synthetic import logistic_reward_function, ExponentialDelaySampler, CoefficientDrifter, \
-    logistic_sparse_reward_function
-from obp.dataset import SyntheticBanditDataset
+from obp.dataset.synthetic import logistic_reward_function, logistic_sparse_reward_function
 from obp.policy.policy_type import PolicyType
 from obp.simulator import run_bandit_simulation
+from obp.simulator.coefficient_drifter import CoefficientDrifter
+from obp.simulator.delay_sampler import ExponentialDelaySampler
+from obp.simulator.simulator import BanditEnvironmentSimulator, count_ground_truth_policy_rewards
 
 
 def test_run_bandit_simulation_updates_at_each_taken_action():
     n_rounds = 100
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=5,
-        reward_type="binary",
         reward_function=logistic_reward_function,
         random_state=12345,
     )
@@ -35,10 +35,9 @@ def test_run_bandit_simulation_updates_at_each_taken_action():
 def test_run_bandit_simulation_handles_context_in_simulations():
     n_rounds = 100
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=5,
-        reward_type="binary",
         reward_function=logistic_reward_function,
         random_state=12345,
     )
@@ -55,7 +54,7 @@ def test_run_bandit_simulation_handles_context_in_simulations():
 def test_run_bandit_simulation_raises_on_unknown_policy():
     n_rounds = 1
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
     )
     bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
@@ -101,13 +100,12 @@ class BanditUpdateTracker(BaseContextFreePolicy):
 
 def test_run_bandit_simulation_works_end_to_end_with_synthetic_bandit_dataset():
     delay_function = ExponentialDelaySampler(
-        scale=1.0, random_state=12345
+        max_scale=1.0, random_state=12345
     ).exponential_delay_function
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=1,
-        reward_type="binary",
         reward_function=logistic_reward_function,
         delay_function=delay_function,
         random_state=12345,
@@ -121,10 +119,9 @@ def test_run_bandit_simulation_works_end_to_end_with_synthetic_bandit_dataset():
 def test_run_bandit_simulation_applies_policy_in_delay_specified_order():
     n_rounds = 5
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=1,
-        reward_type="binary",
         reward_function=logistic_reward_function,
         random_state=12345,
     )
@@ -135,11 +132,11 @@ def test_run_bandit_simulation_applies_policy_in_delay_specified_order():
     _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
 
     expected_updates = [
-        {"round": 3, "action": [0], "reward": [1]},
-        {"round": 3, "action": [0], "reward": [1]},
-        {"round": 5, "action": [2], "reward": [1]},
-        {"round": 5, "action": [1], "reward": [0]},
-        {"round": 5, "action": [2], "reward": [0]},
+        {"round": 3, "action": 0, "reward": 0},
+        {"round": 3, "action": 0, "reward": 1},
+        {"round": 5, "action": 2, "reward": 1},
+        {"round": 5, "action": 1, "reward": 1},
+        {"round": 5, "action": 2, "reward": 0},
     ]
 
     assert tracker.parameter_updates == expected_updates
@@ -148,10 +145,9 @@ def test_run_bandit_simulation_applies_policy_in_delay_specified_order():
 def test_run_bandit_simulation_applies_all_rewards_delayed_till_after_all_rounds_to_the_end_of_simulation():
     n_rounds = 5
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=1,
-        reward_type="binary",
         reward_function=logistic_reward_function,
         random_state=12345,
     )
@@ -162,11 +158,11 @@ def test_run_bandit_simulation_applies_all_rewards_delayed_till_after_all_rounds
     _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
 
     expected_updates = [
-        {"round": 3, "action": [0], "reward": [1]},
-        {"round": 3, "action": [0], "reward": [1]},
-        {"round": 5, "action": [2], "reward": [1]},
-        {"round": 5, "action": [1], "reward": [0]},
-        {"round": 5, "action": [2], "reward": [0]},
+        {"round": 3, "action": 0, "reward": 0},
+        {"round": 3, "action": 0, "reward": 1},
+        {"round": 5, "action": 2, "reward": 1},
+        {"round": 5, "action": 1, "reward": 1},
+        {"round": 5, "action": 2, "reward": 0},
     ]
 
     assert tracker.parameter_updates == expected_updates
@@ -185,10 +181,9 @@ def test_run_bandit_simulation_applies_all_rewards_delayed_till_after_all_rounds
 def test_run_bandit_simulation_does_not_crash_with_various_bandit_algorithms(policy):
     n_rounds = 5
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=4,
-        reward_type="binary",
         reward_function=logistic_reward_function,
         random_state=12345,
     )
@@ -201,10 +196,9 @@ def test_run_bandit_simulation_does_not_crash_with_various_bandit_algorithms(pol
 def test_run_bandit_simulation_applies_policy_directly_when_no_delay():
     n_rounds = 5
 
-    dataset = SyntheticBanditDataset(
+    dataset = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=1,
-        reward_type="binary",
         reward_function=logistic_reward_function,
         random_state=12345,
     )
@@ -216,10 +210,10 @@ def test_run_bandit_simulation_applies_policy_directly_when_no_delay():
     _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
 
     expected_updates = [
-        {"action": 0, "reward": 1, "round": 1},
+        {"action": 0, "reward": 0, "round": 1},
         {"action": 0, "reward": 1, "round": 2},
         {"action": 2, "reward": 1, "round": 3},
-        {"action": 1, "reward": 0, "round": 4},
+        {"action": 1, "reward": 1, "round": 4},
         {"action": 2, "reward": 0, "round": 5},
     ]
 
@@ -242,14 +236,12 @@ def test_simulator_can_create_identical_simulations_using_seeds():
         random_state=1234
     )
 
-    dataset_1 = SyntheticBanditDataset(
+    dataset_1 = BanditEnvironmentSimulator(
         n_actions=n_actions,
         dim_context=dim_context,
-        reward_type="binary",  # "binary" or "continuous"
         reward_function=logistic_sparse_reward_function,
         delay_function=None,
         coef_function=drifter.get_coefficients,
-        behavior_policy_function=None,  # uniformly random
         random_state=12345,
     )
 
@@ -261,8 +253,8 @@ def test_simulator_can_create_identical_simulations_using_seeds():
         policy=policy
     )
 
-    rewards_1 = dataset_1.count_ground_truth_policy_rewards(train_action_dists_1.squeeze(axis=2)[:drift_interval],
-                                                            training_bandit_dataset_1["factual_reward"][
+    rewards_1 = count_ground_truth_policy_rewards(train_action_dists_1.squeeze(axis=2)[:drift_interval],
+                                                            training_bandit_dataset_1["rewards"][
                                                             :drift_interval])
     drifter = CoefficientDrifter(
         drift_interval=drift_interval,
@@ -274,14 +266,12 @@ def test_simulator_can_create_identical_simulations_using_seeds():
     )
 
 
-    dataset_2 = SyntheticBanditDataset(
+    dataset_2 = BanditEnvironmentSimulator(
         n_actions=n_actions,
         dim_context=dim_context,
-        reward_type="binary", # "binary" or "continuous"
         reward_function=logistic_sparse_reward_function,
         delay_function=None,
         coef_function=drifter.get_coefficients,
-        behavior_policy_function=None, # uniformly random
         random_state=12345,
     )
 
@@ -293,7 +283,7 @@ def test_simulator_can_create_identical_simulations_using_seeds():
         policy=policy
     )
 
-    rewards_2 = dataset_2.count_ground_truth_policy_rewards(train_action_dists_2.squeeze(axis=2)[:drift_interval],
-                                                      training_bandit_dataset_2["factual_reward"][:drift_interval])
+    rewards_2 = count_ground_truth_policy_rewards(train_action_dists_2.squeeze(axis=2)[:drift_interval],
+                                                      training_bandit_dataset_2["rewards"][:drift_interval])
 
     assert rewards_1 == rewards_2
