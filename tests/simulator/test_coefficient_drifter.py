@@ -20,7 +20,7 @@ def test_coefficient_tracker_can_shift_expected_rewards_with_syntethic_dataset_g
         random_state=12345,
     )
 
-    bandit_dataset = dataset.obtain_batch_bandit_feedback(n_rounds=4)
+    bandit_dataset = dataset.next_bandit_round_batch(n_rounds=4)
 
 
 class MockCoefSample:
@@ -41,7 +41,7 @@ class MockCoefSample:
 
 def test_coefficient_tracker_can_shift_expected_rewards_instantly_based_on_configured_intervals():
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(drift_interval=3)
@@ -72,10 +72,22 @@ def test_coefficient_tracker_can_shift_expected_rewards_instantly_based_on_confi
 
     expected_expected_rewards = np.asarray(
         [
-            [-7.88993004, -7.88993004, -7.88993004],  # This round has a different context and should have diff E[r]
-            [ 0.9467916 ,  0.9467916 ,  0.9467916 ],  # The next two rounds have the same context and should have identical
-            [ 0.9467916 ,  0.9467916 ,  0.9467916 ],  # E[r]
-            [ 5.99634683,  5.99634683,  5.99634683],  # This round has the same context but has experienced drift.
+            [
+                -6.82778334,
+                -6.82778334,
+                -6.82778334,
+            ],  # This round has a different context and should have diff E[r]
+            [
+                -0.2354408,
+                -0.2354408,
+                -0.2354408,
+            ],  # The next two rounds have the same context and should have identical
+            [-0.2354408, -0.2354408, -0.2354408],  # E[r]
+            [
+                7.29866494,
+                7.29866494,
+                7.29866494,
+            ],  # This round has the same context but has experienced drift.
         ]
     )
 
@@ -84,7 +96,7 @@ def test_coefficient_tracker_can_shift_expected_rewards_instantly_based_on_confi
 
 def test_coefficient_tracker_can_shift_coefficient_instantly_based_on_configured_interval():
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         effective_dim_context = 4
@@ -99,10 +111,10 @@ def test_coefficient_tracker_can_shift_coefficient_instantly_based_on_configured
 
     expected_context_coef = np.asarray(
         [
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],  # AFTER THIS ROUND, THE COEFS CHANGE ABRUPTLY
             [2, 2, 2, 2],
-            [2, 2, 2, 2],
-            [2, 2, 2, 2],  # AFTER THIS ROUND, THE COEFS CHANGE ABRUPTLY
-            [3, 3, 3, 3],
         ]
     )
 
@@ -111,7 +123,7 @@ def test_coefficient_tracker_can_shift_coefficient_instantly_based_on_configured
 
 def test_coefficient_tracker_can_shift_linearly_instantly_based_on_configured_transition_period():
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -125,14 +137,14 @@ def test_coefficient_tracker_can_shift_linearly_instantly_based_on_configured_tr
 
     expected_context_coef = np.asarray(
         [
+            [1.0, 1.0],
+            [1.0, 1.0],  # First two rounds are the same
+            [1.33333333, 1.33333333],  # Next two rounds slowly transition
+            [1.66666667, 1.66666667],
+            [2.0, 2.0],  # Now we start in the new coef again
             [2.0, 2.0],
-            [2.0, 2.0],  # First two rounds are the same
-            [2.33333333, 2.33333333],  # Next two rounds slowly transition
+            [2.33333333, 2.33333333],  # Now we start transitioning again.
             [2.66666667, 2.66666667],
-            [3.0, 3.0],  # Now we start in the new coef again
-            [3.0, 3.0],
-            [3.33333333, 3.33333333],  # Now we start transitioning again.
-            [3.66666667, 3.66666667],
         ]
     )
 
@@ -141,7 +153,7 @@ def test_coefficient_tracker_can_shift_linearly_instantly_based_on_configured_tr
 
 def test_coefficient_tracker_can_shift_weighted_sampled_based_on_configured_transition_period():
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -156,14 +168,14 @@ def test_coefficient_tracker_can_shift_weighted_sampled_based_on_configured_tran
 
     expected_context_coef = np.asarray(
         [
+            [1.0, 1.0],
+            [1.0, 1.0],  # First two rounds are the same
+            [1.0, 1.0],  # Next two rounds are weighted sampled
             [2.0, 2.0],
-            [2.0, 2.0],  # First two rounds are the same
-            [2.0, 2.0],  # Next two rounds are weighted sampled
+            [2.0, 2.0],  # Now we start in the new coef again
+            [2.0, 2.0],
+            [3.0, 3.0],  # Next two rounds are weighted sampled again
             [3.0, 3.0],
-            [3.0, 3.0],  # Now we start in the new coef again
-            [3.0, 3.0],
-            [4.0, 4.0],  # Next two rounds are weighted sampled again
-            [4.0, 4.0],
         ]
     )
 
@@ -172,7 +184,7 @@ def test_coefficient_tracker_can_shift_weighted_sampled_based_on_configured_tran
 
 def test_coefficient_tracker_can_shift_instantly_back_and_forth_between_seasons_using_seasonality_flag():
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -187,14 +199,14 @@ def test_coefficient_tracker_can_shift_instantly_back_and_forth_between_seasons_
 
     expected_context_coef = np.asarray(
         [
+            [1.0, 1.0],
+            [1.0, 1.0],
             [2.0, 2.0],
             [2.0, 2.0],
-            [3.0, 3.0],
-            [3.0, 3.0],
+            [1.0, 1.0],
+            [1.0, 1.0],
             [2.0, 2.0],
             [2.0, 2.0],
-            [3.0, 3.0],
-            [3.0, 3.0],
         ]
     )
 
@@ -203,7 +215,7 @@ def test_coefficient_tracker_can_shift_instantly_back_and_forth_between_seasons_
 
 def test_coefficient_tracker_can_shift_instantly_under_base_coeficient():
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -219,14 +231,14 @@ def test_coefficient_tracker_can_shift_instantly_under_base_coeficient():
 
         expected_context_coef = np.asarray(
             [
+                [1, 1],
+                [1, 1],
                 [1.2, 1.2],
                 [1.2, 1.2],
-                [1.4, 1.4],
-                [1.4, 1.4],
+                [1, 1],
+                [1, 1],
                 [1.2, 1.2],
                 [1.2, 1.2],
-                [1.4, 1.4],
-                [1.4, 1.4],
             ]
         )
 
@@ -235,7 +247,7 @@ def test_coefficient_tracker_can_shift_instantly_under_base_coeficient():
 
 def test_coefficient_tracker_update_coef_makes_next_coef_current_coef_and_samples_new_next_coef():
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -248,7 +260,7 @@ def test_coefficient_tracker_update_coef_makes_next_coef_current_coef_and_sample
         drifter.update_coef()
 
         assert drifter.context_coefs[0] == [2]
-        assert np.allclose(drifter.context_coefs[1], [4.0])
+        assert np.allclose(drifter.context_coefs[1], [3.0])
 
 
 def test_coefficient_tracker_update_coef_samples_both_new_curr_and_next_on_first_pull():
@@ -311,7 +323,7 @@ def test_coefficient_tracker_can_shift_coefficient_multiple_times_instantly_base
     effective_dim_action_context = 3
 
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -324,11 +336,11 @@ def test_coefficient_tracker_can_shift_coefficient_multiple_times_instantly_base
 
     expected_context_coef = np.asarray(
         [
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE
             [2.0, 2.0, 2.0, 2.0],
-            [2.0, 2.0, 2.0, 2.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE
+            [2.0, 2.0, 2.0, 2.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE AGAIN
             [3.0, 3.0, 3.0, 3.0],
-            [3.0, 3.0, 3.0, 3.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE AGAIN
-            [4.0, 4.0, 4.0, 4.0],
         ]
     )
 
@@ -340,7 +352,7 @@ def test_coefficient_tracker_keeps_track_of_shifted_coefficient_based_on_configu
     effective_dim_action_context = 3
 
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -353,9 +365,9 @@ def test_coefficient_tracker_keeps_track_of_shifted_coefficient_based_on_configu
 
         expected_context_coef = np.asarray(
             [
+                [1.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE
                 [2.0, 2.0, 2.0, 2.0],
-                [2.0, 2.0, 2.0, 2.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE
-                [3.0, 3.0, 3.0, 3.0],
             ]
         )
 
@@ -365,9 +377,9 @@ def test_coefficient_tracker_keeps_track_of_shifted_coefficient_based_on_configu
 
         expected_context_coef_2 = np.asarray(
             [
-                [3.0, 3.0, 3.0, 3.0],  # THIS ROUND SHOULD BE THE SAME AS THE LAST ONE
-                [4.0, 4.0, 4.0, 4.0],  # HERE THE COEF SHOULD CHANGE AGAIN
-                [4.0, 4.0, 4.0, 4.0],
+                [2.0, 2.0, 2.0, 2.0],  # THIS ROUND SHOULD BE THE SAME AS THE LAST ONE
+                [3.0, 3.0, 3.0, 3.0],  # HERE THE COEF SHOULD CHANGE AGAIN
+                [3.0, 3.0, 3.0, 3.0],
             ]
         )
 
@@ -379,7 +391,7 @@ def test_coefficients_can_drift_for_the_action_coefs():
     effective_dim_action_context = 3
 
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -406,7 +418,7 @@ def test_coefficients_can_drift_for_the_action_coefs():
     effective_dim_action_context = 3
 
     with mock.patch(
-        "obp.dataset.synthetic.sample_random_uniform_coefficients",
+        "obp.simulator.coefficient_drifter.sample_random_uniform_coefficients",
         MockCoefSample().fake_sample,
     ):
         drifter = CoefficientDrifter(
@@ -417,18 +429,12 @@ def test_coefficients_can_drift_for_the_action_coefs():
 
         _, _, actual_context_action_coef = drifter.get_coefficients(n_rounds=3)
 
-        expected_context_action_coef = np.asarray([[[2., 2., 2.],
-        [2., 2., 2.],
-        [2., 2., 2.],
-        [2., 2., 2.]],
-       [[2., 2., 2.],
-        [2., 2., 2.],
-        [2., 2., 2.],
-        [2., 2., 2.]],
-       [[3., 3., 3.],
-        [3., 3., 3.],
-        [3., 3., 3.],
-        [3., 3., 3.]]])
+        expected_context_action_coef = np.asarray(
+            [
+                [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+                [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+                [[2.0, 2.0, 2.0], [2.0, 2.0, 2.0], [2.0, 2.0, 2.0], [2.0, 2.0, 2.0]],
+            ]
+        )
 
         assert np.allclose(actual_context_action_coef, expected_context_action_coef)
-

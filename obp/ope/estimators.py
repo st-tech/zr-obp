@@ -566,7 +566,7 @@ class InverseProbabilityWeighting(BaseOffPolicyEstimator):
                 iw=iw,
                 iw_hat=np.minimum(iw, self.lambda_),
             )
-        estimated_mse_score = sample_variance + (bias_term ** 2)
+        estimated_mse_score = sample_variance + (bias_term**2)
 
         return estimated_mse_score
 
@@ -1253,7 +1253,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
                 iw_hat=np.minimum(iw, self.lambda_),
                 q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
-        estimated_mse_score = sample_variance + (bias_term ** 2)
+        estimated_mse_score = sample_variance + (bias_term**2)
 
         return estimated_mse_score
 
@@ -1557,7 +1557,7 @@ class SwitchDoublyRobust(DoublyRobust):
                 iw_hat=iw * np.array(iw <= self.lambda_, dtype=int),
                 q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
-        estimated_mse_score = sample_variance + (bias_term ** 2)
+        estimated_mse_score = sample_variance + (bias_term**2)
 
         return estimated_mse_score
 
@@ -1668,7 +1668,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         n = action.shape[0]
         iw = action_dist[np.arange(n), action, position] / pscore
         if self.lambda_ < np.inf:
-            iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+            iw_hat = (self.lambda_ * iw) / (iw**2 + self.lambda_)
         else:
             iw_hat = iw
 
@@ -1751,7 +1751,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
         # estimate the (high probability) upper bound of the bias of DRos
         iw = action_dist[np.arange(n), action, position] / pscore
         if self.lambda_ < np.inf:
-            iw_hat = (self.lambda_ * iw) / (iw ** 2 + self.lambda_)
+            iw_hat = (self.lambda_ * iw) / (iw**2 + self.lambda_)
         else:
             iw_hat = iw
         if use_bias_upper_bound:
@@ -1769,7 +1769,7 @@ class DoublyRobustWithShrinkage(DoublyRobust):
                 iw_hat=iw_hat,
                 q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
-        estimated_mse_score = sample_variance + (bias_term ** 2)
+        estimated_mse_score = sample_variance + (bias_term**2)
 
         return estimated_mse_score
 
@@ -1951,7 +1951,7 @@ class SubGaussianInverseProbabilityWeighting(InverseProbabilityWeighting):
                 iw=iw,
                 iw_hat=iw_hat,
             )
-        estimated_mse_score = sample_variance + (bias_term ** 2)
+        estimated_mse_score = sample_variance + (bias_term**2)
 
         return estimated_mse_score
 
@@ -2153,7 +2153,7 @@ class SubGaussianDoublyRobust(DoublyRobust):
                 iw_hat=iw_hat,
                 q_hat=estimated_rewards_by_reg_model[np.arange(n), action, position],
             )
-        estimated_mse_score = sample_variance + (bias_term ** 2)
+        estimated_mse_score = sample_variance + (bias_term**2)
 
         return estimated_mse_score
 

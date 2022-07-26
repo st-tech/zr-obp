@@ -19,10 +19,10 @@ def test_synthetic_sample_results_in_sampled_delay_when_delay_function_is_given(
         random_state=12345,
     )
 
-    actual_bandits_dataset = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+    actual_bandits_dataset = dataset.next_bandit_round_batch(n_rounds=5)
 
     expected_round_delays = np.tile([266.0, 39.0, 21.0, 23.0, 84.0], (n_actions, 1)).T
-    assert (actual_bandits_dataset["round_delays"] == expected_round_delays).all()
+    assert (actual_bandits_dataset.round_delays == expected_round_delays).all()
 
 
 def test_synthetic_sample_results_in_sampled_delay_with_weighted_delays_per_arm():
@@ -38,15 +38,16 @@ def test_synthetic_sample_results_in_sampled_delay_with_weighted_delays_per_arm(
         random_state=12345,
     )
 
-    actual_bandits_dataset = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+    actual_bandits_dataset = dataset.next_bandit_round_batch(n_rounds=5)
 
-    expected_round_delays = np.asarray([
-        [ 81.,  29.,   8.],
-        [  7.,  63.,  32.],
-        [102.,  80.,  49.],
-        [ 33., 103., 114.],
-        [  1.,   9.,  13.]])
-    assert (actual_bandits_dataset["round_delays"] == expected_round_delays).all()
+    expected_round_delays = np.asarray(
+        [[35., 38., 4.],
+         [3., 84., 17.],
+         [44., 106., 26.],
+         [14., 138., 61.],
+         [1., 12., 7.]]
+    )
+    assert (actual_bandits_dataset.round_delays == expected_round_delays).all()
 
 
 def test_synthetic_sample_results_with_exponential_delay_function_has_different_delays_each_batch():
@@ -63,8 +64,8 @@ def test_synthetic_sample_results_with_exponential_delay_function_has_different_
         random_state=12345,
     )
 
-    actual_delays_1 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
-    actual_delays_2 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
+    actual_delays_1 = dataset.next_bandit_round_batch(n_rounds=5).round_delays
+    actual_delays_2 = dataset.next_bandit_round_batch(n_rounds=5).round_delays
 
     expected_round_delays_1 = np.tile(
         [2654.0, 381.0, 204.0, 229.0, 839.0], (n_actions, 1)
@@ -91,7 +92,7 @@ def test_synthetic_sample_results_with_exponential_delay_function_has_same_delay
         random_state=12345,
     )
 
-    actual_delays_1 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
+    actual_delays_1 = dataset.next_bandit_round_batch(n_rounds=5).round_delays
 
     delay_function = ExponentialDelaySampler(
         max_scale=1000.0, random_state=12345
@@ -103,7 +104,7 @@ def test_synthetic_sample_results_with_exponential_delay_function_has_same_delay
         delay_function=delay_function,
         random_state=12345,
     )
-    actual_delays_2 = dataset.obtain_batch_bandit_feedback(n_rounds=5)["round_delays"]
+    actual_delays_2 = dataset.next_bandit_round_batch(n_rounds=5).round_delays
 
     expected_round_delays_1 = np.tile(
         [2654.0, 381.0, 204.0, 229.0, 839.0], (n_actions, 1)
@@ -123,9 +124,9 @@ def test_synthetic_sample_results_do_not_contain_reward_delay_when_delay_functio
         random_state=12345,
     )
 
-    actual_bandits_dataset = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+    actual_bandits_dataset = dataset.next_bandit_round_batch(n_rounds=5)
 
-    assert actual_bandits_dataset["round_delays"] is None
+    assert actual_bandits_dataset.round_delays is None
 
 
 def test_synthetic_sample_results_reward_delay_is_configurable_through_delay_function():
@@ -141,9 +142,9 @@ def test_synthetic_sample_results_reward_delay_is_configurable_through_delay_fun
         random_state=12345,
     )
 
-    actual_bandits_dataset = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+    actual_bandits_dataset = dataset.next_bandit_round_batch(n_rounds=5)
 
-    assert (actual_bandits_dataset["round_delays"] == [1, 2, 3, 4, 5]).all()
+    assert (actual_bandits_dataset.round_delays == [1, 2, 3, 4, 5]).all()
 
 
 @pytest.mark.parametrize(
@@ -163,7 +164,6 @@ def test_exponential_delay_function_results_in_expected_seeded_discrete_delays(
 
     actual_delays = delay_function(size, n_actions=actions)
     assert (actual_delays == expected_delays).all()
-
 
 
 @pytest.mark.parametrize(

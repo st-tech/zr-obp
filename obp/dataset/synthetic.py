@@ -794,14 +794,16 @@ def _base_reward_function(
 
     if action_coef_.shape[0] != datasize:
         context_action_values = (
-                effective_context_ @ context_action_coef_ @ effective_action_context_.T
+            effective_context_ @ context_action_coef_ @ effective_action_context_.T
         )
     else:
         effective_context_ = np.expand_dims(effective_context_, axis=1)
-        context_action_coef_interactions = np.squeeze(np.matmul(effective_context_, context_action_coef_), axis=1)
+        context_action_coef_interactions = np.squeeze(
+            np.matmul(effective_context_, context_action_coef_), axis=1
+        )
 
         context_action_values = (
-                context_action_coef_interactions @ effective_action_context_.T
+            context_action_coef_interactions @ effective_action_context_.T
         )
 
     expected_rewards = context_values + action_values + context_action_values

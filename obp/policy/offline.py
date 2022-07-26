@@ -72,6 +72,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         self.base_classifier_list = [
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]
+        self.policy_name = "IPWLearner"
 
     @staticmethod
     def _create_train_data_for_opl(
@@ -1263,7 +1264,7 @@ class NNPolicyLearner(BaseOfflinePolicyLearner):
 
         elif self.off_policy_objective == "ipw-os":
             iw = current_pi[idx_tensor, action] / pscore
-            iw_ = (self.lambda_ - (iw ** 2)) / ((iw ** 2 + self.lambda_) ** 2)
+            iw_ = (self.lambda_ - (iw**2)) / ((iw**2 + self.lambda_) ** 2)
             iw_ *= self.lambda_ * iw
             estimated_policy_grad_arr = iw_ * reward
             estimated_policy_grad_arr *= log_prob[idx_tensor, action]

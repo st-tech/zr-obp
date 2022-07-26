@@ -5,11 +5,10 @@
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, Callable, Tuple, Optional, List
+from typing import Callable, Tuple, Optional, List, Any
 from typing import Union
 
 import numpy as np
-import pandas as pd
 from sklearn.utils import check_random_state, check_scalar
 from tqdm import tqdm
 
@@ -20,7 +19,6 @@ from ..policy import BaseContextualPolicy
 from ..policy.policy_type import PolicyType
 from ..types import BanditFeedback
 from ..utils import check_bandit_feedback_inputs, check_array
-from ..utils import convert_to_action_dist
 
 
 # bandit policy type
@@ -29,6 +27,57 @@ coef_func_signature = Callable[
     [np.ndarray, np.ndarray, np.random.RandomState],
     Tuple[np.ndarray, np.ndarray, np.ndarray],
 ]
+
+
+@dataclass
+class BanditRound:
+    n_actions: int
+    context: np.ndarray
+    action_context: np.ndarray
+    rewards: np.ndarray
+    expected_rewards: np.ndarray
+    round_delays: np.ndarray
+
+
+@dataclass
+class BanditRounds:
+    n_rounds: int
+    n_actions: int
+    context: np.ndarray
+    action_context: np.ndarray
+    rewards: np.ndarray
+    expected_rewards: np.ndarray
+    round_delays: np.ndarray
+
+    def _get_bandit_round(self) -> BanditRound:
+        if np.any(self.round_delays):
+            round_delays = self.round_delays[self.idx]
+        else:
+            round_delays = None
+
+        return BanditRound(
+            n_actions=self.n_actions,
+            context=self.context[self.idx],
+            action_context=self.action_context,
+            rewards=self.rewards[self.idx],
+            expected_rewards=self.expected_rewards[self.idx],
+            round_delays=round_delays,
+        )
+
+    def __iter__(self) -> "BanditRounds":
+        self.idx = 0
+        return self
+
+    def __next__(self) -> BanditRound:
+        if self.idx < len(self):
+            result = self._get_bandit_round()
+            self.idx += 1
+            return result
+        else:
+            raise StopIteration
+
+    def __len__(self) -> int:
+        return self.n_rounds
 
 
 @dataclass
@@ -81,56 +130,6 @@ class BanditEnvironmentSimulator:
 
     random_state: int, default=12345
         Controls the random seed in sampling synthetic bandit data.
-
-    dataset_name: str, default='synthetic_bandit_dataset'
-        Name of the dataset.
-
-    Examples
-    ----------
-
-    .. code-block:: python
-
-        >>> from obp.dataset import (
-            SyntheticBanditDataset,
-            logistic_reward_function
-        )
-
-        # generate synthetic contextual bandit feedback with 10 actions.
-        >>> dataset = SyntheticBanditDataset(
-                n_actions=5,
-                dim_context=3,
-                reward_function=logistic_reward_function,
-                beta=3,
-                random_state=12345
-            )
-        >>> bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=100000)
-        >>> bandit_feedback
-        {
-            'n_rounds': 10000,
-            'n_actions': 5,
-            'context': array([[-0.20470766,  0.47894334, -0.51943872],
-                    [-0.5557303 ,  1.96578057,  1.39340583],
-                    [ 0.09290788,  0.28174615,  0.76902257],
-                    ...,
-                    [ 0.42468038,  0.48214752, -0.57647866],
-                    [-0.51595888, -1.58196174, -1.39237837],
-                    [-0.74213546, -0.93858948,  0.03919589]]),
-            'action_context': array([[1, 0, 0, 0, 0],
-                    [0, 1, 0, 0, 0],
-                    [0, 0, 1, 0, 0],
-                    [0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 1]]),
-            'action': array([4, 2, 0, ..., 0, 0, 3]),
-            'position': None,
-            'rewards': array([1, 0, 1, ..., 1, 1, 1]),
-            'expected_reward': array([[0.58447584, 0.42261239, 0.28884131, 0.40610288, 0.59416389],
-                    [0.13543381, 0.06309101, 0.3696813 , 0.69883145, 0.19717306],
-                    [0.52369136, 0.30840555, 0.45036116, 0.59873096, 0.4294134 ],
-                    ...,
-                    [0.68953133, 0.55893616, 0.34955984, 0.45572919, 0.67187002],
-                    [0.88247154, 0.76355595, 0.25545932, 0.19939877, 0.78578675],
-                    [0.67637136, 0.42096732, 0.33178027, 0.36439361, 0.52300522]]),
-        }
     """
 
     n_actions: int
@@ -144,7 +143,6 @@ class BanditEnvironmentSimulator:
     reward_std: float = 1.0
     action_context: Optional[np.ndarray] = None
     random_state: int = 12345
-    dataset_name: str = "synthetic_bandit_dataset"
 
     def __post_init__(self) -> None:
         """Initialize Class."""
@@ -170,11 +168,6 @@ class BanditEnvironmentSimulator:
                     "Expected `action_context.shape[0] == n_actions`, but found it False."
                 )
 
-    @property
-    def len_list(self) -> int:
-        """Length of recommendation lists, slate size."""
-        return 1
-
     def sample_contextfree_expected_reward(self) -> np.ndarray:
         """Sample expected reward for each action from the uniform distribution."""
         return self.random_.uniform(size=self.n_actions)
@@ -195,8 +188,7 @@ class BanditEnvironmentSimulator:
         return expected_reward_
 
     def sample_reward_given_expected_reward(
-        self,
-        expected_reward: np.ndarray
+        self, expected_reward: np.ndarray
     ) -> np.ndarray:
         return self.random_.binomial(n=1, p=expected_reward)
 
@@ -221,8 +213,40 @@ class BanditEnvironmentSimulator:
         expected_reward_ = self.calc_expected_reward(context)
         return self.sample_reward_given_expected_reward(expected_reward_)
 
-    def obtain_batch_bandit_feedback(self, n_rounds: int) -> BanditFeedback:
-        """Obtain batch logged bandit data.
+    def _sample_context(self, size: tuple) -> np.ndarray:
+        context = self.random_.normal(size=size)
+        return context
+
+    def next_context(self) -> np.ndarray:
+        return self._sample_context(size=(1, self.dim_context))
+
+    def next_context_batch(self, n_rounds: int) -> np.ndarray:
+        return self._sample_context(size=(n_rounds, self.dim_context))
+
+    def next_bandit_round(self) -> BanditRound:
+        context = self.next_context()
+        expected_reward_ = self.calc_expected_reward(context)
+        rewards = self.sample_reward_given_expected_reward(expected_reward_)
+
+        round_delays = None
+        if self.delay_function:
+            round_delays = self.delay_function(
+                n_rounds=1,
+                n_actions=self.n_actions,
+                expected_rewards=expected_reward_,
+            )[0]
+
+        return BanditRound(
+            n_actions=self.n_actions,
+            context=context,
+            action_context=self.action_context[0],
+            rewards=rewards[0],
+            expected_rewards=expected_reward_[0],
+            round_delays=round_delays,
+        )
+
+    def next_bandit_round_batch(self, n_rounds: int) -> BanditRounds:
+        """Obtain a batch of full-information bandit data. Contains rewards for all arms,
 
         Parameters
         ----------
@@ -231,17 +255,14 @@ class BanditEnvironmentSimulator:
 
         Returns
         ---------
-        bandit_feedback: BanditFeedback
-            Synthesized logged bandit data.
+        bandit_feedback: BanditRounds
+            A batch of bandit rounds that can be used to simulate an online bandit model
 
         """
         check_scalar(n_rounds, "n_rounds", int, min_val=1)
-        contexts = self.random_.normal(size=(n_rounds, self.dim_context))
 
-        # calc expected reward given context and action
+        contexts = self.next_context_batch(n_rounds=n_rounds)
         expected_reward_ = self.calc_expected_reward(contexts)
-
-        # sample rewards based on the context and action
         rewards = self.sample_reward_given_expected_reward(expected_reward_)
 
         round_delays = None
@@ -252,176 +273,156 @@ class BanditEnvironmentSimulator:
                 expected_rewards=expected_reward_,
             )
 
-        return dict(
+        return BanditRounds(
             n_rounds=n_rounds,
             n_actions=self.n_actions,
             context=contexts,
             action_context=self.action_context,
-            position=None,  # position effect is not considered in synthetic data
             rewards=rewards,
-            expected_reward=expected_reward_,
+            expected_rewards=expected_reward_,
             round_delays=round_delays,
         )
 
 
-def run_bandit_simulation(
-    bandit_feedback: BanditFeedback, policy: BanditPolicy
-) -> np.ndarray:
-    """Run an online bandit algorithm on the given logged bandit feedback data.
+@dataclass
+class BanditPolicySimulator:
+    policy: Any
+    environment: BanditEnvironmentSimulator = None
 
-    Parameters
-    ----------
-    bandit_feedback: BanditFeedback
-        Logged bandit data used in offline bandit simulation.
+    # Internals
+    reward_round_lookup: defaultdict = None
 
-    policy: BanditPolicy
-        Online bandit policy to be evaluated in offline bandit simulation (i.e., evaluation policy).
+    # To keep track of for after
+    selected_actions: np.ndarray = None
+    obtained_rewards: np.ndarray = None
+    ground_truth_rewards: np.ndarray = None
+    contexts: np.ndarray = None
+    total_reward: int = 0
+    rounds_played: int = 0
+    current_round: BanditRound = None
 
-    Returns
-    --------
-    action_dist: array-like, shape (n_rounds, n_actions, len_list)
-        Action choice probabilities (can be deterministic).
+    def __post_init__(self):
+        self.selected_actions = np.empty(0, int)
+        self.obtained_rewards = np.empty(0, int)
+        self.reward_round_lookup = defaultdict(list)
 
-    """
-    for key_ in ["position", "rewards", "context"]:
-        if key_ not in bandit_feedback:
-            raise RuntimeError(f"Missing key of {key_} in 'bandit_feedback'.")
-
-    policy_ = policy
-    selected_actions_list = list()
-    if bandit_feedback["position"] is None:
-        bandit_feedback["position"] = np.zeros((bandit_feedback["context"].shape[0]), dtype=int)
-
-    reward_round_lookup = defaultdict(list)
-    for round_idx, (position_, context_, rewards_) in tqdm(
-        enumerate(
-            zip(
-                bandit_feedback["position"],
-                bandit_feedback["context"],
-                bandit_feedback["rewards"],
-            )
-        ),
-        total=bandit_feedback["n_rounds"],
-    ):
-
-        # select a list of actions
-        if policy_.policy_type == PolicyType.CONTEXT_FREE:
-            selected_actions = policy_.select_action()
-        elif policy_.policy_type == PolicyType.CONTEXTUAL:
-            selected_actions = policy_.select_action(np.expand_dims(context_, axis=0))
+    def start_next_bandit_round(self, bandit_round: BanditRound = None) -> None:
+        if not bandit_round:
+            self.current_round = self.environment.next_bandit_round()
         else:
-            raise RuntimeError(
-                f"Policy type {policy_.policy_type} of policy {policy_.policy_name} is unsupported"
+            self.current_round = bandit_round
+
+        self.append_contexts(self.current_round.context)
+        self.append_ground_truth_rewards(self.current_round.rewards)
+
+    def append_ground_truth_rewards(self, ground_truth_rewards):
+        if self.ground_truth_rewards is None:
+            self.ground_truth_rewards = ground_truth_rewards
+        else:
+            self.ground_truth_rewards = np.vstack(
+                (self.ground_truth_rewards, ground_truth_rewards)
             )
 
-        selected_actions_list.append(selected_actions)
-        action_ = selected_actions[position_]
-        reward_ = rewards_[action_]
+    def append_contexts(self, context):
+        if self.contexts is None:
+            self.contexts = context
+        else:
+            self.contexts = np.vstack((self.contexts, context))
 
-        if bandit_feedback["round_delays"] is None:
-            update_policy(policy_, context_, action_, reward_)
+    def step(self, bandit_round: BanditRound = None):
+        self.start_next_bandit_round(bandit_round)
+        self._step()
+
+    def _step(self):
+        selected_action = self.select_action()
+        self.selected_actions = np.append(self.selected_actions, selected_action)
+
+        reward_ = self.current_round.rewards[selected_action]
+        self.obtained_rewards = np.append(self.obtained_rewards, reward_)
+        self.total_reward += reward_
+
+        delays = self.current_round.round_delays
+        if delays is None:
+            self.update_policy(self.current_round.context, selected_action, reward_)
         else:
             # Add the current round to the lookup
-            round_delay = bandit_feedback["round_delays"][round_idx, action_]
-            reward_round_lookup[round_delay + round_idx].append(round_idx)
-
-            # Update policy with all available rounds
-            available_rounds = reward_round_lookup.get(round_idx, [])
-            delayed_update_policy(
-                available_rounds, bandit_feedback, selected_actions_list, policy_
+            round_delay = delays[selected_action]
+            self.reward_round_lookup[round_delay + self.rounds_played].append(
+                self.rounds_played
             )
 
-            if available_rounds:
-                del reward_round_lookup[round_idx]
+            # Update policy with all available rounds
+            available_rounds = self.reward_round_lookup.get(self.rounds_played, [])
+            self.delayed_update_policy(available_rounds, self.rounds_played)
 
-    for round_idx, available_rounds in reward_round_lookup.items():
-        delayed_update_policy(
-            available_rounds, bandit_feedback, selected_actions_list, policy_
-        )
+        self.rounds_played += 1
 
-    action_dist = convert_to_action_dist(
-        n_actions=policy.n_actions,
-        selected_actions=np.array(selected_actions_list),
-    )
-    return action_dist
+    def select_action(self):
+        if self.policy.policy_type == PolicyType.CONTEXT_FREE:
+            selected_action = self.policy.select_action()[0]
+        elif self.policy.policy_type == PolicyType.CONTEXTUAL:
+            selected_action = self.policy.select_action(
+                np.expand_dims(self.current_round.context, axis=0)
+            )[0]
+        else:
+            raise RuntimeError(
+                f"Policy type {self.policy.policy_type} of policy {self.policy.policy_name} is unsupported"
+            )
+        return selected_action
 
+    def steps(
+        self, n_rounds: int = None, batch_bandit_rounds: BanditRounds = None
+    ) -> None:
+        if n_rounds:
+            for _ in tqdm(range(n_rounds)):
+                self.step()
+        if batch_bandit_rounds:
+            self.append_contexts(batch_bandit_rounds.context)
+            self.append_ground_truth_rewards(batch_bandit_rounds.rewards)
 
-def delayed_update_policy(
-    available_rounds: List[int],
-    bandits_feedback: BanditFeedback,
-    selected_actions_list: List[np.ndarray],
-    policy_,
-) -> None:
-    for available_round_idx in available_rounds:
-        position_ = bandits_feedback["position"][available_round_idx]
-        available_action = selected_actions_list[available_round_idx][position_]
-        available_context = bandits_feedback["context"][available_round_idx]
-        available_rewards = bandits_feedback["rewards"][
-            available_round_idx
-        ][available_action]
-        update_policy(
-            policy_, available_context, available_action, available_rewards
-        )
-
-
-def create_reward_round_lookup(round_delays: np.ndarray) -> Dict[int, List[int]]:
-    """Convert an array of round delays to a dict mapping the available rewards for each round.
-
-    Parameters
-    ----------
-    round_delays: np.ndarray
-        A 1-dimensional numpy array containing the deltas representing how many rounds should be between the taken
-        action and reward observation.
-
-    Returns
-    --------
-    reward_round_lookup: Dict
-        A dict with the round at which feedback become available as a key and a list with the index of all actions
-        for which the reward becomes available in that round.
-
-    """
-    rounds = np.arange(len(round_delays))
-
-    reward_round_pdf = pd.DataFrame(
-        {"available_at_round": rounds + round_delays, "exposed_at_round": rounds}
-    )
-
-    reward_round_lookup = (
-        reward_round_pdf.groupby(["available_at_round"])["exposed_at_round"]
-        .apply(list)
-        .to_dict()
-    )
-
-    return reward_round_lookup
+            for bandit_round in tqdm(batch_bandit_rounds):
+                self.current_round = bandit_round
+                self._step()
 
 
-def update_policy(
-    policy: BanditPolicy, context: np.ndarray, action: int, reward: int
-) -> None:
-    """Run an online bandit algorithm on the given logged bandit feedback data.
+    def delayed_update_policy(
+        self, available_rounds: List[int], current_round: int
+    ) -> None:
+        for available_round_idx in available_rounds:
+            available_action = self.selected_actions[available_round_idx]
+            available_context = self.contexts[available_round_idx]
+            available_rewards = self.obtained_rewards[available_round_idx]
 
-    Parameters
-    ----------
-    policy: BanditPolicy
-        Online bandit policy to be updated.
+            self.update_policy(available_context, available_action, available_rewards)
 
-    context: np.ndarray
-        Context in which the policy observed the reward
+        self.reward_round_lookup.pop(current_round, None)
 
-    action: int
-        Action taken by the policy as defined by the `policy` argument
+    def clear_delayed_queue(self):
+        for round_idx, available_rounds in self.reward_round_lookup.copy().items():
+            self.delayed_update_policy(available_rounds, current_round=round_idx)
 
-    reward: int
-        Reward observed by the policy as defined by the `policy` argument
-    """
-    if policy.policy_type == PolicyType.CONTEXT_FREE:
-        policy.update_params(action=action, reward=reward)
-    elif policy.policy_type == PolicyType.CONTEXTUAL:
-        policy.update_params(
-            action=action,
-            reward=reward,
-            context=np.expand_dims(context, axis=0),
-        )
+    def update_policy(self, context: np.ndarray, action: int, reward: int) -> None:
+        """Run an online bandit algorithm on the given logged bandit feedback data.
+
+        Parameters
+        ----------
+        context: np.ndarray
+            Context in which the policy observed the reward
+
+        action: int
+            Action taken by the policy as defined by the `policy` argument
+
+        reward: int
+            Reward observed by the policy as defined by the `policy` argument
+        """
+        if self.policy.policy_type == PolicyType.CONTEXT_FREE:
+            self.policy.update_params(action=action, reward=reward)
+        elif self.policy.policy_type == PolicyType.CONTEXTUAL:
+            self.policy.update_params(
+                action=action,
+                reward=reward,
+                context=np.expand_dims(context, axis=0),
+            )
 
 
 def calc_ground_truth_policy_value(
@@ -505,38 +506,3 @@ def calc_ground_truth_policy_value(
                 )
 
     return cumulative_reward / (n_sim * bandit_feedback["n_rounds"])
-
-
-def count_ground_truth_policy_rewards(rewards: np.ndarray, sampled_actions: np.ndarray) -> float:
-    """Count the policy rewards of given action distribution on the given .
-
-    Parameters
-    -----------
-    rewards: array-like, shape (n_rounds, n_actions)
-        rewards given context (:math:`x`) and action (:math:`a`),
-        This is often the `rewards` entry of the BanditEnvironmentSimulator. The rewards are
-        sampled from the expected reward at each round.
-
-    sampled_actions: array-like, shape (n_rounds, n_actions, len_list)
-        Action choices of the evaluation policy (should be deterministic).
-
-    Returns
-    ----------
-    policy_reward: float
-        The policy's reward of the given action distribution on the given simulated bandit environment.
-
-    """
-    check_array(array=rewards, name="rewards", expected_dim=2)
-    check_array(array=sampled_actions, name="action_dist", expected_dim=2)
-    if not np.isin(sampled_actions, [0, 1]).all():
-        raise ValueError("Expected `sampled_actions` to be binary action choices. ")
-    if rewards.shape[0] != sampled_actions.shape[0]:
-        raise ValueError(
-            "Expected `rewards.shape[0] = action_dist.shape[0]`, but found it False"
-        )
-    if rewards.shape[1] != sampled_actions.shape[1]:
-        raise ValueError(
-            "Expected `rewards.shape[1] = action_dist.shape[1]`, but found it False"
-        )
-
-    return np.sum(rewards * sampled_actions)

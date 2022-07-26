@@ -118,7 +118,7 @@ def convert_to_action_dist(
     n_actions: int,
     selected_actions: np.ndarray,
 ) -> np.ndarray:
-    """Convert selected actions (output of `run_bandit_simulation`) to distribution over actions.
+    """Convert selected actions (output of `run_bandit_replay`) to distribution over actions.
 
     Parameters
     ----------
@@ -210,11 +210,10 @@ def check_bandit_feedback_inputs(
     action: np.ndarray,
     reward: np.ndarray,
     expected_reward: Optional[np.ndarray] = None,
-    factual_reward: Optional[np.ndarray] = None,
     position: Optional[np.ndarray] = None,
     pscore: Optional[np.ndarray] = None,
     action_context: Optional[np.ndarray] = None,
-) -> None:
+) -> Optional[ValueError]:
     """Check inputs for bandit learning or simulation.
 
     Parameters
@@ -230,9 +229,6 @@ def check_bandit_feedback_inputs(
 
     expected_reward: array-like, shape (n_rounds, n_actions), default=None
         Expected reward of each data, i.e., :math:`\\mathbb{E}[r_i|x_i,a_i]`.
-
-    factual_reward: array-like, shape (n_rounds, n_actions), default=None
-        Full information rewards for each action sampled from the `expected_reward`.
 
     position: array-like, shape (n_rounds,), default=None
         Indices to differentiate positions in a recommendation interface where the actions are presented.
@@ -270,22 +266,6 @@ def check_bandit_feedback_inputs(
     else:
         if not (np.issubdtype(action.dtype, np.integer) and action.min() >= 0):
             raise ValueError("`action` elements must be non-negative integers")
-    if factual_reward is not None:
-        check_array(array=factual_reward, name="expected_reward", expected_dim=2)
-        if not (
-            context.shape[0]
-            == action.shape[0]
-            == reward.shape[0]
-            == factual_reward.shape[0]
-        ):
-            raise ValueError(
-                "Expected `context.shape[0] == action.shape[0] == reward.shape[0] == factual_reward.shape[0]`"
-                ", but found it False"
-            )
-        if not (np.all(np.choose(action, factual_reward.T) == reward)):
-            raise ValueError(
-                "`factual_reward` should match the `reward` values for each taken action."
-            )
     if pscore is not None:
         check_array(array=pscore, name="pscore", expected_dim=1)
         if not (

@@ -2,62 +2,74 @@ import re
 
 import numpy as np
 import pytest
+from sklearn.linear_model import LogisticRegression
 
-from obp.policy import BaseContextFreePolicy
+from obp.policy import BaseContextFreePolicy, IPWLearner
 from obp.policy.linear import LinTS, LinUCB
 
 from obp.policy.contextfree import EpsilonGreedy, Random, BernoulliTS
-from obp.dataset.synthetic import logistic_reward_function, logistic_sparse_reward_function
+from obp.dataset.synthetic import (
+    logistic_reward_function,
+    logistic_sparse_reward_function,
+)
 from obp.policy.policy_type import PolicyType
-from obp.simulator import run_bandit_simulation
 from obp.simulator.coefficient_drifter import CoefficientDrifter
 from obp.simulator.delay_sampler import ExponentialDelaySampler
-from obp.simulator.simulator import BanditEnvironmentSimulator, count_ground_truth_policy_rewards
+from obp.simulator.simulator import BanditEnvironmentSimulator, BanditPolicySimulator
 
 
-def test_run_bandit_simulation_updates_at_each_taken_action():
+def test_bandit_policy_simulator_updates_at_each_taken_action():
     n_rounds = 100
 
-    dataset = BanditEnvironmentSimulator(
+    env = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=5,
         reward_function=logistic_reward_function,
         random_state=12345,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    bandit_rounds = env.next_bandit_round_batch(n_rounds=n_rounds)
 
     epsilon_greedy = EpsilonGreedy(n_actions=3)
-    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=epsilon_greedy)
+
+    simulator = BanditPolicySimulator(
+        policy=epsilon_greedy,
+        environment=env,
+    )
+
+    simulator.steps(batch_bandit_rounds=bandit_rounds)
 
     assert epsilon_greedy.n_trial == n_rounds
 
 
-def test_run_bandit_simulation_handles_context_in_simulations():
+def test_bandit_policy_simulator_handles_context_in_simulations():
     n_rounds = 100
 
-    dataset = BanditEnvironmentSimulator(
+    env = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=5,
         reward_function=logistic_reward_function,
         random_state=12345,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    bandit_rounds = env.next_bandit_round_batch(n_rounds=n_rounds)
 
-    lin_ts = LinTS(
-        dim=dataset.dim_context, n_actions=dataset.n_actions, random_state=12345
+    lin_ts = LinTS(dim=env.dim_context, n_actions=env.n_actions, random_state=12345)
+    simulator = BanditPolicySimulator(
+        policy=lin_ts,
+        environment=env,
     )
-    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=lin_ts)
+
+    simulator.steps(batch_bandit_rounds=bandit_rounds)
 
     assert lin_ts.n_trial == n_rounds
 
 
-def test_run_bandit_simulation_raises_on_unknown_policy():
+def test_bandit_policy_simulator_raises_on_unknown_policy():
     n_rounds = 1
 
-    dataset = BanditEnvironmentSimulator(
+    env = BanditEnvironmentSimulator(
         n_actions=3,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
+    bandit_rounds = env.next_bandit_round_batch(n_rounds=n_rounds)
 
     class OfflineEpsilon(EpsilonGreedy):
         @property
@@ -65,15 +77,18 @@ def test_run_bandit_simulation_raises_on_unknown_policy():
             return PolicyType.OFFLINE
 
     epsilon_greedy = OfflineEpsilon(n_actions=3)
+    simulator = BanditPolicySimulator(
+        policy=epsilon_greedy,
+        environment=env,
+    )
+
     with pytest.raises(
         RuntimeError,
         match=re.escape(
             r"Policy type PolicyType.OFFLINE of policy egreedy_1.0 is " r"unsupported"
         ),
     ):
-        _ = run_bandit_simulation(
-            bandit_feedback=bandit_feedback, policy=epsilon_greedy
-        )
+        simulator.steps(batch_bandit_rounds=bandit_rounds)
 
 
 class BanditUpdateTracker(BaseContextFreePolicy):
@@ -98,70 +113,56 @@ class BanditUpdateTracker(BaseContextFreePolicy):
         )
 
 
-def test_run_bandit_simulation_works_end_to_end_with_synthetic_bandit_dataset():
+def test_bandit_policy_simulator_works_end_to_end_with_synthetic_bandit_dataset():
     delay_function = ExponentialDelaySampler(
         max_scale=1.0, random_state=12345
     ).exponential_delay_function
 
-    dataset = BanditEnvironmentSimulator(
+    env = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=1,
         reward_function=logistic_reward_function,
         delay_function=delay_function,
         random_state=12345,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=5)
+    bandit_rounds = env.next_bandit_round_batch(n_rounds=5)
 
     policy = EpsilonGreedy(n_actions=3, epsilon=0.1, random_state=12345)
-    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=policy)
+
+    simulator = BanditPolicySimulator(
+        policy=policy,
+        environment=env,
+    )
+
+    simulator.steps(batch_bandit_rounds=bandit_rounds)
 
 
-def test_run_bandit_simulation_applies_policy_in_delay_specified_order():
+def test_bandit_policy_simulator_applies_policy_in_delay_specified_order():
     n_rounds = 5
 
-    dataset = BanditEnvironmentSimulator(
+    env = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=1,
         reward_function=logistic_reward_function,
         random_state=12345,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    bandit_feedback["round_delays"] = np.tile([2, 1, 2, 1, 0], (3, 1)).T
+    bandit_rounds = env.next_bandit_round_batch(n_rounds=n_rounds)
+    bandit_rounds.round_delays = np.tile([2, 1, 2, 1, 0], (3, 1)).T
 
     tracker = BanditUpdateTracker(n_actions=3, random_state=12345)
-    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
 
-    expected_updates = [
-        {"round": 3, "action": 0, "reward": 0},
-        {"round": 3, "action": 0, "reward": 1},
-        {"round": 5, "action": 2, "reward": 1},
-        {"round": 5, "action": 1, "reward": 1},
-        {"round": 5, "action": 2, "reward": 0},
-    ]
-
-    assert tracker.parameter_updates == expected_updates
-
-
-def test_run_bandit_simulation_applies_all_rewards_delayed_till_after_all_rounds_to_the_end_of_simulation():
-    n_rounds = 5
-
-    dataset = BanditEnvironmentSimulator(
-        n_actions=3,
-        dim_context=1,
-        reward_function=logistic_reward_function,
-        random_state=12345,
+    simulator = BanditPolicySimulator(
+        policy=tracker,
+        environment=env,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    bandit_feedback["round_delays"] = np.tile([2, 1, 2, 2, 2], (3, 1)).T
 
-    tracker = BanditUpdateTracker(n_actions=3, random_state=12345)
-    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
+    simulator.steps(batch_bandit_rounds=bandit_rounds)
 
     expected_updates = [
-        {"round": 3, "action": 0, "reward": 0},
+        {"round": 3, "action": 0, "reward": 1},
         {"round": 3, "action": 0, "reward": 1},
         {"round": 5, "action": 2, "reward": 1},
-        {"round": 5, "action": 1, "reward": 1},
+        {"round": 5, "action": 1, "reward": 0},
         {"round": 5, "action": 2, "reward": 0},
     ]
 
@@ -178,42 +179,51 @@ def test_run_bandit_simulation_applies_all_rewards_delayed_till_after_all_rounds
         LinUCB(dim=4, n_actions=3, random_state=12345),
     ],
 )
-def test_run_bandit_simulation_does_not_crash_with_various_bandit_algorithms(policy):
+def test_bandit_policy_simulator_does_not_crash_with_various_bandit_algorithms(policy):
     n_rounds = 5
 
-    dataset = BanditEnvironmentSimulator(
+    env = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=4,
         reward_function=logistic_reward_function,
         random_state=12345,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-    bandit_feedback["round_delays"] = np.tile([2, 1, 2, 2, 2], (3, 1)).T
+    bandit_rounds = env.next_bandit_round_batch(n_rounds=n_rounds)
+    bandit_rounds.round_delays = np.tile([2, 1, 2, 2, 2], (3, 1)).T
 
-    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=policy)
+    simulator = BanditPolicySimulator(
+        policy=policy,
+        environment=env,
+    )
+
+    simulator.steps(batch_bandit_rounds=bandit_rounds)
 
 
-def test_run_bandit_simulation_applies_policy_directly_when_no_delay():
+def test_bandit_policy_simulator_applies_policy_directly_when_no_delay():
     n_rounds = 5
 
-    dataset = BanditEnvironmentSimulator(
+    env = BanditEnvironmentSimulator(
         n_actions=3,
         dim_context=1,
         reward_function=logistic_reward_function,
         random_state=12345,
     )
-    bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
-
-    bandit_feedback["round_delays"] = None
+    bandit_rounds = env.next_bandit_round_batch(n_rounds=n_rounds)
+    bandit_rounds.round_delays = None
 
     tracker = BanditUpdateTracker(n_actions=3, random_state=12345)
-    _ = run_bandit_simulation(bandit_feedback=bandit_feedback, policy=tracker)
+
+    simulator = BanditPolicySimulator(
+        policy=tracker,
+        environment=env,
+    )
+    simulator.steps(batch_bandit_rounds=bandit_rounds)
 
     expected_updates = [
-        {"action": 0, "reward": 0, "round": 1},
+        {"action": 0, "reward": 1, "round": 1},
         {"action": 0, "reward": 1, "round": 2},
         {"action": 2, "reward": 1, "round": 3},
-        {"action": 1, "reward": 1, "round": 4},
+        {"action": 1, "reward": 0, "round": 4},
         {"action": 2, "reward": 0, "round": 5},
     ]
 
@@ -232,11 +242,11 @@ def test_simulator_can_create_identical_simulations_using_seeds():
         transition_period=transition_period,
         transition_type="linear",  # linear or weighted_sampled
         seasonal=False,
-        base_coefficient_weight=.3,
-        random_state=1234
+        base_coefficient_weight=0.3,
+        random_state=1234,
     )
 
-    dataset_1 = BanditEnvironmentSimulator(
+    env_1 = BanditEnvironmentSimulator(
         n_actions=n_actions,
         dim_context=dim_context,
         reward_function=logistic_sparse_reward_function,
@@ -245,28 +255,23 @@ def test_simulator_can_create_identical_simulations_using_seeds():
         random_state=12345,
     )
 
-    training_bandit_dataset_1 = dataset_1.obtain_batch_bandit_feedback(n_rounds=sample_n_rounds)
-
     policy = EpsilonGreedy(n_actions=n_actions, epsilon=0.1, random_state=12345)
-    train_action_dists_1 = run_bandit_simulation(
-        bandit_feedback=training_bandit_dataset_1,
-        policy=policy
+    simulator_1 = BanditPolicySimulator(
+        policy=policy,
+        environment=env_1,
     )
+    simulator_1.steps(n_rounds=sample_n_rounds)
 
-    rewards_1 = count_ground_truth_policy_rewards(train_action_dists_1.squeeze(axis=2)[:drift_interval],
-                                                            training_bandit_dataset_1["rewards"][
-                                                            :drift_interval])
     drifter = CoefficientDrifter(
         drift_interval=drift_interval,
         transition_period=transition_period,
         transition_type="linear",  # linear or weighted_sampled
         seasonal=False,
-        base_coefficient_weight=1.0,
-        random_state=1234
+        base_coefficient_weight=0.3,
+        random_state=1234,
     )
 
-
-    dataset_2 = BanditEnvironmentSimulator(
+    env_2 = BanditEnvironmentSimulator(
         n_actions=n_actions,
         dim_context=dim_context,
         reward_function=logistic_sparse_reward_function,
@@ -275,15 +280,243 @@ def test_simulator_can_create_identical_simulations_using_seeds():
         random_state=12345,
     )
 
-    training_bandit_dataset_2 = dataset_2.obtain_batch_bandit_feedback(n_rounds=sample_n_rounds)
-
     policy = EpsilonGreedy(n_actions=n_actions, epsilon=0.1, random_state=12345)
-    train_action_dists_2 = run_bandit_simulation(
-        bandit_feedback=training_bandit_dataset_2,
-        policy=policy
+    simulator_2 = BanditPolicySimulator(
+        policy=policy,
+        environment=env_2,
+    )
+    simulator_2.steps(n_rounds=sample_n_rounds)
+
+    assert simulator_1.total_reward == simulator_2.total_reward
+
+
+def test_bandit_environment_simulator_fetches_new_context_every_pull():
+    env = BanditEnvironmentSimulator(
+        n_actions=10,
+        dim_context=6,
+        reward_function=logistic_sparse_reward_function,
+        delay_function=None,
+        random_state=12345,
     )
 
-    rewards_2 = count_ground_truth_policy_rewards(train_action_dists_2.squeeze(axis=2)[:drift_interval],
-                                                      training_bandit_dataset_2["rewards"][:drift_interval])
+    contexts = [env.next_context() for _ in range(5)]
+    assert len(np.hstack(contexts)[0]) == len(np.unique(contexts))
 
-    assert rewards_1 == rewards_2
+
+def test_bandit_environment_simulator_can_fetch_a_batch_of_contexts():
+    env = BanditEnvironmentSimulator(
+        n_actions=10,
+        dim_context=6,
+        reward_function=logistic_sparse_reward_function,
+        delay_function=None,
+        random_state=12345,
+    )
+
+    contexts = env.next_context_batch(n_rounds=5)
+    assert contexts.shape == (5, 6)
+
+
+def test_bandit_environment_simulator_can_a_single_step():
+    env = BanditEnvironmentSimulator(
+        n_actions=10,
+        dim_context=6,
+        reward_function=logistic_sparse_reward_function,
+        delay_function=None,
+        random_state=12345,
+    )
+
+    bandit_round = env.next_bandit_round()
+
+
+def test_bandit_policy_simulator_can_a_single_steps_and_keep_track():
+    env = BanditEnvironmentSimulator(
+        n_actions=10,
+        dim_context=6,
+        reward_function=logistic_sparse_reward_function,
+        delay_function=None,
+        random_state=12345,
+    )
+
+    simulator = BanditPolicySimulator(
+        policy=EpsilonGreedy(epsilon=0.1, random_state=12345, n_actions=10),
+        environment=env,
+    )
+
+    for _ in range(5):
+        simulator.step()
+
+    assert simulator.total_reward == 4
+    assert simulator.rounds_played == 5
+    assert np.all(simulator.selected_actions == [8, 5, 4, 2, 1])
+
+
+def test_bandit_policy_simulator_can_do_multiple_steps_in_call_and_keep_track_of_actions_and_performance():
+    env = BanditEnvironmentSimulator(
+        n_actions=10,
+        dim_context=6,
+        reward_function=logistic_sparse_reward_function,
+        delay_function=None,
+        random_state=12345,
+    )
+
+    simulator = BanditPolicySimulator(
+        policy=EpsilonGreedy(epsilon=0.1, random_state=12345, n_actions=10),
+        environment=env,
+    )
+
+    simulator.steps(n_rounds=5)
+
+    assert simulator.total_reward == 4
+    assert simulator.rounds_played == 5
+    assert np.all(simulator.selected_actions == [8, 5, 4, 2, 1])
+    assert np.all(simulator.obtained_rewards == [1, 1, 1, 0, 1])
+
+
+def test_bandit_policy_simulator_can_update_policy_with_delays_if_delay_rounds_are_available():
+    class MockBanditEnvironmentSimulator(BanditEnvironmentSimulator):
+        round_delays = np.tile([1, 1, 2, 1, 0], (5, 1)).T
+
+        def next_bandit_round(self):
+            bandit_round = super().next_bandit_round()
+            bandit_round.round_delays, self.round_delays = (
+                self.round_delays[-1],
+                self.round_delays[:-1],
+            )
+            return bandit_round
+
+    env = MockBanditEnvironmentSimulator(
+        n_actions=3,
+        dim_context=1,
+        reward_function=logistic_reward_function,
+        random_state=12345,
+    )
+
+    tracker = BanditUpdateTracker(n_actions=3, random_state=12345)
+
+    simulator = BanditPolicySimulator(
+        policy=tracker,
+        environment=env,
+    )
+
+    simulator.steps(n_rounds=5)
+
+    expected_updates = [
+        {"round": 1, "action": 0, "reward": 0},
+        {"round": 3, "action": 0, "reward": 1},
+        {"round": 5, "action": 2, "reward": 0},
+        {"round": 5, "action": 1, "reward": 0},
+    ]
+
+    assert tracker.parameter_updates == expected_updates
+
+
+def test_bandit_policy_simulator_clears_delay_queue_when_called_into_last_available_round():
+    class MockBanditEnvironmentSimulator(BanditEnvironmentSimulator):
+        round_delays = np.tile([1, 1, 4, 3, 2], (5, 1)).T
+
+        def next_bandit_round(self):
+            bandit_round = super().next_bandit_round()
+            bandit_round.round_delays, self.round_delays = (
+                self.round_delays[-1],
+                self.round_delays[:-1],
+            )
+            return bandit_round
+
+    env = MockBanditEnvironmentSimulator(
+        n_actions=3,
+        dim_context=1,
+        reward_function=logistic_reward_function,
+        random_state=12345,
+    )
+
+    tracker = BanditUpdateTracker(n_actions=3, random_state=12345)
+
+    simulator = BanditPolicySimulator(
+        policy=tracker,
+        environment=env,
+    )
+
+    simulator.steps(n_rounds=5)
+
+    expected_updates_before_queue_cleared = [
+        {"action": 0, "reward": 0, "round": 3},
+        {"action": 0, "reward": 1, "round": 5},
+        {"action": 1, "reward": 0, "round": 5},
+    ]
+
+    assert tracker.parameter_updates == expected_updates_before_queue_cleared
+
+    simulator.clear_delayed_queue()
+
+    expected_updates_after_queue_cleared = [
+        {"round": 3, "action": 0, "reward": 0},
+        {"round": 5, "action": 0, "reward": 1},
+        {"round": 5, "action": 1, "reward": 0},
+        {"round": 5, "action": 2, "reward": 0},
+        {"round": 5, "action": 2, "reward": 0},
+    ]
+
+    assert len(simulator.reward_round_lookup.values()) == 0
+    assert tracker.parameter_updates == expected_updates_after_queue_cleared
+
+
+def test_bandit_policy_simulator_do_simulation_over_batch_data():
+    env = BanditEnvironmentSimulator(
+        n_actions=3,
+        dim_context=1,
+        reward_function=logistic_reward_function,
+        random_state=12345,
+    )
+
+    simulator = BanditPolicySimulator(
+        policy=EpsilonGreedy(n_actions=3, epsilon=0.1, random_state=12345),
+        environment=env,
+    )
+
+    simulator.steps(batch_bandit_rounds=env.next_bandit_round_batch(5))
+
+    assert simulator.rounds_played == 5
+
+
+def test_ipw_can_be_learned_from_logged_data_generated_by_simulation():
+    from sklearn.ensemble import RandomForestClassifier as RandomForest
+
+    env = BanditEnvironmentSimulator(
+        n_actions=10,
+        dim_context=5,
+        reward_function=logistic_reward_function,
+        random_state=12345,
+    )
+
+    simulator = BanditPolicySimulator(
+        policy=EpsilonGreedy(n_actions=10, epsilon=0.1, random_state=12345),
+        environment=env,
+    )
+
+    simulator.steps(batch_bandit_rounds=env.next_bandit_round_batch(100))
+
+    assert simulator.total_reward == 53
+
+    propensity_model = LogisticRegression(random_state=12345)
+    propensity_model.fit(simulator.contexts, simulator.selected_actions)
+    pscores = propensity_model.predict_proba(simulator.contexts)
+
+    ipw_learner = IPWLearner(
+        n_actions=env.n_actions,
+        base_classifier=RandomForest(
+            n_estimators=30, min_samples_leaf=10, random_state=12345
+        ),
+    )
+
+    ipw_learner.fit(
+        context=simulator.contexts,
+        action=simulator.selected_actions,
+        reward=simulator.obtained_rewards,
+        pscore=np.choose(simulator.selected_actions, pscores.T),
+    )
+    eval_action_dists = ipw_learner.predict(context=simulator.contexts)
+
+    rewards = np.sum(
+        simulator.ground_truth_rewards * np.squeeze(eval_action_dists, axis=-1)
+    )
+    assert rewards == 69.0

@@ -110,7 +110,7 @@ def estimate_high_probability_upper_bound_bias(
     )
     n = reward.shape[0]
     bias_upper_bound = estimated_bias
-    bias_upper_bound += sqrt((2 * (iw ** 2).mean() * log(2 / delta)) / n)
+    bias_upper_bound += sqrt((2 * (iw**2).mean() * log(2 / delta)) / n)
     bias_upper_bound += (2 * iw.max() * log(2 / delta)) / (3 * n)
 
     return bias_upper_bound

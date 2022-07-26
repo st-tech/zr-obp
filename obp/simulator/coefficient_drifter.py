@@ -60,7 +60,11 @@ class CoefficientDrifter:
 
     def update_coef(self) -> None:
         if self.base_context_coef is None:
-            self.base_context_coef, self.base_action_coef, self.base_context_action_coef = sample_random_uniform_coefficients(
+            (
+                self.base_context_coef,
+                self.base_action_coef,
+                self.base_context_action_coef,
+            ) = sample_random_uniform_coefficients(
                 self.effective_dim_action_context,
                 self.effective_dim_context,
                 self.random_,
@@ -120,12 +124,22 @@ class CoefficientDrifter:
 
         while required_rounds > 0:
             if required_rounds >= self.available_rounds:
-                self.append_current_coefs(context_coefs, action_coefs, context_action_coefs, rounds=self.available_rounds)
+                self.append_current_coefs(
+                    context_coefs,
+                    action_coefs,
+                    context_action_coefs,
+                    rounds=self.available_rounds,
+                )
                 required_rounds -= self.available_rounds
                 self.update_coef()
                 self.available_rounds = self.drift_interval
             else:
-                self.append_current_coefs(context_coefs, action_coefs, context_action_coefs, rounds=required_rounds)
+                self.append_current_coefs(
+                    context_coefs,
+                    action_coefs,
+                    context_action_coefs,
+                    rounds=required_rounds,
+                )
                 self.available_rounds -= required_rounds
                 required_rounds = 0
 
@@ -136,7 +150,11 @@ class CoefficientDrifter:
         )
 
     def append_current_coefs(
-        self, context_coefs: List[np.ndarray], action_coefs: List[np.ndarray], context_action_coefs: List[np.ndarray], rounds: int
+        self,
+        context_coefs: List[np.ndarray],
+        action_coefs: List[np.ndarray],
+        context_action_coefs: List[np.ndarray],
+        rounds: int,
     ) -> None:
         shift_start = self.available_rounds - self.transition_period
 
@@ -155,10 +173,24 @@ class CoefficientDrifter:
         if self.transition_type is "weighted_sampled":
             weights = self.random_.binomial(n=1, p=weights)
 
-        context_coefs.append(self.compute_weighted_coefs(self.context_coefs, self.base_context_coef, rounds, weights))
-        action_coefs.append(self.compute_weighted_coefs(self.action_coefs, self.base_action_coef, rounds, weights))
-        context_action_coefs.append(self.compute_weighted_coefs(self.context_action_coefs, self.base_context_action_coef, rounds, weights))
-
+        context_coefs.append(
+            self.compute_weighted_coefs(
+                self.context_coefs, self.base_context_coef, rounds, weights
+            )
+        )
+        action_coefs.append(
+            self.compute_weighted_coefs(
+                self.action_coefs, self.base_action_coef, rounds, weights
+            )
+        )
+        context_action_coefs.append(
+            self.compute_weighted_coefs(
+                self.context_action_coefs,
+                self.base_context_action_coef,
+                rounds,
+                weights,
+            )
+        )
 
     def compute_weighted_coefs(self, coefs, base_coef, rounds, weights):
         base_coef = self.base_coefficient_weight * base_coef
@@ -166,8 +198,16 @@ class CoefficientDrifter:
         A = np.tile(coefs[0], [rounds] + [1 for _ in coefs[0].shape])
         B = np.tile(coefs[1], [rounds] + [1 for _ in coefs[1].shape])
         coefs = (
-                base_coef
-                + A * np.expand_dims((1 - self.base_coefficient_weight) * (1 - weights), list(range(1, len(A.shape))))
-                + B * np.expand_dims((1 - self.base_coefficient_weight) * weights, list(range(1, len(B.shape))))
+            base_coef
+            + A
+            * np.expand_dims(
+                (1 - self.base_coefficient_weight) * (1 - weights),
+                list(range(1, len(A.shape))),
+            )
+            + B
+            * np.expand_dims(
+                (1 - self.base_coefficient_weight) * weights,
+                list(range(1, len(B.shape))),
+            )
         )
         return coefs
