@@ -390,11 +390,13 @@ class BanditPolicySimulator:
                 # If anything goes wrong, we want to remove all contexts and rewards that have not yet been shown yet
                 total_rounds = batch_bandit_rounds.context.shape[0]
                 remaining_rounds = total_rounds - (self.rounds_played - start_round)
-                self.contexts = self.contexts[:-remaining_rounds,]
-                self.ground_truth_rewards = self.ground_truth_rewards[:-remaining_rounds,]
+                self.contexts = self.contexts[
+                    :-remaining_rounds,
+                ]
+                self.ground_truth_rewards = self.ground_truth_rewards[
+                    :-remaining_rounds,
+                ]
                 raise e
-
-
 
     def delayed_update_policy(
         self, available_rounds: List[int], current_round: int

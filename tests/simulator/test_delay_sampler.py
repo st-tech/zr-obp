@@ -41,11 +41,13 @@ def test_synthetic_sample_results_in_sampled_delay_with_weighted_delays_per_arm(
     actual_bandits_dataset = dataset.next_bandit_round_batch(n_rounds=5)
 
     expected_round_delays = np.asarray(
-        [[35., 38., 4.],
-         [3., 84., 17.],
-         [44., 106., 26.],
-         [14., 138., 61.],
-         [1., 12., 7.]]
+        [
+            [35.0, 38.0, 4.0],
+            [3.0, 84.0, 17.0],
+            [44.0, 106.0, 26.0],
+            [14.0, 138.0, 61.0],
+            [1.0, 12.0, 7.0],
+        ]
     )
     assert (actual_bandits_dataset.round_delays == expected_round_delays).all()
 

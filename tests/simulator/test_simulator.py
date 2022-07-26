@@ -532,9 +532,18 @@ def test_bandit_policy_simulator_cleans_up_keeping_previous_rounds_when_simulati
         simulator.steps(batch_bandit_rounds=batch_2)
 
     assert simulator.rounds_played == 5
-    assert np.allclose(simulator.contexts, np.vstack((batch_1.context, batch_2.context))[:5,])
-    assert np.allclose(simulator.ground_truth_rewards, np.vstack((batch_1.rewards, batch_2.rewards))[:5,])
-
+    assert np.allclose(
+        simulator.contexts,
+        np.vstack((batch_1.context, batch_2.context))[
+            :5,
+        ],
+    )
+    assert np.allclose(
+        simulator.ground_truth_rewards,
+        np.vstack((batch_1.rewards, batch_2.rewards))[
+            :5,
+        ],
+    )
 
 
 def test_ipw_can_be_learned_from_logged_data_generated_by_simulation():
