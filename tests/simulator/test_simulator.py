@@ -478,6 +478,65 @@ def test_bandit_policy_simulator_do_simulation_over_batch_data():
     assert simulator.rounds_played == 5
 
 
+def test_bandit_policy_simulator_cleans_up_when_simulation_is_interupted():
+    env = BanditEnvironmentSimulator(
+        n_actions=3,
+        dim_context=4,
+        reward_function=logistic_reward_function,
+        random_state=12345,
+    )
+
+    class CrashingBanditPolicySimulator(BanditPolicySimulator):
+        def _step(self):
+            super()._step()
+            if self.rounds_played == 50:
+                raise RuntimeError
+
+    simulator = CrashingBanditPolicySimulator(
+        policy=EpsilonGreedy(n_actions=3, epsilon=0.1, random_state=12345),
+        environment=env,
+    )
+
+    with pytest.raises(RuntimeError):
+        simulator.steps(batch_bandit_rounds=env.next_bandit_round_batch(100))
+
+    assert simulator.rounds_played == 50
+    assert simulator.contexts.shape == (50, 4)
+    assert simulator.ground_truth_rewards.shape == (50, 3)
+
+
+def test_bandit_policy_simulator_cleans_up_keeping_previous_rounds_when_simulation_is_interupted():
+    env = BanditEnvironmentSimulator(
+        n_actions=3,
+        dim_context=4,
+        reward_function=logistic_reward_function,
+        random_state=12345,
+    )
+
+    class CrashingBanditPolicySimulator(BanditPolicySimulator):
+        def _step(self):
+            super()._step()
+            if self.rounds_played == 5:
+                raise RuntimeError
+
+    simulator = CrashingBanditPolicySimulator(
+        policy=EpsilonGreedy(n_actions=3, epsilon=0.1, random_state=12345),
+        environment=env,
+    )
+
+    batch_1 = env.next_bandit_round_batch(2)
+    simulator.steps(batch_bandit_rounds=batch_1)
+
+    batch_2 = env.next_bandit_round_batch(6)
+    with pytest.raises(RuntimeError):
+        simulator.steps(batch_bandit_rounds=batch_2)
+
+    assert simulator.rounds_played == 5
+    assert np.allclose(simulator.contexts, np.vstack((batch_1.context, batch_2.context))[:5,])
+    assert np.allclose(simulator.ground_truth_rewards, np.vstack((batch_1.rewards, batch_2.rewards))[:5,])
+
+
+
 def test_ipw_can_be_learned_from_logged_data_generated_by_simulation():
     from sklearn.ensemble import RandomForestClassifier as RandomForest
 

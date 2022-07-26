@@ -377,12 +377,23 @@ class BanditPolicySimulator:
             for _ in tqdm(range(n_rounds)):
                 self.step()
         if batch_bandit_rounds:
-            self.append_contexts(batch_bandit_rounds.context)
-            self.append_ground_truth_rewards(batch_bandit_rounds.rewards)
+            start_round = self.rounds_played
+            try:
+                # Append context and ground truth before executing rounds for efficiency reasons
+                self.append_contexts(batch_bandit_rounds.context)
+                self.append_ground_truth_rewards(batch_bandit_rounds.rewards)
 
-            for bandit_round in tqdm(batch_bandit_rounds):
-                self.current_round = bandit_round
-                self._step()
+                for bandit_round in tqdm(batch_bandit_rounds):
+                    self.current_round = bandit_round
+                    self._step()
+            except Exception as e:
+                # If anything goes wrong, we want to remove all contexts and rewards that have not yet been shown yet
+                total_rounds = batch_bandit_rounds.context.shape[0]
+                remaining_rounds = total_rounds - (self.rounds_played - start_round)
+                self.contexts = self.contexts[:-remaining_rounds,]
+                self.ground_truth_rewards = self.ground_truth_rewards[:-remaining_rounds,]
+                raise e
+
 
 
     def delayed_update_policy(
