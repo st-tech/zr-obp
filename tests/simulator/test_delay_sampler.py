@@ -132,8 +132,6 @@ def test_synthetic_sample_results_do_not_contain_reward_delay_when_delay_functio
 
 
 def test_synthetic_sample_results_reward_delay_is_configurable_through_delay_function():
-    n_actions = 3
-
     def trivial_delay_func(*args, **kwargs):
         return np.asarray([1, 2, 3, 4, 5])
 

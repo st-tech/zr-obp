@@ -4,7 +4,7 @@
 """Class for Generating Synthetic Logged Bandit Data."""
 from dataclasses import dataclass
 from typing import Callable, Tuple
-from typing import Optional, List
+from typing import Optional
 
 import numpy as np
 from scipy.stats import truncnorm

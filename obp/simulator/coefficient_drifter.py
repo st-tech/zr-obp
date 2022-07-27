@@ -170,7 +170,7 @@ class CoefficientDrifter:
 
         weights = transition_steps / (self.transition_period + 1)
 
-        if self.transition_type is "weighted_sampled":
+        if self.transition_type == "weighted_sampled":
             weights = self.random_.binomial(n=1, p=weights)
 
         context_coefs.append(

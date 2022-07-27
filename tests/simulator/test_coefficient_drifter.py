@@ -20,7 +20,7 @@ def test_coefficient_tracker_can_shift_expected_rewards_with_syntethic_dataset_g
         random_state=12345,
     )
 
-    bandit_dataset = dataset.next_bandit_round_batch(n_rounds=4)
+    _ = dataset.next_bandit_round_batch(n_rounds=4)
 
 
 class MockCoefSample:
@@ -285,8 +285,8 @@ def test_coefficient_tracker_can_set_effective_dim_context_on_first_sample():
     effective_dim_action_context = 3
     drifter = CoefficientDrifter(drift_interval=3)
 
-    assert drifter.effective_dim_context == None
-    assert drifter.effective_dim_action_context == None
+    assert drifter.effective_dim_context is None
+    assert drifter.effective_dim_action_context is None
 
     actual_context_coef, _, _ = drifter.get_coefficients(
         n_rounds=4,
@@ -404,16 +404,16 @@ def test_coefficients_can_drift_for_the_action_coefs():
 
         expected_action_coef = np.asarray(
             [
+                [1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE
                 [2.0, 2.0, 2.0],
-                [2.0, 2.0, 2.0],  # AFTER THIS ROUND, THE COEFS SHOULD CHANGE
-                [3.0, 3.0, 3.0],
             ]
         )
 
         assert np.allclose(actual_action_coef, expected_action_coef)
 
 
-def test_coefficients_can_drift_for_the_action_coefs():
+def test_coefficients_can_drift_for_the_action_context_coefs():
     effective_dim_context = 4
     effective_dim_action_context = 3
 

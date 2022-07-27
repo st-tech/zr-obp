@@ -325,7 +325,7 @@ def test_bandit_environment_simulator_can_a_single_step():
         random_state=12345,
     )
 
-    bandit_round = env.next_bandit_round()
+    _ = env.next_bandit_round()
 
 
 def test_bandit_policy_simulator_can_a_single_steps_and_keep_track():
