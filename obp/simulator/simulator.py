@@ -50,7 +50,7 @@ class BanditRounds:
     round_delays: np.ndarray
 
     def _get_bandit_round(self) -> BanditRound:
-        if np.any(self.round_delays):
+        if self.round_delays is not None:
             round_delays = self.round_delays[self.idx]
         else:
             round_delays = None
@@ -293,17 +293,35 @@ class BanditPolicySimulator:
     reward_round_lookup: defaultdict = None
 
     # To keep track of for after
-    selected_actions: np.ndarray = None
-    obtained_rewards: np.ndarray = None
-    ground_truth_rewards: np.ndarray = None
-    contexts: np.ndarray = None
+    _selected_actions: List[int] = None
+    _obtained_rewards: List[int] = None
+    _ground_truth_rewards: List[np.ndarray] = None
+    _contexts: List[np.ndarray] = None
     total_reward: int = 0
     rounds_played: int = 0
     current_round: BanditRound = None
 
+    @property
+    def selected_actions(self) -> np.ndarray:
+        return np.asarray(self._selected_actions)
+
+    @property
+    def obtained_rewards(self) -> np.ndarray:
+        return np.asarray(self._obtained_rewards)
+
+    @property
+    def ground_truth_rewards(self) -> np.ndarray:
+        return np.vstack(self._ground_truth_rewards)
+
+    @property
+    def contexts(self) -> np.ndarray:
+        return np.vstack(self._contexts)
+
     def __post_init__(self):
-        self.selected_actions = np.empty(0, int)
-        self.obtained_rewards = np.empty(0, int)
+        self._selected_actions = []
+        self._obtained_rewards = []
+        self._ground_truth_rewards = []
+        self._contexts = []
         self.reward_round_lookup = defaultdict(list)
 
     def start_next_bandit_round(self, bandit_round: BanditRound = None) -> None:
@@ -316,18 +334,10 @@ class BanditPolicySimulator:
         self.append_ground_truth_rewards(self.current_round.rewards)
 
     def append_ground_truth_rewards(self, ground_truth_rewards):
-        if self.ground_truth_rewards is None:
-            self.ground_truth_rewards = ground_truth_rewards
-        else:
-            self.ground_truth_rewards = np.vstack(
-                (self.ground_truth_rewards, ground_truth_rewards)
-            )
+        self._ground_truth_rewards.append(ground_truth_rewards)
 
     def append_contexts(self, context):
-        if self.contexts is None:
-            self.contexts = context
-        else:
-            self.contexts = np.vstack((self.contexts, context))
+        self._contexts.append(context)
 
     def step(self, bandit_round: BanditRound = None):
         self.start_next_bandit_round(bandit_round)
@@ -335,10 +345,10 @@ class BanditPolicySimulator:
 
     def _step(self):
         selected_action = self.select_action()
-        self.selected_actions = np.append(self.selected_actions, selected_action)
+        self._selected_actions.append(selected_action)
 
         reward_ = self.current_round.rewards[selected_action]
-        self.obtained_rewards = np.append(self.obtained_rewards, reward_)
+        self._obtained_rewards.append(reward_)
         self.total_reward += reward_
 
         delays = self.current_round.round_delays
@@ -377,34 +387,16 @@ class BanditPolicySimulator:
             for _ in tqdm(range(n_rounds)):
                 self.step()
         if batch_bandit_rounds:
-            start_round = self.rounds_played
-            try:
-                # Append context and ground truth before executing rounds for efficiency reasons
-                self.append_contexts(batch_bandit_rounds.context)
-                self.append_ground_truth_rewards(batch_bandit_rounds.rewards)
-
-                for bandit_round in tqdm(batch_bandit_rounds):
-                    self.current_round = bandit_round
-                    self._step()
-            except Exception as e:
-                # If anything goes wrong, we want to remove all contexts and rewards that have not yet been shown yet
-                total_rounds = batch_bandit_rounds.context.shape[0]
-                remaining_rounds = total_rounds - (self.rounds_played - start_round)
-                self.contexts = self.contexts[
-                    :-remaining_rounds,
-                ]
-                self.ground_truth_rewards = self.ground_truth_rewards[
-                    :-remaining_rounds,
-                ]
-                raise e
+            for bandit_round in tqdm(batch_bandit_rounds):
+                self.step(bandit_round)
 
     def delayed_update_policy(
         self, available_rounds: List[int], current_round: int
     ) -> None:
         for available_round_idx in available_rounds:
-            available_action = self.selected_actions[available_round_idx]
-            available_context = self.contexts[available_round_idx]
-            available_rewards = self.obtained_rewards[available_round_idx]
+            available_action = self._selected_actions[available_round_idx]
+            available_context = self._contexts[available_round_idx]
+            available_rewards = self._obtained_rewards[available_round_idx]
 
             self.update_policy(available_context, available_action, available_rewards)
 
