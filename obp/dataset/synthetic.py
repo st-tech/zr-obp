@@ -113,7 +113,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
     .. code-block:: python
 
-        >>> from obp.dataset import (
+        >>> from obp.env import (
             SyntheticBanditDataset,
             logistic_reward_function
         )
@@ -418,6 +418,7 @@ def logistic_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards.
@@ -459,6 +460,7 @@ def logistic_polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with polynomial feature transformations.
@@ -501,6 +503,7 @@ def logistic_sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with small effective feature dimension.
@@ -535,6 +538,7 @@ def logistic_sparse_reward_function(
         degree=4,
         effective_dim_ratio=0.3,
         coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -545,6 +549,7 @@ def linear_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear mean reward function for continuous rewards.
@@ -572,6 +577,7 @@ def linear_reward_function(
         action_context=action_context,
         degree=1,
         coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -580,6 +586,7 @@ def polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Polynomial mean reward function for continuous rewards.
@@ -612,6 +619,7 @@ def polynomial_reward_function(
         action_context=action_context,
         degree=3,
         coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -620,6 +628,7 @@ def sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
     coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Sparse mean reward function for continuous rewards.
@@ -654,6 +663,7 @@ def sparse_reward_function(
         degree=4,
         effective_dim_ratio=0.3,
         coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -664,6 +674,7 @@ def _base_reward_function(
     degree: int = 3,
     effective_dim_ratio: float = 1.0,
     coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Base function to define mean reward functions.
@@ -713,6 +724,10 @@ def _base_reward_function(
         Specifically, after the polynomial feature transformation is applied to the original context vectors,
         only `dim_context * effective_dim_ratio` fraction of randomly selected dimensions
         will be used as relevant dimensions to generate expected rewards.
+
+    z_score: boolean, default=True
+        Boolean to enable/disable the calculation of a z-score over the resulting rewards. In case the environment
+        is stationary, this can be turned on. But when the
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -793,9 +808,10 @@ def _base_reward_function(
         )
 
     expected_rewards = context_values + action_values + context_action_values
-    expected_rewards = (
-        degree * (expected_rewards - expected_rewards.mean()) / expected_rewards.std()
-    )
+    if z_score:
+        expected_rewards = expected_rewards - expected_rewards.mean() / expected_rewards.std()
+
+    expected_rewards = degree * expected_rewards
 
     return expected_rewards
 
@@ -875,6 +891,7 @@ def _base_behavior_policy_function(
     context: np.ndarray,
     action_context: np.ndarray,
     degree: int = 3,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Base function to define behavior policy functions.
