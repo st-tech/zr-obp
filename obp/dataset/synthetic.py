@@ -809,7 +809,9 @@ def _base_reward_function(
 
     expected_rewards = context_values + action_values + context_action_values
     if z_score:
-        expected_rewards = expected_rewards - expected_rewards.mean() / expected_rewards.std()
+        expected_rewards = (
+            expected_rewards - expected_rewards.mean() / expected_rewards.std()
+        )
 
     expected_rewards = degree * expected_rewards
 
@@ -891,7 +893,6 @@ def _base_behavior_policy_function(
     context: np.ndarray,
     action_context: np.ndarray,
     degree: int = 3,
-    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Base function to define behavior policy functions.
