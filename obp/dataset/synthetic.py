@@ -113,7 +113,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
 
     .. code-block:: python
 
-        >>> from obp.env import (
+        >>> from obp.dataset import (
             SyntheticBanditDataset,
             logistic_reward_function
         )
@@ -431,6 +431,9 @@ def logistic_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
 
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
+
     coef_function: Callable, default=sample_random_uniform_coefficients
         Function for generating the coefficients used for the context, action and context/action interactions.
         By default, the coefficients are randomly uniformly drawn.
@@ -450,6 +453,7 @@ def logistic_reward_function(
         action_context=action_context,
         degree=1,
         random_state=random_state,
+        z_score=z_score,
         coef_function=coef_function,
     )
 
@@ -478,6 +482,9 @@ def logistic_polynomial_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
 
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
+
     random_state: int, default=None
         Controls the random seed in sampling dataset.
 
@@ -493,6 +500,7 @@ def logistic_polynomial_reward_function(
         action_context=action_context,
         degree=3,
         coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -521,6 +529,9 @@ def logistic_sparse_reward_function(
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
+
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -561,6 +572,9 @@ def linear_reward_function(
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
+
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.

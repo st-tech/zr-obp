@@ -112,7 +112,7 @@ class BanditEnvironmentSimulator:
         sampled from the uniform distribution automatically.
 
     delay_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=None
-        Function defining the delay rounds  for each given action-context pair,
+        Function defining the delay rounds for each given action-context pair,
         If None, the `delay_rounds` key will be omitted from the dataset samples.
 
     coef_function: Callable[[np.ndarray, np.ndarray], np.ndarray]], default=sample_random_uniform_coefficients

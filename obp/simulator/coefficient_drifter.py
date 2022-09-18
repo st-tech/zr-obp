@@ -22,6 +22,33 @@ class CoefficientDrifter:
 
     Parameters
     -----------
+    drift_interval: int
+        Controls interval of steps at which the coefficients are updated.
+
+    transition_period: int, default=0
+        Controls the period in which the coefficients are transitioning between new and old. The transition period
+        always happened before the drift interval. Meaning, that if the drift interval is 5000 and the transition period
+        500, the transition will be between step 4500 and step 5000.
+
+    transition_type: str, default="linear"
+        The type of transition (linear or weighted_sampled) to be applied while transitioning between two sets of
+        coefficients.
+
+    seasonal: bool, default=False
+        When True, the coefficients will shift between two sets of coefficients representing a seasonal shift.
+
+    base_coefficient_weight: float, default=0.0
+        A floating point between 0.0 and 1.0 that represents a base coefficient weight that is consistent regardless of
+        any drift. This can be used to ensure the severity of the drift over time.
+
+    effective_dim_action_context: (optional) int, default=None
+        Specifies the dimensions of the action context coefficients.
+
+    effective_dim_context: (optional) int, default=None
+        Specifies the dimensions of the context coefficients.
+
+    random_state: int, default=12345
+        Controls the random seed
 
     References
     ------------
