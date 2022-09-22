@@ -25,7 +25,7 @@ ope_estimators = [ReplayMethod()]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="evaluate off-policy estimators with online bandit algorithms and synthetic bandit data."
+        description="evaluate off-policy estimators with replay bandit algorithms and synthetic bandit data."
     )
     parser.add_argument(
         "--n_runs", type=int, default=1, help="number of simulations in the experiment."
