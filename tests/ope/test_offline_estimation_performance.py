@@ -345,7 +345,7 @@ def test_offline_estimation_performance(
 
         return relative_ee_i
 
-    n_runs = 10
+    n_runs = 20
     processed = Parallel(
         n_jobs=-1,
         verbose=0,

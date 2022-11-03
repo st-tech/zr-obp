@@ -38,18 +38,11 @@ def test_synthetic_sample_results_in_sampled_delay_with_weighted_delays_per_arm(
         random_state=12345,
     )
 
-    actual_bandits_dataset = dataset.next_bandit_round_batch(n_rounds=5)
+    actual_bandits_dataset = dataset.next_bandit_round_batch(n_rounds=1000)
 
-    expected_round_delays = np.asarray(
-        [
-            [35.0, 38.0, 4.0],
-            [3.0, 84.0, 17.0],
-            [44.0, 106.0, 26.0],
-            [14.0, 138.0, 61.0],
-            [1.0, 12.0, 7.0],
-        ]
-    )
-    assert (actual_bandits_dataset.round_delays == expected_round_delays).all()
+    ordered_rewards = actual_bandits_dataset.expected_rewards[0].argsort()
+    mean_delays = actual_bandits_dataset.round_delays.sum(axis=0)
+    assert mean_delays[ordered_rewards[2]] < mean_delays[ordered_rewards[1]] > mean_delays[ordered_rewards[2]]
 
 
 def test_synthetic_sample_results_with_exponential_delay_function_has_different_delays_each_batch():

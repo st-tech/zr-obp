@@ -70,28 +70,12 @@ def test_coefficient_tracker_can_shift_expected_rewards_instantly_based_on_confi
             random_state=12345,
         )
 
-    expected_expected_rewards = np.asarray(
-        [
-            [
-                -6.82778334,
-                -6.82778334,
-                -6.82778334,
-            ],  # This round has a different context and should have diff E[r]
-            [
-                -0.2354408,
-                -0.2354408,
-                -0.2354408,
-            ],  # The next two rounds have the same context and should have identical
-            [-0.2354408, -0.2354408, -0.2354408],  # E[r]
-            [
-                7.29866494,
-                7.29866494,
-                7.29866494,
-            ],  # This round has the same context but has experienced drift.
-        ]
-    )
-
-    assert np.allclose(actual_expected_rewards, expected_expected_rewards)
+    # This round has a different context and should have diff E[r]
+    assert not np.allclose(actual_expected_rewards[0], actual_expected_rewards[1])
+    # The next two rounds have the same context and should have identical
+    assert np.allclose(actual_expected_rewards[1], actual_expected_rewards[2])
+    # This round has the same context but has experienced drift.
+    assert not np.allclose(actual_expected_rewards[2], actual_expected_rewards[3])
 
 
 def test_coefficient_tracker_can_shift_coefficient_instantly_based_on_configured_interval():

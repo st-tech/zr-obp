@@ -581,12 +581,5 @@ def test_base_reward_create_a_matrix_with_expected_rewards_with_identical_expect
         context, action_context, degree=5, effective_dim_ratio=1.0, random_state=12345
     )
 
-    expected_expected_rewards = np.asarray(
-        [
-            [-4.50475921, -5.60364479, -4.6827207],
-            [3.57444414, 7.18370309, -3.36258488],
-            [3.57444414, 7.18370309, -3.36258488],
-        ]
-    )
-
-    assert np.allclose(actual_expected_rewards, expected_expected_rewards)
+    assert np.allclose(actual_expected_rewards[1], actual_expected_rewards[2])
+    assert not np.allclose(actual_expected_rewards[0], actual_expected_rewards[1])
