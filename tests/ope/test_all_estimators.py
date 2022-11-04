@@ -1,5 +1,3 @@
-from typing import Set
-
 from conftest import generate_action_dist
 import numpy as np
 import pytest
