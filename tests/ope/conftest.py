@@ -157,6 +157,7 @@ def feedback_key_set() -> Set[str]:
         "reward",
     }
 
+
 # random evaluation policy
 @pytest.fixture(scope="session")
 def random_action_dist(synthetic_bandit_feedback) -> np.ndarray:

@@ -350,7 +350,6 @@ def test_bandit_policy_simulator_can_a_single_steps_and_keep_track():
     assert simulator.total_reward > 1
 
 
-
 def test_bandit_policy_simulator_can_do_multiple_steps_in_call_and_keep_track_of_actions_and_performance():
     env = BanditEnvironmentSimulator(
         n_actions=10,
@@ -403,7 +402,7 @@ def test_bandit_policy_simulator_can_update_policy_with_delays_if_delay_rounds_a
 
     expected_updates = [1, 3, 5, 5]
 
-    assert [update['round'] for update in tracker.parameter_updates] == expected_updates
+    assert [update["round"] for update in tracker.parameter_updates] == expected_updates
 
 
 def test_bandit_policy_simulator_clears_delay_queue_when_called_into_last_available_round():
@@ -435,14 +434,18 @@ def test_bandit_policy_simulator_clears_delay_queue_when_called_into_last_availa
     simulator.steps(n_rounds=5)
 
     expected_updates_before_queue_cleared = [3, 5, 5]
-    assert [update['round'] for update in tracker.parameter_updates] == expected_updates_before_queue_cleared
+    assert [
+        update["round"] for update in tracker.parameter_updates
+    ] == expected_updates_before_queue_cleared
 
     simulator.clear_delayed_queue()
 
     expected_updates_before_queue_cleared = [3, 5, 5, 5, 5]
 
     assert len(simulator.reward_round_lookup.values()) == 0
-    assert [update['round'] for update in tracker.parameter_updates] == expected_updates_before_queue_cleared
+    assert [
+        update["round"] for update in tracker.parameter_updates
+    ] == expected_updates_before_queue_cleared
 
 
 def test_bandit_policy_simulator_do_simulation_over_batch_data():

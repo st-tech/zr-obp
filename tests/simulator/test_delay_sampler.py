@@ -42,7 +42,11 @@ def test_synthetic_sample_results_in_sampled_delay_with_weighted_delays_per_arm(
 
     ordered_rewards = actual_bandits_dataset.expected_rewards[0].argsort()
     mean_delays = actual_bandits_dataset.round_delays.sum(axis=0)
-    assert mean_delays[ordered_rewards[2]] < mean_delays[ordered_rewards[1]] > mean_delays[ordered_rewards[2]]
+    assert (
+        mean_delays[ordered_rewards[2]]
+        < mean_delays[ordered_rewards[1]]
+        > mean_delays[ordered_rewards[2]]
+    )
 
 
 def test_synthetic_sample_results_with_exponential_delay_function_has_different_delays_each_batch():
