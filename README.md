@@ -79,7 +79,7 @@ Open Bandit Pipeline consists of the following main modules.
 
 - [**dataset module**](./obp/dataset/): This module provides a data loader for Open Bandit Dataset and a flexible interface for handling logged bandit data. It also provides tools to generate synthetic bandit data and transform multi-class classification data to bandit data.
 - [**policy module**](./obp/policy/): This module provides interfaces for implementing new online and offline bandit policies. It also implements several standard policy learning methods.
-- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when you use the ReplayMethod to evaluate online bandit policies. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/online.ipynb) for a quickstart guide of implementing OPE of online bandit algorithms.
+- [**simulator module**](./obp/simulator/): This module provides functions for conducting offline bandit simulation. This module is necessary only when you use the ReplayMethod to evaluate online bandit policies. Please refer to [examples/quickstart/online.ipynb](./examples/quickstart/replay.ipynb) for a quickstart guide of implementing OPE of online bandit algorithms.
 - [**ope module**](./obp/ope/): This module provides generic abstract interfaces to support custom implementations so that researchers can evaluate their own estimators easily. It also implements several basic and advanced OPE estimators.
 
 ### Supported Bandit Algorithms and OPE Estimators

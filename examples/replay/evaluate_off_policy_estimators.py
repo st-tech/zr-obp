@@ -19,14 +19,13 @@ from obp.policy import LogisticEpsilonGreedy
 from obp.policy import LogisticTS
 from obp.policy import LogisticUCB
 from obp.simulator import calc_ground_truth_policy_value
-from obp.simulator import run_bandit_simulation
-
+from obp.utils import run_bandit_replay
 
 ope_estimators = [ReplayMethod()]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="evaluate off-policy estimators with online bandit algorithms and synthetic bandit data."
+        description="evaluate off-policy estimators with replay bandit algorithms and synthetic bandit data."
     )
     parser.add_argument(
         "--n_runs", type=int, default=1, help="number of simulations in the experiment."
@@ -127,7 +126,7 @@ if __name__ == "__main__":
         # sample new data of synthetic logged bandit feedback
         bandit_feedback = dataset.obtain_batch_bandit_feedback(n_rounds=n_rounds)
         # simulate the evaluation policy
-        action_dist = run_bandit_simulation(
+        action_dist = run_bandit_replay(
             bandit_feedback=bandit_feedback, policy=evaluation_policy
         )
         # estimate the ground-truth policy values of the evaluation policy

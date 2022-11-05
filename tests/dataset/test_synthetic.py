@@ -2,7 +2,10 @@ import numpy as np
 import pytest
 
 from obp.dataset import SyntheticBanditDataset
-from obp.dataset.synthetic import linear_behavior_policy
+from obp.dataset.synthetic import (
+    linear_behavior_policy,
+    _base_reward_function,
+)
 from obp.dataset.synthetic import linear_reward_function
 from obp.dataset.synthetic import logistic_polynomial_reward_function
 from obp.dataset.synthetic import logistic_reward_function
@@ -557,3 +560,26 @@ def test_synthetic_behavior_policy_function():
         )
         assert action_prob.shape[0] == n_rounds and action_prob.shape[1] == n_actions
         assert np.all(0 <= action_prob) and np.all(action_prob <= 1)
+
+
+def test_base_reward_create_a_matrix_with_expected_rewards_with_identical_expectation_for_identical_rounds_():
+    context = np.asarray(
+        [
+            [1, 2],
+            [3, 2],
+            [3, 2],
+        ]
+    )
+    action_context = np.asarray(
+        [
+            [1, 0, 0],
+            [0, 0, 1],
+            [0, 1, 0],
+        ]
+    )
+    actual_expected_rewards = _base_reward_function(
+        context, action_context, degree=5, effective_dim_ratio=1.0, random_state=12345
+    )
+
+    assert np.allclose(actual_expected_rewards[1], actual_expected_rewards[2])
+    assert not np.allclose(actual_expected_rewards[0], actual_expected_rewards[1])

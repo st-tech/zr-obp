@@ -3,7 +3,7 @@
 
 """Class for Generating Synthetic Logged Bandit Data."""
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Tuple
 from typing import Optional
 
 import numpy as np
@@ -19,6 +19,25 @@ from ..utils import sigmoid
 from ..utils import softmax
 from .base import BaseBanditDataset
 from .reward_type import RewardType
+
+coef_func_signature = Callable[
+    [np.ndarray, np.ndarray, np.random.RandomState],
+    Tuple[np.ndarray, np.ndarray, np.ndarray],
+]
+
+
+def sample_random_uniform_coefficients(
+    effective_dim_action_context: int,
+    effective_dim_context: int,
+    random_: np.random.RandomState,
+    **kwargs,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    context_coef_ = random_.uniform(-1, 1, size=effective_dim_context)
+    action_coef_ = random_.uniform(-1, 1, size=effective_dim_action_context)
+    context_action_coef_ = random_.uniform(
+        -1, 1, size=(effective_dim_context, effective_dim_action_context)
+    )
+    return context_coef_, action_coef_, context_action_coef_
 
 
 @dataclass
@@ -398,6 +417,8 @@ class SyntheticBanditDataset(BaseBanditDataset):
 def logistic_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards.
@@ -409,6 +430,13 @@ def logistic_reward_function(
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
+
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
+
+    coef_function: Callable, default=sample_random_uniform_coefficients
+        Function for generating the coefficients used for the context, action and context/action interactions.
+        By default, the coefficients are randomly uniformly drawn.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -425,6 +453,8 @@ def logistic_reward_function(
         action_context=action_context,
         degree=1,
         random_state=random_state,
+        z_score=z_score,
+        coef_function=coef_function,
     )
 
     return sigmoid(logits)
@@ -433,6 +463,8 @@ def logistic_reward_function(
 def logistic_polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with polynomial feature transformations.
@@ -450,6 +482,9 @@ def logistic_polynomial_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
 
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
+
     random_state: int, default=None
         Controls the random seed in sampling dataset.
 
@@ -464,6 +499,8 @@ def logistic_polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
+        coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -473,6 +510,8 @@ def logistic_polynomial_reward_function(
 def logistic_sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Logistic mean reward function for binary rewards with small effective feature dimension.
@@ -491,6 +530,9 @@ def logistic_sparse_reward_function(
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
 
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
+
     random_state: int, default=None
         Controls the random seed in sampling dataset.
 
@@ -506,6 +548,8 @@ def logistic_sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
+        coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -515,6 +559,8 @@ def logistic_sparse_reward_function(
 def linear_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Linear mean reward function for continuous rewards.
@@ -526,6 +572,9 @@ def linear_reward_function(
 
     action_context: array-like, shape (n_actions, dim_action_context)
         Vector representation of actions.
+
+    z_score: boolean, default=True
+        Controls whether a z-score will be calculated over the computed logits.
 
     random_state: int, default=None
         Controls the random seed in sampling dataset.
@@ -541,6 +590,8 @@ def linear_reward_function(
         context=context,
         action_context=action_context,
         degree=1,
+        coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -548,6 +599,8 @@ def linear_reward_function(
 def polynomial_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Polynomial mean reward function for continuous rewards.
@@ -579,6 +632,8 @@ def polynomial_reward_function(
         context=context,
         action_context=action_context,
         degree=3,
+        coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -586,6 +641,8 @@ def polynomial_reward_function(
 def sparse_reward_function(
     context: np.ndarray,
     action_context: np.ndarray,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Sparse mean reward function for continuous rewards.
@@ -619,6 +676,8 @@ def sparse_reward_function(
         action_context=action_context,
         degree=4,
         effective_dim_ratio=0.3,
+        coef_function=coef_function,
+        z_score=z_score,
         random_state=random_state,
     )
 
@@ -628,6 +687,8 @@ def _base_reward_function(
     action_context: np.ndarray,
     degree: int = 3,
     effective_dim_ratio: float = 1.0,
+    coef_function: coef_func_signature = sample_random_uniform_coefficients,
+    z_score: bool = True,
     random_state: Optional[int] = None,
 ) -> np.ndarray:
     """Base function to define mean reward functions.
@@ -678,6 +739,10 @@ def _base_reward_function(
         only `dim_context * effective_dim_ratio` fraction of randomly selected dimensions
         will be used as relevant dimensions to generate expected rewards.
 
+    z_score: boolean, default=True
+        Boolean to enable/disable the calculation of a z-score over the resulting rewards. In case the environment
+        is stationary, this can be turned on. But when the
+
     random_state: int, default=None
         Controls the random seed in sampling dataset.
 
@@ -724,21 +789,45 @@ def _base_reward_function(
         effective_context_ = context_
         effective_action_context_ = action_context_
 
-    context_coef_ = random_.uniform(-1, 1, size=effective_dim_context)
-    action_coef_ = random_.uniform(-1, 1, size=effective_dim_action_context)
-    context_action_coef_ = random_.uniform(
-        -1, 1, size=(effective_dim_context, effective_dim_action_context)
+    context_coef_, action_coef_, context_action_coef_ = coef_function(
+        n_rounds=datasize,
+        effective_dim_action_context=effective_dim_action_context,
+        effective_dim_context=effective_dim_context,
+        random_=random_,
     )
 
-    context_values = np.tile(effective_context_ @ context_coef_, (n_actions, 1)).T
-    action_values = np.tile(action_coef_ @ effective_action_context_.T, (datasize, 1))
-    context_action_values = (
-        effective_context_ @ context_action_coef_ @ effective_action_context_.T
-    )
+    if context_coef_.shape[0] != datasize:
+        context_values = np.tile(effective_context_ @ context_coef_, (n_actions, 1)).T
+    else:
+        context_values = np.tile(
+            np.sum(effective_context_ * context_coef_, axis=1), (n_actions, 1)
+        ).T
+
+    action_values = action_coef_ @ effective_action_context_.T
+    if action_coef_.shape[0] != datasize:
+        action_values = np.tile(action_values, (datasize, 1))
+
+    if action_coef_.shape[0] != datasize:
+        context_action_values = (
+            effective_context_ @ context_action_coef_ @ effective_action_context_.T
+        )
+    else:
+        effective_context_ = np.expand_dims(effective_context_, axis=1)
+        context_action_coef_interactions = np.squeeze(
+            np.matmul(effective_context_, context_action_coef_), axis=1
+        )
+
+        context_action_values = (
+            context_action_coef_interactions @ effective_action_context_.T
+        )
+
     expected_rewards = context_values + action_values + context_action_values
-    expected_rewards = (
-        degree * (expected_rewards - expected_rewards.mean()) / expected_rewards.std()
-    )
+    if z_score:
+        expected_rewards = (
+            expected_rewards - expected_rewards.mean() / expected_rewards.std()
+        )
+
+    expected_rewards = degree * expected_rewards
 
     return expected_rewards
 

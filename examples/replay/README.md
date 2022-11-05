@@ -1,4 +1,4 @@
-# Example with Online Bandit Algorithms
+# Replay Example with Online Bandit Algorithms
 
 
 ## Description

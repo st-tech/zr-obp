@@ -72,6 +72,7 @@ class IPWLearner(BaseOfflinePolicyLearner):
         self.base_classifier_list = [
             clone(self.base_classifier) for _ in np.arange(self.len_list)
         ]
+        self.policy_name = "IPWLearner"
 
     @staticmethod
     def _create_train_data_for_opl(

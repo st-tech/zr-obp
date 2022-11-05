@@ -118,7 +118,7 @@ def convert_to_action_dist(
     n_actions: int,
     selected_actions: np.ndarray,
 ) -> np.ndarray:
-    """Convert selected actions (output of `run_bandit_simulation`) to distribution over actions.
+    """Convert selected actions (output of `run_bandit_replay`) to distribution over actions.
 
     Parameters
     ----------
