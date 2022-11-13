@@ -526,7 +526,7 @@ class ContinuousNNPolicyLearner(BaseContinuousOfflinePolicyLearner):
         reward: torch.Tensor,
         pscore: torch.Tensor,
         action_by_current_policy: torch.Tensor,
-    ) -> float:
+    ) -> torch.Tensor:
         """Estimate the policy gradient.
 
         Parameters
