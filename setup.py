@@ -1,7 +1,11 @@
-from obp.version import __version__
-from setuptools import setup, find_packages
 from os import path
 import sys
+
+from setuptools import find_packages
+from setuptools import setup
+
+from obp.version import __version__
+
 
 here = path.abspath(path.dirname(__file__))
 sys.path.insert(0, path.join(here, "obp"))
@@ -49,6 +53,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
