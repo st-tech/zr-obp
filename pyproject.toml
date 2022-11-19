@@ -7,7 +7,9 @@ license = "Apache License 2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.7.1,<3.11"
-torch = "^1.9.0"
+# Remove <1.13 constraints after Linux dependencies issues will be resolved
+# https://github.com/python-poetry/poetry/issues/6409
+torch = "^1.9.0,<1.13"
 scikit-learn = "1.0.2"
 pandas = "^1.3.2"
 numpy = "^1.21.2"
