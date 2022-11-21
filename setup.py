@@ -1,7 +1,11 @@
-from obp.version import __version__
-from setuptools import setup, find_packages
 from os import path
 import sys
+
+from setuptools import find_packages
+from setuptools import setup
+
+from obp.version import __version__
+
 
 here = path.abspath(path.dirname(__file__))
 sys.path.insert(0, path.join(here, "obp"))
@@ -29,8 +33,8 @@ setup(
         "mypy-extensions>=0.4.3",
         "numpy>=1.21.2",
         "pandas>=1.3.2",
-        "pyyaml>=5.1",
-        "seaborn>=0.10.1",
+        "pyyaml>=6.0.0",
+        "seaborn>=0.11.2",
         "scikit-learn>=1.0.2",
         "scipy>=1.7.3",
         "torch>=1.9.0",
@@ -49,6 +53,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",

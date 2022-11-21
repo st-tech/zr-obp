@@ -1,7 +1,7 @@
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/logo.png" width="60%"/></div>
 
 [![pypi](https://img.shields.io/pypi/v/obp.svg)](https://pypi.python.org/pypi/obp)
-[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org)
 [![Downloads](https://pepy.tech/badge/obp)](https://pepy.tech/project/obp)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/st-tech/zr-obp)
 ![GitHub last commit](https://img.shields.io/github/last-commit/st-tech/zr-obp)

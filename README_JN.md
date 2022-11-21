@@ -1,7 +1,7 @@
 <div align="center"><img src="https://raw.githubusercontent.com/st-tech/zr-obp/master/images/logo.png" width="60%"/></div>
 
 [![pypi](https://img.shields.io/pypi/v/obp.svg)](https://pypi.python.org/pypi/obp)
-[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org)
 [![Downloads](https://pepy.tech/badge/obp)](https://pepy.tech/project/obp)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/st-tech/zr-obp)
 ![GitHub last commit](https://img.shields.io/github/last-commit/st-tech/zr-obp)
@@ -170,9 +170,9 @@ cd zr-obp
 python setup.py install
 ```
 
-Pythonおよび利用パッケージのバージョンは以下の通りです。
+本書執筆時点のPythonおよび利用パッケージのバージョンは以下の通りです。
 
-```
+```toml
 [tool.poetry.dependencies]
 python = ">=3.7.1,<3.10"
 torch = "^1.9.0"
@@ -188,7 +188,7 @@ pyieoe = "^0.1.1"
 pingouin = "^0.4.0"
 ```
 
-これらのパッケージのバージョンが異なると、使用方法や挙動が本書執筆時点と異なる場合があるので、注意してください。
+利用パッケージは更新されることがあります。リポジトリの最新版が使用するパッケージのバージョンは[pyproject.toml](./pyproject.toml)を確認してください。
 
 # 使用方法
 
