@@ -74,6 +74,11 @@ class SyntheticMultiLoggersBanditDataset(SyntheticBanditDataset):
         A larger value leads to a noisier reward distribution.
         This argument is valid only when `reward_type="continuous"`.
 
+    reward_noise_distribution: str, default='normal'
+        From which distribution we sample noise on the reward, must be either 'normal' or 'truncated_normal'.
+        If 'truncated_normal' is given, we do not have any negative reward realization in the logged dataset.
+        This argument is valid only when `reward_type="continuous"`.
+
     action_context: np.ndarray, default=None
          Vector representation of (discrete) actions.
          If None, one-hot representation will be used.
@@ -272,12 +277,13 @@ class SyntheticMultiLoggersBanditDataset(SyntheticBanditDataset):
         expected_reward_ = self.calc_expected_reward(contexts)
         if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             # correct expected_reward_, as we use truncated normal distribution here
-            mean = expected_reward_
-            a = (self.reward_min - mean) / self.reward_std
-            b = (self.reward_max - mean) / self.reward_std
-            expected_reward_ = truncnorm.stats(
-                a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
-            )
+            if self.reward_noise_distribution == "truncated_normal":
+                mean = expected_reward_
+                a = (self.reward_min - mean) / self.reward_std
+                b = (self.reward_max - mean) / self.reward_std
+                expected_reward_ = truncnorm.stats(
+                    a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
+                )
 
         # calculate the action choice probabilities of the behavior policy
         pi_b_logits = expected_reward_
