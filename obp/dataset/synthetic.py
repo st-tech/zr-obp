@@ -77,6 +77,11 @@ class SyntheticBanditDataset(BaseBanditDataset):
         A larger value leads to a noisier reward distribution.
         This argument is valid only when `reward_type="continuous"`.
 
+    reward_noise_distribution: str, default='normal'
+        From which distribution we sample noise on the reward, must be either 'normal' or 'truncated_normal'.
+        If 'truncated_normal' is given, we do not have any negative reward realization in the logged dataset.
+        This argument is valid only when `reward_type="continuous"`.
+
     action_context: np.ndarray, default=None
          Vector representation of (discrete) actions.
          If None, one-hot representation will be used.
@@ -177,6 +182,7 @@ class SyntheticBanditDataset(BaseBanditDataset):
     reward_type: str = RewardType.BINARY.value
     reward_function: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None
     reward_std: float = 1.0
+    reward_noise_distribution: str = "normal"
     action_context: Optional[np.ndarray] = None
     behavior_policy_function: Optional[
         Callable[[np.ndarray, np.ndarray], np.ndarray]
@@ -211,6 +217,12 @@ class SyntheticBanditDataset(BaseBanditDataset):
                 f"`reward_type` must be either '{RewardType.BINARY.value}' or '{RewardType.CONTINUOUS.value}',"
                 f"but {self.reward_type} is given.'"
             )
+        if self.reward_noise_distribution not in ["normal", "truncated_normal"]:
+            raise ValueError(
+                f"`reward_noise_distribution` must be either 'normal' or 'truncated_normal',"
+                f"but {self.reward_noise_distribution} is given.'"
+            )
+
         check_scalar(self.reward_std, "reward_std", (int, float), min_val=0)
         if self.reward_function is None:
             self.expected_reward = self.sample_contextfree_expected_reward()
@@ -263,16 +275,23 @@ class SyntheticBanditDataset(BaseBanditDataset):
         if RewardType(self.reward_type) == RewardType.BINARY:
             reward = self.random_.binomial(n=1, p=expected_reward_factual)
         elif RewardType(self.reward_type) == RewardType.CONTINUOUS:
-            mean = expected_reward_factual
-            a = (self.reward_min - mean) / self.reward_std
-            b = (self.reward_max - mean) / self.reward_std
-            reward = truncnorm.rvs(
-                a=a,
-                b=b,
-                loc=mean,
-                scale=self.reward_std,
-                random_state=self.random_state,
-            )
+            if self.reward_noise_distribution == "normal":
+                reward = self.random_.normal(
+                    loc=expected_reward_factual,
+                    scale=self.reward_std,
+                    size=action.shape,
+                )
+            elif self.reward_noise_distribution == "truncated_normal":
+                mean = expected_reward_factual
+                a = (self.reward_min - mean) / self.reward_std
+                b = (self.reward_max - mean) / self.reward_std
+                reward = truncnorm.rvs(
+                    a=a,
+                    b=b,
+                    loc=mean,
+                    scale=self.reward_std,
+                    random_state=self.random_state,
+                )
         else:
             raise NotImplementedError
 
@@ -329,12 +348,13 @@ class SyntheticBanditDataset(BaseBanditDataset):
         expected_reward_ = self.calc_expected_reward(contexts)
         if RewardType(self.reward_type) == RewardType.CONTINUOUS:
             # correct expected_reward_, as we use truncated normal distribution here
-            mean = expected_reward_
-            a = (self.reward_min - mean) / self.reward_std
-            b = (self.reward_max - mean) / self.reward_std
-            expected_reward_ = truncnorm.stats(
-                a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
-            )
+            if self.reward_noise_distribution == "truncated_normal":
+                mean = expected_reward_
+                a = (self.reward_min - mean) / self.reward_std
+                b = (self.reward_max - mean) / self.reward_std
+                expected_reward_ = truncnorm.stats(
+                    a=a, b=b, loc=mean, scale=self.reward_std, moments="m"
+                )
 
         # calculate the action choice probabilities of the behavior policy
         if self.behavior_policy_function is None:
