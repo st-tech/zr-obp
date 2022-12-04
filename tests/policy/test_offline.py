@@ -726,7 +726,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"lambda_ must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"lambda_ must be an instance of {int, float}, not str.",
     ),
     (
         10,
@@ -755,7 +755,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"policy_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"policy_reg_param must be an instance of {int, float}, not str.",
     ),
     (
         10,
@@ -784,7 +784,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"policy_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"policy_reg_param must be an instance of {int, float}, not NoneType.",
     ),
     (
         10,
@@ -842,7 +842,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"var_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"var_reg_param must be an instance of {int, float}, not str.",
     ),
     (
         10,
@@ -871,7 +871,7 @@ invalid_input_of_nn_policy_learner_init = [
         1e-8,
         10,
         TypeError,
-        r"var_reg_param must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"var_reg_param must be an instance of {int, float}, not NoneType.",
     ),
     (
         10,

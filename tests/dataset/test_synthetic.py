@@ -2,10 +2,8 @@ import numpy as np
 import pytest
 
 from obp.dataset import SyntheticBanditDataset
-from obp.dataset.synthetic import (
-    linear_behavior_policy,
-    _base_reward_function,
-)
+from obp.dataset.synthetic import _base_reward_function
+from obp.dataset.synthetic import linear_behavior_policy
 from obp.dataset.synthetic import linear_reward_function
 from obp.dataset.synthetic import logistic_polynomial_reward_function
 from obp.dataset.synthetic import logistic_reward_function
@@ -28,7 +26,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "n_actions must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_actions must be an instance of int, not str.",
     ),
     (
         1,  #
@@ -52,7 +50,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "dim_context must be an instance of <class 'int'>, not <class 'str'>.",
+        "dim_context must be an instance of int, not str.",
     ),
     (
         3,
@@ -88,7 +86,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"reward_std must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"reward_std must be an instance of {int, float}, not str.",
     ),
     (
         3,
@@ -112,7 +110,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"beta must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"beta must be an instance of {int, float}, not str.",
     ),
     (
         3,
@@ -124,7 +122,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "n_deficient_actions must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_deficient_actions must be an instance of int, not str.",
     ),
     (
         3,
@@ -136,7 +134,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "n_deficient_actions must be an instance of <class 'int'>, not <class 'float'>.",
+        "n_deficient_actions must be an instance of int, not float.",
     ),
     (
         3,

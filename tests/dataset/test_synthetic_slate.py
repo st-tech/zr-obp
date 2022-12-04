@@ -24,7 +24,7 @@ invalid_input_of_init = [
         1.0,
         1,
         TypeError,
-        "n_unique_action must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_unique_action must be an instance of int, not str.",
     ),
     (
         1,
@@ -50,7 +50,7 @@ invalid_input_of_init = [
         1.0,
         1,
         TypeError,
-        "len_list must be an instance of <class 'int'>, not <class 'str'>.",
+        "len_list must be an instance of int, not str.",
     ),
     (
         5,
@@ -102,7 +102,7 @@ invalid_input_of_init = [
         1.0,
         1,
         TypeError,
-        "dim_context must be an instance of <class 'int'>, not <class 'str'>.",
+        "dim_context must be an instance of int, not str.",
     ),
     (
         5,
@@ -167,7 +167,7 @@ invalid_input_of_init = [
         "aaa",
         1,
         TypeError,
-        "eta must be an instance of <class 'float'>, not <class 'str'>.",
+        "eta must be an instance of float, not str.",
     ),
     (
         5,
@@ -1228,7 +1228,7 @@ invalid_input_of_generate_evaluation_policy_pscore = [
         np.ones([5, 2]),
         np.tile(np.arange(3), 5),
         TypeError,
-        "epsilon must be an instance of <class 'float'>, not <class 'str'>.",
+        "epsilon must be an instance of float, not str.",
     ),
     (
         "optimal",

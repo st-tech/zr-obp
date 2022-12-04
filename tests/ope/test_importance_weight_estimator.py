@@ -43,7 +43,7 @@ invalid_input_of_initializing_importance_weight_estimator = [
         RandomForestClassifier(**hyperparams["random_forest"]),
         2,
         TypeError,
-        "n_actions must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_actions must be an instance of int, not str.",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -63,7 +63,7 @@ invalid_input_of_initializing_importance_weight_estimator = [
         RandomForestClassifier(**hyperparams["random_forest"]),
         2,
         TypeError,
-        "len_list must be an instance of <class 'int'>, not <class 'str'>.",
+        "len_list must be an instance of int, not str.",
     ),
     (
         np.random.uniform(size=(n_actions, 8)),
@@ -113,7 +113,7 @@ invalid_input_of_initializing_importance_weight_estimator = [
         RandomForestClassifier(**hyperparams["random_forest"]),
         1.5,
         TypeError,
-        "calibration_cv must be an instance of <class 'int'>, not <class 'float'>.",
+        "calibration_cv must be an instance of int, not float.",
     ),
 ]
 
@@ -470,7 +470,7 @@ invalid_input_of_fitting_importance_weight_estimator = [
         None,
         2,
         TypeError,
-        "n_folds must be an instance of <class 'int'>, not <class 'str'>",
+        "n_folds must be an instance of int, not str",
     ),
     (
         np.random.uniform(size=(n_rounds, 7)),

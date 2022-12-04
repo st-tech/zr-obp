@@ -23,13 +23,13 @@ invalid_input_of_dr_init = [
         "",
         False,
         TypeError,
-        r"lambda_ must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"lambda_ must be an instance of {int, float}, not str.",
     ),
     (
         None,
         False,
         TypeError,
-        r"lambda_ must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"lambda_ must be an instance of {int, float}, not NoneType.",
     ),
     (-1.0, False, ValueError, "lambda_ == -1.0, must be >= 0.0."),
     (np.nan, False, ValueError, "`lambda_` must not be nan"),
@@ -93,7 +93,7 @@ invalid_input_of_dr_tuning_init = [
         0.05,
         False,
         TypeError,
-        r"an element of lambdas must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"an element of lambdas must be an instance of {int, float}, not str.",
     ),
     (
         [None],  #
@@ -102,7 +102,7 @@ invalid_input_of_dr_tuning_init = [
         0.05,
         False,
         TypeError,
-        r"an element of lambdas must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"an element of lambdas must be an instance of {int, float}, not NoneType.",
     ),
     (
         [],  #
@@ -165,7 +165,7 @@ invalid_input_of_dr_tuning_init = [
         "",  #
         False,
         TypeError,
-        "delta must be an instance of <class 'float'>",
+        "delta must be an instance of float, not",
     ),
     (
         [1],
@@ -174,7 +174,7 @@ invalid_input_of_dr_tuning_init = [
         None,  #
         False,
         TypeError,
-        "delta must be an instance of <class 'float'>",
+        "delta must be an instance of float, not",
     ),
     (
         [1],

@@ -4,18 +4,20 @@ import numpy as np
 import pytest
 from sklearn.linear_model import LogisticRegression
 
-from obp.policy import BaseContextFreePolicy, IPWLearner
-from obp.policy.linear import LinTS, LinUCB
-
-from obp.policy.contextfree import EpsilonGreedy, Random, BernoulliTS
-from obp.dataset.synthetic import (
-    logistic_reward_function,
-    logistic_sparse_reward_function,
-)
+from obp.dataset.synthetic import logistic_reward_function
+from obp.dataset.synthetic import logistic_sparse_reward_function
+from obp.policy import BaseContextFreePolicy
+from obp.policy import IPWLearner
+from obp.policy.contextfree import BernoulliTS
+from obp.policy.contextfree import EpsilonGreedy
+from obp.policy.contextfree import Random
+from obp.policy.linear import LinTS
+from obp.policy.linear import LinUCB
 from obp.policy.policy_type import PolicyType
 from obp.simulator.coefficient_drifter import CoefficientDrifter
 from obp.simulator.delay_sampler import ExponentialDelaySampler
-from obp.simulator.simulator import BanditEnvironmentSimulator, BanditPolicySimulator
+from obp.simulator.simulator import BanditEnvironmentSimulator
+from obp.simulator.simulator import BanditPolicySimulator
 
 
 def test_bandit_policy_simulator_updates_at_each_taken_action():

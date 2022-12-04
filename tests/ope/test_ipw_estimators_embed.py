@@ -20,7 +20,7 @@ invalid_input_of_ipw_init = [
         None,
         1,
         TypeError,
-        r"n_actions must be an instance of <class 'int'>, not <class 'float'>.",
+        r"n_actions must be an instance of int, not float.",
     ),
     (
         0,  #
@@ -38,7 +38,7 @@ invalid_input_of_ipw_init = [
         None,
         1,
         TypeError,
-        r"delta must be an instance of <class 'float'>, not <class 'str'>.",
+        r"delta must be an instance of float, not str.",
     ),
     (
         2,
@@ -92,7 +92,7 @@ invalid_input_of_ipw_init = [
         None,
         1.0,  #
         TypeError,
-        r"min_emb_dim must be an instance of <class 'int'>, not <class 'float'>.",
+        r"min_emb_dim must be an instance of int, not float.",
     ),
     (
         2,

@@ -3,7 +3,8 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from obp.dataset.synthetic import logistic_sparse_reward_function, _base_reward_function
+from obp.dataset.synthetic import _base_reward_function
+from obp.dataset.synthetic import logistic_sparse_reward_function
 from obp.simulator.coefficient_drifter import CoefficientDrifter
 from obp.simulator.simulator import BanditEnvironmentSimulator
 
