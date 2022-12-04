@@ -4,7 +4,8 @@ import tqdm as tqdm
 from obp.policy.policy_type import PolicyType
 from obp.simulator.simulator import BanditPolicy
 from obp.types import BanditFeedback
-from obp.utils import check_bandit_feedback_inputs, convert_to_action_dist
+from obp.utils import check_bandit_feedback_inputs
+from obp.utils import convert_to_action_dist
 
 
 def run_bandit_replay(

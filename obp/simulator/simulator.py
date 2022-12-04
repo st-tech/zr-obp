@@ -5,11 +5,16 @@
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Tuple, Optional, List, Any
+from typing import Any
+from typing import Callable
+from typing import List
+from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import numpy as np
-from sklearn.utils import check_random_state, check_scalar
+from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar
 from tqdm import tqdm
 
 from ..dataset.reward_type import RewardType
@@ -18,7 +23,8 @@ from ..policy import BaseContextFreePolicy
 from ..policy import BaseContextualPolicy
 from ..policy.policy_type import PolicyType
 from ..types import BanditFeedback
-from ..utils import check_bandit_feedback_inputs, check_array
+from ..utils import check_array
+from ..utils import check_bandit_feedback_inputs
 
 
 # bandit policy type

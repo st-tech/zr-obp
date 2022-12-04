@@ -1,6 +1,8 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Optional, Tuple, List
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import numpy as np
 from sklearn.utils import check_random_state

@@ -3,8 +3,9 @@
 
 """Class for Generating Synthetic Logged Bandit Data."""
 from dataclasses import dataclass
-from typing import Callable, Tuple
+from typing import Callable
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 from scipy.stats import truncnorm
@@ -19,6 +20,7 @@ from ..utils import sigmoid
 from ..utils import softmax
 from .base import BaseBanditDataset
 from .reward_type import RewardType
+
 
 coef_func_signature = Callable[
     [np.ndarray, np.ndarray, np.random.RandomState],
