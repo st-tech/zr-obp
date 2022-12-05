@@ -13,12 +13,12 @@ invalid_input_of_bipw_init = [
     (
         "",
         TypeError,
-        r"lambda_ must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"lambda_ must be an instance of {int, float}, not str.",
     ),
     (
         None,
         TypeError,
-        r"lambda_ must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'NoneType'>.",
+        r"lambda_ must be an instance of {int, float}, not NoneType.",
     ),
     (-1.0, ValueError, "lambda_ == -1.0, must be >= 0.0."),
     (np.nan, ValueError, "`lambda_` must not be nan"),

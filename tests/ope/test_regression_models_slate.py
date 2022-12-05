@@ -46,7 +46,7 @@ invalid_input_of_initializing_regression_models = [
         "normal",
         Ridge(**hyperparams["ridge"]),
         TypeError,
-        "n_unique_action must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_unique_action must be an instance of int, not str.",
     ),
     (
         1,  #
@@ -62,7 +62,7 @@ invalid_input_of_initializing_regression_models = [
         "normal",
         Ridge(**hyperparams["ridge"]),
         TypeError,
-        "len_list must be an instance of <class 'int'>, not <class 'str'>.",
+        "len_list must be an instance of int, not str.",
     ),
     (
         n_unique_action,

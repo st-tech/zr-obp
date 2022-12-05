@@ -487,7 +487,7 @@ invalid_input_of_estimate_intervals = [
         "s",
         1,
         TypeError,
-        "n_bootstrap_samples must be an instance of <class 'int'>, not <class 'str'>",
+        "n_bootstrap_samples must be an instance of int, not str",
     ),
     (-1.0, 1, 1, ValueError, "alpha == -1.0, must be >= 0.0"),
     (2.0, 1, 1, ValueError, "alpha == 2.0, must be <= 1.0"),
@@ -496,7 +496,7 @@ invalid_input_of_estimate_intervals = [
         1,
         1,
         TypeError,
-        "alpha must be an instance of <class 'float'>, not <class 'str'>",
+        "alpha must be an instance of float, not str",
     ),
 ]
 
@@ -682,13 +682,13 @@ invalid_input_of_evaluation_performance_of_estimators = [
         "se",
         1,
         TypeError,
-        "ground_truth_policy_value must be an instance of <class 'float'>, not <class 'int'>.",
+        "ground_truth_policy_value must be an instance of float, not int.",
     ),
     (
         "se",
         "a",
         TypeError,
-        "ground_truth_policy_value must be an instance of <class 'float'>, not <class 'str'>.",
+        "ground_truth_policy_value must be an instance of float, not str.",
     ),
     (
         "relative-ee",

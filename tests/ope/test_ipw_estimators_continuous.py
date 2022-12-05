@@ -252,7 +252,7 @@ invalid_input_of_estimate_intervals = [
         "s",
         1,
         TypeError,
-        "n_bootstrap_samples must be an instance of <class 'int'>, not <class 'str'>",
+        "n_bootstrap_samples must be an instance of int, not str",
     ),
     (-1.0, 1, 1, ValueError, "alpha == -1.0, must be >= 0.0"),
     (2.0, 1, 1, ValueError, "alpha == 2.0, must be <= 1.0"),
@@ -261,7 +261,7 @@ invalid_input_of_estimate_intervals = [
         1,
         1,
         TypeError,
-        "alpha must be an instance of <class 'float'>, not <class 'str'>",
+        "alpha must be an instance of float, not str",
     ),
 ]
 

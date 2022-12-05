@@ -23,7 +23,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "n_actions must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_actions must be an instance of int, not str.",
     ),
     (
         1,  #
@@ -59,7 +59,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "dim_context must be an instance of <class 'int'>, not <class 'str'>.",
+        "dim_context must be an instance of int, not str.",
     ),
     (
         3,
@@ -113,7 +113,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"reward_std must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"reward_std must be an instance of {int, float}, not str.",
     ),
     (
         3,
@@ -149,7 +149,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"beta must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"beta must be an instance of {int, float}, not str.",
     ),
     (
         3,
@@ -167,7 +167,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"n_cat_per_dim must be an instance of <class 'int'>, not <class 'float'>.",
+        r"n_cat_per_dim must be an instance of int, not float.",
     ),
     (
         3,
@@ -203,7 +203,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"latent_param_mat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+        r"latent_param_mat_dim must be an instance of int, not float.",
     ),
     (
         3,
@@ -239,7 +239,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"n_cat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+        r"n_cat_dim must be an instance of int, not float.",
     ),
     (
         3,
@@ -275,7 +275,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"p_e_a_param_std must be an instance of \(<class 'int'>, <class 'float'>\), not <class 'str'>.",
+        r"p_e_a_param_std must be an instance of {int, float}, not str.",
     ),
     (
         3,
@@ -311,7 +311,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"n_unobserved_cat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+        r"n_unobserved_cat_dim must be an instance of int, not float.",
     ),
     (
         3,
@@ -365,7 +365,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        r"n_irrelevant_cat_dim must be an instance of <class 'int'>, not <class 'float'>.",
+        r"n_irrelevant_cat_dim must be an instance of int, not float.",
     ),
     (
         3,
@@ -419,7 +419,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "n_deficient_actions must be an instance of <class 'int'>, not <class 'str'>.",
+        "n_deficient_actions must be an instance of int, not str.",
     ),
     (
         3,
@@ -437,7 +437,7 @@ invalid_input_of_init = [
         None,
         12345,
         TypeError,
-        "n_deficient_actions must be an instance of <class 'int'>, not <class 'float'>.",
+        "n_deficient_actions must be an instance of int, not float.",
     ),
     (
         3,

@@ -441,6 +441,7 @@ class QLearner(BaseOfflinePolicyLearner):
                 raise ValueError("When `self.len_list > 1`, `position` must be given.")
 
         unif_action_dist = np.ones((context.shape[0], self.n_actions, self.len_list))
+        unif_action_dist /= self.n_actions
         self.q_estimator.fit(
             context=context,
             action=action,

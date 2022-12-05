@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from obp.dataset.synthetic import logistic_sparse_reward_function
 
+from obp.dataset.synthetic import logistic_sparse_reward_function
 from obp.simulator.delay_sampler import ExponentialDelaySampler
 from obp.simulator.simulator import BanditEnvironmentSimulator
 
