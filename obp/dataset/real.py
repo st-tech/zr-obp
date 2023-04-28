@@ -228,7 +228,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             A dictionary containing batch logged bandit data collected by the behavior policy.
             The keys of the dictionary are as follows.
             - n_rounds: number of rounds, data size of the logged bandit data
-            - n_actions: number of actions (:math:`|\mathcal{A}|`)
+            - n_actions: number of actions (:math:`|\\mathcal{A}|`)
             - action: action variables sampled by the behavior policy
             - position: positions where actions are recommended, there are three positions in the ZOZOTOWN rec interface
             - reward: binary reward variables, click indicators
@@ -317,7 +317,7 @@ class OpenBanditDataset(BaseRealBanditDataset):
             A dictionary containing logged bandit data collected by the behavior policy.
             The keys of the dictionary are as follows.
             - n_rounds: number of rounds, data size of the logged bandit data
-            - n_actions: number of actions (:math:`|\mathcal{A}|`)
+            - n_actions: number of actions (:math:`|\\mathcal{A}|`)
             - action: action variables sampled by the behavior policy
             - position: positions where actions are recommended, there are three positions in the ZOZOTOWN rec interface
             - reward: binary reward variables, click indicators
