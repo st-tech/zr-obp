@@ -824,9 +824,9 @@ def _base_reward_function(
     expected_rewards = context_values + action_values + context_action_values
     if z_score:
         expected_rewards = (
-            expected_rewards - expected_rewards.mean() / expected_rewards.std()
-        )
-
+            expected_rewards - expected_rewards.mean()
+        ) / expected_rewards.std()
+    
     expected_rewards = degree * expected_rewards
 
     return expected_rewards
