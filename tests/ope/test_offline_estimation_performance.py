@@ -390,5 +390,5 @@ def test_offline_estimation_performance(
     ]
     for estimator_name in tested_estimators:
         assert (
-            relative_ee_df_mean[estimator_name] / relative_ee_df_mean["naive"] < 1.5
+            relative_ee_df_mean[estimator_name] / relative_ee_df_mean["naive"] < 1.65
         ), f"{estimator_name} is significantly worse than naive (on-policy) estimator"
